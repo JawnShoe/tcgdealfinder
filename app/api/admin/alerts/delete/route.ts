@@ -1,0 +1,37 @@
+import { NextResponse } from "next/server";
+
+import { query } from "../../../../../lib/db";
+
+const ADMIN_SECRET = "V6DU6T^P9fSx";
+
+function isAuthorized(secret: string | null): boolean {
+  return secret === ADMIN_SECRET;
+}
+
+export async function POST(request: Request) {
+  const secretHeader = request.headers.get("x-admin-secret");
+  if (!isAuthorized(secretHeader)) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
+  let body: { id?: number };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  if (typeof body.id !== "number") {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  await query(
+    `
+      DELETE FROM alerts_watchlist
+      WHERE id = $1;
+    `,
+    [body.id],
+  );
+
+  return NextResponse.json({ ok: true });
+}

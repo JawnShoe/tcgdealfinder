@@ -1,0 +1,611 @@
+// lib/ebay.ts
+//
+// eBay integration using the modern Buy/Browse API.
+// - Search: /buy/browse/v1/item_summary/search
+// - Auth: OAuth2 client_credentials with EBAY_CLIENT_ID / EBAY_CLIENT_SECRET
+//
+// This replaces any old Finding API usage. scripts/update-listings.ts
+// should continue to call fetchEbayListings(searchQuery, market).
+
+export type NormalizedListing = {
+  source: string; // "EBAY"
+  listingId: string;
+  title: string;
+  url: string;
+  imageUrl?: string;
+  priceCad: number;
+  shippingCad: number;
+  totalPriceCad: number;
+  seller?: string;
+  sellerFeedbackCount?: number | null;
+  sellerPositivePercent?: number | null;
+  sellerUsername?: string | null;
+  conditionRaw?: string;
+  market: string; // e.g. "EBAY_US"
+  endsAt?: string | null;
+};
+
+export type SoldListing = {
+  listingId?: string;
+  title: string;
+  priceCad: number;
+  soldAt?: string | null;
+  raw: unknown;
+};
+
+type EbayEnv = {
+  appId: string;
+  clientId: string;
+  clientSecret: string;
+};
+
+export const BANNED_TITLE_KEYWORDS = [
+  "full art card",
+  "jumbo",
+  "oversize",
+  "oversized",
+  "giant",
+  "gigantamax",
+  "proxy",
+  "proxi",
+  "proxies",
+  "proxy card",
+  "fan art",
+  "art card",
+  "custom art",
+  "fanart",
+  "fan-made",
+  "fan made",
+  "fanmade",
+  "custom",
+  "custom made",
+  "customized",
+  "custom-designed",
+  "custom design",
+  "custom artwork",
+  "custom print",
+  "custom card",
+  "custom pokemon",
+  "made to order",
+  "custom metal",
+  "custom metal card",
+  "custom pokemon card",
+  "metal card",
+  "metal art",
+  "metal pokemon card",
+  "rainbow metal",
+  "brushed metal",
+  "stainless steel",
+  "chrome card",
+  "chromium card",
+  "full metal",
+  "etched",
+  "etched card",
+  "etched metal",
+  "laser engraved",
+  "engraved",
+  "display only",
+  "display card",
+  "display piece",
+  "display",
+  "for display",
+  "for collection only",
+  "print only",
+  "printed card",
+  "printed",
+  "high-quality print",
+  "high quality print",
+  "collector print",
+  "reprint",
+  "reprinted",
+  "replica",
+  "remake",
+  "not real",
+  "not a real",
+  "not authentic",
+  "not official",
+  "non official",
+  "sticker",
+  "decal",
+  "handmade",
+  "hand made",
+  "hand-crafted",
+  "handcrafted",
+  "blank card",
+  "diy card",
+  "template card",
+  "png",
+  "svg",
+  "digital file",
+  "digital download",
+  "textured",
+  "textured gold",
+  "gold plated",
+  "gold-plated",
+  "gold foil",
+  "silver foil",
+  "rainbow foil",
+  "foil art",
+  "poster",
+  "anime card",
+  "anime",
+  "mystery box",
+  "lot",
+  "bundle",
+  "set of",
+  "bulk",
+  "korean",
+  "case",
+  "booster",
+  "deck box",
+  "online code",
+  "ptcgo",
+  "digital code",
+  "330hp",
+  "hp330",
+  "rainbow fan art",
+  "playmat",
+];
+
+export function cleanTitle(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function isValidListingTitle(rawTitle: string): boolean {
+  const title = cleanTitle(rawTitle);
+
+  // Exclude anything that hints at custom/fan-made/replica/oversized cards.
+  // These tend to be reprints, metal/etched novelties, or display-only items
+  // that do not reflect real market prices.
+  for (const banned of BANNED_TITLE_KEYWORDS) {
+    if (title.includes(banned)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+const MAX_STANDARD_SHIPPING_CAD = 40;
+const HIGH_VALUE_PRICE_THRESHOLD = 800;
+const MIN_PRICE_CAD = 0.99;
+
+function getEbayEnv(): EbayEnv {
+  const appId = process.env.EBAY_APP_ID;
+  const clientId = process.env.EBAY_CLIENT_ID;
+  const clientSecret = process.env.EBAY_CLIENT_SECRET;
+
+  if (!appId) {
+    throw new Error("EBAY_APP_ID is not set in .env.local");
+  }
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      "EBAY_CLIENT_ID and EBAY_CLIENT_SECRET must be set in .env.local",
+    );
+  }
+
+  return { appId, clientId, clientSecret };
+}
+
+// Simple in-memory token cache so we don't request a new token on every call.
+let cachedToken:
+  | {
+      accessToken: string;
+      expiresAt: number; // epoch seconds
+    }
+  | null = null;
+
+// ---- OAuth: get application access token for Browse API ----
+
+async function getAppAccessToken(): Promise<string> {
+  const { clientId, clientSecret } = getEbayEnv();
+
+  const now = Math.floor(Date.now() / 1000);
+  if (cachedToken && cachedToken.expiresAt - 60 > now) {
+    return cachedToken.accessToken;
+  }
+
+  const tokenUrl = "https://api.ebay.com/identity/v1/oauth2/token";
+  const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString(
+    "base64",
+  );
+
+  const body = new URLSearchParams({
+    grant_type: "client_credentials",
+    scope: "https://api.ebay.com/oauth/api_scope",
+  });
+
+  const res = await fetch(tokenUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${basicAuth}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `Failed to get eBay app access token (${res.status} ${res.statusText}): ${text}`,
+    );
+  }
+
+  const json = (await res.json()) as {
+    access_token: string;
+    expires_in: number;
+  };
+
+  const expiresAt = now + (json.expires_in || 3600);
+
+  cachedToken = {
+    accessToken: json.access_token,
+    expiresAt,
+  };
+
+  return json.access_token;
+}
+
+// Map our stored market code to the Browse Marketplace ID header.
+function toMarketplaceId(market: string): string {
+  switch (market) {
+    case "EBAY_CA":
+      return "EBAY_CA";
+    case "EBAY_GB":
+      return "EBAY_GB";
+    case "EBAY_DE":
+      return "EBAY_DE";
+    case "EBAY_AU":
+      return "EBAY_AU";
+    case "EBAY_US":
+    default:
+      return "EBAY_US";
+  }
+}
+
+// ---- Browse API search ----
+// NOTE: Signature matches existing callers: fetchEbayListings(searchQuery, market)
+
+export async function fetchEbayListings(
+  searchQuery: string,
+  market: string,
+): Promise<NormalizedListing[]> {
+  const marketplaceId = toMarketplaceId(market);
+  const accessToken = await getAppAccessToken();
+
+  const baseUrl = "https://api.ebay.com/buy/browse/v1/item_summary/search";
+  const url = new URL(baseUrl);
+
+  // Use the actual query string from caller.
+  url.searchParams.set("q", searchQuery);
+  url.searchParams.set("limit", "50");
+  url.searchParams.set("sort", "price"); // we'll do deal logic later
+
+  console.log(
+    `fetchEbayListings: calling Browse API for "${searchQuery}" on ${marketplaceId}`,
+  );
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.error(
+      `fetchEbayListings: HTTP ${res.status} ${res.statusText}. Body (truncated):`,
+      text.slice(0, 400),
+    );
+    return [];
+  }
+
+  const data = (await res.json()) as {
+    itemSummaries?: Array<{
+      itemId?: string;
+      title?: string;
+      itemWebUrl?: string;
+      image?: { imageUrl?: string };
+      price?: { value?: string; currency?: string };
+      shippingOptions?: Array<{
+        shippingCost?: { value?: string; currency?: string };
+      }>;
+      seller?: {
+        username?: string;
+        feedbackScore?: number;
+        feedbackPercentage?: string;
+      };
+      condition?: string;
+      itemEndDate?: string;
+      buyingOptions?: string[];
+      bidCount?: number;
+    }>;
+  };
+
+  const items = data.itemSummaries ?? [];
+  console.log(
+    `fetchEbayListings: received ${items.length} items from Browse API for "${searchQuery}".`,
+  );
+
+  const listings: NormalizedListing[] = [];
+
+  for (const item of items) {
+    const listingId = item.itemId;
+    const title = item.title;
+    const urlStr = item.itemWebUrl;
+
+    if (!listingId || !title || !urlStr) {
+      continue;
+    }
+
+    const priceValue = item.price?.value ? Number(item.price.value) : NaN;
+    const shipValueRaw =
+      item.shippingOptions?.[0]?.shippingCost?.value ?? "0";
+    const shipValue = Number(shipValueRaw);
+
+    if (!Number.isFinite(priceValue)) {
+      // Skip weird items without a proper price.
+      continue;
+    }
+
+    if (priceValue < MIN_PRICE_CAD) {
+      continue;
+    }
+
+    if (!isValidListingTitle(title)) {
+      continue;
+    }
+
+    const shipping = Number.isFinite(shipValue) ? shipValue : 0;
+    const total = priceValue + shipping;
+
+    const buyingOptions = item.buyingOptions ?? [];
+    const isAuction = buyingOptions.includes("AUCTION");
+    const isBin = buyingOptions.includes("FIXED_PRICE");
+    const bidCount = item.bidCount ?? 0;
+
+    if (isAuction && !isBin && (!Number.isFinite(bidCount) || bidCount <= 0)) {
+      continue;
+    }
+
+    const isHighValue = priceValue >= HIGH_VALUE_PRICE_THRESHOLD;
+    if (
+      !isHighValue &&
+      Number.isFinite(shipValue) &&
+      shipValue > MAX_STANDARD_SHIPPING_CAD
+    ) {
+      continue;
+    }
+
+    const sellerFeedbackCount =
+      item.seller?.feedbackScore !== undefined
+        ? Number(item.seller.feedbackScore)
+        : null;
+    const sellerPositivePercent =
+      item.seller?.feedbackPercentage !== undefined
+        ? Number(item.seller.feedbackPercentage)
+        : null;
+    const sellerUsername = item.seller?.username
+      ? item.seller.username.toLowerCase()
+      : null;
+
+    const base: NormalizedListing = {
+      source: "EBAY",
+      listingId: String(listingId),
+      title: String(title),
+      url: String(urlStr),
+      imageUrl: item.image?.imageUrl,
+      priceCad: priceValue,
+      shippingCad: shipping,
+      totalPriceCad: total,
+      seller: item.seller?.username,
+      sellerFeedbackCount,
+      sellerPositivePercent,
+       sellerUsername,
+      conditionRaw: item.condition,
+      market,
+      endsAt: item.itemEndDate ?? null,
+    };
+
+    // Add some alias fields to satisfy any older code that expects different names.
+    const aliased: any = base;
+    aliased.price = base.priceCad;
+    aliased.shipping = base.shippingCad;
+    aliased.total = base.totalPriceCad;
+    aliased.price_cad = base.priceCad;
+    aliased.shipping_cad = base.shippingCad;
+    aliased.total_price_cad = base.totalPriceCad;
+    aliased.seller_username = base.sellerUsername;
+
+    listings.push(base);
+  }
+
+  console.log(
+    `fetchEbayListings: normalized ${listings.length} listings for "${searchQuery}".`,
+  );
+
+  const filtered = listings.filter((item) => {
+    if (!item.title) return false;
+    if (!isValidListingTitle(item.title)) return false;
+
+    const price =
+      item.totalPriceCad ??
+      item.priceCad ??
+      (item as any).total ??
+      (item as any).price ??
+      null;
+
+    if (price == null || !Number.isFinite(price) || price <= 0) {
+      return false;
+    }
+
+    return true;
+  });
+
+  return filtered;
+}
+
+function selfTestTitleFilter() {
+  const cases: Array<{ title: string; expected: boolean }> = [
+    {
+      title: "Custom made Umbreon VMAX 215/203 metal card",
+      expected: false,
+    },
+    {
+      title: "Pokemon Umbreon VMAX 215/203 Alternate Art Mint",
+      expected: true,
+    },
+  ];
+
+  for (const test of cases) {
+    const result = isValidListingTitle(test.title);
+    if (result !== test.expected) {
+      console.warn(
+        `[lib/ebay] title filter self-test failed for "${test.title}" – expected ${test.expected}, got ${result}`,
+      );
+    }
+  }
+}
+
+selfTestTitleFilter();
+
+export async function fetchEbaySoldListings(
+  searchQuery: string,
+  market: string,
+  limit = 50,
+): Promise<SoldListing[]> {
+  const marketplaceId = toMarketplaceId(market);
+  const accessToken = await getAppAccessToken();
+
+  const baseUrl = "https://api.ebay.com/buy/browse/v1/item_summary/search";
+  const url = new URL(baseUrl);
+
+  url.searchParams.set("q", searchQuery);
+  url.searchParams.set("limit", String(Math.min(limit, 50)));
+  url.searchParams.set("sort", "-endTime");
+  url.searchParams.set("filter", "salesStatus:{SOLD}");
+
+  console.log(
+    `fetchEbaySoldListings: calling Browse API for "${searchQuery}" on ${marketplaceId}`,
+  );
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.error(
+      `fetchEbaySoldListings: HTTP ${res.status} ${res.statusText}. Body (truncated):`,
+      text.slice(0, 400),
+    );
+    return [];
+  }
+
+  const data = (await res.json()) as {
+    itemSummaries?: Array<{
+      itemId?: string;
+      title?: string;
+      price?: { value?: string };
+      itemEndDate?: string;
+    }>;
+  };
+
+  const items = data.itemSummaries ?? [];
+  console.log(
+    `fetchEbaySoldListings: received ${items.length} sold items for "${searchQuery}".`,
+  );
+
+  const soldListings: SoldListing[] = [];
+  for (const item of items) {
+    if (!item.title || !item.price?.value) {
+      continue;
+    }
+    const priceValue = Number(item.price.value);
+    if (!Number.isFinite(priceValue) || priceValue <= 0) {
+      continue;
+    }
+    soldListings.push({
+      listingId: item.itemId,
+      title: item.title,
+      priceCad: priceValue,
+      soldAt: item.itemEndDate ?? null,
+      raw: item,
+    });
+  }
+
+  return soldListings;
+}
+
+// ---- Rate-limit helper (Analytics API) ----
+
+export async function getEbayRateLimits(): Promise<void> {
+  const { clientId, clientSecret } = getEbayEnv();
+
+  const tokenUrl = "https://api.ebay.com/identity/v1/oauth2/token";
+  const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString(
+    "base64",
+  );
+
+  const body = new URLSearchParams({
+    grant_type: "client_credentials",
+    scope: "https://api.ebay.com/oauth/api_scope",
+  });
+
+  const tokenRes = await fetch(tokenUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${basicAuth}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+
+  if (!tokenRes.ok) {
+    const text = await tokenRes.text().catch(() => "");
+    throw new Error(
+      `getEbayRateLimits: failed to get token (${tokenRes.status} ${tokenRes.statusText}): ${text}`,
+    );
+  }
+
+  const tokenJson = (await tokenRes.json()) as {
+    access_token: string;
+  };
+
+  const accessToken = tokenJson.access_token;
+
+  const limitsRes = await fetch(
+    "https://api.ebay.com/analytics/v1/rate_limit/",
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (!limitsRes.ok) {
+    const text = await limitsRes.text().catch(() => "");
+    throw new Error(
+      `getEbayRateLimits: failed to retrieve limits (${limitsRes.status} ${limitsRes.statusText}): ${text}`,
+    );
+  }
+
+  const limitsJson = await limitsRes.json();
+  console.log(
+    "getEbayRateLimits: raw response:",
+    JSON.stringify(limitsJson, null, 2),
+  );
+}

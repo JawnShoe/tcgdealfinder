@@ -1,0 +1,110 @@
+import "dotenv/config";
+import { query } from "../lib/db.ts";
+import { fetchEbaySoldListings, isValidListingTitle } from "../lib/ebay.ts";
+import type { SoldListing } from "../lib/ebay.ts";
+
+type CardConfigRow = {
+  card_id: number;
+  condition_bucket: string;
+  search_query: string;
+  market: string;
+};
+
+async function fetchCardConfigs(): Promise<CardConfigRow[]> {
+  const res = await query<CardConfigRow>(
+    `
+      SELECT
+        c.id AS card_id,
+        c.condition_bucket,
+        cfg.search_query,
+        cfg.market
+      FROM card_search_config cfg
+      JOIN cards c ON c.id = cfg.card_id
+      WHERE cfg.is_active = TRUE
+      ORDER BY c.id;
+    `,
+  );
+  return res.rows;
+}
+
+async function insertSoldListing(
+  cardId: number,
+  condition: string,
+  item: SoldListing,
+): Promise<void> {
+  await query(
+    `
+      INSERT INTO ebay_sold_listings (
+        card_id,
+        condition,
+        title,
+        price,
+        sold_at,
+        raw
+      )
+      VALUES ($1, $2, $3, $4, $5, $6);
+    `,
+    [
+      cardId,
+      condition,
+      item.title,
+      item.priceCad,
+      item.soldAt ? new Date(item.soldAt) : null,
+      item.raw ?? {},
+    ],
+  );
+}
+
+async function main() {
+  console.log("Starting sold listings update...");
+  const configs = await fetchCardConfigs();
+  console.log(`Found ${configs.length} cards to process.`);
+
+  let processed = 0;
+  let totalInserted = 0;
+
+  for (const config of configs) {
+    console.log(
+      `Fetching sold listings for card ${config.card_id} (${config.condition_bucket})...`,
+    );
+    const soldItems = await fetchEbaySoldListings(
+      config.search_query,
+      config.market ?? "EBAY_US",
+    );
+
+    let insertedForCard = 0;
+    for (const item of soldItems) {
+      if (!item.title || !isValidListingTitle(item.title)) {
+        continue;
+      }
+      if (!Number.isFinite(item.priceCad) || item.priceCad <= 0) {
+        continue;
+      }
+
+      try {
+        await insertSoldListing(config.card_id, config.condition_bucket, item);
+        insertedForCard += 1;
+      } catch (err) {
+        console.error(
+          `Failed to insert sold listing "${item.title}" for card ${config.card_id}:`,
+          err,
+        );
+      }
+    }
+
+    processed += 1;
+    totalInserted += insertedForCard;
+    console.log(
+      `Card ${config.card_id}: inserted ${insertedForCard} sold rows (processed ${processed}/${configs.length}).`,
+    );
+  }
+
+  console.log(
+    `Sold listings update complete. Total rows inserted: ${totalInserted}.`,
+  );
+}
+
+main().catch((err) => {
+  console.error("Error running sold listings update:", err);
+  process.exit(1);
+});

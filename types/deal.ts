@@ -1,0 +1,28 @@
+export type Deal = {
+  id: number;
+  title: string;
+  url: string;
+  priceCad: number | null;
+  shippingCad: number | null;
+  totalPriceCad: number | null;
+  historicPriceCad: number | null;
+  discountPercent: number | null;
+  sampleSize: number | null;
+  market: string;
+  endsAt: string | null;
+  thumbnailUrl: string | null;
+  sellerUsername: string | null;
+  sellerFeedbackCount?: number | null;
+  sellerPositivePercent?: number | null;
+  card: {
+    id: number;
+    name: string | null;
+    setName: string | null;
+    cardNumber: string | null;
+    conditionBucket: string | null;
+  } | null;
+  condition: string | null;
+  setName: string | null;
+  cardName: string | null;
+  cardId: number | null;
+};

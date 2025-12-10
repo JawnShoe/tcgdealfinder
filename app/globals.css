@@ -1,0 +1,212 @@
+﻿:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  background-color: #f1f5f9;
+  color: #0f172a;
+  line-height: 1.65;
+}
+
+a {
+  color: #0369a1;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #0c4a6e;
+  text-decoration: underline;
+}
+
+.page-shell {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.page-title {
+  font-size: clamp(1.8rem, 2.4vw, 2.75rem);
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.panel {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  padding: 1.5rem;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
+}
+
+@media (min-width: 768px) {
+  .panel {
+    padding: 2rem;
+  }
+}
+
+.table-section table,
+.deals-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.table-section thead tr,
+.deals-table thead tr {
+  background-color: #eaf0f8;
+  color: #475569;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+}
+
+.table-section th,
+.table-section td,
+.deals-table th,
+.deals-table td {
+  padding: 0.75rem 0.65rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table-section tbody tr:nth-child(odd),
+.deals-table tbody tr:nth-child(odd) {
+  background-color: #f8fafc;
+}
+
+.table-section tbody tr:hover,
+.deals-table tbody tr:hover {
+  background-color: #eef6ff;
+}
+
+.table-cell--numeric {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.deals-controls .deal-control__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  display: inline-block;
+  margin-bottom: 0.25rem;
+}
+
+.deal-control__select,
+.deal-control__input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #cbd5f5;
+  border-radius: 0.55rem;
+  background-color: #fff;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.deal-control__select:focus,
+.deal-control__input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+  outline: none;
+}
+
+.discount-good {
+  color: #047857;
+}
+
+.discount-bad {
+  color: #dc2626;
+}
+
+.discount-neutral {
+  color: #475569;
+}
+
+.confidence-chip {
+  display: inline-flex;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.confidence-high {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.confidence-medium {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.confidence-low {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.confidence-muted {
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+.watchlist-button {
+  border: 1px solid #cbd5f5;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background-color: #ffffff;
+}
+
+.watchlist-button.watchlist-active {
+  background-color: #e0f2fe;
+  border-color: #38bdf8;
+  color: #0369a1;
+}
+
+.watchlist-button-icon {
+  border: 1px solid #cbd5f5;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.4rem;
+}
+
+.watchlist-button-icon.watchlist-active {
+  background-color: #e0f2fe;
+  border-color: #38bdf8;
+  color: #0369a1;
+}
+
+.best-deal-panel {
+  border: 1px solid #bbf7d0;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  background-color: #ecfdf5;
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: 1rem;
+    border-radius: 0.65rem;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  }
+
+  .deals-table th,
+  .deals-table td {
+    padding: 0.55rem 0.4rem;
+  }
+}

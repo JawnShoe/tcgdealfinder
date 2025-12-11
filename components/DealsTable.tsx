@@ -1,14 +1,12 @@
-\"use client\";
+"use client";
 
-import Image from \"next/image\";
-import Link from \"next/link\";
-import { useEffect, useMemo, useState } from \"react\";
-import { usePathname, useSearchParams } from \"next/navigation\";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
-import { AdminDealActions } from \"./AdminDealActions\";
-import { TrustedBadge } from \"./TrustedBadge\";
-import type { Deal } from \"../types/deal\";
-
+import { AdminDealActions } from "./AdminDealActions";
+import { TrustedBadge } from "./TrustedBadge";
+import type { Deal } from "../types/deal";
 import {
   CONDITION_FILTERS,
   type ConditionFilterKey,
@@ -16,8 +14,7 @@ import {
   type MarketFilterKey,
   matchesConditionFilter,
   matchesMarket,
-} from \"../lib/filters\";
-
+} from "../lib/filters";
 import {
   discountClass,
   formatCurrency,
@@ -26,50 +23,37 @@ import {
   formatScore,
   getConfidenceLabel,
   scoreClass,
-} from \"../lib/dealFormatting\";
-
-import { getDealPrice, getDealDiscount } from \"../lib/dealMath\";
-
+} from "../lib/dealFormatting";
+import { getDealDiscount, getDealPrice } from "../lib/dealMath";
 import {
   computeDealScore,
   getDealConfidence,
   isDealTrusted,
   type DealConfidence,
-} from \"../lib/dealScore\";
-
-import {
-  DEFAULT_DEALS_VIEW_STATE,
-  parseDealsViewStateFromSearchParams,
-  serializeDealsViewStateToSearchParams,
-  type DealsViewState,
-} from \"../lib/dealsState\";
-
-import {
-  loadDealsViewState,
-  saveDealsViewState,
-} from \"../lib/dealsStateStorage\";
+} from "../lib/dealScore";
 
 const TOP_DEAL_DISCOUNT = 15;
 const TOP_DEAL_SAMPLE_SIZE = 20;
+const PAGE_SIZE = 50;
 
 const SORT_LABEL: Record<SortOption, string> = {
-  \"best-discount\": \"Best discount\",
-  \"best-score\": \"Best score\",
-  \"price-low-high\": \"Price: low to high\",
-  \"price-high-low\": \"Price: high to low\",
-  \"historic-high-low\": \"Historic price\",
-  \"card-name\": \"Card name\",
-  \"time-left\": \"Ending soon\",
+  "best-discount": "Best discount",
+  "best-score": "Best score",
+  "price-low-high": "Price: low to high",
+  "price-high-low": "Price: high to low",
+  "historic-high-low": "Historic price",
+  "card-name": "Card name",
+  "time-left": "Ending soon",
 };
 
 type SortOption =
-  | \"best-discount\"
-  | \"best-score\"
-  | \"price-low-high\"
-  | \"price-high-low\"
-  | \"historic-high-low\"
-  | \"card-name\"
-  | \"time-left\";
+  | "best-discount"
+  | "best-score"
+  | "price-low-high"
+  | "price-high-low"
+  | "historic-high-low"
+  | "card-name"
+  | "time-left";
 
 type DealViewModel = {
   deal: Deal;
@@ -82,95 +66,42 @@ type DealViewModel = {
   endsAtMs: number | null;
 };
 
-type UrlOverrideFlags = {
-  sortBy: boolean;
+type DealsViewState = {
+  sortBy: SortOption;
+  conditionKey: ConditionFilterKey;
+  marketKey: MarketFilterKey;
   topDealsOnly: boolean;
-  conditionKey: boolean;
-  setFilter: boolean;
-  marketKey: boolean;
-  minDiscountPercent: boolean;
-  minPrice: boolean;
-  maxPrice: boolean;
-  page: boolean;
+  minDiscountPercent: number | null;
+  minPrice: number | null;
+  maxPrice: number | null;
+  setFilter: string;
+  page: number;
+};
+
+const defaultState: DealsViewState = {
+  sortBy: "best-discount",
+  conditionKey: "all",
+  marketKey: "all",
+  topDealsOnly: false,
+  minDiscountPercent: null,
+  minPrice: null,
+  maxPrice: null,
+  setFilter: "",
+  page: 1,
 };
 
 interface DealsTableProps {
   deals: Deal[];
-  page: number;
-  totalPages: number;
   isAdmin?: boolean;
   adminSecret?: string;
 }
 
-export function DealsTable({
+export default function DealsTable({
   deals,
-  page,
-  totalPages,
   isAdmin = false,
   adminSecret,
 }: DealsTableProps) {
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-
-  const urlState = useMemo(() => {
-    const params = new URLSearchParams(searchParams?.toString() ?? \"\");
-    return parseDealsViewStateFromSearchParams(
-      params,
-      DEFAULT_DEALS_VIEW_STATE,
-    );
-  }, [searchParams]);
-
-  const urlOverrides = useMemo<UrlOverrideFlags>(() => {
-    const params = searchParams ?? new URLSearchParams();
-    return {
-      sortBy: params.has(\"sort\"),
-      topDealsOnly: params.get(\"top\") === \"1\",
-      conditionKey: params.has(\"cond\"),
-      setFilter: params.has(\"set\"),
-      marketKey: params.has(\"mkt\"),
-      minDiscountPercent: params.has(\"min_disc\"),
-      minPrice: params.has(\"min_price\"),
-      maxPrice: params.has(\"max_price\"),
-      page: params.has(\"page\"),
-    };
-  }, [searchParams]);
-
-  const [viewState, setViewState] = useState<DealsViewState>(urlState);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setViewState(urlState);
-  }, [urlState]);
-
-  useEffect(() => {
-    const saved = loadDealsViewState();
-    if (!saved) return;
-    setViewState((prev) => mergeStateFromStorage(prev, saved, urlOverrides));
-  }, [urlOverrides]);
-
-  useEffect(() => {
-    setViewState((prev) => (prev.page === page ? prev : { ...prev, page }));
-  }, [page]);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isMounted) return;
-    saveDealsViewState(viewState);
-    if (typeof window === \"undefined\") {
-      return;
-    }
-    const params = serializeDealsViewStateToSearchParams(viewState);
-    if (isAdmin && adminSecret) {
-      params.set(\"secret\", adminSecret);
-    }
-    const basePath = pathname ?? window.location.pathname ?? \"/\";
-    const query = params.toString();
-    const nextUrl = query ? ${basePath}? : basePath;
-    window.history.replaceState(null, \"\", nextUrl);
-  }, [viewState, pathname, isMounted, isAdmin, adminSecret]);
+  const [viewState, setViewState] = useState<DealsViewState>(defaultState);
 
   const updateState = (
     producer: (prev: DealsViewState) => DealsViewState,
@@ -178,7 +109,7 @@ export function DealsTable({
   ) => {
     setViewState((prev) => {
       const next = producer(prev);
-      if (options?.resetPage && next.page !== 1) {
+      if (options?.resetPage) {
         return { ...next, page: 1 };
       }
       return next;
@@ -222,7 +153,7 @@ export function DealsTable({
   }, [deals, referenceTime]);
 
   const filteredDeals = useMemo(() => {
-    const normalizedSet = viewState.setFilter?.toLowerCase?.() ?? \"\";
+    const normalizedSet = viewState.setFilter.trim().toLowerCase();
     const minDiscountTarget = viewState.minDiscountPercent ?? null;
     const minPriceTarget = viewState.minPrice ?? null;
     const maxPriceTarget = viewState.maxPrice ?? null;
@@ -233,20 +164,22 @@ export function DealsTable({
       if (
         !matchesConditionFilter(
           deal.condition ?? deal.card?.conditionBucket ?? null,
-          viewState.conditionKey as ConditionFilterKey,
+          viewState.conditionKey,
         )
       ) {
         return false;
       }
 
-      if (!matchesMarket(deal.market, viewState.marketKey as MarketFilterKey)) {
+      if (!matchesMarket(deal.market, viewState.marketKey)) {
         return false;
       }
 
       if (
         normalizedSet &&
-        normalizedSet !== \"all\" &&
-        !(deal.card?.setName ?? deal.setName ?? \"\").toLowerCase().includes(normalizedSet)
+        normalizedSet !== "all" &&
+        !(deal.card?.setName ?? deal.setName ?? "")
+          .toLowerCase()
+          .includes(normalizedSet)
       ) {
         return false;
       }
@@ -266,16 +199,12 @@ export function DealsTable({
         }
       }
 
-      if (minPriceTarget != null) {
-        if (price == null || price < minPriceTarget) {
-          return false;
-        }
+      if (minPriceTarget != null && (price == null || price < minPriceTarget)) {
+        return false;
       }
 
-      if (maxPriceTarget != null) {
-        if (price == null || price > maxPriceTarget) {
-          return false;
-        }
+      if (maxPriceTarget != null && (price == null || price > maxPriceTarget)) {
+        return false;
       }
 
       return true;
@@ -284,70 +213,59 @@ export function DealsTable({
 
   const sortedDeals = useMemo(() => {
     const list = [...filteredDeals];
-    const sortKey = (viewState.sortBy as SortOption) || \"best-discount\";
-    const comparator = comparators[sortKey] ?? comparators[\"best-discount\"];
+    const sortKey = viewState.sortBy || "best-discount";
+    const comparator = comparators[sortKey] ?? comparators["best-discount"];
     list.sort(comparator);
     return list;
   }, [filteredDeals, viewState.sortBy]);
 
-  const handleSortChange = (value: SortOption) => {
-    updateState((prev) => ({ ...prev, sortBy: value }), {
-      resetPage: true,
+  useEffect(() => {
+    setViewState((prev) => {
+      const maxPage = Math.max(1, Math.ceil(sortedDeals.length / PAGE_SIZE));
+      return prev.page > maxPage ? { ...prev, page: maxPage } : prev;
     });
-  };
+  }, [sortedDeals.length]);
 
-  const handleConditionChange = (key: ConditionFilterKey) => {
-    updateState((prev) => ({ ...prev, conditionKey: key }), { resetPage: true });
-  };
-
-  const handleMarketChange = (key: MarketFilterKey) => {
-    updateState((prev) => ({ ...prev, marketKey: key }), { resetPage: true });
-  };
-
-  const handleMinDiscountChange = (value: string) => {
-    updateState((prev) => ({ ...prev, minDiscountPercent: parseNumberInput(value) }), {
-      resetPage: true,
-    });
-  };
-
-  const handleMinPriceChange = (value: string) => {
-    updateState((prev) => ({ ...prev, minPrice: parseNumberInput(value) }), {
-      resetPage: true,
-    });
-  };
-
-  const handleMaxPriceChange = (value: string) => {
-    updateState((prev) => ({ ...prev, maxPrice: parseNumberInput(value) }), {
-      resetPage: true,
-    });
-  };
-
-  const handleSetFilterChange = (value: string) => {
-    updateState((prev) => ({ ...prev, setFilter: value }), { resetPage: true });
-  };
-
-  const handleTopDealsToggle = (checked: boolean) => {
-    updateState((prev) => ({ ...prev, topDealsOnly: checked }), {
-      resetPage: true,
-    });
-  };
-
-  const currentPage = viewState.page || 1;
+  const totalPages = Math.max(1, Math.ceil(sortedDeals.length / PAGE_SIZE));
+  const currentPage = viewState.page;
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const currentSlice = sortedDeals.slice(pageStart, pageStart + PAGE_SIZE);
   const hasDeals = sortedDeals.length > 0;
-  const prevDisabled = currentPage <= 1;
-  const nextDisabled = currentPage >= totalPages;
+
+  const handlePrev = () => {
+    setViewState((prev) =>
+      prev.page > 1 ? { ...prev, page: prev.page - 1 } : prev,
+    );
+  };
+
+  const handleNext = () => {
+    setViewState((prev) =>
+      prev.page < totalPages ? { ...prev, page: prev.page + 1 } : prev,
+    );
+  };
+
+  const inputClasses =
+    "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none";
 
   return (
-    <section className=\"panel space-y-4\">
-      <div className=\"deals-controls space-y-4\">
-        <div className=\"flex flex-wrap gap-3 md:gap-4\">
-          <label className=\"deal-control min-w-[180px]\">
-            <span className=\"deal-control__label\">Sort by</span>
+    <div className="space-y-4">
+      <div className="mb-4 space-y-3">
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="flex flex-col gap-1 text-sm text-slate-600">
+            <span className="text-xs font-semibold uppercase text-slate-500">
+              Sort by
+            </span>
             <select
-              className=\"deal-control__select\"
+              className={inputClasses}
               value={viewState.sortBy}
               onChange={(event) =>
-                handleSortChange(event.target.value as SortOption)
+                updateState(
+                  (prev) => ({
+                    ...prev,
+                    sortBy: event.target.value as SortOption,
+                  }),
+                  { resetPage: true },
+                )
               }
             >
               {Object.keys(SORT_LABEL).map((option) => (
@@ -358,13 +276,21 @@ export function DealsTable({
             </select>
           </label>
 
-          <label className=\"deal-control min-w-[160px]\">
-            <span className=\"deal-control__label\">Condition</span>
+          <label className="flex flex-col gap-1 text-sm text-slate-600">
+            <span className="text-xs font-semibold uppercase text-slate-500">
+              Condition
+            </span>
             <select
-              className=\"deal-control__select\"
+              className={inputClasses}
               value={viewState.conditionKey}
               onChange={(event) =>
-                handleConditionChange(event.target.value as ConditionFilterKey)
+                updateState(
+                  (prev) => ({
+                    ...prev,
+                    conditionKey: event.target.value as ConditionFilterKey,
+                  }),
+                  { resetPage: true },
+                )
               }
             >
               {CONDITION_FILTERS.map((option) => (
@@ -375,13 +301,21 @@ export function DealsTable({
             </select>
           </label>
 
-          <label className=\"deal-control min-w-[160px]\">
-            <span className=\"deal-control__label\">Market</span>
+          <label className="flex flex-col gap-1 text-sm text-slate-600">
+            <span className="text-xs font-semibold uppercase text-slate-500">
+              Market
+            </span>
             <select
-              className=\"deal-control__select\"
+              className={inputClasses}
               value={viewState.marketKey}
               onChange={(event) =>
-                handleMarketChange(event.target.value as MarketFilterKey)
+                updateState(
+                  (prev) => ({
+                    ...prev,
+                    marketKey: event.target.value as MarketFilterKey,
+                  }),
+                  { resetPage: true },
+                )
               }
             >
               {MARKET_FILTERS.map((option) => (
@@ -391,211 +325,272 @@ export function DealsTable({
               ))}
             </select>
           </label>
+        </div>
 
-          <label className=\"deal-control min-w-[150px]\">
-            <span className=\"deal-control__label\">Min discount (% off)</span>
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="flex flex-col gap-1 text-sm text-slate-600">
+            <span className="text-xs font-semibold uppercase text-slate-500">
+              Min discount (% off)
+            </span>
             <input
-              type=\"number\"
-              inputMode=\"decimal\"
-              className=\"deal-control__input\"
-              placeholder=\"15\"
-              value={viewState.minDiscountPercent ?? \"\"}
-              onChange={(event) => handleMinDiscountChange(event.target.value)}
+              type="number"
+              inputMode="decimal"
+              className={inputClasses}
+              placeholder="15"
+              value={viewState.minDiscountPercent ?? ""}
+              onChange={(event) =>
+                updateState(
+                  (prev) => ({
+                    ...prev,
+                    minDiscountPercent: parseNumberInput(event.target.value),
+                  }),
+                  { resetPage: true },
+                )
+              }
             />
           </label>
 
-          <label className=\"deal-control min-w-[140px]\">
-            <span className=\"deal-control__label\">Min price</span>
-            <input
-              type=\"number\"
-              inputMode=\"decimal\"
-              className=\"deal-control__input\"
-              placeholder=\"0\"
-              value={viewState.minPrice ?? \"\"}
-              onChange={(event) => handleMinPriceChange(event.target.value)}
-            />
+          <label className="flex flex-col gap-1 text-sm text-slate-600">
+            <span className="text-xs font-semibold uppercase text-slate-500">
+              Price range
+            </span>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                inputMode="decimal"
+                className={inputClasses}
+                placeholder="Min"
+                value={viewState.minPrice ?? ""}
+                onChange={(event) =>
+                  updateState(
+                    (prev) => ({
+                      ...prev,
+                      minPrice: parseNumberInput(event.target.value),
+                    }),
+                    { resetPage: true },
+                  )
+                }
+              />
+              <input
+                type="number"
+                inputMode="decimal"
+                className={inputClasses}
+                placeholder="Max"
+                value={viewState.maxPrice ?? ""}
+                onChange={(event) =>
+                  updateState(
+                    (prev) => ({
+                      ...prev,
+                      maxPrice: parseNumberInput(event.target.value),
+                    }),
+                    { resetPage: true },
+                  )
+                }
+              />
+            </div>
           </label>
 
-          <label className=\"deal-control min-w-[140px]\">
-            <span className=\"deal-control__label\">Max price</span>
+          <label className="flex flex-col justify-end gap-2 text-sm text-slate-600">
+            <span className="text-xs font-semibold uppercase text-slate-500">
+              Set filter
+            </span>
             <input
-              type=\"number\"
-              inputMode=\"decimal\"
-              className=\"deal-control__input\"
-              placeholder=\"1000\"
-              value={viewState.maxPrice ?? \"\"}
-              onChange={(event) => handleMaxPriceChange(event.target.value)}
+              type="text"
+              className={inputClasses}
+              placeholder="e.g. Evolving Skies"
+              value={viewState.setFilter}
+              onChange={(event) =>
+                updateState(
+                  (prev) => ({ ...prev, setFilter: event.target.value }),
+                  { resetPage: true },
+                )
+              }
             />
           </label>
         </div>
 
-        <div className=\"flex flex-wrap items-end gap-3 md:gap-4\">
-          <label className=\"deal-control flex-1 min-w-[220px]\">
-            <span className=\"deal-control__label\">Filter by set name</span>
-            <input
-              type=\"text\"
-              className=\"deal-control__input\"
-              placeholder=\"Evolving Skies\"
-              value={viewState.setFilter ?? \"\"}
-              onChange={(event) => handleSetFilterChange(event.target.value)}
-            />
-          </label>
-
-          <label className=\"flex items-center gap-2 text-sm text-slate-600\">
-            <input
-              type=\"checkbox\"
-              className=\"h-4 w-4 rounded border-slate-300\"
-              checked={viewState.topDealsOnly}
-              onChange={(event) => handleTopDealsToggle(event.target.checked)}
-            />
-            <span>Top deals only (= 15% off, = 20 sales)</span>
-          </label>
-        </div>
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-slate-300 text-slate-900"
+            checked={viewState.topDealsOnly}
+            onChange={(event) =>
+              updateState(
+                (prev) => ({ ...prev, topDealsOnly: event.target.checked }),
+                { resetPage: true },
+              )
+            }
+          />
+          <span>Top deals only (>= 15% off & >= 20 sales)</span>
+        </label>
       </div>
 
       {hasDeals ? (
         <>
-          <div className=\"hidden sm:block\">
-            <table className=\"deals-table w-full text-sm\">
-              <thead>
-                <tr>
-                  <th className=\"px-3 py-2 text-left\">Card</th>
-                  <th className=\"px-3 py-2 text-right\">Total</th>
-                  <th className=\"px-3 py-2 text-right\">Historic</th>
-                  <th className=\"px-3 py-2 text-right\">Discount</th>
-                  <th className=\"px-3 py-2 text-right\">Score</th>
-                  <th className=\"px-3 py-2 text-left\">Confidence</th>
-                  <th className=\"px-3 py-2 text-left\">Seller</th>
-                  <th className=\"px-3 py-2 text-left\">Market</th>
-                  <th className=\"px-3 py-2 text-left\">Ends</th>
-                  {isAdmin ? <th className=\"px-3 py-2 text-left\">Admin</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {sortedDeals.map((vm) => (
-                  <tr key={vm.deal.id}>
-                    <td className=\"px-3 py-2 align-top\">
-                      <div className=\"flex items-center gap-3\">
-                        {vm.deal.thumbnailUrl ? (
-                          <Image
-                            src={vm.deal.thumbnailUrl}
-                            alt={vm.deal.title}
-                            width={56}
-                            height={56}
-                            className=\"h-14 w-14 rounded object-cover\"
-                          />
-                        ) : (
-                          <div className=\"h-14 w-14 rounded bg-slate-200\" />
-                        )}
-                        <div className=\"space-y-1\">
-                          <Link
-                            href={vm.deal.url}
-                            target=\"_blank\"
-                            rel=\"noopener noreferrer\"
-                            className=\"font-semibold text-slate-900 hover:underline\"
-                          >
-                            {vm.deal.title}
-                          </Link>
-                          <p className=\"text-xs text-slate-500\">
-                            {(vm.deal.card?.setName ?? vm.deal.setName ?? \"\") || \"Unknown set\"}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className=\"whitespace-nowrap px-3 py-2 text-right font-medium text-slate-900\">
-                      {formatCurrency(vm.price)}
-                    </td>
-                    <td className=\"whitespace-nowrap px-3 py-2 text-right text-slate-700\">
-                      {formatCurrency(vm.deal.historicPriceCad)}
-                    </td>
-                    <td className={\whitespace-nowrap px-3 py-2 text-right font-semibold \\}>
-                      {formatDiscount(vm.discount)}
-                    </td>
-                    <td className={\whitespace-nowrap px-3 py-2 text-right font-semibold \\}>
-                      {formatScore(vm.score)}
-                    </td>
-                    <td className=\"px-3 py-2 text-left text-sm text-slate-600\">
-                      {getConfidenceLabel(vm.deal.sampleSize ?? null)}
-                    </td>
-                    <td className=\"px-3 py-2 text-left text-sm text-slate-700\">
-                      <span className=\"inline-flex items-center gap-1\">
-                        {vm.deal.sellerUsername ?? \"Unknown\"}
-                        {vm.trustedSeller ? <TrustedBadge /> : null}
-                      </span>
-                    </td>
-                    <td className=\"px-3 py-2 text-left text-sm text-slate-600\">
-                      {vm.deal.market}
-                    </td>
-                    <td className=\"whitespace-nowrap px-3 py-2 text-left text-sm text-slate-600\">
-                      {formatEndsAt(vm.deal.endsAt)}
-                    </td>
-                    {isAdmin ? (
-                      <td className=\"px-3 py-2 text-sm\">
-                        <AdminDealActions deal={vm.deal} />
-                      </td>
+          <div className="hidden sm:block">
+            <div className="w-full overflow-x-auto">
+              <table className="min-w-full text-sm text-slate-900">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Card</th>
+                    <th className="px-3 py-2 text-right">Total</th>
+                    <th className="px-3 py-2 text-right">Historic</th>
+                    <th className="px-3 py-2 text-right">Discount</th>
+                    <th className="px-3 py-2 text-right">Score</th>
+                    <th className="px-3 py-2 text-left">Confidence</th>
+                    <th className="px-3 py-2 text-left">Seller</th>
+                    <th className="px-3 py-2 text-left">Market</th>
+                    <th className="px-3 py-2 text-left">Ends</th>
+                    {isAdmin && adminSecret ? (
+                      <th className="px-3 py-2 text-left">Admin</th>
                     ) : null}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {currentSlice.map((vm) => (
+                    <tr key={vm.deal.id} className="hover:bg-slate-50">
+                      <td className="px-3 py-3 align-top">
+                        <div className="flex items-center gap-3">
+                          {vm.deal.thumbnailUrl ? (
+                            <Image
+                              src={vm.deal.thumbnailUrl}
+                              alt={vm.deal.title}
+                              width={56}
+                              height={56}
+                              className="h-14 w-14 rounded object-cover"
+                            />
+                          ) : (
+                            <div className="h-14 w-14 rounded border border-dashed border-slate-300" />
+                          )}
+                          <div className="space-y-1">
+                            <Link
+                              href={vm.deal.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-semibold text-slate-900 hover:text-slate-700"
+                            >
+                              {vm.deal.title}
+                            </Link>
+                            <p className="text-xs text-slate-500">
+                              {(vm.deal.card?.setName ?? vm.deal.setName ?? "") ||
+                                "Unknown set"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right font-semibold">
+                        {formatCurrency(vm.price)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right text-slate-600">
+                        {formatCurrency(vm.deal.historicPriceCad)}
+                      </td>
+                      <td
+                        className={`${discountClass(
+                          vm.discount,
+                        )} whitespace-nowrap px-3 py-3 text-right font-semibold`}
+                      >
+                        {formatDiscount(vm.discount)}
+                      </td>
+                      <td
+                        className={`${scoreClass(
+                          vm.score,
+                        )} whitespace-nowrap px-3 py-3 text-right font-semibold`}
+                      >
+                        {formatScore(vm.score)}
+                      </td>
+                      <td className="px-3 py-3 text-left text-sm text-slate-600">
+                        {getConfidenceLabel(vm.deal.sampleSize ?? null)}
+                      </td>
+                      <td className="px-3 py-3 text-left text-sm text-slate-700">
+                        <span className="inline-flex items-center gap-1">
+                          {vm.deal.sellerUsername ?? "Unknown"}
+                          {vm.trustedSeller ? <TrustedBadge /> : null}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-left text-sm text-slate-600">
+                        {vm.deal.market}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-left text-sm text-slate-600">
+                        {formatEndsAt(vm.deal.endsAt)}
+                      </td>
+                      {isAdmin && adminSecret ? (
+                        <td className="px-3 py-3 text-sm">
+                          <AdminDealActions deal={vm.deal} />
+                        </td>
+                      ) : null}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div className=\"space-y-3 sm:hidden\">
-            {sortedDeals.map((vm) => (
-              <div key={vm.deal.id} className=\"rounded border border-slate-200 bg-white p-3 shadow-sm\">
-                <div className=\"flex gap-3\">
+          <div className="space-y-3 sm:hidden">
+            {currentSlice.map((vm) => (
+              <div
+                key={vm.deal.id}
+                className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+              >
+                <div className="flex gap-3">
                   {vm.deal.thumbnailUrl ? (
                     <Image
                       src={vm.deal.thumbnailUrl}
                       alt={vm.deal.title}
                       width={72}
                       height={72}
-                      className=\"h-18 w-18 rounded object-cover\"
+                      className="h-18 w-18 rounded object-cover"
                     />
                   ) : (
-                    <div className=\"h-18 w-18 rounded bg-slate-200\" />
+                    <div className="h-18 w-18 rounded border border-dashed border-slate-300" />
                   )}
-                  <div className=\"flex-1 space-y-1\">
+                  <div className="flex-1 space-y-1">
                     <Link
                       href={vm.deal.url}
-                      target=\"_blank\"
-                      rel=\"noopener noreferrer\"
-                      className=\"font-semibold text-slate-900 hover:underline\"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-slate-900 hover:text-slate-700"
                     >
                       {vm.deal.title}
                     </Link>
-                    <p className=\"text-xs text-slate-500\">
-                      {(vm.deal.card?.setName ?? vm.deal.setName ?? \"\") || \"Unknown set\"}
+                    <p className="text-xs text-slate-500">
+                      {(vm.deal.card?.setName ?? vm.deal.setName ?? "") ||
+                        "Unknown set"}
                     </p>
                   </div>
                 </div>
 
-                <div className=\"mt-3 grid grid-cols-2 gap-3 text-sm\">
+                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className=\"text-slate-500\">Total</p>
-                    <p className=\"font-medium text-slate-900\">{formatCurrency(vm.price)}</p>
+                    <p className="text-slate-500">Total</p>
+                    <p className="font-semibold text-slate-900">
+                      {formatCurrency(vm.price)}
+                    </p>
                   </div>
                   <div>
-                    <p className=\"text-slate-500\">Historic</p>
+                    <p className="text-slate-500">Historic</p>
                     <p>{formatCurrency(vm.deal.historicPriceCad)}</p>
                   </div>
                   <div>
-                    <p className=\"text-slate-500\">Discount</p>
+                    <p className="text-slate-500">Discount</p>
                     <p className={discountClass(vm.discount)}>
                       {formatDiscount(vm.discount)}
                     </p>
                   </div>
                   <div>
-                    <p className=\"text-slate-500\">Score</p>
-                    <p className={scoreClass(vm.score)}>{formatScore(vm.score)}</p>
+                    <p className="text-slate-500">Score</p>
+                    <p className={scoreClass(vm.score)}>
+                      {formatScore(vm.score)}
+                    </p>
                   </div>
                 </div>
 
-                <div className=\"mt-3 flex flex-wrap gap-2 text-xs text-slate-500\">
-                  <span>Confidence: {getConfidenceLabel(vm.deal.sampleSize ?? null)}</span>
-                  <span>Seller: {vm.deal.sellerUsername ?? \"Unknown\"}</span>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                  <span>
+                    Confidence: {getConfidenceLabel(vm.deal.sampleSize ?? null)}
+                  </span>
+                  <span>Seller: {vm.deal.sellerUsername ?? "Unknown"}</span>
                   {vm.trustedSeller ? (
-                    <span className=\"inline-flex items-center gap-1\">
+                    <span className="inline-flex items-center gap-1">
                       <TrustedBadge />
                       Trusted
                     </span>
@@ -603,8 +598,8 @@ export function DealsTable({
                   <span>Ends {formatEndsAt(vm.deal.endsAt)}</span>
                 </div>
 
-                {isAdmin ? (
-                  <div className=\"mt-3\">
+                {isAdmin && adminSecret ? (
+                  <div className="mt-3">
                     <AdminDealActions deal={vm.deal} />
                   </div>
                 ) : null}
@@ -613,124 +608,83 @@ export function DealsTable({
           </div>
         </>
       ) : (
-        <p className=\"text-sm text-slate-600\">
-          No deals match your filters. Try adjusting the search criteria.
+        <p className="text-sm text-slate-600">
+          No deals match your filters. Try adjusting the criteria.
         </p>
       )}
 
-      <div className=\"flex items-center justify-between pt-2 text-sm text-slate-700\">
+      <div className="flex items-center justify-center gap-4 pt-2 text-sm text-slate-700">
+        <button
+          type="button"
+          className="rounded border border-slate-300 px-3 py-1 disabled:cursor-not-allowed disabled:text-slate-400"
+          onClick={handlePrev}
+          disabled={currentPage <= 1}
+        >
+          Previous
+        </button>
         <span>
-          Page {currentPage} of {Math.max(totalPages, 1)}
+          Page {currentPage} of {totalPages}
         </span>
-        <div className=\"flex gap-2\">
-          {prevDisabled ? (
-            <span className=\"cursor-not-allowed text-slate-400\">Previous</span>
-          ) : (
-            <Link
-              className=\"text-sky-600 hover:underline\"
-              href={buildPageHref(pathname, viewState, currentPage - 1, isAdmin, adminSecret)}
-            >
-              Previous
-            </Link>
-          )}
-          {nextDisabled ? (
-            <span className=\"cursor-not-allowed text-slate-400\">Next</span>
-          ) : (
-            <Link
-              className=\"text-sky-600 hover:underline\"
-              href={buildPageHref(pathname, viewState, currentPage + 1, isAdmin, adminSecret)}
-            >
-              Next
-            </Link>
-          )}
-        </div>
+        <button
+          type="button"
+          className="rounded border border-slate-300 px-3 py-1 disabled:cursor-not-allowed disabled:text-slate-400"
+          onClick={handleNext}
+          disabled={currentPage >= totalPages}
+        >
+          Next
+        </button>
       </div>
-    </section>
+    </div>
   );
 }
 
 function parseNumberInput(value: string): number | null {
   const trimmed = value.trim();
-  if (!trimmed) {
-    return null;
-  }
+  if (!trimmed) return null;
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
 function buildCardSortKey(deal: Deal): string {
-  const setName = (deal.card?.setName ?? deal.setName ?? \"\").toLowerCase();
-  const number = (deal.card?.cardNumber ?? \"\").toLowerCase();
-  const name = (deal.card?.name ?? deal.cardName ?? deal.title ?? \"\").toLowerCase();
-  return ${setName}||;
+  const setName = (deal.card?.setName ?? deal.setName ?? "").toLowerCase();
+  const number = (deal.card?.cardNumber ?? "").toLowerCase();
+  const name = (deal.card?.name ?? deal.cardName ?? deal.title ?? "").toLowerCase();
+  return `${setName}||${number}||${name}`;
 }
 
-function mergeStateFromStorage(
-  prev: DealsViewState,
-  saved: Partial<DealsViewState>,
-  overrides: UrlOverrideFlags,
-): DealsViewState {
-  const next = { ...prev };
-  (Object.keys(saved) as (keyof DealsViewState)[]).forEach((key) => {
-    if ((overrides as Record<string, boolean>)[key]) {
-      return;
-    }
-    const value = saved[key];
-    if (value !== undefined && value !== null) {
-      (next as Record<string, unknown>)[key] = value;
-    }
-  });
-  return next;
-}
-
-function buildPageHref(
-  pathname: string | null,
-  state: DealsViewState,
-  page: number,
-  isAdmin: boolean,
-  adminSecret?: string,
-): string {
-  const params = serializeDealsViewStateToSearchParams({ ...state, page });
-  if (isAdmin && adminSecret) {
-    params.set(\"secret\", adminSecret);
-  }
-  const basePath = pathname ?? \"/\";
-  const query = params.toString();
-  return query ? ${basePath}? : basePath;
-}
-
-const comparators: Record<SortOption, (a: DealViewModel, b: DealViewModel) => number> = {
-  \"best-discount\": (a, b) => {
+const comparators: Record<
+  SortOption,
+  (a: DealViewModel, b: DealViewModel) => number
+> = {
+  "best-discount": (a, b) => {
     const left = a.discount ?? Infinity;
     const right = b.discount ?? Infinity;
     return left - right;
   },
-  \"best-score\": (a, b) => {
+  "best-score": (a, b) => {
     const left = a.score ?? -Infinity;
     const right = b.score ?? -Infinity;
     return right - left;
   },
-  \"price-low-high\": (a, b) => {
+  "price-low-high": (a, b) => {
     const left = a.price ?? Infinity;
     const right = b.price ?? Infinity;
     return left - right;
   },
-  \"price-high-low\": (a, b) => {
+  "price-high-low": (a, b) => {
     const left = a.price ?? -Infinity;
     const right = b.price ?? -Infinity;
     return right - left;
   },
-  \"historic-high-low\": (a, b) => {
+  "historic-high-low": (a, b) => {
     const left = a.deal.historicPriceCad ?? -Infinity;
     const right = b.deal.historicPriceCad ?? -Infinity;
     return right - left;
   },
-  \"card-name\": (a, b) => a.cardSortKey.localeCompare(b.cardSortKey),
-  \"time-left\": (a, b) => {
+  "card-name": (a, b) => a.cardSortKey.localeCompare(b.cardSortKey),
+  "time-left": (a, b) => {
     const left = a.endsAtMs ?? Infinity;
     const right = b.endsAtMs ?? Infinity;
     return left - right;
   },
 };
-
-export default DealsTable;

@@ -38,6 +38,37 @@ type ListingDbRow = {
   seller_username: string | null;
 };
 
+type CardDetail = {
+  card: {
+    id: number;
+    name: string;
+    setName: string;
+    collectorNumber: string | null;
+    rarity: string | null;
+  };
+  historicals: Array<{
+    condition: string;
+    medianPriceCad: number | null;
+    sampleSize: number | null;
+  }>;
+  listings: Array<{
+    id: number;
+    condition: string;
+    title: string;
+    url: string;
+    totalPriceCad: number | null;
+    medianPriceCad: number | null;
+    discountPercent: number | null;
+    sampleSize: number | null;
+    market: string;
+    endsAt: string | null;
+    thumbnailUrl: string | null;
+    sellerUsername: string | null;
+    sellerFeedbackCount: number | null;
+    sellerPositivePercent: number | null;
+  }>;
+};
+
 async function getCard(cardId: number): Promise<CardRecord | null> {
   const res = await query<CardRecord>(
     `
@@ -78,9 +109,7 @@ async function getRelatedCards(card: CardRecord): Promise<CardRecord[]> {
 }
 
 async function getHistoricals(cardIds: number[]): Promise<HistoricalDbRow[]> {
-  if (cardIds.length === 0) {
-    return [];
-  }
+  if (cardIds.length === 0) return [];
 
   const res = await query<HistoricalDbRow>(
     `
@@ -100,9 +129,7 @@ async function getHistoricals(cardIds: number[]): Promise<HistoricalDbRow[]> {
 }
 
 async function getListings(cardIds: number[]): Promise<ListingDbRow[]> {
-  if (cardIds.length === 0) {
-    return [];
-  }
+  if (cardIds.length === 0) return [];
 
   const res = await query<ListingDbRow>(
     `
@@ -140,20 +167,9 @@ async function getListings(cardIds: number[]): Promise<ListingDbRow[]> {
   return res.rows;
 }
 
-export default async function CardPage({
-  params,
-}: {
-  params: { cardId: string };
-}) {
-  const cardId = Number(params.cardId);
-  if (!Number.isFinite(cardId)) {
-    return null;
-  }
-
+async function getCardDetail(cardId: number): Promise<CardDetail | null> {
   const cardRecord = await getCard(cardId);
-  if (!cardRecord) {
-    return null;
-  }
+  if (!cardRecord) return null;
 
   const relatedCards = await getRelatedCards(cardRecord);
   const cardIds = relatedCards.map((c) => c.id);
@@ -173,10 +189,12 @@ export default async function CardPage({
       row.price_cad !== null || row.shipping_cad !== null
         ? Number(row.price_cad ?? 0) + Number(row.shipping_cad ?? 0)
         : null;
+
     const totalPriceCad =
       row.total_price_cad !== null && row.total_price_cad !== undefined
         ? Number(row.total_price_cad)
         : fallbackPrice;
+
     const medianPriceCad =
       row.median_price_cad !== null ? Number(row.median_price_cad) : null;
     const sampleSize = row.sample_size ?? null;
@@ -222,19 +240,40 @@ export default async function CardPage({
     };
   });
 
+  return {
+    card: {
+      id: cardRecord.id,
+      name: cardRecord.name,
+      setName: cardRecord.set_name,
+      collectorNumber: cardRecord.card_number,
+      rarity: cardRecord.rarity,
+    },
+    historicals,
+    listings,
+  };
+}
+
+type CardPageProps = {
+  params: { cardId: string };
+};
+
+export default async function CardPage({ params }: CardPageProps) {
+  const cardId = Number(params.cardId);
+  if (!Number.isFinite(cardId)) {
+    return null;
+  }
+  console.log("USING APP ROUTER: /cards/[cardId]", { cardId });
+
+  const detail = await getCardDetail(cardId);
+  if (!detail) {
+    return null;
+  }
+
   return (
-    <main className="min-h-screen bg-slate-50">
-      <CardDetailClient
-        card={{
-          id: cardRecord.id,
-          name: cardRecord.name,
-          setName: cardRecord.set_name,
-          collectorNumber: cardRecord.card_number,
-          rarity: cardRecord.rarity,
-        }}
-        historicals={historicals}
-        listings={listings}
-      />
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="mx-auto w-full max-w-6xl px-4 py-8 md:py-12">
+        <CardDetailClient detail={detail} />
+      </div>
     </main>
   );
 }

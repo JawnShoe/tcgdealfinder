@@ -162,24 +162,33 @@ export default async function HomePage() {
         {/* Hero */}
         <section>
           <div className="rounded-2xl bg-white shadow-sm border border-slate-200 px-6 py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-emerald-600">
+            <div className="space-y-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-emerald-600">
                 Real-time arbitrage radar
               </p>
-              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-                Find undervalued Pokémon cards in seconds.
-              </h1>
-              <p className="text-sm md:text-base text-slate-600 max-w-xl">
-                TCG Deal Finder scores every live eBay listing by discount, seller
-                trust, and data confidence so you only spend time on the safest
-                opportunities.
-              </p>
+              <div className="space-y-3">
+                <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">
+                  Find undervalued Pokemon cards in seconds.
+                </h1>
+                <p className="text-sm md:text-base text-slate-600 max-w-2xl">
+                  TCG Deal Finder scores every live eBay listing by discount, seller trust, and data confidence so you only spend time on the safest opportunities.
+                </p>
+              </div>
             </div>
 
-            <div className="text-sm text-slate-600">
-              <div>200+ live deals tracked</div>
-              <div>40+ trusted sellers</div>
-              <div>Fresh listings every day</div>
+            <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-700">
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-500">Coverage</p>
+                <p className="text-base font-semibold text-slate-900">200+ live deals tracked</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-500">Trusted sellers</p>
+                <p className="text-base font-semibold text-slate-900">40+ verified accounts</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-500">Fresh data</p>
+                <p className="text-base font-semibold text-slate-900">Updated every day</p>
+              </div>
             </div>
           </div>
         </section>

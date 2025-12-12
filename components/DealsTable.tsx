@@ -41,6 +41,12 @@ import {
   CONFIDENCE_TOOLTIP,
 } from "../lib/dealConfidence";
 import { FX_RATE_COPY } from "../lib/money";
+import {
+  DEFAULT_MARKET,
+  getMarketLabel,
+  normalizeMarketCode,
+} from "../lib/markets";
+import { compareStrictBestDiscountValues } from "../lib/dealSort";
 
 const TOP_DEAL_DISCOUNT = 15;
 const TOP_DEAL_SAMPLE_SIZE = 20;
@@ -104,6 +110,8 @@ const defaultState: DealsViewState = {
   page: 1,
 };
 
+type DealsTableVariant = "default" | "newest";
+
 interface DealsTableProps {
   deals: Deal[];
   isAdmin?: boolean;
@@ -111,6 +119,7 @@ interface DealsTableProps {
   initialApiMeta?: DealsApiMeta | null;
   page?: number;
   totalPages?: number;
+  variant?: DealsTableVariant;
 }
 
 export default function DealsTable({
@@ -118,6 +127,7 @@ export default function DealsTable({
   isAdmin = false,
   adminSecret,
   initialApiMeta = null,
+  variant = "default",
 }: DealsTableProps) {
   const [viewState, setViewState] = useState<DealsViewState>({
     ...defaultState,
@@ -130,6 +140,23 @@ export default function DealsTable({
   const [remoteDeals, setRemoteDeals] = useState<Deal[]>(deals);
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteError, setRemoteError] = useState<string | null>(null);
+  const isNewestVariant = variant === "newest";
+  const formatDiscountDisplay = (value: number | null | undefined) => {
+    if (!isNewestVariant) {
+      return formatDiscount(value);
+    }
+    if (value == null || Number.isNaN(value)) {
+      return "Unscored";
+    }
+    if (value < 0) {
+      return formatDiscount(value);
+    }
+    return `+${Math.abs(value).toFixed(1)}% markup`;
+  };
+  const isUnscoredDiscount = (value: number | null | undefined) =>
+    isNewestVariant && (value == null || Number.isNaN(value));
+  const formatMarketLabel = (market: string | null | undefined) =>
+    getMarketLabel(normalizeMarketCode(market ?? DEFAULT_MARKET));
 
   const updateState = (
     producer: (prev: DealsViewState) => DealsViewState,
@@ -303,13 +330,28 @@ export default function DealsTable({
     });
   }, [viewModels, viewState]);
 
-  const sortedDeals = useMemo(() => {
+  const { sortedDeals, showNoDiscountNotice } = useMemo(() => {
     const list = [...filteredDeals];
     const sortKey = viewState.sortBy || "best-discount";
+    if (isNewestVariant && sortKey === "best-discount") {
+      const hasDiscounted = list.some(
+        (vm) => vm.discount != null && vm.discount < 0,
+      );
+      if (hasDiscounted) {
+        list.sort((a, b) =>
+          compareStrictBestDiscountValues(a.discount, b.discount),
+        );
+        return { sortedDeals: list, showNoDiscountNotice: false };
+      }
+      return {
+        sortedDeals: list,
+        showNoDiscountNotice: list.length > 0,
+      };
+    }
     const comparator = comparators[sortKey] ?? comparators["best-discount"];
     list.sort(comparator);
-    return list;
-  }, [filteredDeals, viewState.sortBy]);
+    return { sortedDeals: list, showNoDiscountNotice: false };
+  }, [filteredDeals, viewState.sortBy, isNewestVariant]);
 
   useEffect(() => {
     if (serverMode) return;
@@ -543,11 +585,17 @@ export default function DealsTable({
         Prices shown in USD (converted from CAD). {FX_RATE_COPY}
       </p>
 
+      {showNoDiscountNotice ? (
+        <p className="text-xs text-slate-500">
+          No discounted listings found in this feed.
+        </p>
+      ) : null}
+
       {hasDeals ? (
         <>
-          <div className="hidden sm:block">
-            <div className="w-full overflow-x-auto">
-              <table className="min-w-full table-fixed text-sm text-slate-900">
+      <div className="hidden sm:block">
+        <div className="w-full overflow-x-auto">
+          <table className="min-w-full table-fixed text-sm text-slate-900">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="px-3 py-2 text-left">Card</th>
@@ -582,7 +630,11 @@ export default function DealsTable({
                           ) : (
                             <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
                           )}
-                          <div className="flex h-16 flex-col justify-center space-y-0.5 leading-snug">
+                          <div
+                            className={`flex flex-col justify-center space-y-0.5 leading-snug ${
+                              isNewestVariant ? "" : "h-16"
+                            }`}
+                          >
                             <Link
                               href={vm.deal.url}
                               target="_blank"
@@ -591,7 +643,16 @@ export default function DealsTable({
                             >
                               {vm.deal.title}
                             </Link>
-                            <p className="line-clamp-1 text-xs text-slate-500">
+                            <p
+                              className={`text-xs text-slate-500 ${
+                                isNewestVariant
+                                  ? "whitespace-normal line-clamp-2"
+                                  : "line-clamp-1"
+                              }`}
+                              title={
+                                vm.deal.card?.setName ?? vm.deal.setName ?? undefined
+                              }
+                            >
                               {(vm.deal.card?.setName ?? vm.deal.setName ?? "") ||
                                 "Unknown set"}
                             </p>
@@ -620,9 +681,13 @@ export default function DealsTable({
                       <td
                         className={`${discountClass(
                           vm.discount,
-                        )} whitespace-nowrap px-3 py-4 align-middle text-right text-base font-semibold`}
+                        )} whitespace-nowrap px-3 py-4 align-middle text-right text-base ${
+                          isUnscoredDiscount(vm.discount)
+                            ? "font-normal text-slate-500"
+                            : "font-semibold"
+                        }`}
                       >
-                        {formatDiscount(vm.discount)}
+                        {formatDiscountDisplay(vm.discount)}
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 align-middle text-right text-base">
                         <div className="flex flex-col items-end gap-1">
@@ -649,7 +714,7 @@ export default function DealsTable({
                         </span>
                       </td>
                       <td className="px-3 py-4 align-middle text-left text-sm text-slate-600">
-                        {vm.deal.market}
+                        {formatMarketLabel(vm.deal.market)}
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 align-middle text-left text-sm text-slate-600">
                         {formatEndsAt(vm.deal.endsAt)}
@@ -693,7 +758,14 @@ export default function DealsTable({
                     >
                       {vm.deal.title}
                     </Link>
-                    <p className="line-clamp-1 text-xs text-slate-500">
+                    <p
+                      className={`text-xs text-slate-500 ${
+                        isNewestVariant
+                          ? "whitespace-normal line-clamp-2"
+                          : "line-clamp-1"
+                      }`}
+                      title={vm.deal.card?.setName ?? vm.deal.setName ?? undefined}
+                    >
                       {(vm.deal.card?.setName ?? vm.deal.setName ?? "") ||
                         "Unknown set"}
                     </p>
@@ -713,8 +785,12 @@ export default function DealsTable({
                   </div>
                   <div>
                     <p className="text-slate-500">Discount</p>
-                    <p className={`${discountClass(vm.discount)} text-base`}>
-                      {formatDiscount(vm.discount)}
+                    <p
+                      className={`${discountClass(vm.discount)} text-base ${
+                        isUnscoredDiscount(vm.discount) ? "text-slate-500" : ""
+                      }`}
+                    >
+                      {formatDiscountDisplay(vm.discount)}
                     </p>
                   </div>
                   <div>
@@ -740,6 +816,7 @@ export default function DealsTable({
                     Confidence: {getConfidenceLabel(vm.deal.sampleSize ?? null)}
                   </span>
                   <span>Seller: {vm.deal.sellerUsername ?? "Unknown"}</span>
+                  <span>Market: {formatMarketLabel(vm.deal.market)}</span>
                   {vm.trustedSeller ? (
                     <span className="inline-flex items-center gap-1">
                       <TrustedBadge />

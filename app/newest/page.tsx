@@ -31,7 +31,11 @@ export default async function NewestListingsPage() {
 
         <section className="mt-6">
           <div className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-7 lg:px-10">
-            <DealsTable deals={initial.items} initialApiMeta={initial} />
+            <DealsTable
+              deals={initial.items}
+              initialApiMeta={initial}
+              variant="newest"
+            />
           </div>
         </section>
       </div>

@@ -1,9 +1,8 @@
 "use server";
 
-import Link from "next/link";
-
 import { AdminDealActions } from "../../components/AdminDealActions";
 import { TrustedBadge } from "../../components/TrustedBadge";
+import { CardIdentityBlock } from "../../components/CardIdentity";
 import { query } from "../../lib/db";
 import { formatCurrency } from "../../lib/dealFormatting";
 import { FX_RATE_COPY } from "../../lib/money";
@@ -22,6 +21,7 @@ type EndingSoonRow = {
   card_id: number | null;
   card_name: string | null;
   set_name: string | null;
+  title: string | null;
   condition: string | null;
   total_price_cad: string | null;
   historic_price_cad: string | null;
@@ -37,6 +37,7 @@ type EndingSoonRow = {
 
 type EndingSoonDeal = {
   listingId: number;
+  listingTitle: string | null;
   cardId: number | null;
   cardName: string | null;
   setName: string | null;
@@ -111,6 +112,7 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
     `
       SELECT
         l.id AS listing_id,
+        l.title,
         l.card_id,
         c.name AS card_name,
         c.set_name,
@@ -196,11 +198,12 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
         ? new Date(row.ends_at)
         : null;
 
-    return {
-      listingId: row.listing_id,
-      cardId: row.card_id,
-      cardName: row.card_name,
-      setName: row.set_name,
+      return {
+        listingId: row.listing_id,
+        listingTitle: row.title ?? null,
+        cardId: row.card_id,
+        cardName: row.card_name,
+        setName: row.set_name,
       condition: row.condition,
       totalPriceCad: total,
       medianPriceCad: historic,
@@ -256,7 +259,6 @@ export default async function EndingSoonPage({
             <thead>
               <tr>
                 <th className="col-card text-left">Card</th>
-                <th className="col-set text-left">Set</th>
                 <th className="col-condition text-left">Condition</th>
                 <th className="col-price text-right">Total (USD)</th>
                 <th className="col-historic text-right">Historic (USD)</th>
@@ -272,16 +274,18 @@ export default async function EndingSoonPage({
             <tbody>
               {deals.map((deal) => (
                 <tr key={deal.listingId}>
-                  <td className="col-card text-sky-700">
-                    {deal.cardId ? (
-                      <Link href={`/cards/${deal.cardId}`} className="hover:underline">
-                        {deal.cardName ?? "Unknown card"}
-                      </Link>
-                    ) : (
-                      deal.cardName ?? "Unknown card"
-                    )}
+                  <td className="col-card text-left">
+                    <CardIdentityBlock
+                      identity={{
+                        primary: deal.cardName ?? deal.listingTitle ?? "Unknown card",
+                        setName: deal.setName ?? null,
+                        listingTitle: deal.listingTitle,
+                        cardId: deal.cardId,
+                      }}
+                      primaryHref={deal.listingUrl}
+                      showListingTitle
+                    />
                   </td>
-                  <td className="col-set text-slate-600">{deal.setName ?? "--"}</td>
                   <td className="col-condition text-slate-600">
                     {deal.condition ?? "--"}
                   </td>

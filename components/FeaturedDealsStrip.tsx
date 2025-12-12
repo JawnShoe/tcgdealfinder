@@ -1,6 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
-
 import type { Deal } from "@/types/deal";
 import { FX_RATE_COPY } from "@/lib/money";
 import {
@@ -8,6 +6,7 @@ import {
   formatDiscount,
   getConfidenceLabel,
 } from "@/lib/dealFormatting";
+import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 
 type FeaturedDealsStripProps = {
   deals: Deal[];
@@ -73,12 +72,12 @@ export default function FeaturedDealsStrip({
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-1 text-sm font-semibold text-slate-900">
-                      {deal.card?.name ?? deal.cardName ?? deal.title}
-                    </p>
-                    <p className="line-clamp-1 text-xs text-slate-500">
-                      {deal.card?.setName ?? deal.setName ?? "Unknown set"}
-                    </p>
+                    <CardIdentityBlock
+                      identity={buildCardIdentityFromDeal(deal)}
+                      primaryHref={deal.url}
+                      showListingTitle
+                      showViewCardLink={false}
+                    />
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                       <span className="font-semibold text-slate-900">
                         {formatCurrency(price)}

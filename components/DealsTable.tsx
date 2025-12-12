@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AdminDealActions } from "./AdminDealActions";
 import { TrustedBadge } from "./TrustedBadge";
+import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 import type { Deal } from "../types/deal";
 import type { DealsApiMeta, DealsApiResponse } from "@/types/dealsApi";
 import {
@@ -616,7 +617,7 @@ export default function DealsTable({
                   {currentSlice.map((vm) => (
                     <tr key={vm.deal.id} className="hover:bg-slate-50">
                       <td className="px-3 py-4 align-middle">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-start gap-3">
                           {vm.deal.thumbnailUrl ? (
                             <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
                               <Image
@@ -630,52 +631,28 @@ export default function DealsTable({
                           ) : (
                             <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
                           )}
-                          <div
-                            className={`flex flex-col justify-center space-y-0.5 leading-snug ${
-                              isNewestVariant ? "" : "h-16"
-                            }`}
-                          >
-                            <Link
-                              href={vm.deal.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="line-clamp-1 text-base font-semibold text-slate-900 hover:text-slate-700"
-                            >
-                              {vm.deal.title}
-                            </Link>
-                            <p
-                              className={`text-xs text-slate-500 ${
-                                isNewestVariant
-                                  ? "whitespace-normal line-clamp-2"
-                                  : "line-clamp-1"
-                              }`}
-                              title={
-                                vm.deal.card?.setName ?? vm.deal.setName ?? undefined
-                              }
-                            >
-                              {(vm.deal.card?.setName ?? vm.deal.setName ?? "") ||
-                                "Unknown set"}
-                            </p>
-                            {vm.deal.card?.id ? (
-                              <Link
-                                href={`/cards/${vm.deal.card.id}`}
-                                className="text-xs font-medium text-slate-500 hover:text-slate-800"
-                              >
-                                View card page
-                              </Link>
-                            ) : null}
+                          <div className="flex flex-col gap-1">
+                            <CardIdentityBlock
+                              identity={buildCardIdentityFromDeal(vm.deal)}
+                              className={isNewestVariant ? "" : "h-16"}
+                              primaryHref={vm.deal.url}
+                              showListingTitle={isNewestVariant}
+                              showViewCardLink
+                            />
                             {vm.deal.historicBaselineConfidence === "none" ? (
                               <p className="text-xs text-amber-600">
-                                {baselineBadgeLabel(vm.deal.historicBaselineBucketUsed)}
+                                {baselineBadgeLabel(
+                                  vm.deal.historicBaselineBucketUsed,
+                                )}
                               </p>
                             ) : null}
                           </div>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-4 align-middle text-right text-base font-semibold">
+                      <td className="px-3 py-4 align-middle text-right text-base font-semibold">
                         {formatCurrency(vm.price)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-4 align-middle text-right text-base text-slate-600">
+                      <td className="px-3 py-4 align-middle text-right text-base text-slate-600">
                         {formatCurrency(vm.deal.historicPriceCad)}
                       </td>
                       <td
@@ -689,7 +666,7 @@ export default function DealsTable({
                       >
                         {formatDiscountDisplay(vm.discount)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-4 align-middle text-right text-base">
+                      <td className="px-3 py-4 align-middle text-right text-base">
                         <div className="flex flex-col items-end gap-1">
                           <span className={`${scoreClass(vm.score)} font-semibold`}>
                             {formatScore(vm.score)}
@@ -749,27 +726,12 @@ export default function DealsTable({
                   ) : (
                     <div className="h-20 w-20 rounded border border-dashed border-slate-300" />
                   )}
-                  <div className="flex-1 space-y-1">
-                    <Link
-                      href={vm.deal.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="line-clamp-1 text-base font-semibold text-slate-900 hover:text-slate-700"
-                    >
-                      {vm.deal.title}
-                    </Link>
-                    <p
-                      className={`text-xs text-slate-500 ${
-                        isNewestVariant
-                          ? "whitespace-normal line-clamp-2"
-                          : "line-clamp-1"
-                      }`}
-                      title={vm.deal.card?.setName ?? vm.deal.setName ?? undefined}
-                    >
-                      {(vm.deal.card?.setName ?? vm.deal.setName ?? "") ||
-                        "Unknown set"}
-                    </p>
-                  </div>
+                  <CardIdentityBlock
+                    identity={buildCardIdentityFromDeal(vm.deal)}
+                    primaryHref={vm.deal.url}
+                    showListingTitle={isNewestVariant}
+                    showViewCardLink={false}
+                  />
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 gap-3 text-base">

@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { TrustedBadge } from "./TrustedBadge";
 import type { Deal } from "../types/deal";
+import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 import {
   discountClass,
   formatCurrency,
@@ -63,21 +64,12 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                   <div className="h-20 w-20 rounded-md bg-slate-200" />
                 )}
                 <div className="flex-1">
-                  <div className="text-sm font-semibold text-slate-900">
-                    {deal.cardId ? (
-                      <Link
-                        href={`/cards/${deal.cardId}`}
-                        className="hover:underline"
-                      >
-                        {deal.card?.name ?? deal.cardName ?? "Unknown card"}
-                      </Link>
-                    ) : (
-                      deal.card?.name ?? deal.cardName ?? "Unknown card"
-                    )}
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    {deal.card?.setName ?? deal.setName ?? "Unknown set"}
-                  </div>
+                  <CardIdentityBlock
+                    identity={buildCardIdentityFromDeal(deal)}
+                    primaryHref={deal.url}
+                    showListingTitle
+                    showViewCardLink={false}
+                  />
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     <span className="font-semibold text-slate-900">
                       {formatCurrency(price)}

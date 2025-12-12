@@ -7,6 +7,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { TrustedBadge } from "./TrustedBadge";
 import { WatchlistButton } from "./WatchlistButton";
+import { CardIdentityBlock } from "./CardIdentity";
 import {
   CONDITION_FILTERS,
   type ConditionFilterKey,
@@ -496,36 +497,34 @@ export default function CardDetailClient({
                   );
                   return (
                     <tr key={listing.id} className="hover:bg-slate-50">
-                    <td className="px-3 py-4 align-middle">
-                      <div className="flex items-center gap-3">
-                        {listing.thumbnailUrl ? (
-                          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
-                            <Image
-                              src={listing.thumbnailUrl}
-                              alt={listing.title}
-                              width={64}
-                              height={64}
-                              className="h-full w-full object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
-                        )}
-                        <div className="flex h-16 flex-col justify-center space-y-0.5 leading-snug">
-                          <Link
-                            href={listing.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="line-clamp-1 text-base font-semibold text-slate-900 hover:text-slate-700"
-                          >
-                            {listing.title}
-                          </Link>
-                          <p className="line-clamp-1 text-xs text-slate-500">
-                            {listing.condition}
-                          </p>
+                      <td className="px-3 py-4 align-middle">
+                        <div className="flex items-start gap-3">
+                          {listing.thumbnailUrl ? (
+                            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
+                              <Image
+                                src={listing.thumbnailUrl}
+                                alt={listing.title}
+                                width={64}
+                                height={64}
+                                className="h-full w-full object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
+                          )}
+                          <CardIdentityBlock
+                            identity={{
+                              primary: detail.card.name ?? listing.title,
+                              setName: detail.card.setName ?? null,
+                              listingTitle: listing.title,
+                              cardId: detail.card.id,
+                            }}
+                            primaryHref={listing.url}
+                            showListingTitle
+                            showViewCardLink={false}
+                          />
                         </div>
-                      </div>
-                    </td>
+                      </td>
                     <td className="px-3 py-4 align-middle text-right text-base font-semibold">
                       {formatCurrency(listing.totalPriceCad)}
                     </td>

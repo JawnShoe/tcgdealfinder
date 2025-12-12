@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 import { AdminDealActions } from "../../components/AdminDealActions";
 import { TrustedBadge } from "../../components/TrustedBadge";
+import { CardIdentityBlock } from "../../components/CardIdentity";
 import { query } from "../../lib/db";
 import { formatCurrency } from "../../lib/dealFormatting";
 import { FX_RATE_COPY } from "../../lib/money";
@@ -36,6 +35,7 @@ type TopDealRow = {
 
 type TopDeal = {
   listingId: number;
+  listingTitle: string | null;
   cardId: number | null;
   cardName: string | null;
   setName: string | null;
@@ -191,6 +191,7 @@ async function getTopDeals(): Promise<TopDeal[]> {
 
       return {
         listingId: row.listing_id,
+        listingTitle: row.title ?? null,
         cardId: row.card_id ?? null,
         cardName: row.card_name ?? null,
         setName: row.set_name ?? null,
@@ -258,7 +259,6 @@ export default async function TopDealsPage({
             <thead>
               <tr>
                 <th className="col-card text-left">Card</th>
-                <th className="col-set text-left">Set</th>
                 <th className="col-condition text-left">Condition</th>
                 <th className="col-price text-right">Total (USD)</th>
                 <th className="col-historic text-right">Historic (USD)</th>
@@ -274,16 +274,18 @@ export default async function TopDealsPage({
             <tbody>
               {deals.map((deal) => (
                 <tr key={deal.listingId}>
-                  <td className="col-card text-sky-700">
-                    {deal.cardId ? (
-                      <Link href={`/cards/${deal.cardId}`} className="hover:underline">
-                        {deal.cardName ?? "Unknown card"}
-                      </Link>
-                    ) : (
-                      deal.cardName ?? "Unknown card"
-                    )}
+                  <td className="col-card text-left">
+                    <CardIdentityBlock
+                      identity={{
+                        primary: deal.cardName ?? deal.listingTitle ?? "Unknown card",
+                        setName: deal.setName ?? null,
+                        listingTitle: deal.listingTitle,
+                        cardId: deal.cardId,
+                      }}
+                      primaryHref={deal.listingUrl}
+                      showListingTitle
+                    />
                   </td>
-                  <td className="col-set text-slate-600">{deal.setName ?? "--"}</td>
                   <td className="col-condition text-slate-600">
                     {deal.condition ?? "--"}
                   </td>

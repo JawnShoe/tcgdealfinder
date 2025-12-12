@@ -20,6 +20,16 @@ type SearchConfigRow = {
 const AUTO_BLACKLIST_MIN_TOTAL = 20;
 const AUTO_BLACKLIST_MIN_RATIO = 0.7;
 const cardIdCache = new Map<string, number>();
+const GRADE_SUFFIX: Record<string, string> = {
+  psa_10: `"PSA 10"`,
+  psa_9: `"PSA 9"`,
+  bgs_10: `"BGS 10"`,
+  bgs_95: `"BGS 9.5"`,
+  bgs_9: `"BGS 9"`,
+  cgc_10: `"CGC 10"`,
+  cgc_95: `"CGC 9.5"`,
+  cgc_9: `"CGC 9"`,
+};
 
 async function getBlacklistedSellers(): Promise<Set<string>> {
   const res = await query<{ seller_username: string }>(
@@ -397,12 +407,14 @@ async function getCardIdForBucket(
   targetBucket: string,
 ): Promise<number> {
   if (targetBucket === base.condition_bucket) {
+    await ensureSearchConfig(base.card_id, base, targetBucket);
     return base.card_id;
   }
 
   const cacheKey = `${base.name}|${base.set_name}|${base.card_number}|${targetBucket}`;
   const cached = cardIdCache.get(cacheKey);
   if (cached) {
+    await ensureSearchConfig(cached, base, targetBucket);
     return cached;
   }
 
@@ -418,6 +430,7 @@ async function getCardIdForBucket(
 
   if (existing.rows[0]) {
     cardIdCache.set(cacheKey, existing.rows[0].id);
+    await ensureSearchConfig(existing.rows[0].id, base, targetBucket);
     return existing.rows[0].id;
   }
 
@@ -434,5 +447,33 @@ async function getCardIdForBucket(
 
   const newId = inserted.rows[0].id;
   cardIdCache.set(cacheKey, newId);
+  await ensureSearchConfig(newId, base, targetBucket);
   return newId;
+}
+
+async function ensureSearchConfig(
+  cardId: number,
+  base: SearchConfigRow,
+  bucket: string,
+): Promise<void> {
+  const derivedQuery = deriveSearchQuery(base.search_query, bucket);
+  await query(
+    `
+      INSERT INTO card_search_config (card_id, search_query, market, is_active)
+      VALUES ($1, $2, $3, TRUE)
+      ON CONFLICT (card_id, search_query, market) DO NOTHING;
+    `,
+    [cardId, derivedQuery, base.market],
+  );
+}
+
+function deriveSearchQuery(baseQuery: string, bucket: string): string {
+  const suffix = GRADE_SUFFIX[bucket];
+  if (!suffix) {
+    return baseQuery;
+  }
+  if (baseQuery.toLowerCase().includes(suffix.replace(/"/g, "").toLowerCase())) {
+    return baseQuery;
+  }
+  return `${baseQuery} ${suffix}`;
 }

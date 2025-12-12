@@ -45,6 +45,7 @@ type CardDetail = {
     setName: string;
     collectorNumber: string | null;
     rarity: string | null;
+    condition: string | null;
   };
   historicals: Array<{
     condition: string;
@@ -154,6 +155,8 @@ async function getListings(cardIds: number[]): Promise<ListingDbRow[]> {
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
       WHERE l.card_id = ANY($1)
         AND l.seller_username IS NOT NULL
+        AND l.match_eligible = TRUE
+        AND l.shipping_known = TRUE
         AND NOT EXISTS (
           SELECT 1
           FROM seller_blacklist sb
@@ -247,6 +250,7 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       setName: cardRecord.set_name,
       collectorNumber: cardRecord.card_number,
       rarity: cardRecord.rarity,
+      condition: cardRecord.condition_bucket,
     },
     historicals,
     listings,

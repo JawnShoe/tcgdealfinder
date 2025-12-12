@@ -124,6 +124,7 @@ async function getTopDeals(): Promise<TopDeal[]> {
         AND l.seller_positive_percent IS NOT NULL
         AND l.seller_positive_percent >= $3
         AND l.seller_username IS NOT NULL
+        AND l.shipping_known = TRUE
         AND l.match_eligible = TRUE
         AND NOT EXISTS (
           SELECT 1

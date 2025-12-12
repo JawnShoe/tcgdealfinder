@@ -60,6 +60,7 @@ export type CardDetailClientProps = {
       setName: string;
       collectorNumber: string | null;
       rarity: string | null;
+      condition: string | null;
     };
     historicals: HistoricalPoint[];
     listings: ListingRow[];
@@ -69,10 +70,32 @@ export type CardDetailClientProps = {
 type PriceHistoryStatus = "idle" | "loading" | "ready" | "error";
 type AlertStatus = "idle" | "loading" | "success" | "error";
 
+const CONDITION_LABELS: Record<string, string> = {
+  raw_nm: "Raw (NM)",
+  raw_lp: "Raw (LP)",
+  raw_mp: "Raw (MP)",
+  raw_hp: "Raw (HP)",
+  psa_10: "PSA 10",
+  psa_9: "PSA 9",
+  psa_8: "PSA 8",
+  bgs_10: "BGS 10",
+  bgs_95: "BGS 9.5",
+  bgs_9: "BGS 9",
+  cgc_10: "CGC 10",
+  cgc_95: "CGC 9.5",
+  cgc_9: "CGC 9",
+};
+
+function formatConditionLabel(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return CONDITION_LABELS[value] ?? value.replace(/_/g, " ").toUpperCase();
+}
+
 export default function CardDetailClient({
   detail,
 }: CardDetailClientProps) {
   const { card, historicals, listings } = detail;
+  const conditionLabel = formatConditionLabel(card.condition ?? null);
 
   const [conditionFilter, setConditionFilter] = useState<ConditionFilterKey>(
     CONDITION_FILTERS[0]?.key ?? "all",
@@ -164,6 +187,11 @@ export default function CardDetailClient({
   const listingsLabel = `${filteredListings.length} listings / ${getConfidenceLabel(
     selectedHistorical?.sampleSize ?? null,
   )} data`;
+  const historyPointCount = priceHistory.length;
+  const historyLabel = conditionLabel ?? "This condition";
+  const historyCountText = `${historyPointCount} sale${
+    historyPointCount === 1 ? "" : "s"
+  } recorded`;
 
   const handleAlertSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -241,10 +269,28 @@ export default function CardDetailClient({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-1">
                   <p className="text-xs uppercase text-slate-500">Card</p>
-                  <h2 className="text-3xl font-semibold text-slate-900">
-                    {card.name}
-                  </h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-3xl font-semibold text-slate-900">
+                      {card.name}
+                    </h2>
+                    {conditionLabel && (
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                        {conditionLabel}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-slate-600">{card.setName}</p>
+                  {conditionLabel && (
+                    <p
+                      className="text-xs text-slate-500"
+                      title="This page is a condition-specific variant. Price history and deal rankings are computed per condition when data exists."
+                    >
+                      This page tracks {conditionLabel} listings only.{" "}
+                      <span className="underline decoration-dotted">
+                        Why am I seeing this?
+                      </span>
+                    </p>
+                  )}
                 </div>
                 <div className="sm:pt-1">
                   <WatchlistButton cardId={card.id} />
@@ -398,9 +444,17 @@ export default function CardDetailClient({
           </p>
         )}
         {priceHistoryStatus === "ready" && (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <PriceHistoryChart points={priceHistory} />
-          </div>
+          <>
+            {priceHistory.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600">
+                {historyLabel} history: {historyCountText}. More data needed.
+              </p>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <PriceHistoryChart points={priceHistory} />
+              </div>
+            )}
+          </>
         )}
       </section>
 

@@ -35,6 +35,21 @@ const GRADE_SUFFIX: Record<string, string> = {
 const detailCache = new Map<string, Promise<EbayItemDetail | null>>();
 const detailSemaphore = createSemaphore(5);
 
+const ACCESSORY_PHRASES = [
+  "card not included",
+  "no card included",
+  "case only",
+  "empty case",
+  "toploader",
+  "top loader",
+  "binder",
+  "sleeves",
+  "deck box",
+  "playmat",
+  "display stand",
+  "card case",
+];
+
 type GradeInfo = {
   grader: string | null;
   gradeValue: string | null;
@@ -97,6 +112,8 @@ async function upsertListing(
   rejectSource: string | null,
   detectedCollectorNumber: string | null,
   detectedLanguage: string,
+  shippingKnown: boolean,
+  shippingSource: string | null,
 ) {
   const priceCad =
     listing.priceCad ??
@@ -112,7 +129,9 @@ async function upsertListing(
     null;
   const thumbnailUrl = listing.imageUrl ?? null;
 
-  if (totalPriceCad == null && priceCad != null && shippingCad != null) {
+  if (!shippingKnown) {
+    totalPriceCad = null;
+  } else if (totalPriceCad == null && priceCad != null && shippingCad != null) {
     totalPriceCad = priceCad + shippingCad;
   }
 
@@ -143,6 +162,8 @@ async function upsertListing(
       price_cad,
       shipping_cad,
       total_price_cad,
+      shipping_known,
+      shipping_source,
       seller,
       seller_username,
       seller_feedback_count,
@@ -174,23 +195,25 @@ async function upsertListing(
       $7,  -- price_cad
       $8,  -- shipping_cad
       $9,  -- total_price_cad
-      $10, -- seller
-      $11, -- seller_username
-      $12, -- seller_feedback_count
-      $13, -- seller_positive_percent
-      $14, -- condition_raw
-      $15, -- grader
-      $16, -- grade_value
-      $17, -- grade_source
-      $18, -- market
-      $19, -- ends_at
-      $20, -- historic_price_cad
-      $21, -- discount_percent
-      $22, -- match_eligible
-      $23, -- match_reject_reason
-      $24, -- reject_source
-      $25, -- detected_collector_number
-      $26, -- detected_language
+      $10, -- shipping_known
+      $11, -- shipping_source
+      $12, -- seller
+      $13, -- seller_username
+      $14, -- seller_feedback_count
+      $15, -- seller_positive_percent
+      $16, -- condition_raw
+      $17, -- grader
+      $18, -- grade_value
+      $19, -- grade_source
+      $20, -- market
+      $21, -- ends_at
+      $22, -- historic_price_cad
+      $23, -- discount_percent
+      $24, -- match_eligible
+      $25, -- match_reject_reason
+      $26, -- reject_source
+      $27, -- detected_collector_number
+      $28, -- detected_language
       NOW(),
       NOW()
     )
@@ -203,6 +226,8 @@ async function upsertListing(
       price_cad = EXCLUDED.price_cad,
       shipping_cad = EXCLUDED.shipping_cad,
       total_price_cad = EXCLUDED.total_price_cad,
+      shipping_known = EXCLUDED.shipping_known,
+      shipping_source = EXCLUDED.shipping_source,
       seller = EXCLUDED.seller,
       seller_username = EXCLUDED.seller_username,
       seller_feedback_count = EXCLUDED.seller_feedback_count,
@@ -232,6 +257,8 @@ async function upsertListing(
       priceCad,
       shippingCad,
       totalPriceCad,
+      shippingKnown,
+      shippingSource,
       listing.seller ?? null,
       sellerUsername,
       sellerFeedbackCount,
@@ -350,6 +377,9 @@ async function main() {
         row.card_number ?? null,
       );
       const detectedLanguage = detectListingLanguage(listing.title ?? "");
+      const shippingKnownFlag =
+        listing.shippingKnown ?? (listing.shippingCad != null);
+      const shippingSource = listing.shippingSource ?? null;
 
       let matchEligible = true;
       let rejectReason: string | null = null;
@@ -359,11 +389,22 @@ async function main() {
         matchEligible = false;
         rejectReason = `title_keyword:${bannedKeyword}`;
         rejectSource = "title_filter";
-      } else if (detectedLanguage === "jp") {
+      }
+
+      if (matchEligible) {
+        const accessoryPhrase = detectAccessoryPhrase(listing.title ?? "");
+        if (accessoryPhrase) {
+          matchEligible = false;
+          rejectReason = "accessory_not_card";
+          rejectSource = `title_accessory:${accessoryPhrase}`;
+        }
+      }
+
+      if (matchEligible && detectedLanguage === "jp") {
         matchEligible = false;
         rejectReason = "language_mismatch";
         rejectSource = "language_filter";
-      } else if (
+      } else if (matchEligible &&
         targetCollectorNumber &&
         detectedCollectorNumber &&
         targetCollectorNumber !== detectedCollectorNumber
@@ -398,6 +439,8 @@ async function main() {
           rejectSource,
           detectedCollectorNumber,
           detectedLanguage,
+          shippingKnownFlag,
+          shippingSource,
         );
         if (matchEligible) {
           updatedCount += 1;
@@ -633,6 +676,17 @@ function detectGradeFromTitle(title: string): GradeInfo | null {
         bucket: pattern.bucket,
         source: "title",
       };
+    }
+  }
+  return null;
+}
+
+function detectAccessoryPhrase(title: string | null | undefined): string | null {
+  if (!title) return null;
+  const normalized = title.toLowerCase();
+  for (const phrase of ACCESSORY_PHRASES) {
+    if (normalized.includes(phrase)) {
+      return phrase;
     }
   }
   return null;

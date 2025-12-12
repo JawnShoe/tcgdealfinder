@@ -10,6 +10,7 @@ export default function ListingLookup() {
     url: string;
     matchEligible: boolean;
     matchRejectReason: string | null;
+    shippingKnown: boolean;
   } | null>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -36,12 +37,14 @@ export default function ListingLookup() {
           title: string;
           matchEligible: boolean;
           matchRejectReason: string | null;
+          shippingKnown: boolean;
         };
       };
       setResult({
         url: json.listing.url,
         matchEligible: json.listing.matchEligible ?? true,
         matchRejectReason: json.listing.matchRejectReason ?? null,
+        shippingKnown: json.listing.shippingKnown ?? true,
       });
       setMessage(json.listing.title ?? "Listing found.");
       setStatus("success");
@@ -87,6 +90,11 @@ export default function ListingLookup() {
               {!result.matchEligible && (
                 <span className="ml-2 inline-flex items-center rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
                   Excluded: {result.matchRejectReason ?? "flagged"}
+                </span>
+              )}
+              {!result.shippingKnown && (
+                <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800">
+                  Shipping unknown
                 </span>
               )}
             </>

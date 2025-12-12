@@ -28,11 +28,14 @@ export async function GET(request: NextRequest) {
     title: string;
     url: string;
     total_price_cad: string | null;
+    shipping_cad: string | null;
     market: string;
     seller_username: string | null;
     match_eligible: boolean;
     match_reject_reason: string | null;
     reject_source: string | null;
+    shipping_known: boolean;
+    shipping_source: string | null;
   }>(
     `
       SELECT
@@ -41,11 +44,14 @@ export async function GET(request: NextRequest) {
         l.title,
         l.url,
         l.total_price_cad,
+        l.shipping_cad,
         l.market,
         l.seller_username,
         l.match_eligible,
         l.match_reject_reason,
-        l.reject_source
+        l.reject_source,
+        l.shipping_known,
+        l.shipping_source
       FROM listings l
       WHERE l.listing_id = $1
       LIMIT 1;
@@ -75,6 +81,9 @@ export async function GET(request: NextRequest) {
       matchEligible: match.match_eligible,
       matchRejectReason: match.match_reject_reason,
       rejectSource: match.reject_source,
+      shippingKnown: match.shipping_known,
+      shippingCad: match.shipping_cad != null ? Number(match.shipping_cad) : null,
+      shippingSource: match.shipping_source,
     },
   });
 }

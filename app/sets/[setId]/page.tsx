@@ -104,7 +104,9 @@ async function getSetOverview(setName: string): Promise<SetOverviewStats> {
         AND l.total_price_cad IS NOT NULL
         AND l.historic_price_cad IS NOT NULL
         AND l.seller_username IS NOT NULL
+        AND l.shipping_known = TRUE
         AND l.match_eligible = TRUE
+        AND l.shipping_known = TRUE
         AND NOT EXISTS (
           SELECT 1
           FROM seller_blacklist sb
@@ -169,6 +171,7 @@ async function getHotCards(setName: string): Promise<HotCard[]> {
           AND l.discount_percent IS NOT NULL
           AND l.discount_percent <= $2
           AND l.seller_username IS NOT NULL
+          AND l.shipping_known = TRUE
           AND l.match_eligible = TRUE
           AND NOT EXISTS (
             SELECT 1

@@ -14,8 +14,10 @@ export type NormalizedListing = {
   url: string;
   imageUrl?: string;
   priceCad: number;
-  shippingCad: number;
-  totalPriceCad: number;
+  shippingCad: number | null;
+  totalPriceCad: number | null;
+  shippingKnown?: boolean;
+  shippingSource?: string | null;
   seller?: string;
   sellerFeedbackCount?: number | null;
   sellerPositivePercent?: number | null;
@@ -495,9 +497,23 @@ export async function fetchEbayListings(
     }
 
     const priceValue = item.price?.value ? Number(item.price.value) : NaN;
-    const shipValueRaw =
-      item.shippingOptions?.[0]?.shippingCost?.value ?? "0";
-    const shipValue = Number(shipValueRaw);
+    const shipValueRaw = item.shippingOptions?.[0]?.shippingCost?.value;
+    let shippingKnown = true;
+    let shippingCad: number | null = null;
+    let shippingSource: string | null = null;
+    if (shipValueRaw == null) {
+      shippingKnown = false;
+      shippingSource = "missing";
+    } else {
+      const parsedShipping = Number(shipValueRaw);
+      if (Number.isFinite(parsedShipping)) {
+        shippingCad = parsedShipping;
+        shippingSource = "ebay";
+      } else {
+        shippingKnown = false;
+        shippingSource = "invalid";
+      }
+    }
 
     if (!Number.isFinite(priceValue)) {
       // Skip weird items without a proper price.
@@ -512,8 +528,8 @@ export async function fetchEbayListings(
       continue;
     }
 
-    const shipping = Number.isFinite(shipValue) ? shipValue : 0;
-    const total = priceValue + shipping;
+    const total =
+      shippingKnown && shippingCad != null ? priceValue + shippingCad : null;
 
     const buyingOptions = item.buyingOptions ?? [];
     const isAuction = buyingOptions.includes("AUCTION");
@@ -527,8 +543,8 @@ export async function fetchEbayListings(
     const isHighValue = priceValue >= HIGH_VALUE_PRICE_THRESHOLD;
     if (
       !isHighValue &&
-      Number.isFinite(shipValue) &&
-      shipValue > MAX_STANDARD_SHIPPING_CAD
+      shippingCad != null &&
+      shippingCad > MAX_STANDARD_SHIPPING_CAD
     ) {
       continue;
     }
@@ -554,8 +570,10 @@ export async function fetchEbayListings(
       url: String(urlStr),
       imageUrl: item.image?.imageUrl,
       priceCad: priceValue,
-      shippingCad: shipping,
+      shippingCad,
       totalPriceCad: total,
+      shippingKnown,
+      shippingSource,
       seller: item.seller?.username,
       sellerFeedbackCount,
       sellerPositivePercent,

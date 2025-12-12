@@ -50,7 +50,8 @@ export async function GET(req: NextRequest) {
       WHERE
         l.total_price_cad IS NOT NULL
         AND l.historic_price_cad IS NOT NULL
-        AND l.match_eligible = TRUE;
+        AND l.match_eligible = TRUE
+        AND l.shipping_known = TRUE;
     `,
   );
   const totalCount = Number(totalRes.rows[0]?.count ?? 0);
@@ -86,6 +87,7 @@ export async function GET(req: NextRequest) {
         AND l.historic_price_cad IS NOT NULL
         AND l.seller_username IS NOT NULL
         AND l.match_eligible = TRUE
+        AND l.shipping_known = TRUE
         AND NOT EXISTS (
           SELECT 1
           FROM seller_blacklist sb

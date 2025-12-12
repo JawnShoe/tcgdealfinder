@@ -128,6 +128,7 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
         AND l.seller_positive_percent >= $3
         AND l.ends_at IS NOT NULL
         AND l.ends_at BETWEEN NOW() AND NOW() + INTERVAL '24 hours'
+        AND l.shipping_known = TRUE
         AND l.match_eligible = TRUE
         AND NOT EXISTS (
           SELECT 1

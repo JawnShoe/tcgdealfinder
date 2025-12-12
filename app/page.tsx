@@ -51,11 +51,16 @@ function deriveBaselineConfidence(sampleSize: number | null): "high" | "medium" 
 async function getHomePageDeals(): Promise<Deal[]> {
   const PAGE_SIZE = 50;
 
-  const statsRes = await query<{ total: string; excluded: string }>(
+  const statsRes = await query<{
+    total: string;
+    excluded: string;
+    shipping_unknown: string;
+  }>(
     `
       SELECT
         COUNT(*)::bigint AS total,
-        COALESCE(SUM(CASE WHEN l.match_eligible = FALSE THEN 1 ELSE 0 END), 0)::bigint AS excluded
+        COALESCE(SUM(CASE WHEN l.match_eligible = FALSE THEN 1 ELSE 0 END), 0)::bigint AS excluded,
+        COALESCE(SUM(CASE WHEN l.shipping_known = FALSE THEN 1 ELSE 0 END), 0)::bigint AS shipping_unknown
       FROM listings l
       WHERE
         l.total_price_cad IS NOT NULL
@@ -70,8 +75,11 @@ async function getHomePageDeals(): Promise<Deal[]> {
   );
   const totalCandidates = Number(statsRes.rows[0]?.total ?? 0);
   const excludedByMatch = Number(statsRes.rows[0]?.excluded ?? 0);
+  const excludedByShipping = Number(
+    statsRes.rows[0]?.shipping_unknown ?? 0,
+  );
   console.log(
-    `[home] deals query: total_candidates=${totalCandidates}, excluded_by_match=${excludedByMatch}`,
+    `[home] deals query: total_candidates=${totalCandidates}, excluded_by_match=${excludedByMatch}, shipping_unknown=${excludedByShipping}`,
   );
 
   const res = await query<DealRow>(
@@ -104,6 +112,7 @@ async function getHomePageDeals(): Promise<Deal[]> {
         l.total_price_cad IS NOT NULL
         AND l.historic_price_cad IS NOT NULL
         AND l.seller_username IS NOT NULL
+        AND l.shipping_known = TRUE
         AND l.match_eligible = TRUE
         AND NOT EXISTS (
           SELECT 1

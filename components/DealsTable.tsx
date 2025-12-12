@@ -404,6 +404,44 @@ export default function DealsTable({
   const inputClasses =
     "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none";
 
+  const colClass = (
+    colKey:
+      | "card"
+      | "total"
+      | "historic"
+      | "discount"
+      | "score"
+      | "confidence"
+      | "seller"
+      | "market"
+      | "ends",
+    variant: DealsTableVariant = "default",
+  ): string => {
+    const isNewest = variant === "newest";
+    switch (colKey) {
+      case "card":
+        return isNewest ? "w-[280px] min-w-[280px]" : "w-[320px] min-w-[320px]";
+      case "total":
+        return "w-[120px]";
+      case "historic":
+        return "w-[120px]";
+      case "discount":
+        return "";
+      case "score":
+        return "";
+      case "confidence":
+        return "";
+      case "seller":
+        return isNewest ? "w-[140px]" : "";
+      case "market":
+        return isNewest ? "w-[80px]" : "";
+      case "ends":
+        return "w-[96px]";
+      default:
+        return "";
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="mb-4 space-y-3">
@@ -599,27 +637,21 @@ export default function DealsTable({
           <table className="min-w-full table-fixed text-sm text-slate-900">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className={`px-3 py-2 text-left ${
-                      isNewestVariant ? "w-[280px] min-w-[280px]" : "w-[320px] min-w-[320px]"
-                    }`}>
+                    <th className={`px-3 py-2 text-left ${colClass("card", variant)}`}>
                       Card
                     </th>
-                    <th className="w-[120px] px-3 py-2 text-right">
+                    <th className={`${colClass("total", variant)} px-3 py-2 text-right`}>
                       Total (USD)
                     </th>
-                    <th className="w-[120px] px-3 py-2 text-right">
+                    <th className={`${colClass("historic", variant)} px-3 py-2 text-right`}>
                       Historic (USD)
                     </th>
-                    <th className="px-3 py-2 text-right">Discount</th>
-                    <th className="px-3 py-2 text-right">Score</th>
-                    <th className="px-3 py-2 text-left">Confidence</th>
-                    <th className={`px-3 py-2 text-left ${
-                      isNewestVariant ? "w-[140px]" : ""
-                    }`}>Seller</th>
-                    <th className={`px-3 py-2 text-left ${
-                      isNewestVariant ? "w-[80px]" : ""
-                    }`}>Market</th>
-                    <th className="w-[96px] px-3 py-2 text-left">Ends</th>
+                    <th className={`${colClass("discount", variant)} px-3 py-2 text-right`}>Discount</th>
+                    <th className={`${colClass("score", variant)} px-3 py-2 text-right`}>Score</th>
+                    <th className={`${colClass("confidence", variant)} px-3 py-2 text-left`}>Confidence</th>
+                    <th className={`${colClass("seller", variant)} px-3 py-2 text-left`}>Seller</th>
+                    <th className={`${colClass("market", variant)} px-3 py-2 text-left`}>Market</th>
+                    <th className={`${colClass("ends", variant)} px-3 py-2 text-left`}>Ends</th>
                     {isAdmin && adminSecret ? (
                       <th className="px-3 py-2 text-left">Admin</th>
                     ) : null}
@@ -628,9 +660,7 @@ export default function DealsTable({
                 <tbody className="divide-y divide-slate-100">
                   {currentSlice.map((vm) => (
                     <tr key={vm.deal.id} className="hover:bg-slate-50">
-                      <td className={`px-3 py-4 align-middle ${
-                        isNewestVariant ? "w-[280px] min-w-[280px]" : "w-[320px] min-w-[320px]"
-                      }`}>
+                      <td className={`${colClass("card", variant)} px-3 py-4 align-middle`}>
                         <div className="flex items-start gap-2.5">
                           {vm.deal.thumbnailUrl ? (
                             <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
@@ -662,14 +692,14 @@ export default function DealsTable({
                           </div>
                         </div>
                       </td>
-                      <td className="w-[120px] px-3 py-4 align-middle text-right text-base font-semibold">
+                      <td className={`${colClass("total", variant)} px-3 py-4 align-middle text-right text-base font-semibold`}>
                         {formatCurrency(vm.price)}
                       </td>
-                      <td className="w-[120px] px-3 py-4 align-middle text-right text-base text-slate-600">
+                      <td className={`${colClass("historic", variant)} px-3 py-4 align-middle text-right text-base text-slate-600`}>
                         {formatCurrency(vm.deal.historicPriceCad)}
                       </td>
                       <td
-                        className={`${discountClass(
+                        className={`${colClass("discount", variant)} ${discountClass(
                           vm.discount,
                         )} whitespace-nowrap px-3 py-4 align-middle text-right text-base ${
                           isUnscoredDiscount(vm.discount)
@@ -679,7 +709,7 @@ export default function DealsTable({
                       >
                         {formatDiscountDisplay(vm.discount)}
                       </td>
-                      <td className="px-3 py-4 align-middle text-right text-base">
+                      <td className={`${colClass("score", variant)} px-3 py-4 align-middle text-right text-base`}>
                         <div className="flex flex-col items-end gap-1">
                           <span className={`${scoreClass(vm.score)} font-semibold`}>
                             {formatScore(vm.score)}
@@ -694,12 +724,10 @@ export default function DealsTable({
                           </span>
                         </div>
                       </td>
-                      <td className="px-3 py-4 align-middle text-left text-base text-slate-600">
+                      <td className={`${colClass("confidence", variant)} px-3 py-4 align-middle text-left text-base text-slate-600`}>
                         {getConfidenceLabel(vm.deal.sampleSize ?? null)}
                       </td>
-                      <td className={`px-3 py-4 align-middle text-left text-sm text-slate-700 ${
-                        isNewestVariant ? "w-[140px]" : ""
-                      }`}>
+                      <td className={`${colClass("seller", variant)} px-3 py-4 align-middle text-left text-sm text-slate-700`}>
                         <div className="flex min-w-0 items-center gap-2">
                           <span
                             className={`truncate ${
@@ -714,12 +742,12 @@ export default function DealsTable({
                           ) : null}
                         </div>
                       </td>
-                      <td className={`px-3 py-4 align-middle text-left text-sm text-slate-600 ${
-                        isNewestVariant ? "w-[80px] whitespace-normal break-words" : ""
+                      <td className={`${colClass("market", variant)} px-3 py-4 align-middle text-left text-sm text-slate-600${
+                        isNewestVariant ? " whitespace-normal break-words" : ""
                       }`}>
                         {formatMarketLabel(vm.deal.market)}
                       </td>
-                      <td className="w-[96px] whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600">
+                      <td className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}>
                         {formatEndsAt(vm.deal.endsAt)}
                       </td>
                       {isAdmin && adminSecret ? (

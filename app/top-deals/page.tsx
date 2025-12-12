@@ -2,13 +2,23 @@ import { AdminDealActions } from "../../components/AdminDealActions";
 import { TrustedBadge } from "../../components/TrustedBadge";
 import { CardIdentityBlock } from "../../components/CardIdentity";
 import { query } from "../../lib/db";
-import { formatCurrency } from "../../lib/dealFormatting";
+import {
+  formatCurrency,
+  discountClass,
+  formatDiscount,
+  formatEndsAt,
+  getConfidenceLabel,
+} from "../../lib/dealFormatting";
 import { FX_RATE_COPY } from "../../lib/money";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../lib/pricing";
-import { DEFAULT_MARKET } from "../../lib/markets";
+import {
+  DEFAULT_MARKET,
+  getMarketLabel,
+  normalizeMarketCode,
+} from "../../lib/markets";
 import {
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
@@ -59,37 +69,17 @@ const MIN_DISCOUNT = 15;
 const MIN_SELLER_FEEDBACK_COUNT = 20;
 const MIN_SELLER_POSITIVE_PERCENT = 98;
 
-function formatEndsAt(value: string | null) {
-  if (!value) {
-    return "--";
-  }
-  return new Date(value).toLocaleString();
-}
-
-function discountClass(value: number | null | undefined): string {
-  if (value == null) return "";
-  if (value <= -20) return "discount-good";
-  if (value >= 5) return "discount-bad";
-  return "discount-neutral";
-}
-
-function getConfidenceLabel(sampleSize: number | null | undefined): string {
-  if (sampleSize == null) return "";
-  if (sampleSize >= 50) return `High n=${sampleSize}`;
-  if (sampleSize >= 20) return `Med n=${sampleSize}`;
-  if (sampleSize >= 5) return `Low n=${sampleSize}`;
-  return `Very low n=${sampleSize}`;
-}
-
 function formatSeller(deal: TopDeal): JSX.Element {
-  const name = deal.sellerUsername ?? "Unknown seller";
+  const name = deal.sellerUsername ?? "Unknown";
   return (
-    <span className="flex min-w-0 items-center gap-2 text-slate-700">
+    <div className="flex min-w-0 items-center gap-2">
       <span className="truncate" title={name}>
         {name}
       </span>
-      {deal.trustedSeller && <TrustedBadge className="flex-none" />}
-    </span>
+      {deal.trustedSeller ? (
+        <TrustedBadge className="flex-none" />
+      ) : null}
+    </div>
   );
 }
 
@@ -307,17 +297,14 @@ export default async function TopDealsPage({
                       deal.discountPercent,
                     )}`}
                   >
-                    {deal.discountPercent == null ? (
-                      <span className="text-slate-400">--</span>
-                    ) : (
-                      <span>
-                        {deal.discountPercent > 0 ? "+" : ""}
-                        {deal.discountPercent.toFixed(1)}%
-                      </span>
-                    )}
+                    {formatDiscount(deal.discountPercent)}
                   </td>
-                  <td className="col-seller">{formatSeller(deal)}</td>
-                  <td className="col-market text-slate-600">{deal.market}</td>
+                  <td className="col-seller text-sm text-slate-700">
+                    {formatSeller(deal)}
+                  </td>
+                  <td className="col-market text-slate-600">
+                    {getMarketLabel(normalizeMarketCode(deal.market))}
+                  </td>
                   <td className="col-ends text-right text-slate-500">
                     {formatEndsAt(deal.endsAt)}
                   </td>

@@ -27,6 +27,11 @@ import { ALERT_THRESHOLD_OPTIONS } from "../lib/alertsConfig";
 import { isDealTrusted } from "../lib/dealScore";
 import { FX_RATE_COPY } from "../lib/money";
 import {
+  getMarketLabel,
+  normalizeMarketCode,
+  DEFAULT_MARKET,
+} from "../lib/markets";
+import {
   getConfidenceLabel as getWeightLabel,
   getConfidenceBadgeClass,
   getConfidenceDisplayText,
@@ -563,7 +568,7 @@ export default function CardDetailClient({
                       </div>
                     </td>
                     <td className="px-3 py-4 align-middle text-sm text-slate-600">
-                      {listing.market}
+                      {getMarketLabel(normalizeMarketCode(listing.market))}
                     </td>
                     <td className="px-3 py-4 align-middle text-right text-slate-600">
                       {formatEndsAt(listing.endsAt)}

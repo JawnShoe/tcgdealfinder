@@ -4,13 +4,23 @@ import { AdminDealActions } from "../../components/AdminDealActions";
 import { TrustedBadge } from "../../components/TrustedBadge";
 import { CardIdentityBlock } from "../../components/CardIdentity";
 import { query } from "../../lib/db";
-import { formatCurrency } from "../../lib/dealFormatting";
+import {
+  formatCurrency,
+  discountClass,
+  formatDiscount,
+  formatEndsAt,
+  getConfidenceLabel,
+} from "../../lib/dealFormatting";
 import { FX_RATE_COPY } from "../../lib/money";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../lib/pricing";
-import { DEFAULT_MARKET } from "../../lib/markets";
+import {
+  DEFAULT_MARKET,
+  getMarketLabel,
+  normalizeMarketCode,
+} from "../../lib/markets";
 import {
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
@@ -49,7 +59,7 @@ type EndingSoonDeal = {
   sellerFeedbackCount: number | null;
   sellerPositivePercent: number | null;
   market: string;
-  endsAt: Date | null;
+  endsAt: string | null;
   listingUrl: string;
   sellerUsername: string | null;
 };
@@ -58,42 +68,22 @@ const MIN_SAMPLE_SIZE = 20;
 const TRUSTED_FEEDBACK = 20;
 const TRUSTED_POSITIVE_PERCENT = 98;
 
-function formatDate(value: Date | null): string {
-  if (!value || Number.isNaN(value.getTime())) {
-    return "--";
-  }
-  return value.toLocaleString();
-}
-
-function discountClass(value: number | null | undefined): string {
-  if (value == null) return "";
-  if (value <= -20) return "discount-good";
-  if (value >= 5) return "discount-bad";
-  return "discount-neutral";
-}
-
-function getConfidenceLabel(sampleSize: number | null | undefined): string {
-  if (sampleSize == null) return "";
-  if (sampleSize >= 50) return `High n=${sampleSize}`;
-  if (sampleSize >= 20) return `Med n=${sampleSize}`;
-  if (sampleSize >= 5) return `Low n=${sampleSize}`;
-  return `Very low n=${sampleSize}`;
-}
-
 function formatSeller(deal: EndingSoonDeal): JSX.Element {
-  const name = deal.sellerUsername ?? "Unknown seller";
+  const name = deal.sellerUsername ?? "Unknown";
   const trusted =
     deal.sellerFeedbackCount != null &&
     deal.sellerFeedbackCount >= TRUSTED_FEEDBACK &&
     deal.sellerPositivePercent != null &&
     deal.sellerPositivePercent >= TRUSTED_POSITIVE_PERCENT;
   return (
-    <span className="flex min-w-0 items-center gap-2 text-slate-700">
+    <div className="flex min-w-0 items-center gap-2">
       <span className="truncate" title={name}>
         {name}
       </span>
-      {trusted && <TrustedBadge className="flex-none" />}
-    </span>
+      {trusted ? (
+        <TrustedBadge className="flex-none" />
+      ) : null}
+    </div>
   );
 }
 
@@ -195,17 +185,12 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
             seller_positive_percent: sellerPositivePercent,
           });
 
-    const endsAt =
-      row.ends_at != null && !Number.isNaN(new Date(row.ends_at).getTime())
-        ? new Date(row.ends_at)
-        : null;
-
-      return {
-        listingId: row.listing_id,
-        listingTitle: row.title ?? null,
-        cardId: row.card_id,
-        cardName: row.card_name,
-        setName: row.set_name,
+    return {
+      listingId: row.listing_id,
+      listingTitle: row.title ?? null,
+      cardId: row.card_id,
+      cardName: row.card_name,
+      setName: row.set_name,
       condition: row.condition,
       totalPriceCad: total,
       medianPriceCad: historic,
@@ -214,7 +199,7 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
       sellerFeedbackCount,
       sellerPositivePercent,
       market: row.market,
-      endsAt,
+      endsAt: row.ends_at,
       listingUrl: row.listing_url,
       sellerUsername: row.seller_username ?? null,
     };
@@ -307,19 +292,16 @@ export default async function EndingSoonPage({
                       deal.discountPercent,
                     )}`}
                   >
-                    {deal.discountPercent == null ? (
-                      <span className="text-slate-400">--</span>
-                    ) : (
-                      <span>
-                        {deal.discountPercent > 0 ? "+" : ""}
-                        {deal.discountPercent.toFixed(1)}%
-                      </span>
-                    )}
+                    {formatDiscount(deal.discountPercent)}
                   </td>
-                  <td className="col-seller">{formatSeller(deal)}</td>
-                  <td className="col-market text-slate-600">{deal.market}</td>
+                  <td className="col-seller text-sm text-slate-700">
+                    {formatSeller(deal)}
+                  </td>
+                  <td className="col-market text-slate-600">
+                    {getMarketLabel(normalizeMarketCode(deal.market))}
+                  </td>
                   <td className="col-ends text-right text-slate-500">
-                    {formatDate(deal.endsAt)}
+                    {formatEndsAt(deal.endsAt)}
                   </td>
                   <td className="col-link text-right">
                     <a

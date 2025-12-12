@@ -28,4 +28,5 @@ export type Deal = {
   setName: string | null;
   cardName: string | null;
   cardId: number | null;
+  listingId?: string | null;
 };

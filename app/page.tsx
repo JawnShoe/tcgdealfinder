@@ -1,5 +1,6 @@
 import DealsTable from "@/components/DealsTable";
 import FeaturedDealsStrip from "@/components/FeaturedDealsStrip";
+import ListingLookup from "@/components/ListingLookup";
 import { query } from "@/lib/db";
 import {
   computeDiscountPercent,
@@ -147,6 +148,7 @@ async function getHomePageDeals(): Promise<Deal[]> {
       shippingCad,
       totalPriceCad,
       historicPriceCad,
+      listingId: row.listing_id ?? null,
       historicSampleCount: sampleSize,
       historicBaselineBucketUsed: conditionBucket ?? null,
       historicBaselineConfidence: hasBaseline
@@ -230,6 +232,7 @@ export default async function HomePage() {
         {/* All live deals */}
         <section>
           <div className="mx-auto max-w-7xl rounded-2xl bg-white shadow-sm border border-slate-200 px-5 py-5 sm:px-7 lg:px-10 deals-card">
+            <ListingLookup />
             <h2 className="text-lg font-semibold tracking-tight mb-2">
               All live deals
             </h2>

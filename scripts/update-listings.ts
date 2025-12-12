@@ -4,6 +4,8 @@ import {
   NormalizedListing,
   isValidListingTitle,
   normalizeCondition,
+  fetchEbayItemDetail,
+  type EbayItemDetail,
 } from "../lib/ebay";
 import { computeDiscountPercent } from "../lib/pricing";
 
@@ -29,6 +31,15 @@ const GRADE_SUFFIX: Record<string, string> = {
   cgc_10: `"CGC 10"`,
   cgc_95: `"CGC 9.5"`,
   cgc_9: `"CGC 9"`,
+};
+const detailCache = new Map<string, Promise<EbayItemDetail | null>>();
+const detailSemaphore = createSemaphore(5);
+
+type GradeInfo = {
+  grader: string | null;
+  gradeValue: string | null;
+  bucket: string | null;
+  source: "specifics" | "title" | "none";
 };
 
 async function getBlacklistedSellers(): Promise<Set<string>> {
@@ -80,6 +91,7 @@ async function upsertListing(
   listing: NormalizedListing,
   sellerUsername: string | null,
   historicPriceCad: number | null,
+  gradeInfo: GradeInfo,
 ) {
   const priceCad =
     listing.priceCad ??
@@ -131,6 +143,9 @@ async function upsertListing(
       seller_feedback_count,
       seller_positive_percent,
       condition_raw,
+      grader,
+      grade_value,
+      grade_source,
       market,
       ends_at,
       historic_price_cad,
@@ -154,10 +169,13 @@ async function upsertListing(
       $12, -- seller_feedback_count
       $13, -- seller_positive_percent
       $14, -- condition_raw
-      $15, -- market
-      $16, -- ends_at
-      $17, -- historic_price_cad
-      $18, -- discount_percent
+      $15, -- grader
+      $16, -- grade_value
+      $17, -- grade_source
+      $18, -- market
+      $19, -- ends_at
+      $20, -- historic_price_cad
+      $21, -- discount_percent
       NOW(),
       NOW()
     )
@@ -175,6 +193,9 @@ async function upsertListing(
       seller_feedback_count = EXCLUDED.seller_feedback_count,
       seller_positive_percent = EXCLUDED.seller_positive_percent,
       condition_raw = EXCLUDED.condition_raw,
+      grader = EXCLUDED.grader,
+      grade_value = EXCLUDED.grade_value,
+      grade_source = EXCLUDED.grade_source,
       market = EXCLUDED.market,
       ends_at = EXCLUDED.ends_at,
       historic_price_cad = EXCLUDED.historic_price_cad,
@@ -196,6 +217,9 @@ async function upsertListing(
       sellerFeedbackCount,
       sellerPositivePercent,
       normalizedCondition,
+      gradeInfo.grader,
+      gradeInfo.gradeValue,
+      gradeInfo.source,
       market,
       listing.endsAt ?? null,
       historicPriceCad,
@@ -265,7 +289,7 @@ async function main() {
     }
     const listings = await fetchEbayListings(
       row.search_query,
-      "EBAY_US",
+      row.market ?? "EBAY_US",
     );
 
     console.log(
@@ -283,9 +307,11 @@ async function main() {
         listing.sellerUsername ??
         listing.seller?.toLowerCase() ??
         null;
+      const gradeInfo = await resolveGradeInfo(listing, row.market ?? "EBAY_US");
       const inferredBucket = inferConditionBucket(
         listing,
         row.condition_bucket,
+        gradeInfo,
       );
       const targetCardId = await getCardIdForBucket(row, inferredBucket);
 
@@ -322,6 +348,7 @@ async function main() {
           listing,
           sellerUsername,
           historicPrice,
+          gradeInfo,
         );
         updatedCount += 1;
       } catch (err) {
@@ -369,15 +396,19 @@ main().catch((err) => {
 function inferConditionBucket(
   listing: NormalizedListing,
   defaultBucket: string,
+  gradeInfo: GradeInfo,
 ): string {
-  const gradedBucket = detectGradedBucket(listing);
-  if (gradedBucket) {
-    return gradedBucket;
+  if (gradeInfo.bucket) {
+    return gradeInfo.bucket;
+  }
+  const fallback = fallbackGradedBucketFromText(listing);
+  if (fallback) {
+    return fallback;
   }
   return defaultBucket;
 }
 
-function detectGradedBucket(listing: NormalizedListing): string | null {
+function fallbackGradedBucketFromText(listing: NormalizedListing): string | null {
   const text = `${listing.title ?? ""} ${listing.conditionRaw ?? ""}`
     .toLowerCase()
     .trim();
@@ -476,4 +507,202 @@ function deriveSearchQuery(baseQuery: string, bucket: string): string {
     return baseQuery;
   }
   return `${baseQuery} ${suffix}`;
+}
+
+async function resolveGradeInfo(
+  listing: NormalizedListing,
+  market: string,
+): Promise<GradeInfo> {
+  const empty: GradeInfo = {
+    grader: null,
+    gradeValue: null,
+    bucket: null,
+    source: "none",
+  };
+  const fromTitle = detectGradeFromTitle(listing.title ?? "");
+  if (!isGradedCandidate(listing)) {
+    return fromTitle ?? empty;
+  }
+
+  const detail = await getListingDetail(listing.listingId, market);
+  const structured = extractGradeFromDetail(detail);
+  if (structured) {
+    return structured;
+  }
+  return fromTitle ?? empty;
+}
+
+function isGradedCandidate(listing: NormalizedListing): boolean {
+  if ((listing.conditionRaw ?? "").toLowerCase().includes("graded")) {
+    return true;
+  }
+  const title = listing.title?.toLowerCase() ?? "";
+  return /\b(psa|bgs|beckett|cgc)\b/.test(title);
+}
+
+function detectGradeFromTitle(title: string): GradeInfo | null {
+  const patterns: Array<{
+    regex: RegExp;
+    grader: string;
+    gradeValue: string;
+    bucket: string;
+  }> = [
+    { regex: /\bpsa\s*10\b|\bpsa10\b/i, grader: "PSA", gradeValue: "10", bucket: "psa_10" },
+    { regex: /\bpsa\s*9\b|\bpsa9\b/i, grader: "PSA", gradeValue: "9", bucket: "psa_9" },
+    { regex: /\bbgs\s*10\b|\bbeckett\s*10\b/i, grader: "BGS", gradeValue: "10", bucket: "bgs_10" },
+    { regex: /\bbgs\s*9\.?5\b|\bbeckett\s*9\.?5\b/i, grader: "BGS", gradeValue: "9.5", bucket: "bgs_95" },
+    { regex: /\bbgs\s*9\b|\bbeckett\s*9\b/i, grader: "BGS", gradeValue: "9", bucket: "bgs_9" },
+    { regex: /\bcgc\s*10\b/i, grader: "CGC", gradeValue: "10", bucket: "cgc_10" },
+    { regex: /\bcgc\s*9\.?5\b/i, grader: "CGC", gradeValue: "9.5", bucket: "cgc_95" },
+    { regex: /\bcgc\s*9\b/i, grader: "CGC", gradeValue: "9", bucket: "cgc_9" },
+  ];
+  for (const pattern of patterns) {
+    if (pattern.regex.test(title)) {
+      return {
+        grader: pattern.grader,
+        gradeValue: pattern.gradeValue,
+        bucket: pattern.bucket,
+        source: "title",
+      };
+    }
+  }
+  return null;
+}
+
+async function getListingDetail(
+  listingId: string | undefined,
+  market: string,
+): Promise<EbayItemDetail | null> {
+  if (!listingId) return null;
+  if (!detailCache.has(listingId)) {
+    detailCache.set(
+      listingId,
+      detailSemaphore.run(() => fetchEbayItemDetail(listingId, market)),
+    );
+  }
+  return detailCache.get(listingId) ?? null;
+}
+
+function extractGradeFromDetail(detail: EbayItemDetail | null): GradeInfo | null {
+  if (!detail) return null;
+  const graderRaw =
+    findDescriptorValue(detail.conditionDescriptors ?? [], "professional grader") ??
+    findAspectValue(detail.localizedAspects ?? [], "professional grader");
+  const gradeRaw =
+    findDescriptorValue(detail.conditionDescriptors ?? [], "grade") ??
+    findAspectValue(detail.localizedAspects ?? [], "grade");
+
+  const grader = normalizeGraderName(graderRaw);
+  const gradeValue = normalizeGradeValue(gradeRaw);
+  if (!grader && !gradeValue) {
+    return null;
+  }
+  const bucket = bucketFromGrade(grader, gradeValue);
+  return {
+    grader,
+    gradeValue,
+    bucket,
+    source: "specifics",
+  };
+}
+
+function findDescriptorValue(
+  descriptors: Array<{ name?: string; values?: Array<{ content?: string }> }>,
+  targetName: string,
+): string | null {
+  for (const descriptor of descriptors) {
+    if (!descriptor.name) continue;
+    if (descriptor.name.trim().toLowerCase() === targetName) {
+      const value = descriptor.values?.[0]?.content;
+      if (value) {
+        return value;
+      }
+    }
+  }
+  return null;
+}
+
+function findAspectValue(
+  aspects: Array<{ name?: string; value?: string }>,
+  targetName: string,
+): string | null {
+  for (const aspect of aspects) {
+    if (!aspect.name) continue;
+    if (aspect.name.trim().toLowerCase() === targetName) {
+      if (aspect.value) {
+        return aspect.value;
+      }
+    }
+  }
+  return null;
+}
+
+function normalizeGraderName(raw: string | null): string | null {
+  if (!raw) return null;
+  const value = raw.toLowerCase();
+  if (value.includes("psa")) return "PSA";
+  if (value.includes("bgs") || value.includes("beckett")) return "BGS";
+  if (value.includes("cgc")) return "CGC";
+  return null;
+}
+
+function normalizeGradeValue(raw: string | null): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const cleaned = trimmed.replace(/[^0-9.]/g, "");
+  if (!cleaned) return null;
+  if (cleaned === "95") return "9.5";
+  return cleaned;
+}
+
+function bucketFromGrade(grader: string | null, gradeValue: string | null): string | null {
+  if (!grader || !gradeValue) return null;
+  const normalized = gradeValue;
+  switch (grader) {
+    case "PSA":
+      if (normalized === "10") return "psa_10";
+      if (normalized === "9") return "psa_9";
+      break;
+    case "BGS":
+      if (normalized === "10") return "bgs_10";
+      if (normalized === "9.5") return "bgs_95";
+      if (normalized === "9") return "bgs_9";
+      break;
+    case "CGC":
+      if (normalized === "10") return "cgc_10";
+      if (normalized === "9.5") return "cgc_95";
+      if (normalized === "9") return "cgc_9";
+      break;
+  }
+  return null;
+}
+
+function createSemaphore(limit: number) {
+  let active = 0;
+  const queue: Array<() => void> = [];
+  return {
+    run<T>(fn: () => Promise<T>): Promise<T> {
+      return new Promise<T>((resolve, reject) => {
+        const execute = async () => {
+          active += 1;
+          try {
+            const result = await fn();
+            resolve(result);
+          } catch (error) {
+            reject(error);
+          } finally {
+            active -= 1;
+            const next = queue.shift();
+            if (next) next();
+          }
+        };
+        if (active < limit) {
+          void execute();
+        } else {
+          queue.push(execute);
+        }
+      });
+    },
+  };
 }

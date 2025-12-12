@@ -25,6 +25,17 @@ export type NormalizedListing = {
   endsAt?: string | null;
 };
 
+export type EbayItemDetail = {
+  conditionDescriptors?: Array<{
+    name?: string;
+    values?: Array<{ content?: string }>;
+  }>;
+  localizedAspects?: Array<{
+    name?: string;
+    value?: string;
+  }>;
+};
+
 export type SoldListing = {
   listingId?: string;
   title: string;
@@ -599,6 +610,40 @@ export async function fetchEbayListings(
   });
 
   return filtered;
+}
+
+export async function fetchEbayItemDetail(
+  listingId: string,
+  market: string,
+): Promise<EbayItemDetail | null> {
+  const marketplaceId = toMarketplaceId(market);
+  const accessToken = await getAppAccessToken();
+  const endpoint = `https://api.ebay.com/buy/browse/v1/item/${listingId}`;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
+      },
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error(
+        `fetchEbayItemDetail: HTTP ${res.status} ${res.statusText} for ${listingId}. Body (truncated):`,
+        text.slice(0, 200),
+      );
+      return null;
+    }
+
+    return (await res.json()) as EbayItemDetail;
+  } catch (error) {
+    console.error(`fetchEbayItemDetail: failed for ${listingId}`, error);
+    return null;
+  }
 }
 
 function selfTestTitleFilter() {

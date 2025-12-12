@@ -8,6 +8,9 @@ export type Deal = {
   historicPriceCad: number | null;
   discountPercent: number | null;
   sampleSize: number | null;
+  historicSampleCount?: number | null;
+  historicBaselineBucketUsed?: string | null;
+  historicBaselineConfidence?: "high" | "medium" | "low" | "none";
   market: string;
   endsAt: string | null;
   thumbnailUrl: string | null;

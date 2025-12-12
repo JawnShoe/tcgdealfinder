@@ -477,6 +477,11 @@ export default function DealsTable({
                               {(vm.deal.card?.setName ?? vm.deal.setName ?? "") ||
                                 "Unknown set"}
                             </p>
+                            {vm.deal.historicBaselineConfidence === "none" ? (
+                              <p className="text-xs text-amber-600">
+                                {baselineBadgeLabel(vm.deal.historicBaselineBucketUsed)}
+                              </p>
+                            ) : null}
                           </div>
                         </div>
                       </td>
@@ -652,6 +657,18 @@ function buildCardSortKey(deal: Deal): string {
   const number = (deal.card?.cardNumber ?? "").toLowerCase();
   const name = (deal.card?.name ?? deal.cardName ?? deal.title ?? "").toLowerCase();
   return `${setName}||${number}||${name}`;
+}
+
+function baselineBadgeLabel(bucket: string | null | undefined): string {
+  if (bucket) {
+    const friendly = bucket
+      .split("_")
+      .filter(Boolean)
+      .map((part) => part.toUpperCase())
+      .join(" ");
+    return friendly ? `No ${friendly} history` : "No baseline yet";
+  }
+  return "No baseline yet";
 }
 
 const comparators: Record<

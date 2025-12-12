@@ -30,6 +30,23 @@ type DealRow = {
   card_condition_bucket: string | null;
 };
 
+function isGradedBucket(bucket: string | null): boolean {
+  if (!bucket) return false;
+  return bucket.startsWith("psa_") || bucket.startsWith("bgs_") || bucket.startsWith("cgc_");
+}
+
+function deriveBaselineConfidence(sampleSize: number | null): "high" | "medium" | "low" {
+  if (sampleSize == null || sampleSize <= 0) {
+    return "low";
+  }
+  if (sampleSize >= 20) {
+    return "high";
+  }
+  if (sampleSize >= 10) {
+    return "medium";
+  }
+  return "low";
+}
 async function getHomePageDeals(): Promise<Deal[]> {
   const PAGE_SIZE = 50;
 
@@ -84,10 +101,16 @@ async function getHomePageDeals(): Promise<Deal[]> {
       row.shipping_cad != null ? Number(row.shipping_cad) : null;
     const totalPriceCad =
       row.total_price_cad != null ? Number(row.total_price_cad) : null;
-    const historicPriceCad =
-      row.historic_price_cad != null ? Number(row.historic_price_cad) : null;
     const sampleSize =
       row.sample_size != null ? Number(row.sample_size) : null;
+    const conditionBucket = row.card_condition_bucket ?? null;
+    const hasBaseline =
+      row.historic_price_cad != null &&
+      (!isGradedBucket(conditionBucket) || (sampleSize ?? 0) >= 5);
+    const historicPriceCad =
+      hasBaseline && row.historic_price_cad != null
+        ? Number(row.historic_price_cad)
+        : null;
 
     const sellerFeedbackCount =
       row.seller_feedback_count != null
@@ -100,22 +123,20 @@ async function getHomePageDeals(): Promise<Deal[]> {
 
     const storedDiscount =
       row.discount_percent != null ? Number(row.discount_percent) : null;
-    let rawDiscount = computeDiscountPercent(
-      totalPriceCad ?? priceCad,
-      historicPriceCad,
-    );
-    if (rawDiscount == null && storedDiscount != null) {
+    let rawDiscount = hasBaseline
+      ? computeDiscountPercent(totalPriceCad ?? priceCad, historicPriceCad)
+      : null;
+    if (hasBaseline && rawDiscount == null && storedDiscount != null) {
       rawDiscount = Number.isNaN(storedDiscount) ? null : storedDiscount;
     }
 
-    const displayDiscount =
-      sampleSize !== null && sampleSize < 5
-        ? null
-        : getDisplayDiscountPercent({
-            discount_percent: rawDiscount,
-            seller_feedback_count: sellerFeedbackCount,
-            seller_positive_percent: sellerPositivePercent,
-          });
+    const displayDiscount = hasBaseline
+      ? getDisplayDiscountPercent({
+          discount_percent: rawDiscount,
+          seller_feedback_count: sellerFeedbackCount,
+          seller_positive_percent: sellerPositivePercent,
+        })
+      : null;
 
     return {
       id: row.id,
@@ -126,13 +147,18 @@ async function getHomePageDeals(): Promise<Deal[]> {
       shippingCad,
       totalPriceCad,
       historicPriceCad,
+      historicSampleCount: sampleSize,
+      historicBaselineBucketUsed: conditionBucket ?? null,
+      historicBaselineConfidence: hasBaseline
+        ? deriveBaselineConfidence(sampleSize)
+        : "none",
       thumbnailUrl: row.thumbnail_url,
       sellerUsername: row.seller_username ?? null,
       discountPercent: displayDiscount,
       sellerFeedbackCount,
       sellerPositivePercent,
       sampleSize,
-      condition: row.card_condition_bucket ?? null,
+      condition: conditionBucket,
       setName: row.card_set_name ?? null,
       cardName: row.card_name ?? null,
       market: row.market,

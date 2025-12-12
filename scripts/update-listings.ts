@@ -35,19 +35,30 @@ const GRADE_SUFFIX: Record<string, string> = {
 const detailCache = new Map<string, Promise<EbayItemDetail | null>>();
 const detailSemaphore = createSemaphore(5);
 
-const ACCESSORY_PHRASES = [
-  "card not included",
-  "no card included",
-  "case only",
-  "empty case",
-  "toploader",
-  "top loader",
-  "binder",
-  "sleeves",
-  "deck box",
-  "playmat",
-  "display stand",
-  "card case",
+const ACCESSORY_PHRASES = {
+  hard: [
+    "card not included",
+    "no card included",
+    "case only",
+    "empty case",
+  ],
+  contextual: [
+    "toploader",
+    "top loader",
+    "binder",
+    "sleeves",
+    "deck box",
+    "playmat",
+    "display stand",
+    "card case",
+  ],
+};
+const ACCESSORY_CONTEXT = [
+  "case",
+  "holder",
+  "storage",
+  "accessory",
+  "not included",
 ];
 
 type GradeInfo = {
@@ -301,6 +312,7 @@ async function main() {
   console.log(
     `Loaded ${blacklistedSellers.size} blacklisted seller(s) into memory.`,
   );
+  let accessoryRejects = 0;
 
   const res = await query<SearchConfigRow>(
     `
@@ -397,6 +409,7 @@ async function main() {
           matchEligible = false;
           rejectReason = "accessory_not_card";
           rejectSource = `title_accessory:${accessoryPhrase}`;
+          accessoryRejects += 1;
         }
       }
 
@@ -499,6 +512,11 @@ async function main() {
   }
 
   console.log("Listing update complete.");
+  if (accessoryRejects > 0) {
+    console.log(
+      `[debug] accessory_not_card rejections this run: ${accessoryRejects}`,
+    );
+  }
 }
 
 main().catch((err) => {
@@ -684,7 +702,18 @@ function detectGradeFromTitle(title: string): GradeInfo | null {
 function detectAccessoryPhrase(title: string | null | undefined): string | null {
   if (!title) return null;
   const normalized = title.toLowerCase();
-  for (const phrase of ACCESSORY_PHRASES) {
+  for (const phrase of ACCESSORY_PHRASES.hard) {
+    if (normalized.includes(phrase)) {
+      return phrase;
+    }
+  }
+  const hasContext = ACCESSORY_CONTEXT.some((context) =>
+    normalized.includes(context),
+  );
+  if (!hasContext) {
+    return null;
+  }
+  for (const phrase of ACCESSORY_PHRASES.contextual) {
     if (normalized.includes(phrase)) {
       return phrase;
     }

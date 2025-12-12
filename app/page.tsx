@@ -1,53 +1,11 @@
+import Link from "next/link";
 import DealsTable from "@/components/DealsTable";
 import FeaturedDealsStrip from "@/components/FeaturedDealsStrip";
 import ListingLookup from "@/components/ListingLookup";
 import { query } from "@/lib/db";
-import {
-  computeDiscountPercent,
-  getDisplayDiscountPercent,
-} from "@/lib/pricing";
+import { runDealsQuery } from "./api/deals/dealsQuery";
 import type { Deal } from "@/types/deal";
 
-type DealRow = {
-  id: number;
-  title: string;
-  url: string;
-  price_cad: string | null;
-  shipping_cad: string | null;
-  total_price_cad: string | null;
-  historic_price_cad: string | null;
-  discount_percent: string | null;
-  market: string;
-  ends_at: string | null;
-  thumbnail_url: string | null;
-  sample_size: number | null;
-  seller_username: string | null;
-  seller_feedback_count: number | null;
-  seller_positive_percent: string | null;
-  card_id: number | null;
-  card_name: string | null;
-  card_set_name: string | null;
-  card_number: string | null;
-  card_condition_bucket: string | null;
-};
-
-function isGradedBucket(bucket: string | null): boolean {
-  if (!bucket) return false;
-  return bucket.startsWith("psa_") || bucket.startsWith("bgs_") || bucket.startsWith("cgc_");
-}
-
-function deriveBaselineConfidence(sampleSize: number | null): "high" | "medium" | "low" {
-  if (sampleSize == null || sampleSize <= 0) {
-    return "low";
-  }
-  if (sampleSize >= 20) {
-    return "high";
-  }
-  if (sampleSize >= 10) {
-    return "medium";
-  }
-  return "low";
-}
 async function getHomePageDeals(): Promise<Deal[]> {
   const PAGE_SIZE = 50;
 
@@ -82,136 +40,13 @@ async function getHomePageDeals(): Promise<Deal[]> {
     `[home] deals query: total_candidates=${totalCandidates}, excluded_by_match=${excludedByMatch}, shipping_unknown=${excludedByShipping}`,
   );
 
-  const res = await query<DealRow>(
-    `
-      SELECT
-        l.id,
-        l.title,
-        l.url,
-        l.price_cad,
-        l.shipping_cad,
-        l.total_price_cad,
-        l.historic_price_cad,
-        l.discount_percent,
-        l.market,
-        l.ends_at,
-        l.thumbnail_url,
-        l.seller_username,
-        l.seller_feedback_count,
-        l.seller_positive_percent,
-        hp.sample_size,
-        c.id   AS card_id,
-        c.name AS card_name,
-        c.set_name AS card_set_name,
-        c.card_number AS card_number,
-        c.condition_bucket AS card_condition_bucket
-      FROM listings l
-      LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
-      LEFT JOIN cards c ON c.id = l.card_id
-      WHERE
-        l.total_price_cad IS NOT NULL
-        AND l.historic_price_cad IS NOT NULL
-        AND l.seller_username IS NOT NULL
-        AND l.shipping_known = TRUE
-        AND l.match_eligible = TRUE
-        AND NOT EXISTS (
-          SELECT 1
-          FROM seller_blacklist sb
-          WHERE sb.seller_username = l.seller_username
-        )
-      ORDER BY
-        l.discount_percent ASC NULLS LAST,
-        l.total_price_cad ASC,
-        l.ends_at ASC NULLS LAST
-      LIMIT $1;
-    `,
-    [PAGE_SIZE],
-  );
-
-  const deals = res.rows.map((row: DealRow) => {
-    const priceCad =
-      row.price_cad != null ? Number(row.price_cad) : null;
-    const shippingCad =
-      row.shipping_cad != null ? Number(row.shipping_cad) : null;
-    const totalPriceCad =
-      row.total_price_cad != null ? Number(row.total_price_cad) : null;
-    const sampleSize =
-      row.sample_size != null ? Number(row.sample_size) : null;
-    const conditionBucket = row.card_condition_bucket ?? null;
-    const hasBaseline =
-      row.historic_price_cad != null &&
-      (!isGradedBucket(conditionBucket) || (sampleSize ?? 0) >= 5);
-    const historicPriceCad =
-      hasBaseline && row.historic_price_cad != null
-        ? Number(row.historic_price_cad)
-        : null;
-
-    const sellerFeedbackCount =
-      row.seller_feedback_count != null
-        ? Number(row.seller_feedback_count)
-        : null;
-    const sellerPositivePercent =
-      row.seller_positive_percent != null
-        ? Number(row.seller_positive_percent)
-        : null;
-
-    const storedDiscount =
-      row.discount_percent != null ? Number(row.discount_percent) : null;
-    let rawDiscount = hasBaseline
-      ? computeDiscountPercent(totalPriceCad ?? priceCad, historicPriceCad)
-      : null;
-    if (hasBaseline && rawDiscount == null && storedDiscount != null) {
-      rawDiscount = Number.isNaN(storedDiscount) ? null : storedDiscount;
-    }
-
-    const displayDiscount = hasBaseline
-      ? getDisplayDiscountPercent({
-          discount_percent: rawDiscount,
-          seller_feedback_count: sellerFeedbackCount,
-          seller_positive_percent: sellerPositivePercent,
-        })
-      : null;
-
-    return {
-      id: row.id,
-      cardId: row.card_id ?? null,
-      title: row.title,
-      url: row.url,
-      priceCad,
-      shippingCad,
-      totalPriceCad,
-      historicPriceCad,
-      listingId: row.listing_id ?? null,
-      historicSampleCount: sampleSize,
-      historicBaselineBucketUsed: conditionBucket ?? null,
-      historicBaselineConfidence: hasBaseline
-        ? deriveBaselineConfidence(sampleSize)
-        : "none",
-      thumbnailUrl: row.thumbnail_url,
-      sellerUsername: row.seller_username ?? null,
-      discountPercent: displayDiscount,
-      sellerFeedbackCount,
-      sellerPositivePercent,
-      sampleSize,
-      condition: conditionBucket,
-      setName: row.card_set_name ?? null,
-      cardName: row.card_name ?? null,
-      market: row.market,
-      endsAt: row.ends_at,
-      card:
-        row.card_id == null
-          ? null
-          : {
-              id: row.card_id,
-              name: row.card_name,
-              setName: row.card_set_name,
-              cardNumber: row.card_number,
-              conditionBucket: row.card_condition_bucket,
-            },
-    } as Deal;
+  const response = await runDealsQuery({
+    sort: "best",
+    page: 1,
+    pageSize: PAGE_SIZE,
   });
 
-  return deals;
+  return response.items;
 }
 
 export default async function HomePage() {
@@ -236,6 +71,14 @@ export default async function HomePage() {
                   <p className="text-sm md:text-base text-slate-600 max-w-2xl">
                     TCG Deal Finder scores every live eBay listing by discount, seller trust, and data confidence so you only spend time on the safest opportunities.
                   </p>
+                  <div className="flex flex-wrap gap-3 pt-1">
+                    <Link
+                      href="/newest"
+                      className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+                    >
+                      Browse newest listings
+                    </Link>
+                  </div>
                 </div>
               </div>
 

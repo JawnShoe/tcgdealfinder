@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AdminDealActions } from "./AdminDealActions";
 import { TrustedBadge } from "./TrustedBadge";
 import type { Deal } from "../types/deal";
+import type { DealsApiMeta, DealsApiResponse } from "@/types/dealsApi";
 import {
   CONDITION_FILTERS,
   type ConditionFilterKey,
@@ -94,14 +95,25 @@ interface DealsTableProps {
   deals: Deal[];
   isAdmin?: boolean;
   adminSecret?: string;
+  initialApiMeta?: DealsApiMeta | null;
+  page?: number;
+  totalPages?: number;
 }
 
 export default function DealsTable({
   deals,
   isAdmin = false,
   adminSecret,
+  initialApiMeta = null,
 }: DealsTableProps) {
   const [viewState, setViewState] = useState<DealsViewState>(defaultState);
+  const serverMode = Boolean(initialApiMeta);
+  const [remoteMeta, setRemoteMeta] = useState<DealsApiMeta | null>(
+    initialApiMeta ?? null,
+  );
+  const [remoteDeals, setRemoteDeals] = useState<Deal[]>(deals);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const [remoteError, setRemoteError] = useState<string | null>(null);
 
   const updateState = (
     producer: (prev: DealsViewState) => DealsViewState,
@@ -116,10 +128,58 @@ export default function DealsTable({
     });
   };
 
-  const referenceTime = useMemo(() => Date.now(), [deals]);
+  useEffect(() => {
+    if (!serverMode) return;
+    setRemoteDeals(deals);
+  }, [serverMode, deals]);
+
+  useEffect(() => {
+    if (!serverMode) return;
+    setRemoteMeta(initialApiMeta ?? null);
+  }, [serverMode, initialApiMeta]);
+
+  const fetchRemotePage = useCallback(
+    async (targetPage: number) => {
+      if (!serverMode || !remoteMeta) return;
+      const params = new URLSearchParams({
+        sort: remoteMeta.sort,
+        page: String(Math.max(targetPage, 1)),
+        pageSize: String(remoteMeta.pageSize),
+      });
+      setRemoteLoading(true);
+      setRemoteError(null);
+      try {
+        const res = await fetch(`/api/deals?${params.toString()}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          throw new Error(`Request failed (${res.status})`);
+        }
+        const payload: DealsApiResponse = await res.json();
+        setRemoteDeals(payload.items);
+        setRemoteMeta({
+          sort: payload.sort,
+          page: payload.page,
+          pageSize: payload.pageSize,
+          totalItems: payload.totalItems,
+          totalPages: payload.totalPages,
+        });
+      } catch (error) {
+        setRemoteError(
+          error instanceof Error ? error.message : "Unable to load listings",
+        );
+      } finally {
+        setRemoteLoading(false);
+      }
+    },
+    [serverMode, remoteMeta],
+  );
+
+  const baseDeals = serverMode ? remoteDeals : deals;
+  const referenceTime = useMemo(() => Date.now(), [baseDeals]);
 
   const viewModels = useMemo<DealViewModel[]>(() => {
-    return deals.map((deal) => {
+    return baseDeals.map((deal) => {
       const price = getDealPrice(deal);
       const discount = getDealDiscount(deal);
       const trustedSeller = isDealTrusted(
@@ -150,7 +210,7 @@ export default function DealsTable({
         endsAtMs: Number.isNaN(endsAtMs) ? null : endsAtMs,
       };
     });
-  }, [deals, referenceTime]);
+  }, [baseDeals, referenceTime]);
 
   const filteredDeals = useMemo(() => {
     const normalizedSet = viewState.setFilter.trim().toLowerCase();
@@ -220,25 +280,47 @@ export default function DealsTable({
   }, [filteredDeals, viewState.sortBy]);
 
   useEffect(() => {
+    if (serverMode) return;
     setViewState((prev) => {
       const maxPage = Math.max(1, Math.ceil(sortedDeals.length / PAGE_SIZE));
       return prev.page > maxPage ? { ...prev, page: maxPage } : prev;
     });
-  }, [sortedDeals.length]);
+  }, [serverMode, sortedDeals.length]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedDeals.length / PAGE_SIZE));
-  const currentPage = viewState.page;
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const currentSlice = sortedDeals.slice(pageStart, pageStart + PAGE_SIZE);
-  const hasDeals = sortedDeals.length > 0;
+  const totalPages = serverMode
+    ? remoteMeta?.totalPages ?? 1
+    : Math.max(1, Math.ceil(sortedDeals.length / PAGE_SIZE));
+  const currentPage = serverMode ? remoteMeta?.page ?? 1 : viewState.page;
+  const pageStart = (viewState.page - 1) * PAGE_SIZE;
+  const currentSlice = serverMode
+    ? sortedDeals
+    : sortedDeals.slice(pageStart, pageStart + PAGE_SIZE);
+  const hasDeals = currentSlice.length > 0;
 
   const handlePrev = () => {
+    if (serverMode) {
+      if (remoteMeta && remoteMeta.page > 1 && !remoteLoading) {
+        void fetchRemotePage(remoteMeta.page - 1);
+      }
+      return;
+    }
     setViewState((prev) =>
       prev.page > 1 ? { ...prev, page: prev.page - 1 } : prev,
     );
   };
 
   const handleNext = () => {
+    if (serverMode) {
+      if (
+        remoteMeta &&
+        !remoteLoading &&
+        (remoteMeta.totalPages == null ||
+          remoteMeta.page < remoteMeta.totalPages)
+      ) {
+        void fetchRemotePage(remoteMeta.page + 1);
+      }
+      return;
+    }
     setViewState((prev) =>
       prev.page < totalPages ? { ...prev, page: prev.page + 1 } : prev,
     );
@@ -620,23 +702,42 @@ export default function DealsTable({
         </p>
       )}
 
+      {serverMode && remoteError ? (
+        <p className="text-center text-sm text-rose-600">{remoteError}</p>
+      ) : null}
       <div className="flex items-center justify-center gap-4 pt-2 text-sm text-slate-700">
         <button
           type="button"
           className="rounded border border-slate-300 px-3 py-1 disabled:cursor-not-allowed disabled:text-slate-400"
           onClick={handlePrev}
-          disabled={currentPage <= 1}
+          disabled={
+            serverMode
+              ? !remoteMeta || remoteMeta.page <= 1 || remoteLoading
+              : currentPage <= 1
+          }
         >
           Previous
         </button>
-        <span>
-          Page {currentPage} of {totalPages}
+        <span className="inline-flex items-center gap-2">
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+          {serverMode && remoteLoading ? (
+            <span className="text-xs text-slate-500">Loading…</span>
+          ) : null}
         </span>
         <button
           type="button"
           className="rounded border border-slate-300 px-3 py-1 disabled:cursor-not-allowed disabled:text-slate-400"
           onClick={handleNext}
-          disabled={currentPage >= totalPages}
+          disabled={
+            serverMode
+              ? !remoteMeta ||
+                remoteLoading ||
+                (remoteMeta.totalPages != null &&
+                  remoteMeta.page >= remoteMeta.totalPages)
+              : currentPage >= totalPages
+          }
         >
           Next
         </button>

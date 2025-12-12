@@ -1,14 +1,14 @@
+import { formatMoneyFromCad } from "./money";
+
 type FormatEndsAtOptions = {
   short?: boolean;
 };
 
 export function formatCurrency(
   value: number | null | undefined,
+  currency = "USD",
 ): string {
-  if (value == null || Number.isNaN(value)) {
-    return "--";
-  }
-  return `$${value.toFixed(2)}`;
+  return formatMoneyFromCad(value ?? null, currency);
 }
 
 export function formatDiscount(

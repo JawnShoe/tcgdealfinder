@@ -11,6 +11,7 @@ export type Deal = {
   historicSampleCount?: number | null;
   historicBaselineBucketUsed?: string | null;
   historicBaselineConfidence?: "high" | "medium" | "low" | "none";
+  confidenceWeight?: number | null;
   market: string;
   endsAt: string | null;
   thumbnailUrl: string | null;

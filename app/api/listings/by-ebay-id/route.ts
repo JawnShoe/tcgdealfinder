@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { query } from "@/lib/db";
+import { ensureListingsMarketColumn } from "@/lib/schema";
+import { DEFAULT_MARKET } from "@/lib/markets";
 
 const LISTING_ID_PATTERN = /^v1\|\d+\|0$/;
 
@@ -22,6 +24,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const hasMarketColumn = await ensureListingsMarketColumn();
+  const marketSelect = hasMarketColumn
+    ? "l.market"
+    : `'${DEFAULT_MARKET}'::text`;
+
   const row = await query<{
     id: number;
     listing_id: string;
@@ -34,8 +41,15 @@ export async function GET(request: NextRequest) {
     match_eligible: boolean;
     match_reject_reason: string | null;
     reject_source: string | null;
+    reject_detail: string | null;
     shipping_known: boolean;
     shipping_source: string | null;
+    collector_number_raw: string | null;
+    collector_number_norm: string | null;
+    collector_number_confidence: string | null;
+    collector_number_signals: string[] | null;
+    card_collector_number_norm: string | null;
+    card_collector_number_confidence: string | null;
   }>(
     `
       SELECT
@@ -45,14 +59,22 @@ export async function GET(request: NextRequest) {
         l.url,
         l.total_price_cad,
         l.shipping_cad,
-        l.market,
+        ${marketSelect} AS market,
         l.seller_username,
         l.match_eligible,
         l.match_reject_reason,
         l.reject_source,
+        l.reject_detail,
         l.shipping_known,
-        l.shipping_source
+        l.shipping_source,
+        l.collector_number_raw,
+        l.collector_number_norm,
+        l.collector_number_confidence,
+        l.collector_number_signals,
+        c.collector_number_norm AS card_collector_number_norm,
+        c.collector_number_confidence AS card_collector_number_confidence
       FROM listings l
+      LEFT JOIN cards c ON c.id = l.card_id
       WHERE l.listing_id = $1
       LIMIT 1;
     `,
@@ -81,9 +103,20 @@ export async function GET(request: NextRequest) {
       matchEligible: match.match_eligible,
       matchRejectReason: match.match_reject_reason,
       rejectSource: match.reject_source,
+      rejectDetail: match.reject_detail,
       shippingKnown: match.shipping_known,
       shippingCad: match.shipping_cad != null ? Number(match.shipping_cad) : null,
       shippingSource: match.shipping_source,
+      collectorNumber: {
+        raw: match.collector_number_raw,
+        norm: match.collector_number_norm,
+        confidence: (match.collector_number_confidence as any) ?? "NONE",
+        signals: match.collector_number_signals ?? [],
+      },
+      cardCollectorNumber: {
+        norm: match.card_collector_number_norm,
+        confidence: (match.card_collector_number_confidence as any) ?? null,
+      },
     },
   });
 }

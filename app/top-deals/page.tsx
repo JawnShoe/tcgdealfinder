@@ -3,10 +3,17 @@ import Link from "next/link";
 import { AdminDealActions } from "../../components/AdminDealActions";
 import { TrustedBadge } from "../../components/TrustedBadge";
 import { query } from "../../lib/db";
+import { formatCurrency } from "../../lib/dealFormatting";
+import { FX_RATE_COPY } from "../../lib/money";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../lib/pricing";
+import { DEFAULT_MARKET } from "../../lib/markets";
+import {
+  ensureHistoricalMarketColumn,
+  ensureListingsMarketColumn,
+} from "../../lib/schema";
 
 type TopDealRow = {
   listing_id: number;
@@ -52,13 +59,6 @@ const MIN_DISCOUNT = 15;
 const MIN_SELLER_FEEDBACK_COUNT = 20;
 const MIN_SELLER_POSITIVE_PERCENT = 98;
 
-function formatCurrency(value: number | null) {
-  if (value == null || Number.isNaN(value)) {
-    return "--";
-  }
-  return `$${value.toFixed(2)}`;
-}
-
 function formatEndsAt(value: string | null) {
   if (!value) {
     return "--";
@@ -92,6 +92,18 @@ function formatSeller(deal: TopDeal): JSX.Element {
 }
 
 async function getTopDeals(): Promise<TopDeal[]> {
+  const market = DEFAULT_MARKET;
+  const hasListingsMarketColumn = await ensureListingsMarketColumn();
+  const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
+  const marketLiteral = `'${market}'::text`;
+  const marketSelect = hasListingsMarketColumn ? "l.market" : marketLiteral;
+  const historicalJoinClause =
+    hasHistoricalMarketColumn && hasListingsMarketColumn
+      ? "AND hp.market = l.market"
+      : hasHistoricalMarketColumn
+        ? `AND hp.market = ${marketLiteral}`
+        : "";
+  const marketFilterClause = hasListingsMarketColumn ? "AND l.market = $5" : "";
   const res = await query<TopDealRow>(
     `
       SELECT
@@ -101,7 +113,7 @@ async function getTopDeals(): Promise<TopDeal[]> {
         l.total_price_cad,
         l.historic_price_cad,
         l.discount_percent,
-        l.market,
+        ${marketSelect} AS market,
         l.ends_at,
         c.id   AS card_id,
         c.name AS card_name,
@@ -114,6 +126,7 @@ async function getTopDeals(): Promise<TopDeal[]> {
       FROM listings l
       LEFT JOIN cards c ON c.id = l.card_id
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
+        ${historicalJoinClause}
       WHERE
         l.total_price_cad IS NOT NULL
         AND l.historic_price_cad IS NOT NULL
@@ -126,6 +139,7 @@ async function getTopDeals(): Promise<TopDeal[]> {
         AND l.seller_username IS NOT NULL
         AND l.shipping_known = TRUE
         AND l.match_eligible = TRUE
+        ${marketFilterClause}
         AND NOT EXISTS (
           SELECT 1
           FROM seller_blacklist sb
@@ -142,6 +156,7 @@ async function getTopDeals(): Promise<TopDeal[]> {
       MIN_SELLER_FEEDBACK_COUNT,
       MIN_SELLER_POSITIVE_PERCENT,
       LIMIT,
+      ...(hasListingsMarketColumn ? [market] : []),
     ],
   );
 
@@ -231,6 +246,9 @@ export default async function TopDealsPage({
       </div>
 
       <div className="panel overflow-x-auto">
+        <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
+          Prices shown in USD (converted from CAD). {FX_RATE_COPY}
+        </p>
         {deals.length === 0 ? (
           <div className="py-10 text-center text-sm text-slate-500">
             No high-confidence top deals found right now. Try again later.
@@ -242,8 +260,8 @@ export default async function TopDealsPage({
                 <th className="col-card text-left">Card</th>
                 <th className="col-set text-left">Set</th>
                 <th className="col-condition text-left">Condition</th>
-                <th className="col-price text-right">Total</th>
-                <th className="col-historic text-right">Historic</th>
+                <th className="col-price text-right">Total (USD)</th>
+                <th className="col-historic text-right">Historic (USD)</th>
                 <th className="col-sample text-right">Sample</th>
                 <th className="col-discount text-right">Discount %</th>
                 <th className="col-seller text-left">Seller</th>

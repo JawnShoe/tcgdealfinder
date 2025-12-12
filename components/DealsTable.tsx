@@ -15,6 +15,7 @@ import {
   type MarketFilterKey,
   matchesConditionFilter,
   matchesMarket,
+  DEFAULT_MARKET_FILTER,
 } from "../lib/filters";
 import {
   discountClass,
@@ -32,6 +33,13 @@ import {
   isDealTrusted,
   type DealConfidence,
 } from "../lib/dealScore";
+import {
+  applyConfidenceToScore,
+  getConfidenceLabel as getWeightLabel,
+  getConfidenceBadgeClass,
+  getConfidenceDisplayText,
+  CONFIDENCE_TOOLTIP,
+} from "../lib/dealConfidence";
 import { FX_RATE_COPY } from "../lib/money";
 
 const TOP_DEAL_DISCOUNT = 15;
@@ -46,6 +54,7 @@ const SORT_LABEL: Record<SortOption, string> = {
   "historic-high-low": "Historic price",
   "card-name": "Card name",
   "time-left": "Ending soon",
+  "confidence-first": "High confidence first",
 };
 
 type SortOption =
@@ -55,7 +64,8 @@ type SortOption =
   | "price-high-low"
   | "historic-high-low"
   | "card-name"
-  | "time-left";
+  | "time-left"
+  | "confidence-first";
 
 type DealViewModel = {
   deal: Deal;
@@ -64,6 +74,8 @@ type DealViewModel = {
   score: number | null;
   trustedSeller: boolean;
   confidence: DealConfidence;
+  confidenceWeight: number | null;
+  confidenceLabel: "high" | "medium" | "low";
   cardSortKey: string;
   endsAtMs: number | null;
 };
@@ -83,7 +95,7 @@ type DealsViewState = {
 const defaultState: DealsViewState = {
   sortBy: "best-discount",
   conditionKey: "all",
-  marketKey: "all",
+  marketKey: DEFAULT_MARKET_FILTER,
   topDealsOnly: false,
   minDiscountPercent: null,
   minPrice: null,
@@ -107,7 +119,10 @@ export default function DealsTable({
   adminSecret,
   initialApiMeta = null,
 }: DealsTableProps) {
-  const [viewState, setViewState] = useState<DealsViewState>(defaultState);
+  const [viewState, setViewState] = useState<DealsViewState>({
+    ...defaultState,
+    marketKey: initialApiMeta?.market ?? defaultState.marketKey,
+  });
   const serverMode = Boolean(initialApiMeta);
   const [remoteMeta, setRemoteMeta] = useState<DealsApiMeta | null>(
     initialApiMeta ?? null,
@@ -140,12 +155,16 @@ export default function DealsTable({
   }, [serverMode, initialApiMeta]);
 
   const fetchRemotePage = useCallback(
-    async (targetPage: number) => {
+    async (
+      targetPage: number,
+      overrides?: { market?: MarketFilterKey },
+    ) => {
       if (!serverMode || !remoteMeta) return;
       const params = new URLSearchParams({
         sort: remoteMeta.sort,
         page: String(Math.max(targetPage, 1)),
         pageSize: String(remoteMeta.pageSize),
+        market: overrides?.market ?? viewState.marketKey,
       });
       setRemoteLoading(true);
       setRemoteError(null);
@@ -164,6 +183,7 @@ export default function DealsTable({
           pageSize: payload.pageSize,
           totalItems: payload.totalItems,
           totalPages: payload.totalPages,
+          market: payload.market,
         });
       } catch (error) {
         setRemoteError(
@@ -173,8 +193,14 @@ export default function DealsTable({
         setRemoteLoading(false);
       }
     },
-    [serverMode, remoteMeta],
+    [serverMode, remoteMeta, viewState.marketKey],
   );
+
+  useEffect(() => {
+    if (!serverMode || !remoteMeta) return;
+    if (viewState.marketKey === remoteMeta.market) return;
+    void fetchRemotePage(1, { market: viewState.marketKey });
+  }, [serverMode, remoteMeta, viewState.marketKey, fetchRemotePage]);
 
   const baseDeals = serverMode ? remoteDeals : deals;
   const referenceTime = useMemo(() => Date.now(), [baseDeals]);
@@ -197,6 +223,9 @@ export default function DealsTable({
         },
         referenceTime,
       );
+      const confidenceWeight = deal.confidenceWeight ?? null;
+      const weightedScore = applyConfidenceToScore(score, confidenceWeight);
+      const confidenceLabel = getWeightLabel(confidenceWeight);
       const endsAtMs = deal.endsAt ? Date.parse(deal.endsAt) : null;
       const cardSortKey = buildCardSortKey(deal);
 
@@ -204,9 +233,11 @@ export default function DealsTable({
         deal,
         price,
         discount,
-        score,
+        score: weightedScore,
         trustedSeller,
         confidence,
+        confidenceWeight,
+        confidenceLabel,
         cardSortKey,
         endsAtMs: Number.isNaN(endsAtMs) ? null : endsAtMs,
       };
@@ -593,12 +624,20 @@ export default function DealsTable({
                       >
                         {formatDiscount(vm.discount)}
                       </td>
-                      <td
-                        className={`${scoreClass(
-                          vm.score,
-                        )} whitespace-nowrap px-3 py-4 align-middle text-right text-base font-semibold`}
-                      >
-                        {formatScore(vm.score)}
+                      <td className="whitespace-nowrap px-3 py-4 align-middle text-right text-base">
+                        <div className="flex flex-col items-end gap-1">
+                          <span className={`${scoreClass(vm.score)} font-semibold`}>
+                            {formatScore(vm.score)}
+                          </span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
+                              vm.confidenceLabel,
+                            )}`}
+                            title={CONFIDENCE_TOOLTIP}
+                          >
+                            {getConfidenceDisplayText(vm.confidenceLabel)}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-3 py-4 align-middle text-left text-base text-slate-600">
                         {getConfidenceLabel(vm.deal.sampleSize ?? null)}
@@ -680,9 +719,19 @@ export default function DealsTable({
                   </div>
                   <div>
                     <p className="text-slate-500">Score</p>
-                    <p className={`${scoreClass(vm.score)} text-base`}>
-                      {formatScore(vm.score)}
-                    </p>
+                    <div className="flex flex-col gap-1">
+                      <p className={`${scoreClass(vm.score)} text-base`}>
+                        {formatScore(vm.score)}
+                      </p>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
+                          vm.confidenceLabel,
+                        )}`}
+                        title={CONFIDENCE_TOOLTIP}
+                      >
+                        {getConfidenceDisplayText(vm.confidenceLabel)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -792,7 +841,14 @@ const comparators: Record<
   "best-discount": (a, b) => {
     const left = a.discount ?? Infinity;
     const right = b.discount ?? Infinity;
-    return left - right;
+    const diff = left - right;
+    if (diff !== 0) return diff;
+    const leftWeight = a.confidenceWeight ?? 0;
+    const rightWeight = b.confidenceWeight ?? 0;
+    if (rightWeight !== leftWeight) {
+      return rightWeight - leftWeight;
+    }
+    return (b.score ?? -Infinity) - (a.score ?? -Infinity);
   },
   "best-score": (a, b) => {
     const left = a.score ?? -Infinity;
@@ -819,5 +875,13 @@ const comparators: Record<
     const left = a.endsAtMs ?? Infinity;
     const right = b.endsAtMs ?? Infinity;
     return left - right;
+  },
+  "confidence-first": (a, b) => {
+    const left = a.confidenceWeight ?? 0;
+    const right = b.confidenceWeight ?? 0;
+    if (right !== left) {
+      return right - left;
+    }
+    return (b.score ?? -Infinity) - (a.score ?? -Infinity);
   },
 };

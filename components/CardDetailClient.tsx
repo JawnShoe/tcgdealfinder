@@ -20,11 +20,17 @@ import {
   formatCurrency,
   formatDiscount,
   formatEndsAt,
-  getConfidenceLabel,
+  getConfidenceLabel as getSampleConfidenceLabel,
 } from "../lib/dealFormatting";
 import { ALERT_THRESHOLD_OPTIONS } from "../lib/alertsConfig";
 import { isDealTrusted } from "../lib/dealScore";
 import { FX_RATE_COPY } from "../lib/money";
+import {
+  getConfidenceLabel as getWeightLabel,
+  getConfidenceBadgeClass,
+  getConfidenceDisplayText,
+  CONFIDENCE_TOOLTIP,
+} from "../lib/dealConfidence";
 
 const PriceHistoryChart = dynamic(() => import("./PriceHistoryChart"), {
   ssr: false,
@@ -51,6 +57,7 @@ type ListingRow = {
   sellerUsername: string | null;
   sellerFeedbackCount: number | null;
   sellerPositivePercent: number | null;
+  confidenceWeight: number | null;
 };
 
 export type CardDetailClientProps = {
@@ -185,7 +192,7 @@ export default function CardDetailClient({
       })[0];
   }, [filteredListings]);
 
-  const listingsLabel = `${filteredListings.length} listings / ${getConfidenceLabel(
+  const listingsLabel = `${filteredListings.length} listings / ${getSampleConfidenceLabel(
     selectedHistorical?.sampleSize ?? null,
   )} data`;
   const historyPointCount = priceHistory.length;
@@ -466,6 +473,7 @@ export default function CardDetailClient({
                 <th className="px-3 py-2 text-right">Total (USD)</th>
                 <th className="px-3 py-2 text-right">Historic (USD)</th>
                 <th className="px-3 py-2 text-right">Discount</th>
+                <th className="px-3 py-2 text-left">Confidence</th>
                 <th className="px-3 py-2 text-left">Seller</th>
                 <th className="px-3 py-2 text-left">Market</th>
                 <th className="px-3 py-2 text-right">Ends</th>
@@ -482,8 +490,12 @@ export default function CardDetailClient({
                   </td>
                 </tr>
               ) : (
-                filteredListings.map((listing) => (
-                  <tr key={listing.id} className="hover:bg-slate-50">
+                filteredListings.map((listing) => {
+                  const weightLabel = getWeightLabel(
+                    listing.confidenceWeight ?? null,
+                  );
+                  return (
+                    <tr key={listing.id} className="hover:bg-slate-50">
                     <td className="px-3 py-4 align-middle">
                       <div className="flex items-center gap-3">
                         {listing.thumbnailUrl ? (
@@ -527,6 +539,16 @@ export default function CardDetailClient({
                     >
                       {formatDiscount(listing.discountPercent)}
                     </td>
+                    <td className="px-3 py-4 align-middle">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
+                          weightLabel,
+                        )}`}
+                        title={CONFIDENCE_TOOLTIP}
+                      >
+                        {getConfidenceDisplayText(weightLabel)}
+                      </span>
+                    </td>
                     <td className="px-3 py-4 align-middle text-sm text-slate-700">
                       <span className="inline-flex items-center gap-1">
                         {listing.sellerUsername ?? "Unknown"}
@@ -543,7 +565,8 @@ export default function CardDetailClient({
                       {formatEndsAt(listing.endsAt)}
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

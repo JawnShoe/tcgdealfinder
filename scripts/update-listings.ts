@@ -1,3 +1,5 @@
+import { pathToFileURL } from "url";
+
 import { query } from "../lib/db";
 import {
   fetchEbayListings,
@@ -8,12 +10,28 @@ import {
   findBannedTitleKeyword,
 } from "../lib/ebay";
 import { computeDiscountPercent } from "../lib/pricing";
+import {
+  extractCollectorNumber,
+  normalizeCollectorNumber,
+  shouldRejectCollectorNumber,
+  type CollectorNumberConfidence,
+  type CollectorNumberResult,
+} from "../lib/collectorNumber";
+import {
+  DEFAULT_MARKET,
+  getExpectedCurrency,
+  type MarketCode,
+  normalizeMarketCode,
+} from "../lib/markets";
 
 type SearchConfigRow = {
   card_id: number;
   name: string;
   set_name: string;
   card_number: string;
+  collector_number_raw: string | null;
+  collector_number_norm: string | null;
+  collector_number_confidence: CollectorNumberConfidence | null;
   condition_bucket: string;
   search_query: string;
   market: string;
@@ -61,12 +79,51 @@ const ACCESSORY_CONTEXT = [
   "not included",
 ];
 
+export function detectMarketCurrencyMismatch(
+  listingCurrency: string | null | undefined,
+  market: MarketCode,
+): string | null {
+  if (!listingCurrency) return null;
+  const normalized = listingCurrency.toUpperCase();
+  const expected = getExpectedCurrency(market);
+  if (normalized === expected) {
+    return null;
+  }
+  return `market=${market} expected=${expected} price=${normalized}`;
+}
+
 type GradeInfo = {
   grader: string | null;
   gradeValue: string | null;
   bucket: string | null;
   source: "specifics" | "title" | "none";
 };
+
+export function decideCollectorNumberRejection(
+  cardCollector: CollectorNumberResult,
+  listingCollector: CollectorNumberResult,
+): {
+  matchEligible: boolean;
+  rejectReason: string | null;
+  rejectSource: string | null;
+  rejectDetail: string | null;
+} {
+  const decision = shouldRejectCollectorNumber(cardCollector, listingCollector);
+  if (decision.reject) {
+    return {
+      matchEligible: false,
+      rejectReason: "collector_number_mismatch",
+      rejectSource: "collector_number_check",
+      rejectDetail: decision.detail ?? null,
+    };
+  }
+  return {
+    matchEligible: true,
+    rejectReason: null,
+    rejectSource: null,
+    rejectDetail: null,
+  };
+}
 
 async function getBlacklistedSellers(): Promise<Set<string>> {
   const res = await query<{ seller_username: string }>(
@@ -87,6 +144,7 @@ async function getBlacklistedSellers(): Promise<Set<string>> {
 async function logRejectedListing(
   listing: NormalizedListing,
   reason: string,
+  detail?: string | null,
 ): Promise<void> {
   const sellerUsername =
     listing.sellerUsername ?? listing.seller?.toLowerCase() ?? null;
@@ -105,14 +163,14 @@ async function logRejectedListing(
       listing.listingId ?? null,
       sellerUsername,
       listing.title,
-      reason,
+      detail ? `${reason} (${detail})` : reason,
     ],
   );
 }
 
 async function upsertListing(
   cardId: number,
-  market: string,
+  market: MarketCode,
   conditionBucket: string,
   listing: NormalizedListing,
   sellerUsername: string | null,
@@ -121,6 +179,11 @@ async function upsertListing(
   matchEligible: boolean,
   rejectReason: string | null,
   rejectSource: string | null,
+  rejectDetail: string | null,
+  collectorNumberRaw: string | null,
+  collectorNumberNorm: string | null,
+  collectorNumberConfidence: CollectorNumberConfidence,
+  collectorNumberSignals: string[],
   detectedCollectorNumber: string | null,
   detectedLanguage: string,
   shippingKnown: boolean,
@@ -190,6 +253,11 @@ async function upsertListing(
       match_eligible,
       match_reject_reason,
       reject_source,
+      reject_detail,
+      collector_number_raw,
+      collector_number_norm,
+      collector_number_confidence,
+      collector_number_signals,
       detected_collector_number,
       detected_language,
       created_at,
@@ -223,8 +291,13 @@ async function upsertListing(
       $24, -- match_eligible
       $25, -- match_reject_reason
       $26, -- reject_source
-      $27, -- detected_collector_number
-      $28, -- detected_language
+      $27, -- reject_detail
+      $28, -- collector_number_raw
+      $29, -- collector_number_norm
+      $30, -- collector_number_confidence
+      $31, -- collector_number_signals
+      $32, -- detected_collector_number
+      $33, -- detected_language
       NOW(),
       NOW()
     )
@@ -254,6 +327,11 @@ async function upsertListing(
       match_eligible = EXCLUDED.match_eligible,
       match_reject_reason = EXCLUDED.match_reject_reason,
       reject_source = EXCLUDED.reject_source,
+      reject_detail = EXCLUDED.reject_detail,
+      collector_number_raw = EXCLUDED.collector_number_raw,
+      collector_number_norm = EXCLUDED.collector_number_norm,
+      collector_number_confidence = EXCLUDED.collector_number_confidence,
+      collector_number_signals = EXCLUDED.collector_number_signals,
       detected_collector_number = EXCLUDED.detected_collector_number,
       detected_language = EXCLUDED.detected_language,
       updated_at = NOW();
@@ -285,21 +363,30 @@ async function upsertListing(
       matchEligible,
       rejectReason,
       rejectSource,
+      rejectDetail,
+      collectorNumberRaw,
+      collectorNumberNorm,
+      collectorNumberConfidence,
+      collectorNumberSignals,
       detectedCollectorNumber,
       detectedLanguage,
     ],
   );
 }
 
-async function getHistoricalPrice(cardId: number): Promise<number | null> {
+async function getHistoricalPrice(
+  cardId: number,
+  market: MarketCode,
+): Promise<number | null> {
   const res = await query<{ median_price_cad: string }>(
     `
       SELECT median_price_cad
       FROM historical_prices
       WHERE card_id = $1
+        AND market = $2
       LIMIT 1;
     `,
-    [cardId],
+    [cardId, market],
   );
 
   const value = res.rows[0]?.median_price_cad;
@@ -321,6 +408,9 @@ async function main() {
       c.name,
       c.set_name,
       c.card_number,
+      c.collector_number_raw,
+      c.collector_number_norm,
+      c.collector_number_confidence,
       c.condition_bucket,
       cfg.search_query,
       cfg.market
@@ -341,7 +431,7 @@ async function main() {
     console.log(
       `Fetching listings for card: ${row.name} (${row.condition_bucket}), query="${row.search_query}"`,
     );
-    const historicPrice = await getHistoricalPrice(row.card_id);
+    const historicPrice = await getHistoricalPrice(row.card_id, market);
     if (historicPrice !== null) {
       console.log(
         `Using historic price $${historicPrice.toFixed(2)} for ${row.name} (${row.condition_bucket}).`,
@@ -351,9 +441,10 @@ async function main() {
         `No historic price available for ${row.name} (${row.condition_bucket}).`,
       );
     }
+    const market = normalizeMarketCode(row.market);
     const listings = await fetchEbayListings(
       row.search_query,
-      row.market ?? "EBAY_US",
+      market,
     );
 
     console.log(
@@ -371,23 +462,46 @@ async function main() {
         listing.sellerUsername ??
         listing.seller?.toLowerCase() ??
         null;
-      const gradeInfo = await resolveGradeInfo(listing, row.market ?? "EBAY_US");
+      const gradeInfo = await resolveGradeInfo(listing, market);
       const inferredBucket = inferConditionBucket(
         listing,
         row.condition_bucket,
         gradeInfo,
       );
       const targetCardId = await getCardIdForBucket(row, inferredBucket);
+      const cardCollector: CollectorNumberResult = {
+        raw: row.collector_number_raw ?? row.card_number ?? null,
+        norm:
+          row.collector_number_norm ??
+          normalizeCollectorNumber(row.card_number ?? null),
+        confidence:
+          row.collector_number_confidence ??
+          (row.card_number ? "HIGH" : "NONE"),
+        signals: row.collector_number_norm ? ["catalog"] : [],
+      };
+
       const bannedKeyword = findBannedTitleKeyword(listing.title ?? "");
-      const detectedCollectorNumberRaw = extractCollectorNumber(
-        listing.title ?? "",
-      );
-      const detectedCollectorNumber = normalizeCollectorNumberValue(
-        detectedCollectorNumberRaw,
-      );
-      const targetCollectorNumber = normalizeCollectorNumberValue(
-        row.card_number ?? null,
-      );
+      let listingCollector = extractCollectorNumber({
+        title: listing.title ?? "",
+        aspects: listing.localizedAspects ?? [],
+      });
+      if (
+        listingCollector.confidence === "NONE" ||
+        listingCollector.confidence === "LOW"
+      ) {
+        const detail = await getListingDetail(listing.listingId, market);
+        const mergedAspects = [
+          ...(listing.localizedAspects ?? []),
+          ...(detail?.localizedAspects ?? []),
+        ];
+        if (mergedAspects.length > (listing.localizedAspects?.length ?? 0)) {
+          listingCollector = extractCollectorNumber({
+            title: listing.title ?? "",
+            aspects: mergedAspects,
+          });
+        }
+      }
+      const detectedCollectorNumber = listingCollector.norm;
       const detectedLanguage = detectListingLanguage(listing.title ?? "");
       const shippingKnownFlag =
         listing.shippingKnown ?? (listing.shippingCad != null);
@@ -396,6 +510,7 @@ async function main() {
       let matchEligible = true;
       let rejectReason: string | null = null;
       let rejectSource: string | null = null;
+      let rejectDetail: string | null = null;
 
       if (bannedKeyword) {
         matchEligible = false;
@@ -413,18 +528,34 @@ async function main() {
         }
       }
 
+      if (matchEligible) {
+        const currencyDetail = detectMarketCurrencyMismatch(
+          listing.priceCurrency ?? null,
+          market,
+        );
+        if (currencyDetail) {
+          matchEligible = false;
+          rejectReason = "market_currency_mismatch";
+          rejectSource = "currency_guard";
+          rejectDetail = currencyDetail;
+        }
+      }
+
       if (matchEligible && detectedLanguage === "jp") {
         matchEligible = false;
         rejectReason = "language_mismatch";
         rejectSource = "language_filter";
-      } else if (matchEligible &&
-        targetCollectorNumber &&
-        detectedCollectorNumber &&
-        targetCollectorNumber !== detectedCollectorNumber
-      ) {
-        matchEligible = false;
-        rejectReason = "collector_number_mismatch";
-        rejectSource = "collector_number";
+      } else if (matchEligible) {
+        const cnOutcome = decideCollectorNumberRejection(
+          cardCollector,
+          listingCollector,
+        );
+        if (!cnOutcome.matchEligible) {
+          matchEligible = false;
+          rejectReason = cnOutcome.rejectReason;
+          rejectSource = cnOutcome.rejectSource;
+          rejectDetail = cnOutcome.rejectDetail;
+        }
       } else if (sellerUsername && blacklistedSellers.has(sellerUsername)) {
         matchEligible = false;
         rejectReason = "seller_blacklisted";
@@ -450,6 +581,11 @@ async function main() {
           matchEligible,
           rejectReason,
           rejectSource,
+          rejectDetail,
+          listingCollector.raw,
+          listingCollector.norm,
+          listingCollector.confidence,
+          listingCollector.signals,
           detectedCollectorNumber,
           detectedLanguage,
           shippingKnownFlag,
@@ -470,6 +606,7 @@ async function main() {
         await logRejectedListing(
           listing,
           rejectReason ?? "match_rejected_unknown",
+          rejectDetail,
         );
         if (
           sellerUsername &&
@@ -519,9 +656,22 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error("Error running listings update:", err);
-});
+const isCliExecution = (() => {
+  if (typeof process === "undefined" || !process.argv?.[1]) {
+    return false;
+  }
+  try {
+    return import.meta.url === pathToFileURL(process.argv[1]).href;
+  } catch {
+    return false;
+  }
+})();
+
+if (isCliExecution) {
+  main().catch((err) => {
+    console.error("Error running listings update:", err);
+  });
+}
 
 function inferConditionBucket(
   listing: NormalizedListing,
@@ -719,34 +869,6 @@ function detectAccessoryPhrase(title: string | null | undefined): string | null 
     }
   }
   return null;
-}
-
-function extractCollectorNumber(rawTitle: string): string | null {
-  if (!rawTitle) return null;
-  const normalized = rawTitle.toUpperCase().replace(/[#]/g, " ");
-  const pattern = /([A-Z]{0,3}\d{1,3})\s*\/\s*([A-Z]{0,3}\d{1,3})/g;
-  let match: RegExpExecArray | null;
-  // eslint-disable-next-line no-cond-assign
-  while ((match = pattern.exec(normalized))) {
-    const left = match[1]?.replace(/\s+/g, "") ?? "";
-    const right = match[2]?.replace(/\s+/g, "") ?? "";
-    if (!/\d/.test(left) || !/\d/.test(right)) {
-      continue;
-    }
-    return `${left}/${right}`;
-  }
-  return null;
-}
-
-function normalizeCollectorNumberValue(
-  input: string | null | undefined,
-): string | null {
-  if (!input) return null;
-  const cleaned = input
-    .toUpperCase()
-    .replace(/[^A-Z0-9/]/g, "")
-    .replace(/\/+/g, "/");
-  return cleaned || null;
 }
 
 type ListingLanguage = "en" | "jp" | "unknown";

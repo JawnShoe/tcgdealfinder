@@ -2,6 +2,7 @@ import "dotenv/config";
 import { query } from "../lib/db.ts";
 import { fetchEbaySoldListings, isValidListingTitle } from "../lib/ebay.ts";
 import type { SoldListing } from "../lib/ebay.ts";
+import { normalizeMarketCode, type MarketCode } from "../lib/markets";
 
 type CardConfigRow = {
   card_id: number;
@@ -30,22 +31,25 @@ async function fetchCardConfigs(): Promise<CardConfigRow[]> {
 async function insertSoldListing(
   cardId: number,
   condition: string,
+  market: MarketCode,
   item: SoldListing,
 ): Promise<void> {
   await query(
     `
       INSERT INTO ebay_sold_listings (
         card_id,
+        market,
         condition,
         title,
         price,
         sold_at,
         raw
       )
-      VALUES ($1, $2, $3, $4, $5, $6);
+      VALUES ($1, $2, $3, $4, $5, $6, $7);
     `,
     [
       cardId,
+      market,
       condition,
       item.title,
       item.priceCad,
@@ -67,9 +71,10 @@ async function main() {
     console.log(
       `Fetching sold listings for card ${config.card_id} (${config.condition_bucket})...`,
     );
+    const market = normalizeMarketCode(config.market);
     const soldItems = await fetchEbaySoldListings(
       config.search_query,
-      config.market ?? "EBAY_US",
+      market,
     );
 
     let insertedForCard = 0;
@@ -82,7 +87,7 @@ async function main() {
       }
 
       try {
-        await insertSoldListing(config.card_id, config.condition_bucket, item);
+        await insertSoldListing(config.card_id, config.condition_bucket, market, item);
         insertedForCard += 1;
       } catch (err) {
         console.error(

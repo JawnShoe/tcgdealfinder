@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { Deal } from "@/types/deal";
+import { FX_RATE_COPY } from "@/lib/money";
 import {
   formatCurrency,
   formatDiscount,
@@ -36,6 +37,9 @@ export default function FeaturedDealsStrip({
         <p className="text-sm text-slate-600">
           Highest-discount listings across every market. Refreshed whenever new
           deals arrive.
+        </p>
+        <p className="text-xs uppercase tracking-wide text-slate-500">
+          Prices shown in USD (converted from CAD). {FX_RATE_COPY}
         </p>
       </div>
 

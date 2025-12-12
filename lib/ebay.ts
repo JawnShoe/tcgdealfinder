@@ -1,3 +1,5 @@
+import type { MarketCode } from "./markets";
+
 ﻿// lib/ebay.ts
 //
 // eBay integration using the modern Buy/Browse API.
@@ -13,8 +15,11 @@ export type NormalizedListing = {
   title: string;
   url: string;
   imageUrl?: string;
+  localizedAspects?: Array<{ name?: string; value?: string }>;
   priceCad: number;
+  priceCurrency?: string | null;
   shippingCad: number | null;
+  shippingCurrency?: string | null;
   totalPriceCad: number | null;
   shippingKnown?: boolean;
   shippingSource?: string | null;
@@ -23,7 +28,7 @@ export type NormalizedListing = {
   sellerPositivePercent?: number | null;
   sellerUsername?: string | null;
   conditionRaw?: string | null;
-  market: string; // e.g. "EBAY_US"
+  market: MarketCode; // e.g. "EBAY_US"
   endsAt?: string | null;
 };
 
@@ -464,6 +469,7 @@ export async function fetchEbayListings(
       title?: string;
       itemWebUrl?: string;
       image?: { imageUrl?: string };
+      localizedAspects?: Array<{ name?: string; value?: string }>;
       price?: { value?: string; currency?: string };
       shippingOptions?: Array<{
         shippingCost?: { value?: string; currency?: string };
@@ -491,13 +497,19 @@ export async function fetchEbayListings(
     const listingId = item.itemId;
     const title = item.title;
     const urlStr = item.itemWebUrl;
+    const localizedAspects = item.localizedAspects ?? [];
 
     if (!listingId || !title || !urlStr) {
       continue;
     }
 
+    const priceCurrency = item.price?.currency
+      ? String(item.price.currency).toUpperCase()
+      : null;
     const priceValue = item.price?.value ? Number(item.price.value) : NaN;
     const shipValueRaw = item.shippingOptions?.[0]?.shippingCost?.value;
+    const shippingCurrencyRaw =
+      item.shippingOptions?.[0]?.shippingCost?.currency;
     let shippingKnown = true;
     let shippingCad: number | null = null;
     let shippingSource: string | null = null;
@@ -569,15 +581,20 @@ export async function fetchEbayListings(
       title: String(title),
       url: String(urlStr),
       imageUrl: item.image?.imageUrl,
+      localizedAspects,
       priceCad: priceValue,
+      priceCurrency,
       shippingCad,
+      shippingCurrency: shippingCurrencyRaw
+        ? String(shippingCurrencyRaw).toUpperCase()
+        : null,
       totalPriceCad: total,
       shippingKnown,
       shippingSource,
       seller: item.seller?.username,
       sellerFeedbackCount,
       sellerPositivePercent,
-       sellerUsername,
+      sellerUsername,
       conditionRaw: normalizedCondition,
       market,
       endsAt: item.itemEndDate ?? null,

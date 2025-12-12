@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { query } from "../../../lib/db";
+import { ensureHistoricalMarketColumn } from "../../../lib/schema";
+import { DEFAULT_MARKET } from "../../../lib/markets";
 
 type WatchlistCardRow = {
   id: number;
@@ -28,6 +30,10 @@ export async function GET(req: NextRequest) {
   }
 
   const uniqueIds = Array.from(new Set(ids)).slice(0, 50);
+  const hasHistoricalMarket = await ensureHistoricalMarketColumn();
+  const joinClause = hasHistoricalMarket
+    ? `LEFT JOIN historical_prices hp ON hp.card_id = c.id AND hp.market = '${DEFAULT_MARKET}'`
+    : "LEFT JOIN historical_prices hp ON hp.card_id = c.id";
 
   const res = await query<WatchlistCardRow>(
     `
@@ -40,7 +46,7 @@ export async function GET(req: NextRequest) {
         hp.median_price_cad,
         hp.sample_size
       FROM cards c
-      LEFT JOIN historical_prices hp ON hp.card_id = c.id
+      ${joinClause}
       WHERE c.id = ANY($1)
     `,
     [uniqueIds],

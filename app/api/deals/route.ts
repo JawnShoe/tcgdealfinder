@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runDealsQuery } from "./dealsQuery";
 import type { DealsApiSort } from "@/types/dealsApi";
+import { normalizeMarketCode } from "@/lib/markets";
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
@@ -13,11 +14,14 @@ export async function GET(req: NextRequest) {
         : "best";
   const pageParam = Number(searchParams.get("page"));
   const pageSizeParam = Number(searchParams.get("pageSize"));
+  const marketParam = searchParams.get("market");
+  const market = normalizeMarketCode(marketParam);
 
   const response = await runDealsQuery({
     sort,
     page: Number.isFinite(pageParam) ? pageParam : undefined,
     pageSize: Number.isFinite(pageSizeParam) ? pageSizeParam : undefined,
+    market,
   });
 
   return NextResponse.json(response);

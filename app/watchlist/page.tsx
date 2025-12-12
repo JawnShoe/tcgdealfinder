@@ -8,6 +8,8 @@ import {
   getWatchlistIds,
   removeFromWatchlist,
 } from "../../lib/watchlistStorage";
+import { formatCurrency } from "@/lib/dealFormatting";
+import { FX_RATE_COPY } from "@/lib/money";
 
 type WatchlistCard = {
   id: number;
@@ -87,6 +89,9 @@ export default function WatchlistPage() {
         <p className="text-base text-slate-600">
           Save cards to track their estimated value and active deals.
         </p>
+        <p className="text-xs uppercase tracking-wide text-slate-500">
+          Prices shown in USD (converted from CAD). {FX_RATE_COPY}
+        </p>
       </div>
 
       {loading ? (
@@ -156,11 +161,4 @@ export default function WatchlistPage() {
       )}
     </main>
   );
-}
-
-function formatCurrency(value: number | null): string {
-  if (value == null || Number.isNaN(value)) {
-    return "--";
-  }
-  return `$${value.toFixed(2)}`;
 }

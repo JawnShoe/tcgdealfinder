@@ -1,7 +1,7 @@
 
 import { DEFAULT_DEALS_VIEW_STATE, type DealsViewState } from "./dealsState";
 
-const STORAGE_KEY = "tcg_deals_view_state_v1";
+const STORAGE_KEY = "tcg_deals_view_state_v2";
 
 export function loadDealsViewState(): Partial<DealsViewState> | null {
   if (typeof window === "undefined") {
@@ -51,7 +51,10 @@ function sanitizePartial(
     partial.setFilter = data.setFilter;
   }
   if (typeof data.marketKey === "string") {
-    partial.marketKey = data.marketKey;
+    const upper = data.marketKey.toUpperCase();
+    if (upper === "EBAY_US" || upper === "EBAY_CA") {
+      partial.marketKey = upper;
+    }
   }
   if (typeof data.minDiscountPercent === "number") {
     partial.minDiscountPercent = data.minDiscountPercent;

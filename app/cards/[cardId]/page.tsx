@@ -4,6 +4,14 @@ import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../../lib/pricing";
+import { computeDealConfidenceWeight } from "../../../lib/dealConfidence";
+import {
+  ensureDealConfidenceColumn,
+  ensureCardLanguageColumn,
+  ensureHistoricalMarketColumn,
+  ensureListingsMarketColumn,
+} from "../../../lib/schema";
+import { DEFAULT_MARKET, type MarketCode } from "../../../lib/markets";
 
 type CardRecord = {
   id: number;
@@ -12,6 +20,7 @@ type CardRecord = {
   card_number: string | null;
   rarity: string | null;
   condition_bucket: string;
+  language: string | null;
 };
 
 type HistoricalDbRow = {
@@ -36,6 +45,7 @@ type ListingDbRow = {
   seller_feedback_count: number | null;
   seller_positive_percent: string | null;
   seller_username: string | null;
+  deal_confidence_weight: string | null;
 };
 
 type CardDetail = {
@@ -58,7 +68,7 @@ type CardDetail = {
     title: string;
     url: string;
     totalPriceCad: number | null;
-    medianPriceCad: number | null;
+    historicPriceCad: number | null;
     discountPercent: number | null;
     sampleSize: number | null;
     market: string;
@@ -70,7 +80,19 @@ type CardDetail = {
   }>;
 };
 
-async function getCard(cardId: number): Promise<CardRecord | null> {
+function isGradedBucket(bucket: string | null): boolean {
+  if (!bucket) return false;
+  return (
+    bucket.startsWith("psa_") ||
+    bucket.startsWith("bgs_") ||
+    bucket.startsWith("cgc_")
+  );
+}
+
+async function getCard(
+  cardId: number,
+  hasLanguageColumn: boolean,
+): Promise<CardRecord | null> {
   const res = await query<CardRecord>(
     `
       SELECT
@@ -78,6 +100,7 @@ async function getCard(cardId: number): Promise<CardRecord | null> {
         name,
         set_name,
         card_number,
+        ${hasLanguageColumn ? "language" : "NULL::text AS language"},
         condition_bucket,
         NULL::text AS rarity
       FROM cards
@@ -88,7 +111,10 @@ async function getCard(cardId: number): Promise<CardRecord | null> {
   return res.rows[0] ?? null;
 }
 
-async function getRelatedCards(card: CardRecord): Promise<CardRecord[]> {
+async function getRelatedCards(
+  card: CardRecord,
+  hasLanguageColumn: boolean,
+): Promise<CardRecord[]> {
   const res = await query<CardRecord>(
     `
       SELECT
@@ -96,6 +122,7 @@ async function getRelatedCards(card: CardRecord): Promise<CardRecord[]> {
         name,
         set_name,
         card_number,
+        ${hasLanguageColumn ? "language" : "NULL::text AS language"},
         condition_bucket,
         NULL::text AS rarity
       FROM cards
@@ -129,8 +156,28 @@ async function getHistoricals(cardIds: number[]): Promise<HistoricalDbRow[]> {
   return res.rows;
 }
 
-async function getListings(cardIds: number[]): Promise<ListingDbRow[]> {
+async function getListings(
+  cardIds: number[],
+  market: MarketCode,
+  hasListingsMarketColumn: boolean,
+  hasHistoricalMarketColumn: boolean,
+): Promise<ListingDbRow[]> {
   if (cardIds.length === 0) return [];
+  const hasConfidenceColumn = await ensureDealConfidenceColumn();
+  const params: unknown[] = [cardIds];
+  let marketFilterClause = "";
+  if (hasListingsMarketColumn) {
+    params.push(market);
+    marketFilterClause = "AND l.market = $2";
+  }
+  const marketLiteral = `'${market}'::text`;
+  const marketSelect = hasListingsMarketColumn ? "l.market" : marketLiteral;
+  const historicalJoinClause =
+    hasHistoricalMarketColumn && hasListingsMarketColumn
+      ? "AND hp.market = l.market"
+      : hasHistoricalMarketColumn
+        ? `AND hp.market = ${marketLiteral}`
+        : "";
 
   const res = await query<ListingDbRow>(
     `
@@ -141,7 +188,7 @@ async function getListings(cardIds: number[]): Promise<ListingDbRow[]> {
         l.price_cad,
         l.shipping_cad,
         l.total_price_cad,
-        l.market,
+        ${marketSelect} AS market,
         l.ends_at,
         l.thumbnail_url,
         c.condition_bucket AS condition,
@@ -149,11 +196,18 @@ async function getListings(cardIds: number[]): Promise<ListingDbRow[]> {
         hp.sample_size,
         l.seller_feedback_count,
         l.seller_positive_percent,
-        l.seller_username
+        l.seller_username,
+        ${
+          hasConfidenceColumn
+            ? "l.deal_confidence_weight"
+            : "NULL::numeric"
+        } AS deal_confidence_weight
       FROM listings l
       JOIN cards c ON c.id = l.card_id
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
+        ${historicalJoinClause}
       WHERE l.card_id = ANY($1)
+        ${marketFilterClause}
         AND l.seller_username IS NOT NULL
         AND l.match_eligible = TRUE
         AND l.shipping_known = TRUE
@@ -164,21 +218,33 @@ async function getListings(cardIds: number[]): Promise<ListingDbRow[]> {
         )
       ORDER BY l.discount_percent ASC NULLS LAST, l.total_price_cad ASC NULLS LAST
     `,
-    [cardIds],
+    params,
   );
 
   return res.rows;
 }
 
 async function getCardDetail(cardId: number): Promise<CardDetail | null> {
-  const cardRecord = await getCard(cardId);
+  const hasLanguageColumn = await ensureCardLanguageColumn();
+  const hasListingsMarketColumn = await ensureListingsMarketColumn();
+  const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
+  const market: MarketCode = DEFAULT_MARKET;
+  const cardRecord = await getCard(cardId, hasLanguageColumn);
   if (!cardRecord) return null;
 
-  const relatedCards = await getRelatedCards(cardRecord);
+  const relatedCards = await getRelatedCards(
+    cardRecord,
+    hasLanguageColumn,
+  );
   const cardIds = relatedCards.map((c) => c.id);
 
   const historicalRows = await getHistoricals(cardIds);
-  const listingsRows = await getListings(cardIds);
+  const listingsRows = await getListings(
+    cardIds,
+    market,
+    hasListingsMarketColumn,
+    hasHistoricalMarketColumn,
+  );
 
   const historicals = historicalRows.map((row) => ({
     condition: row.condition,
@@ -188,9 +254,13 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
   }));
 
   const listings = listingsRows.map((row) => {
+    const shippingCad =
+      row.shipping_cad !== null && row.shipping_cad !== undefined
+        ? Number(row.shipping_cad)
+        : null;
     const fallbackPrice =
-      row.price_cad !== null || row.shipping_cad !== null
-        ? Number(row.price_cad ?? 0) + Number(row.shipping_cad ?? 0)
+      row.price_cad !== null || shippingCad !== null
+        ? Number(row.price_cad ?? 0) + Number(shippingCad ?? 0)
         : null;
 
     const totalPriceCad =
@@ -198,9 +268,18 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
         ? Number(row.total_price_cad)
         : fallbackPrice;
 
+    const sampleSize =
+      row.sample_size !== null && row.sample_size !== undefined
+        ? Number(row.sample_size)
+        : null;
+    const conditionBucket = row.condition;
+    const hasBaseline =
+      row.median_price_cad !== null &&
+      (!isGradedBucket(conditionBucket) || (sampleSize ?? 0) >= 5);
     const medianPriceCad =
-      row.median_price_cad !== null ? Number(row.median_price_cad) : null;
-    const sampleSize = row.sample_size ?? null;
+      hasBaseline && row.median_price_cad !== null
+        ? Number(row.median_price_cad)
+        : null;
 
     const sellerFeedbackCount =
       row.seller_feedback_count != null
@@ -210,20 +289,31 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       row.seller_positive_percent != null
         ? Number(row.seller_positive_percent)
         : null;
+    const storedWeight =
+      row.deal_confidence_weight != null
+        ? Number(row.deal_confidence_weight)
+        : null;
+    const confidenceWeight =
+      storedWeight ??
+      computeDealConfidenceWeight({
+        sampleCount: sampleSize,
+        medianPrice: medianPriceCad,
+        stdDev: null,
+        shippingPrice: shippingCad,
+      });
 
-    const rawDiscount = computeDiscountPercent(
-      totalPriceCad,
-      medianPriceCad,
-    );
+    const rawDiscount =
+      hasBaseline && medianPriceCad != null
+        ? computeDiscountPercent(totalPriceCad, medianPriceCad)
+        : null;
 
-    const discountPercent =
-      sampleSize !== null && sampleSize < 5
-        ? null
-        : getDisplayDiscountPercent({
-            discount_percent: rawDiscount,
-            seller_feedback_count: sellerFeedbackCount,
-            seller_positive_percent: sellerPositivePercent,
-          });
+    const discountPercent = hasBaseline
+      ? getDisplayDiscountPercent({
+          discount_percent: rawDiscount,
+          seller_feedback_count: sellerFeedbackCount,
+          seller_positive_percent: sellerPositivePercent,
+        })
+      : null;
 
     return {
       id: row.id,
@@ -231,7 +321,7 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       title: row.title,
       url: row.url,
       totalPriceCad,
-      medianPriceCad,
+      historicPriceCad: medianPriceCad,
       discountPercent,
       sampleSize,
       market: row.market,
@@ -240,6 +330,7 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       sellerUsername: row.seller_username ?? null,
       sellerFeedbackCount,
       sellerPositivePercent,
+      confidenceWeight,
     };
   });
 

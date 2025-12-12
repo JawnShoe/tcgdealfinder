@@ -4,10 +4,15 @@ import FeaturedDealsStrip from "@/components/FeaturedDealsStrip";
 import ListingLookup from "@/components/ListingLookup";
 import { query } from "@/lib/db";
 import { runDealsQuery } from "./api/deals/dealsQuery";
-import type { Deal } from "@/types/deal";
+import type { DealsApiResponse } from "@/types/dealsApi";
+import { DEFAULT_MARKET } from "@/lib/markets";
+import { ensureListingsMarketColumn } from "@/lib/schema";
 
-async function getHomePageDeals(): Promise<Deal[]> {
+async function getHomePageDeals(): Promise<DealsApiResponse> {
   const PAGE_SIZE = 50;
+  const market = DEFAULT_MARKET;
+  const hasMarketColumn = await ensureListingsMarketColumn();
+  const marketClause = hasMarketColumn ? "AND l.market = $1" : "";
 
   const statsRes = await query<{
     total: string;
@@ -24,12 +29,14 @@ async function getHomePageDeals(): Promise<Deal[]> {
         l.total_price_cad IS NOT NULL
         AND l.historic_price_cad IS NOT NULL
         AND l.seller_username IS NOT NULL
+        ${marketClause}
         AND NOT EXISTS (
           SELECT 1
           FROM seller_blacklist sb
           WHERE sb.seller_username = l.seller_username
         );
     `,
+    hasMarketColumn ? [market] : [],
   );
   const totalCandidates = Number(statsRes.rows[0]?.total ?? 0);
   const excludedByMatch = Number(statsRes.rows[0]?.excluded ?? 0);
@@ -40,18 +47,18 @@ async function getHomePageDeals(): Promise<Deal[]> {
     `[home] deals query: total_candidates=${totalCandidates}, excluded_by_match=${excludedByMatch}, shipping_unknown=${excludedByShipping}`,
   );
 
-  const response = await runDealsQuery({
+  return runDealsQuery({
     sort: "best",
     page: 1,
     pageSize: PAGE_SIZE,
+    market,
   });
-
-  return response.items;
 }
 
 export default async function HomePage() {
   console.log("USING APP ROUTER: /");
-  const deals = await getHomePageDeals();
+  const initial = await getHomePageDeals();
+  const deals = initial.items;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -115,7 +122,7 @@ export default async function HomePage() {
             <p className="mb-4 text-sm text-slate-600">
               Filter by condition, region, discount, or price to focus on the safest listings for your collecting goals.
             </p>
-            <DealsTable deals={deals} />
+            <DealsTable deals={deals} initialApiMeta={initial} />
           </div>
         </section>
       </div>

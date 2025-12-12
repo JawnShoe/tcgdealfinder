@@ -5,10 +5,17 @@ import Link from "next/link";
 import { AdminDealActions } from "../../components/AdminDealActions";
 import { TrustedBadge } from "../../components/TrustedBadge";
 import { query } from "../../lib/db";
+import { formatCurrency } from "../../lib/dealFormatting";
+import { FX_RATE_COPY } from "../../lib/money";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../lib/pricing";
+import { DEFAULT_MARKET } from "../../lib/markets";
+import {
+  ensureHistoricalMarketColumn,
+  ensureListingsMarketColumn,
+} from "../../lib/schema";
 
 type EndingSoonRow = {
   listing_id: number;
@@ -50,13 +57,6 @@ const MIN_SAMPLE_SIZE = 20;
 const TRUSTED_FEEDBACK = 20;
 const TRUSTED_POSITIVE_PERCENT = 98;
 
-function formatCurrency(value: number | null) {
-  if (value == null || Number.isNaN(value)) {
-    return "--";
-  }
-  return `$${value.toFixed(2)}`;
-}
-
 function formatDate(value: Date | null): string {
   if (!value || Number.isNaN(value.getTime())) {
     return "--";
@@ -95,6 +95,18 @@ function formatSeller(deal: EndingSoonDeal): JSX.Element {
 }
 
 async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
+  const market = DEFAULT_MARKET;
+  const hasListingsMarketColumn = await ensureListingsMarketColumn();
+  const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
+  const marketLiteral = `'${market}'::text`;
+  const marketSelect = hasListingsMarketColumn ? "l.market" : marketLiteral;
+  const historicalJoinClause =
+    hasHistoricalMarketColumn && hasListingsMarketColumn
+      ? "AND hp.market = l.market"
+      : hasHistoricalMarketColumn
+        ? `AND hp.market = ${marketLiteral}`
+        : "";
+  const marketFilterClause = hasListingsMarketColumn ? "AND l.market = $4" : "";
   const res = await query<EndingSoonRow>(
     `
       SELECT
@@ -109,13 +121,14 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
         l.discount_percent,
         l.seller_feedback_count,
         l.seller_positive_percent,
-        l.market,
+        ${marketSelect} AS market,
         l.ends_at,
         l.url AS listing_url,
         l.seller_username
       FROM listings l
       LEFT JOIN cards c ON c.id = l.card_id
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
+        ${historicalJoinClause}
       WHERE
         l.total_price_cad IS NOT NULL
         AND l.historic_price_cad IS NOT NULL
@@ -130,6 +143,7 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
         AND l.ends_at BETWEEN NOW() AND NOW() + INTERVAL '24 hours'
         AND l.shipping_known = TRUE
         AND l.match_eligible = TRUE
+        ${marketFilterClause}
         AND NOT EXISTS (
           SELECT 1
           FROM seller_blacklist sb
@@ -140,7 +154,12 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
         l.discount_percent ASC NULLS LAST
       LIMIT 100;
     `,
-    [MIN_SAMPLE_SIZE, TRUSTED_FEEDBACK, TRUSTED_POSITIVE_PERCENT],
+    [
+      MIN_SAMPLE_SIZE,
+      TRUSTED_FEEDBACK,
+      TRUSTED_POSITIVE_PERCENT,
+      ...(hasListingsMarketColumn ? [market] : []),
+    ],
   );
 
   return res.rows.map((row) => {
@@ -224,6 +243,9 @@ export default async function EndingSoonPage({
       </div>
 
       <div className="panel overflow-x-auto">
+        <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
+          Prices shown in USD (converted from CAD). {FX_RATE_COPY}
+        </p>
         {deals.length === 0 ? (
           <p className="py-10 text-center text-sm text-slate-500">
             No trusted discounted listings ending in the next 24 hours.
@@ -236,8 +258,8 @@ export default async function EndingSoonPage({
                 <th className="col-card text-left">Card</th>
                 <th className="col-set text-left">Set</th>
                 <th className="col-condition text-left">Condition</th>
-                <th className="col-price text-right">Total</th>
-                <th className="col-historic text-right">Historic</th>
+                <th className="col-price text-right">Total (USD)</th>
+                <th className="col-historic text-right">Historic (USD)</th>
                 <th className="col-sample text-right">Sample</th>
                 <th className="col-discount text-right">Discount %</th>
                 <th className="col-seller text-left">Seller</th>

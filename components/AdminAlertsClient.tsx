@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
+import { formatCurrency } from "@/lib/dealFormatting";
+
 const DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
   year: "numeric",
   month: "2-digit",
@@ -58,14 +60,9 @@ function formatDate(value: string | null) {
   return DATE_FORMATTER.format(date);
 }
 
-function formatCurrency(value: number | null) {
-  if (value == null || Number.isNaN(value)) return "—";
-  return `$${value.toFixed(2)}`;
-}
-
 function describeRule(watch: WatchRow) {
   if (watch.thresholdType === "price_below") {
-    return `Price below $${watch.thresholdValue.toFixed(2)}`;
+    return `Price below ${formatCurrency(watch.thresholdValue)}`;
   }
   if (watch.thresholdType === "discount_at_least") {
     return `Discount ≥ ${watch.thresholdValue.toFixed(1)}% off`;
@@ -328,8 +325,8 @@ export function AdminAlertsClient({
                 <th className="border px-2 py-1">Watch</th>
                 <th className="border px-2 py-1">Card</th>
                 <th className="border px-2 py-1">Condition</th>
-                <th className="border px-2 py-1">Total</th>
-                <th className="border px-2 py-1">Median</th>
+                <th className="border px-2 py-1">Total (USD)</th>
+                <th className="border px-2 py-1">Median (USD)</th>
                 <th className="border px-2 py-1">Discount %</th>
               </tr>
             </thead>

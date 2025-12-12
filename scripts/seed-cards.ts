@@ -1,4 +1,5 @@
 import { query } from "../lib/db";
+import { SUPPORTED_MARKETS } from "../lib/markets";
 
 type CardSeed = {
   name: string;
@@ -9,14 +10,13 @@ type CardSeed = {
   market: string;
 };
 
-const seeds: CardSeed[] = [
+const baseSeeds: Omit<CardSeed, "market">[] = [
   {
     name: "Umbreon VMAX Alt Art",
     setName: "Evolving Skies",
     cardNumber: "215/203",
     conditionBucket: "raw_nm",
     searchQuery: "Pokemon Umbreon VMAX 215/203 -proxy -lot -bundle",
-    market: "EBAY_US",
   },
   {
     name: "Umbreon VMAX Alt Art",
@@ -51,6 +51,13 @@ const seeds: CardSeed[] = [
     market: "EBAY_US",
   },
 ];
+
+const seeds: CardSeed[] = baseSeeds.flatMap((seed) =>
+  SUPPORTED_MARKETS.map((market) => ({
+    ...seed,
+    market,
+  })),
+);
 
 async function upsertCard(seed: CardSeed) {
   const insertResult = await query<{ id: number }>(

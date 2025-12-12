@@ -1,3 +1,10 @@
+import {
+  DEFAULT_MARKET,
+  type MarketCode,
+  getMarketLabel,
+  SUPPORTED_MARKETS,
+} from "./markets";
+
 export type ConditionFilterKey =
   | "all"
   | "raw_nm"
@@ -122,18 +129,20 @@ export function resolvePreferredCondition(
   return availableConditions[0] ?? null;
 }
 
-export type MarketFilterKey = "all" | "EBAY_US";
+export type MarketFilterKey = MarketCode;
 
-export const MARKET_FILTERS: { key: MarketFilterKey; label: string }[] = [
-  { key: "all", label: "All markets" },
-  { key: "EBAY_US", label: "US only (EBAY_US)" },
-];
+export const MARKET_FILTERS: { key: MarketFilterKey; label: string }[] =
+  SUPPORTED_MARKETS.map((code) => ({
+    key: code,
+    label: getMarketLabel(code),
+  }));
+
+export const DEFAULT_MARKET_FILTER: MarketFilterKey = DEFAULT_MARKET;
 
 export function matchesMarket(
   market: string | null | undefined,
   filter: MarketFilterKey,
 ): boolean {
-  if (filter === "all") return true;
   if (!market) return false;
   return market.toUpperCase() === filter;
 }

@@ -1,10 +1,12 @@
+import type { MarketFilterKey } from "./filters";
+import { DEFAULT_MARKET_FILTER } from "./filters";
 
 export type DealsViewState = {
   sortBy: string;
   topDealsOnly: boolean;
   conditionKey: string;
   setFilter: string;
-  marketKey: string;
+  marketKey: MarketFilterKey;
   minDiscountPercent: number | null;
   minPrice: number | null;
   maxPrice: number | null;
@@ -16,7 +18,7 @@ export const DEFAULT_DEALS_VIEW_STATE: DealsViewState = {
   topDealsOnly: false,
   conditionKey: "all",
   setFilter: "all",
-  marketKey: "all",
+  marketKey: DEFAULT_MARKET_FILTER,
   minDiscountPercent: null,
   minPrice: null,
   maxPrice: null,
@@ -59,8 +61,8 @@ export function parseDealsViewStateFromSearchParams(
     next.setFilter = set;
   }
 
-  const market = params.get("mkt");
-  if (market) {
+  const market = params.get("mkt")?.toUpperCase();
+  if (market === "EBAY_US" || market === "EBAY_CA") {
     next.marketKey = market;
   }
 

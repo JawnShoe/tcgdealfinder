@@ -4,14 +4,27 @@ import { notFound } from "next/navigation";
 import DealsTable from "../../../components/DealsTable";
 import type { Deal } from "../../../types/deal";
 import { query } from "../../../lib/db";
+import { formatCurrency } from "../../../lib/dealFormatting";
+import { FX_RATE_COPY } from "../../../lib/money";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../../lib/pricing";
+import { DEFAULT_MARKET, type MarketCode } from "../../../lib/markets";
+import {
+  ensureHistoricalMarketColumn,
+  ensureListingsMarketColumn,
+} from "../../../lib/schema";
 
 const HOT_CARD_LIMIT = 8;
 const HOT_CARD_THRESHOLD = -5;
 const DEAL_LIMIT = 400;
+
+type MarketContext = {
+  market: MarketCode;
+  hasListingsMarketColumn: boolean;
+  hasHistoricalMarketColumn: boolean;
+};
 
 type SetOverviewStats = {
   totalCardsTracked: number;
@@ -77,7 +90,10 @@ async function ensureSetExists(setName: string): Promise<boolean> {
   return Boolean(res.rows[0]?.exists);
 }
 
-async function getSetOverview(setName: string): Promise<SetOverviewStats> {
+async function getSetOverview(
+  setName: string,
+  context: MarketContext,
+): Promise<SetOverviewStats> {
   const totalsRes = await query<{ count: string }>(
     `
       SELECT COUNT(*)::bigint AS count
@@ -107,13 +123,14 @@ async function getSetOverview(setName: string): Promise<SetOverviewStats> {
         AND l.shipping_known = TRUE
         AND l.match_eligible = TRUE
         AND l.shipping_known = TRUE
+        ${context.hasListingsMarketColumn ? "AND l.market = $2" : ""}
         AND NOT EXISTS (
           SELECT 1
           FROM seller_blacklist sb
           WHERE sb.seller_username = l.seller_username
         );
     `,
-    [setName],
+    context.hasListingsMarketColumn ? [setName, context.market] : [setName],
   );
 
   const listingRow = listingsRes.rows[0];
@@ -130,7 +147,21 @@ async function getSetOverview(setName: string): Promise<SetOverviewStats> {
   };
 }
 
-async function getHotCards(setName: string): Promise<HotCard[]> {
+async function getHotCards(
+  setName: string,
+  context: MarketContext,
+): Promise<HotCard[]> {
+  const params: (string | number)[] = [
+    setName,
+    HOT_CARD_THRESHOLD,
+    HOT_CARD_LIMIT,
+  ];
+  const marketFilterClause = context.hasListingsMarketColumn
+    ? "AND l.market = $4"
+    : "";
+  if (context.hasListingsMarketColumn) {
+    params.push(context.market);
+  }
   const res = await query<{
     id: number;
     name: string;
@@ -157,6 +188,11 @@ async function getHotCards(setName: string): Promise<HotCard[]> {
         best.deal_seller_positive_percent
       FROM cards c
       LEFT JOIN historical_prices hp ON hp.card_id = c.id
+        ${
+          context.hasHistoricalMarketColumn
+            ? `AND hp.market = '${context.market}'`
+            : ""
+        }
       LEFT JOIN LATERAL (
         SELECT
           l.total_price_cad AS deal_total_price_cad,
@@ -173,6 +209,7 @@ async function getHotCards(setName: string): Promise<HotCard[]> {
           AND l.seller_username IS NOT NULL
           AND l.shipping_known = TRUE
           AND l.match_eligible = TRUE
+          ${marketFilterClause}
           AND NOT EXISTS (
             SELECT 1
             FROM seller_blacklist sb
@@ -188,7 +225,7 @@ async function getHotCards(setName: string): Promise<HotCard[]> {
       ORDER BY best.deal_discount_percent ASC
       LIMIT $3;
     `,
-    [setName, HOT_CARD_THRESHOLD, HOT_CARD_LIMIT],
+    params,
   );
 
   return res.rows.map((row) => {
@@ -231,7 +268,27 @@ async function getHotCards(setName: string): Promise<HotCard[]> {
   });
 }
 
-async function getSetDeals(setName: string): Promise<Deal[]> {
+async function getSetDeals(
+  setName: string,
+  context: MarketContext,
+): Promise<Deal[]> {
+  const marketLiteral = `'${context.market}'::text`;
+  const marketSelect = context.hasListingsMarketColumn
+    ? "l.market"
+    : marketLiteral;
+  const marketFilterClause = context.hasListingsMarketColumn
+    ? "AND l.market = $3"
+    : "";
+  const historicalJoinClause =
+    context.hasHistoricalMarketColumn && context.hasListingsMarketColumn
+      ? "AND hp.market = l.market"
+      : context.hasHistoricalMarketColumn
+        ? `AND hp.market = ${marketLiteral}`
+        : "";
+  const params: (string | number)[] = [setName, DEAL_LIMIT];
+  if (context.hasListingsMarketColumn) {
+    params.push(context.market);
+  }
   const res = await query<DealRow>(
     `
       SELECT
@@ -243,7 +300,7 @@ async function getSetDeals(setName: string): Promise<Deal[]> {
         l.total_price_cad,
         l.historic_price_cad,
         l.discount_percent,
-        l.market,
+        ${marketSelect} AS market,
         l.ends_at,
         l.thumbnail_url,
         l.seller_username,
@@ -258,11 +315,13 @@ async function getSetDeals(setName: string): Promise<Deal[]> {
       FROM listings l
       JOIN cards c ON c.id = l.card_id
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
+        ${historicalJoinClause}
       WHERE c.set_name = $1
         AND l.total_price_cad IS NOT NULL
         AND l.historic_price_cad IS NOT NULL
         AND l.seller_username IS NOT NULL
         AND l.match_eligible = TRUE
+        ${marketFilterClause}
         AND NOT EXISTS (
           SELECT 1
           FROM seller_blacklist sb
@@ -274,7 +333,7 @@ async function getSetDeals(setName: string): Promise<Deal[]> {
         l.ends_at ASC NULLS LAST
       LIMIT $2;
     `,
-    [setName, DEAL_LIMIT],
+    params,
   );
 
   return res.rows.map((row) => {
@@ -348,13 +407,6 @@ async function getSetDeals(setName: string): Promise<Deal[]> {
   });
 }
 
-function formatCurrency(value: number | null): string {
-  if (value == null || !Number.isFinite(value)) {
-    return "--";
-  }
-  return `$${value.toFixed(2)}`;
-}
-
 function formatDiscount(value: number | null): string {
   if (value == null || !Number.isFinite(value)) {
     return "--";
@@ -381,10 +433,19 @@ export default async function SetDetailPage({
     notFound();
   }
 
+  const market = DEFAULT_MARKET;
+  const hasListingsMarketColumn = await ensureListingsMarketColumn();
+  const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
+  const marketContext: MarketContext = {
+    market,
+    hasListingsMarketColumn,
+    hasHistoricalMarketColumn,
+  };
+
   const [stats, hotCards, deals] = await Promise.all([
-    getSetOverview(setName),
-    getHotCards(setName),
-    getSetDeals(setName),
+    getSetOverview(setName, marketContext),
+    getHotCards(setName, marketContext),
+    getSetDeals(setName, marketContext),
   ]);
 
   return (
@@ -397,6 +458,9 @@ export default async function SetDetailPage({
         <p className="text-sm text-slate-600">
           Tracking {stats.totalCardsTracked} card
           {stats.totalCardsTracked === 1 ? "" : "s"} from this set.
+        </p>
+        <p className="text-xs uppercase tracking-wide text-slate-500">
+          Prices shown in USD (converted from CAD). {FX_RATE_COPY}
         </p>
         <div className="flex flex-wrap gap-4 text-sm text-slate-700">
           <div>

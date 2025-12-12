@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { formatMoneyFromCad, FX_RATE_COPY } from "@/lib/money";
 
 export type HistoricalPoint = {
   date: string;
@@ -21,7 +22,7 @@ export type PriceHistoryChartProps = {
 };
 
 function formatCurrency(value: number): string {
-  return `$${value.toFixed(2)}`;
+  return formatMoneyFromCad(value, "USD");
 }
 
 function formatDateLabel(label: string): string {
@@ -58,45 +59,50 @@ export default function PriceHistoryChart({
   }
 
   return (
-    <div className="h-60 w-full rounded border border-slate-200 bg-white px-3 py-2">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 16, right: 16, bottom: 8, left: 8 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis
-            dataKey="date"
-            tickFormatter={formatDateLabel}
-            minTickGap={24}
-            stroke="#94a3b8"
-            fontSize={12}
-          />
-          <YAxis
-            stroke="#94a3b8"
-            fontSize={12}
-            tickFormatter={(value) => `$${value}`}
-          />
-          <Tooltip
-            contentStyle={{ fontSize: 12 }}
-            labelFormatter={formatDateLabel}
-            formatter={(value: number, _name, payload) => {
-              const sample = payload?.payload?.sample;
-              return [
-                `${formatCurrency(value)}${
-                  typeof sample === "number" ? ` (n=${sample})` : ""
-                }`,
-                "Median",
-              ];
-            }}
-          />
-          <Line
-            type="monotone"
-            dataKey="median"
-            stroke="#0ea5e9"
-            strokeWidth={2}
-            dot={false}
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+    <div className="space-y-1">
+      <div className="h-60 w-full rounded border border-slate-200 bg-white px-3 py-2">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 16, right: 16, bottom: 8, left: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={formatDateLabel}
+              minTickGap={24}
+              stroke="#94a3b8"
+              fontSize={12}
+            />
+            <YAxis
+              stroke="#94a3b8"
+              fontSize={12}
+              tickFormatter={(value) => formatCurrency(Number(value))}
+            />
+            <Tooltip
+              contentStyle={{ fontSize: 12 }}
+              labelFormatter={formatDateLabel}
+              formatter={(value: number, _name, payload) => {
+                const sample = payload?.payload?.sample;
+                return [
+                  `${formatCurrency(value)}${
+                    typeof sample === "number" ? ` (n=${sample})` : ""
+                  }`,
+                  "Median",
+                ];
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="median"
+              stroke="#0ea5e9"
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="text-xs text-slate-500">
+        USD shown using an approximate CAD→USD rate. {FX_RATE_COPY}
+      </p>
     </div>
   );
 }

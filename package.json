@@ -20,6 +20,10 @@
     "ebay:rates": "tsx scripts/ebay-rate-limits.ts",
     "alerts:check": "tsx scripts/check-alerts.ts",
     "debug:discounts": "tsx scripts/debug-discounts.ts",
+    "collector:backfill": "tsx scripts/backfill-collector-numbers.ts",
+    "confidence:backfill": "tsx scripts/backfill-deal-confidence.ts",
+    "cards:language:backfill": "tsx scripts/backfill-card-language.ts",
+    "market:backfill": "tsx scripts/backfill-market.ts",
     "import:tcg-catalog": "tsx scripts/import-tcgplayer-catalog.ts"
   },
   "dependencies": {

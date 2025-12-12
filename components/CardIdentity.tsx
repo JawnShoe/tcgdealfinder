@@ -39,20 +39,22 @@ export function CardIdentityBlock({
   const { primary, setName, listingTitle, cardId } = identity;
 
   return (
-    <div className={`flex flex-col space-y-0.5 leading-tight ${className}`}>
+    <div
+      className={`flex min-w-0 flex-1 flex-col space-y-0.5 leading-snug ${className}`}
+    >
       {primaryHref ? (
         <Link
           href={primaryHref}
           target={titleLinkTarget}
           rel="noopener noreferrer"
-          className="line-clamp-2 break-words text-base font-semibold text-slate-900 hover:text-slate-700"
+          className="line-clamp-2 break-normal text-base font-semibold text-slate-900 hover:text-slate-700"
           title={primary ?? undefined}
         >
           {primary}
         </Link>
       ) : (
         <p
-          className="line-clamp-2 break-words text-base font-semibold text-slate-900"
+          className="line-clamp-2 break-normal text-base font-semibold text-slate-900"
           title={primary ?? undefined}
         >
           {primary}

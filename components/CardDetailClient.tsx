@@ -549,13 +549,18 @@ export default function CardDetailClient({
                       </span>
                     </td>
                     <td className="px-3 py-4 align-middle text-sm text-slate-700">
-                      <span className="inline-flex items-center gap-1">
-                        {listing.sellerUsername ?? "Unknown"}
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span
+                          className="truncate"
+                          title={listing.sellerUsername ?? "Unknown"}
+                        >
+                          {listing.sellerUsername ?? "Unknown"}
+                        </span>
                         {isDealTrusted(
                           listing.sellerFeedbackCount,
                           listing.sellerPositivePercent,
-                        ) && <TrustedBadge />}
-                      </span>
+                        ) && <TrustedBadge className="flex-none" />}
+                      </div>
                     </td>
                     <td className="px-3 py-4 align-middle text-sm text-slate-600">
                       {listing.market}

@@ -599,15 +599,21 @@ export default function DealsTable({
           <table className="min-w-full table-fixed text-sm text-slate-900">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="px-3 py-2 text-left">Card</th>
-                    <th className="px-3 py-2 text-right">Total (USD)</th>
-                    <th className="px-3 py-2 text-right">Historic (USD)</th>
+                    <th className="w-[320px] min-w-[320px] px-3 py-2 text-left">
+                      Card
+                    </th>
+                    <th className="w-[120px] px-3 py-2 text-right">
+                      Total (USD)
+                    </th>
+                    <th className="w-[120px] px-3 py-2 text-right">
+                      Historic (USD)
+                    </th>
                     <th className="px-3 py-2 text-right">Discount</th>
                     <th className="px-3 py-2 text-right">Score</th>
                     <th className="px-3 py-2 text-left">Confidence</th>
                     <th className="px-3 py-2 text-left">Seller</th>
                     <th className="px-3 py-2 text-left">Market</th>
-                    <th className="px-3 py-2 text-left">Ends</th>
+                    <th className="w-[96px] px-3 py-2 text-left">Ends</th>
                     {isAdmin && adminSecret ? (
                       <th className="px-3 py-2 text-left">Admin</th>
                     ) : null}
@@ -616,8 +622,8 @@ export default function DealsTable({
                 <tbody className="divide-y divide-slate-100">
                   {currentSlice.map((vm) => (
                     <tr key={vm.deal.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-4 align-middle">
-                        <div className="flex items-start gap-3">
+                      <td className="w-[320px] min-w-[320px] px-3 py-4 align-middle">
+                        <div className="flex items-start gap-2.5">
                           {vm.deal.thumbnailUrl ? (
                             <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
                               <Image
@@ -631,10 +637,9 @@ export default function DealsTable({
                           ) : (
                             <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
                           )}
-                          <div className="flex flex-col gap-1">
+                          <div className="flex min-w-0 flex-1 flex-col gap-1">
                             <CardIdentityBlock
                               identity={buildCardIdentityFromDeal(vm.deal)}
-                              className={isNewestVariant ? "" : "h-16"}
                               primaryHref={vm.deal.url}
                               showListingTitle={isNewestVariant}
                               showViewCardLink
@@ -649,10 +654,10 @@ export default function DealsTable({
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-4 align-middle text-right text-base font-semibold">
+                      <td className="w-[120px] px-3 py-4 align-middle text-right text-base font-semibold">
                         {formatCurrency(vm.price)}
                       </td>
-                      <td className="px-3 py-4 align-middle text-right text-base text-slate-600">
+                      <td className="w-[120px] px-3 py-4 align-middle text-right text-base text-slate-600">
                         {formatCurrency(vm.deal.historicPriceCad)}
                       </td>
                       <td
@@ -685,15 +690,22 @@ export default function DealsTable({
                         {getConfidenceLabel(vm.deal.sampleSize ?? null)}
                       </td>
                       <td className="px-3 py-4 align-middle text-left text-sm text-slate-700">
-                        <span className="inline-flex items-center gap-1">
-                          {vm.deal.sellerUsername ?? "Unknown"}
-                          {vm.trustedSeller ? <TrustedBadge /> : null}
-                        </span>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span
+                            className="truncate"
+                            title={vm.deal.sellerUsername ?? "Unknown"}
+                          >
+                            {vm.deal.sellerUsername ?? "Unknown"}
+                          </span>
+                          {vm.trustedSeller ? (
+                            <TrustedBadge className="flex-none" />
+                          ) : null}
+                        </div>
                       </td>
                       <td className="px-3 py-4 align-middle text-left text-sm text-slate-600">
                         {formatMarketLabel(vm.deal.market)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-4 align-middle text-left text-sm text-slate-600">
+                      <td className="w-[96px] whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600">
                         {formatEndsAt(vm.deal.endsAt)}
                       </td>
                       {isAdmin && adminSecret ? (

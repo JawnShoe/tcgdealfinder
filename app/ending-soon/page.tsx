@@ -88,9 +88,11 @@ function formatSeller(deal: EndingSoonDeal): JSX.Element {
     deal.sellerPositivePercent != null &&
     deal.sellerPositivePercent >= TRUSTED_POSITIVE_PERCENT;
   return (
-    <span className="inline-flex items-center gap-1 text-slate-700">
-      {name}
-      {trusted && <TrustedBadge />}
+    <span className="flex min-w-0 items-center gap-2 text-slate-700">
+      <span className="truncate" title={name}>
+        {name}
+      </span>
+      {trusted && <TrustedBadge className="flex-none" />}
     </span>
   );
 }

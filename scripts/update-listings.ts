@@ -19,6 +19,7 @@ type SearchConfigRow = {
 
 const AUTO_BLACKLIST_MIN_TOTAL = 20;
 const AUTO_BLACKLIST_MIN_RATIO = 0.7;
+const cardIdCache = new Map<string, number>();
 
 async function getBlacklistedSellers(): Promise<Set<string>> {
   const res = await query<{ seller_username: string }>(
@@ -272,6 +273,11 @@ async function main() {
         listing.sellerUsername ??
         listing.seller?.toLowerCase() ??
         null;
+      const inferredBucket = inferConditionBucket(
+        listing,
+        row.condition_bucket,
+      );
+      const targetCardId = await getCardIdForBucket(row, inferredBucket);
 
       if (sellerUsername) {
         const stats =
@@ -300,9 +306,9 @@ async function main() {
       }
       try {
         await upsertListing(
-          row.card_id,
+          targetCardId,
           row.market,
-          row.condition_bucket,
+          inferredBucket,
           listing,
           sellerUsername,
           historicPrice,
@@ -349,3 +355,84 @@ async function main() {
 main().catch((err) => {
   console.error("Error running listings update:", err);
 });
+
+function inferConditionBucket(
+  listing: NormalizedListing,
+  defaultBucket: string,
+): string {
+  const gradedBucket = detectGradedBucket(listing);
+  if (gradedBucket) {
+    return gradedBucket;
+  }
+  return defaultBucket;
+}
+
+function detectGradedBucket(listing: NormalizedListing): string | null {
+  const text = `${listing.title ?? ""} ${listing.conditionRaw ?? ""}`
+    .toLowerCase()
+    .trim();
+
+  const patterns: { regex: RegExp; bucket: string }[] = [
+    { regex: /\bpsa\s*10\b|\bpsa10\b/i, bucket: "psa_10" },
+    { regex: /\bpsa\s*9\b|\bpsa9\b/i, bucket: "psa_9" },
+    { regex: /\bbgs\s*10\b|\bbeckett\s*10\b/i, bucket: "bgs_10" },
+    { regex: /\bbgs\s*9\.?5\b|\bbeckett\s*9\.?5\b/i, bucket: "bgs_95" },
+    { regex: /\bbgs\s*9\b|\bbeckett\s*9\b/i, bucket: "bgs_9" },
+    { regex: /\bcgc\s*10\b/i, bucket: "cgc_10" },
+    { regex: /\bcgc\s*9\.?5\b/i, bucket: "cgc_95" },
+    { regex: /\bcgc\s*9\b/i, bucket: "cgc_9" },
+  ];
+
+  for (const { regex, bucket } of patterns) {
+    if (regex.test(text)) {
+      return bucket;
+    }
+  }
+
+  return null;
+}
+
+async function getCardIdForBucket(
+  base: SearchConfigRow,
+  targetBucket: string,
+): Promise<number> {
+  if (targetBucket === base.condition_bucket) {
+    return base.card_id;
+  }
+
+  const cacheKey = `${base.name}|${base.set_name}|${base.card_number}|${targetBucket}`;
+  const cached = cardIdCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const existing = await query<{ id: number }>(
+    `
+      SELECT id
+      FROM cards
+      WHERE name = $1 AND set_name = $2 AND card_number = $3 AND condition_bucket = $4
+      LIMIT 1;
+    `,
+    [base.name, base.set_name, base.card_number, targetBucket],
+  );
+
+  if (existing.rows[0]) {
+    cardIdCache.set(cacheKey, existing.rows[0].id);
+    return existing.rows[0].id;
+  }
+
+  const inserted = await query<{ id: number }>(
+    `
+      INSERT INTO cards (name, set_name, card_number, condition_bucket)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (name, set_name, card_number, condition_bucket)
+      DO UPDATE SET updated_at = NOW()
+      RETURNING id;
+    `,
+    [base.name, base.set_name, base.card_number, targetBucket],
+  );
+
+  const newId = inserted.rows[0].id;
+  cardIdCache.set(cacheKey, newId);
+  return newId;
+}

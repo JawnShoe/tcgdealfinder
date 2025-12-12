@@ -1,4 +1,5 @@
 import DealsTable from "@/components/DealsTable";
+import FeaturedDealsStrip from "@/components/FeaturedDealsStrip";
 import { query } from "@/lib/db";
 import {
   computeDiscountPercent,
@@ -158,12 +159,12 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6 lg:py-10 space-y-6 lg:space-y-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 pt-4 pb-8 lg:pt-6 lg:pb-12 space-y-5 lg:space-y-7">
         {/* Hero */}
         <section>
-          <div className="rounded-2xl bg-white shadow-sm border border-slate-200 px-5 py-6 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-center lg:gap-10">
-              <div className="space-y-4 lg:pr-6">
+          <div className="mx-auto max-w-7xl rounded-2xl bg-white shadow-sm border border-slate-200 px-5 py-6 sm:px-7 lg:px-10">
+            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:items-center lg:gap-12 xl:gap-16">
+              <div className="space-y-4 lg:pr-8">
                 <p className="text-xs font-semibold uppercase tracking-[0.35em] text-emerald-600">
                   Real-time arbitrage radar
                 </p>
@@ -177,7 +178,7 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-700 sm:grid-cols-3 lg:pl-4">
+              <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-700 sm:grid-cols-3 lg:pl-6">
                 <div>
                   <p className="text-xs font-semibold uppercase text-slate-500">Coverage</p>
                   <p className="text-base font-semibold text-slate-900">200+ live deals tracked</p>
@@ -195,9 +196,14 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* Featured deals */}
+        <section>
+          <FeaturedDealsStrip deals={deals} />
+        </section>
+
         {/* All live deals */}
         <section>
-          <div className="rounded-2xl bg-white shadow-sm border border-slate-200 px-5 py-5 sm:px-6 lg:px-8 deals-card">
+          <div className="mx-auto max-w-7xl rounded-2xl bg-white shadow-sm border border-slate-200 px-5 py-5 sm:px-7 lg:px-10 deals-card">
             <h2 className="text-lg font-semibold tracking-tight mb-2">
               All live deals
             </h2>

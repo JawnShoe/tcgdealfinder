@@ -203,7 +203,7 @@ export default function CardDetailClient({
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="space-y-6 lg:space-y-8">
       <Link
         href="/"
         className="text-sm text-slate-500 hover:text-slate-800"
@@ -211,130 +211,142 @@ export default function CardDetailClient({
         &larr; Back to deals
       </Link>
 
-      <section className="grid gap-6 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm md:grid-cols-[minmax(0,240px)_1fr]">
-        <div className="flex flex-col items-center gap-4 md:items-start">
-          <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-            {filteredListings[0]?.thumbnailUrl ? (
-              <Image
-                src={filteredListings[0].thumbnailUrl as string}
-                alt={card.name}
-                width={320}
-                height={420}
-                className="h-auto w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-64 w-full items-center justify-center text-sm text-slate-500">
-                No image available
-              </div>
-            )}
-          </div>
-          <div className="space-y-1 text-center text-sm text-slate-600 md:text-left">
-            <p>{card.setName}</p>
-            {card.collectorNumber && <p>#{card.collectorNumber}</p>}
-            {card.rarity && <p>Rarity: {card.rarity}</p>}
-          </div>
-        </div>
-
-        <div className="space-y-5">
-          <div className="space-y-1 border-b border-slate-200 pb-4">
-            <p className="text-xs uppercase text-slate-500">Card</p>
-            <h2 className="text-3xl font-semibold text-slate-900">
-              {card.name}
-            </h2>
-            <p className="text-sm text-slate-600">{card.setName}</p>
-            <WatchlistButton cardId={card.id} />
-          </div>
-
-          <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
-            <div>
-              <p className="text-xs uppercase text-slate-500">Historic median</p>
-              <p className="text-2xl font-semibold text-slate-900">
-                {formatCurrency(selectedHistorical?.medianPriceCad ?? null)}
-              </p>
-              <p className="text-xs text-slate-500">
-                {selectedHistorical?.sampleSize
-                  ? `${selectedHistorical.sampleSize} sales`
-                  : "Limited data"}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase text-slate-500">Best trusted deal</p>
-              <p className="text-2xl font-semibold text-slate-900">
-                {bestTrustedDeal
-                  ? formatCurrency(bestTrustedDeal.totalPriceCad)
-                  : "--"}
-              </p>
-              <p
-                className={`text-sm ${discountClass(
-                  bestTrustedDeal?.discountPercent ?? null,
-                )}`}
-              >
-                {bestTrustedDeal
-                  ? formatDiscount(bestTrustedDeal.discountPercent)
-                  : "No trusted listings"}
-              </p>
-              {bestTrustedDeal && (
-                <p className="text-xs text-slate-500">
-                  {bestTrustedDeal.market} / {formatEndsAt(bestTrustedDeal.endsAt)}
-                </p>
+      <section className="rounded-2xl border border-slate-200 bg-white px-5 py-6 shadow-sm sm:px-7 lg:px-10">
+        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-12">
+          <div className="flex flex-col gap-4">
+            <div className="aspect-[3/4] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+              {filteredListings[0]?.thumbnailUrl ? (
+                <Image
+                  src={filteredListings[0].thumbnailUrl as string}
+                  alt={card.name}
+                  width={320}
+                  height={420}
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">
+                  No image available
+                </div>
               )}
             </div>
+            <div className="space-y-1 text-center text-sm text-slate-600 lg:text-left">
+              <p>{card.setName}</p>
+              {card.collectorNumber && <p>#{card.collectorNumber}</p>}
+              {card.rarity && <p>Rarity: {card.rarity}</p>}
+            </div>
           </div>
 
-          <form
-            onSubmit={handleAlertSubmit}
-            className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-          >
-            <p className="text-sm font-semibold text-slate-900">Email alerts</p>
-            <div className="grid gap-3 sm:grid-cols-[2fr_1fr_auto]">
-              <input
-                type="email"
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
-                placeholder="you@example.com"
-                value={alertEmail}
-                onChange={(event) => setAlertEmail(event.target.value)}
-                required
-              />
-              <select
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
-                value={alertThreshold}
-                onChange={(event) =>
-                  setAlertThreshold(Number(event.target.value))
-                }
-              >
-                {ALERT_THRESHOLD_OPTIONS.map((value) => (
-                  <option key={value} value={value}>
-                    {value}%
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-                disabled={alertStatus === "loading"}
-              >
-                {alertStatus === "loading" ? "Saving..." : "Notify me"}
-              </button>
+          <div className="flex flex-col gap-6">
+            <div className="space-y-4 border-b border-slate-200 pb-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase text-slate-500">Card</p>
+                  <h2 className="text-3xl font-semibold text-slate-900">
+                    {card.name}
+                  </h2>
+                  <p className="text-sm text-slate-600">{card.setName}</p>
+                </div>
+                <div className="sm:pt-1">
+                  <WatchlistButton cardId={card.id} />
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs uppercase text-slate-500">
+                    Historic median
+                  </p>
+                  <p className="text-2xl font-semibold text-slate-900">
+                    {formatCurrency(selectedHistorical?.medianPriceCad ?? null)}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {selectedHistorical?.sampleSize
+                      ? `${selectedHistorical.sampleSize} sales`
+                      : "Limited data"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs uppercase text-slate-500">
+                    Best trusted deal
+                  </p>
+                  <p className="text-2xl font-semibold text-slate-900">
+                    {bestTrustedDeal
+                      ? formatCurrency(bestTrustedDeal.totalPriceCad)
+                      : "--"}
+                  </p>
+                  <p
+                    className={`text-sm ${discountClass(
+                      bestTrustedDeal?.discountPercent ?? null,
+                    )}`}
+                  >
+                    {bestTrustedDeal
+                      ? formatDiscount(bestTrustedDeal.discountPercent)
+                      : "No trusted listings"}
+                  </p>
+                  {bestTrustedDeal && (
+                    <p className="text-xs text-slate-500">
+                      {bestTrustedDeal.market} /{" "}
+                      {formatEndsAt(bestTrustedDeal.endsAt)}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
-            {alertMessage && (
-              <p
-                className={`text-xs ${
-                  alertStatus === "error"
-                    ? "text-rose-500"
-                    : "text-emerald-600"
-                }`}
-              >
-                {alertMessage}
-              </p>
-            )}
-          </form>
+
+            <form
+              onSubmit={handleAlertSubmit}
+              className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+            >
+              <p className="text-sm font-semibold text-slate-900">Email alerts</p>
+              <div className="grid gap-3 sm:grid-cols-[2fr_1fr_auto]">
+                <input
+                  type="email"
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+                  placeholder="you@example.com"
+                  value={alertEmail}
+                  onChange={(event) => setAlertEmail(event.target.value)}
+                  required
+                />
+                <select
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+                  value={alertThreshold}
+                  onChange={(event) =>
+                    setAlertThreshold(Number(event.target.value))
+                  }
+                >
+                  {ALERT_THRESHOLD_OPTIONS.map((value) => (
+                    <option key={value} value={value}>
+                      {value}%
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+                  disabled={alertStatus === "loading"}
+                >
+                  {alertStatus === "loading" ? "Saving..." : "Notify me"}
+                </button>
+              </div>
+              {alertMessage && (
+                <p
+                  className={`text-xs ${
+                    alertStatus === "error"
+                      ? "text-rose-500"
+                      : "text-emerald-600"
+                  }`}
+                >
+                  {alertMessage}
+                </p>
+              )}
+            </form>
+          </div>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap gap-4 text-sm text-slate-700">
-            <label className="flex items-center gap-2">
+      <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="grid w-full gap-3 text-sm text-slate-700 sm:grid-cols-2">
+            <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase text-slate-500">
                 Condition
               </span>
@@ -352,7 +364,7 @@ export default function CardDetailClient({
                 ))}
               </select>
             </label>
-            <label className="flex items-center gap-2">
+            <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase text-slate-500">
                 Market
               </span>
@@ -375,7 +387,7 @@ export default function CardDetailClient({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6 lg:px-8">
         <h2 className="mb-3 text-base font-semibold text-slate-900">Price history</h2>
         {priceHistoryStatus === "loading" && (
           <p className="text-sm text-slate-500">Loading chart...</p>
@@ -392,13 +404,13 @@ export default function CardDetailClient({
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
+      <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6 lg:px-8">
         <div className="mb-3 flex items-baseline justify-between gap-2">
           <h2 className="text-base font-semibold text-slate-900">Live listings</h2>
           <p className="text-xs text-slate-500">{listingsLabel}</p>
         </div>
         <div className="w-full overflow-x-auto">
-          <table className="min-w-full text-sm">
+          <table className="min-w-full table-fixed text-sm text-slate-900">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-3 py-2 text-left">Listing</th>
@@ -423,48 +435,50 @@ export default function CardDetailClient({
               ) : (
                 filteredListings.map((listing) => (
                   <tr key={listing.id} className="hover:bg-slate-50">
-                    <td className="px-3 py-3 align-top">
+                    <td className="px-3 py-3 align-middle">
                       <div className="flex items-center gap-3">
                         {listing.thumbnailUrl ? (
-                          <Image
-                            src={listing.thumbnailUrl}
-                            alt={listing.title}
-                            width={56}
-                            height={56}
-                            className="h-14 w-14 rounded object-cover"
-                          />
+                          <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
+                            <Image
+                              src={listing.thumbnailUrl}
+                              alt={listing.title}
+                              width={56}
+                              height={56}
+                              className="h-full w-full object-contain"
+                            />
+                          </div>
                         ) : (
-                          <div className="h-14 w-14 rounded border border-dashed border-slate-300" />
+                          <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
                         )}
-                        <div className="space-y-1">
+                        <div className="flex h-14 flex-col justify-center space-y-0.5 leading-snug">
                           <Link
                             href={listing.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-semibold text-slate-900 hover:text-slate-700"
+                            className="line-clamp-1 font-semibold text-slate-900 hover:text-slate-700"
                           >
                             {listing.title}
                           </Link>
-                          <p className="text-xs text-slate-500">
+                          <p className="line-clamp-1 text-xs text-slate-500">
                             {listing.condition}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-right font-semibold">
+                    <td className="px-3 py-3 align-middle text-right font-semibold">
                       {formatCurrency(listing.totalPriceCad)}
                     </td>
-                    <td className="px-3 py-3 text-right text-slate-600">
+                    <td className="px-3 py-3 align-middle text-right text-slate-600">
                       {formatCurrency(listing.medianPriceCad)}
                     </td>
                     <td
-                      className={`px-3 py-3 text-right font-semibold ${discountClass(
+                      className={`px-3 py-3 align-middle text-right font-semibold ${discountClass(
                         listing.discountPercent,
                       )}`}
                     >
                       {formatDiscount(listing.discountPercent)}
                     </td>
-                    <td className="px-3 py-3 text-sm text-slate-700">
+                    <td className="px-3 py-3 align-middle text-sm text-slate-700">
                       <span className="inline-flex items-center gap-1">
                         {listing.sellerUsername ?? "Unknown"}
                         {isDealTrusted(
@@ -473,10 +487,10 @@ export default function CardDetailClient({
                         ) && <TrustedBadge />}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-sm text-slate-600">
+                    <td className="px-3 py-3 align-middle text-sm text-slate-600">
                       {listing.market}
                     </td>
-                    <td className="px-3 py-3 text-right text-slate-600">
+                    <td className="px-3 py-3 align-middle text-right text-slate-600">
                       {formatEndsAt(listing.endsAt)}
                     </td>
                   </tr>

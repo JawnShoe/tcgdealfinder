@@ -24,6 +24,7 @@ import {
 } from "../lib/dealFormatting";
 import { ALERT_THRESHOLD_OPTIONS } from "../lib/alertsConfig";
 import { isDealTrusted } from "../lib/dealScore";
+import { FX_RATE_COPY } from "../lib/money";
 
 const PriceHistoryChart = dynamic(() => import("./PriceHistoryChart"), {
   ssr: false,
@@ -41,7 +42,7 @@ type ListingRow = {
   title: string;
   url: string;
   totalPriceCad: number | null;
-  medianPriceCad: number | null;
+  historicPriceCad: number | null;
   discountPercent: number | null;
   sampleSize: number | null;
   market: string;
@@ -232,12 +233,14 @@ export default function CardDetailClient({
 
   return (
     <div className="space-y-6 lg:space-y-8">
-      <Link
-        href="/"
-        className="text-sm text-slate-500 hover:text-slate-800"
-      >
-        &larr; Back to deals
-      </Link>
+      <nav className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
+        <Link href="/" className="hover:text-slate-800">
+          &larr; Home
+        </Link>
+        <Link href="/newest" className="hover:text-slate-800">
+          Newest listings
+        </Link>
+      </nav>
 
       <section className="rounded-2xl border border-slate-200 bg-white px-5 py-6 shadow-sm sm:px-7 lg:px-10">
         <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-12">
@@ -280,17 +283,6 @@ export default function CardDetailClient({
                     )}
                   </div>
                   <p className="text-sm text-slate-600">{card.setName}</p>
-                  {conditionLabel && (
-                    <p
-                      className="text-xs text-slate-500"
-                      title="This page is a condition-specific variant. Price history and deal rankings are computed per condition when data exists."
-                    >
-                      This page tracks {conditionLabel} listings only.{" "}
-                      <span className="underline decoration-dotted">
-                        Why am I seeing this?
-                      </span>
-                    </p>
-                  )}
                 </div>
                 <div className="sm:pt-1">
                   <WatchlistButton cardId={card.id} />
@@ -299,7 +291,7 @@ export default function CardDetailClient({
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs uppercase text-slate-500">
-                    Historic median
+                    Historic median (USD)
                   </p>
                   <p className="text-2xl font-semibold text-slate-900">
                     {formatCurrency(selectedHistorical?.medianPriceCad ?? null)}
@@ -312,7 +304,7 @@ export default function CardDetailClient({
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs uppercase text-slate-500">
-                    Best trusted deal
+                    Best trusted deal (USD)
                   </p>
                   <p className="text-2xl font-semibold text-slate-900">
                     {bestTrustedDeal
@@ -463,13 +455,16 @@ export default function CardDetailClient({
           <h2 className="text-base font-semibold text-slate-900">Live listings</h2>
           <p className="text-xs text-slate-500">{listingsLabel}</p>
         </div>
+        <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
+          Prices shown in USD (converted from CAD). {FX_RATE_COPY}
+        </p>
         <div className="w-full overflow-x-auto">
           <table className="min-w-full table-fixed text-sm text-slate-900">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-3 py-2 text-left">Listing</th>
-                <th className="px-3 py-2 text-right">Price</th>
-                <th className="px-3 py-2 text-right">Historic</th>
+                <th className="px-3 py-2 text-right">Total (USD)</th>
+                <th className="px-3 py-2 text-right">Historic (USD)</th>
                 <th className="px-3 py-2 text-right">Discount</th>
                 <th className="px-3 py-2 text-left">Seller</th>
                 <th className="px-3 py-2 text-left">Market</th>
@@ -489,27 +484,27 @@ export default function CardDetailClient({
               ) : (
                 filteredListings.map((listing) => (
                   <tr key={listing.id} className="hover:bg-slate-50">
-                    <td className="px-3 py-3 align-middle">
+                    <td className="px-3 py-4 align-middle">
                       <div className="flex items-center gap-3">
                         {listing.thumbnailUrl ? (
-                          <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
+                          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
                             <Image
                               src={listing.thumbnailUrl}
                               alt={listing.title}
-                              width={56}
-                              height={56}
+                              width={64}
+                              height={64}
                               className="h-full w-full object-contain"
                             />
                           </div>
                         ) : (
-                          <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
+                          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
                         )}
-                        <div className="flex h-14 flex-col justify-center space-y-0.5 leading-snug">
+                        <div className="flex h-16 flex-col justify-center space-y-0.5 leading-snug">
                           <Link
                             href={listing.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="line-clamp-1 font-semibold text-slate-900 hover:text-slate-700"
+                            className="line-clamp-1 text-base font-semibold text-slate-900 hover:text-slate-700"
                           >
                             {listing.title}
                           </Link>
@@ -519,20 +514,20 @@ export default function CardDetailClient({
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-3 align-middle text-right font-semibold">
+                    <td className="px-3 py-4 align-middle text-right text-base font-semibold">
                       {formatCurrency(listing.totalPriceCad)}
                     </td>
-                    <td className="px-3 py-3 align-middle text-right text-slate-600">
-                      {formatCurrency(listing.medianPriceCad)}
+                    <td className="px-3 py-4 align-middle text-right text-base text-slate-600">
+                      {formatCurrency(listing.historicPriceCad)}
                     </td>
                     <td
-                      className={`px-3 py-3 align-middle text-right font-semibold ${discountClass(
+                      className={`px-3 py-4 align-middle text-right text-base font-semibold ${discountClass(
                         listing.discountPercent,
                       )}`}
                     >
                       {formatDiscount(listing.discountPercent)}
                     </td>
-                    <td className="px-3 py-3 align-middle text-sm text-slate-700">
+                    <td className="px-3 py-4 align-middle text-sm text-slate-700">
                       <span className="inline-flex items-center gap-1">
                         {listing.sellerUsername ?? "Unknown"}
                         {isDealTrusted(
@@ -541,10 +536,10 @@ export default function CardDetailClient({
                         ) && <TrustedBadge />}
                       </span>
                     </td>
-                    <td className="px-3 py-3 align-middle text-sm text-slate-600">
+                    <td className="px-3 py-4 align-middle text-sm text-slate-600">
                       {listing.market}
                     </td>
-                    <td className="px-3 py-3 align-middle text-right text-slate-600">
+                    <td className="px-3 py-4 align-middle text-right text-slate-600">
                       {formatEndsAt(listing.endsAt)}
                     </td>
                   </tr>

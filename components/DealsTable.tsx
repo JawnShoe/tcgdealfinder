@@ -32,6 +32,7 @@ import {
   isDealTrusted,
   type DealConfidence,
 } from "../lib/dealScore";
+import { FX_RATE_COPY } from "../lib/money";
 
 const TOP_DEAL_DISCOUNT = 15;
 const TOP_DEAL_SAMPLE_SIZE = 20;
@@ -507,6 +508,10 @@ export default function DealsTable({
         </label>
       </div>
 
+      <p className="text-xs uppercase tracking-wide text-slate-500">
+        Prices shown in USD (converted from CAD). {FX_RATE_COPY}
+      </p>
+
       {hasDeals ? (
         <>
           <div className="hidden sm:block">
@@ -515,8 +520,8 @@ export default function DealsTable({
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className="px-3 py-2 text-left">Card</th>
-                    <th className="px-3 py-2 text-right">Total</th>
-                    <th className="px-3 py-2 text-right">Historic</th>
+                    <th className="px-3 py-2 text-right">Total (USD)</th>
+                    <th className="px-3 py-2 text-right">Historic (USD)</th>
                     <th className="px-3 py-2 text-right">Discount</th>
                     <th className="px-3 py-2 text-right">Score</th>
                     <th className="px-3 py-2 text-left">Confidence</th>
@@ -531,27 +536,27 @@ export default function DealsTable({
                 <tbody className="divide-y divide-slate-100">
                   {currentSlice.map((vm) => (
                     <tr key={vm.deal.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-3 align-middle">
+                      <td className="px-3 py-4 align-middle">
                         <div className="flex items-center gap-3">
                           {vm.deal.thumbnailUrl ? (
-                            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
+                            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
                               <Image
                                 src={vm.deal.thumbnailUrl}
                                 alt={vm.deal.title}
-                                width={56}
-                                height={56}
+                                width={64}
+                                height={64}
                                 className="h-full w-full object-contain"
                               />
                             </div>
                           ) : (
-                            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
+                            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
                           )}
-                          <div className="flex h-14 flex-col justify-center space-y-0.5 leading-snug">
+                          <div className="flex h-16 flex-col justify-center space-y-0.5 leading-snug">
                             <Link
                               href={vm.deal.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="line-clamp-1 font-semibold text-slate-900 hover:text-slate-700"
+                              className="line-clamp-1 text-base font-semibold text-slate-900 hover:text-slate-700"
                             >
                               {vm.deal.title}
                             </Link>
@@ -559,6 +564,14 @@ export default function DealsTable({
                               {(vm.deal.card?.setName ?? vm.deal.setName ?? "") ||
                                 "Unknown set"}
                             </p>
+                            {vm.deal.card?.id ? (
+                              <Link
+                                href={`/cards/${vm.deal.card.id}`}
+                                className="text-xs font-medium text-slate-500 hover:text-slate-800"
+                              >
+                                View card page
+                              </Link>
+                            ) : null}
                             {vm.deal.historicBaselineConfidence === "none" ? (
                               <p className="text-xs text-amber-600">
                                 {baselineBadgeLabel(vm.deal.historicBaselineBucketUsed)}
@@ -567,43 +580,43 @@ export default function DealsTable({
                           </div>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 align-middle text-right font-semibold">
+                      <td className="whitespace-nowrap px-3 py-4 align-middle text-right text-base font-semibold">
                         {formatCurrency(vm.price)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 align-middle text-right text-slate-600">
+                      <td className="whitespace-nowrap px-3 py-4 align-middle text-right text-base text-slate-600">
                         {formatCurrency(vm.deal.historicPriceCad)}
                       </td>
                       <td
                         className={`${discountClass(
                           vm.discount,
-                        )} whitespace-nowrap px-3 py-3 align-middle text-right font-semibold`}
+                        )} whitespace-nowrap px-3 py-4 align-middle text-right text-base font-semibold`}
                       >
                         {formatDiscount(vm.discount)}
                       </td>
                       <td
                         className={`${scoreClass(
                           vm.score,
-                        )} whitespace-nowrap px-3 py-3 align-middle text-right font-semibold`}
+                        )} whitespace-nowrap px-3 py-4 align-middle text-right text-base font-semibold`}
                       >
                         {formatScore(vm.score)}
                       </td>
-                      <td className="px-3 py-3 align-middle text-left text-sm text-slate-600">
+                      <td className="px-3 py-4 align-middle text-left text-base text-slate-600">
                         {getConfidenceLabel(vm.deal.sampleSize ?? null)}
                       </td>
-                      <td className="px-3 py-3 align-middle text-left text-sm text-slate-700">
+                      <td className="px-3 py-4 align-middle text-left text-sm text-slate-700">
                         <span className="inline-flex items-center gap-1">
                           {vm.deal.sellerUsername ?? "Unknown"}
                           {vm.trustedSeller ? <TrustedBadge /> : null}
                         </span>
                       </td>
-                      <td className="px-3 py-3 align-middle text-left text-sm text-slate-600">
+                      <td className="px-3 py-4 align-middle text-left text-sm text-slate-600">
                         {vm.deal.market}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 align-middle text-left text-sm text-slate-600">
+                      <td className="whitespace-nowrap px-3 py-4 align-middle text-left text-sm text-slate-600">
                         {formatEndsAt(vm.deal.endsAt)}
                       </td>
                       {isAdmin && adminSecret ? (
-                        <td className="px-3 py-3 align-middle text-sm">
+                        <td className="px-3 py-4 align-middle text-sm">
                           <AdminDealActions deal={vm.deal} />
                         </td>
                       ) : null}
@@ -625,19 +638,19 @@ export default function DealsTable({
                     <Image
                       src={vm.deal.thumbnailUrl}
                       alt={vm.deal.title}
-                      width={72}
-                      height={72}
-                      className="h-18 w-18 rounded object-cover"
+                      width={80}
+                      height={80}
+                      className="h-20 w-20 rounded object-cover"
                     />
                   ) : (
-                    <div className="h-18 w-18 rounded border border-dashed border-slate-300" />
+                    <div className="h-20 w-20 rounded border border-dashed border-slate-300" />
                   )}
                   <div className="flex-1 space-y-1">
                     <Link
                       href={vm.deal.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="line-clamp-1 font-semibold text-slate-900 hover:text-slate-700"
+                      className="line-clamp-1 text-base font-semibold text-slate-900 hover:text-slate-700"
                     >
                       {vm.deal.title}
                     </Link>
@@ -648,26 +661,26 @@ export default function DealsTable({
                   </div>
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                <div className="mt-3 grid grid-cols-2 gap-3 text-base">
                   <div>
-                    <p className="text-slate-500">Total</p>
-                    <p className="font-semibold text-slate-900">
+                    <p className="text-slate-500">Total (USD)</p>
+                    <p className="text-base font-semibold text-slate-900">
                       {formatCurrency(vm.price)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-slate-500">Historic</p>
-                    <p>{formatCurrency(vm.deal.historicPriceCad)}</p>
+                    <p className="text-slate-500">Historic (USD)</p>
+                    <p className="text-base">{formatCurrency(vm.deal.historicPriceCad)}</p>
                   </div>
                   <div>
                     <p className="text-slate-500">Discount</p>
-                    <p className={discountClass(vm.discount)}>
+                    <p className={`${discountClass(vm.discount)} text-base`}>
                       {formatDiscount(vm.discount)}
                     </p>
                   </div>
                   <div>
                     <p className="text-slate-500">Score</p>
-                    <p className={scoreClass(vm.score)}>
+                    <p className={`${scoreClass(vm.score)} text-base`}>
                       {formatScore(vm.score)}
                     </p>
                   </div>

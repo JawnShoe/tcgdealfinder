@@ -158,36 +158,38 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-6xl px-4 py-8 space-y-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6 lg:py-10 space-y-6 lg:space-y-8">
         {/* Hero */}
         <section>
-          <div className="rounded-2xl bg-white shadow-sm border border-slate-200 px-6 py-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-emerald-600">
-                Real-time arbitrage radar
-              </p>
-              <div className="space-y-3">
-                <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">
-                  Find undervalued Pokemon cards in seconds.
-                </h1>
-                <p className="text-sm md:text-base text-slate-600 max-w-2xl">
-                  TCG Deal Finder scores every live eBay listing by discount, seller trust, and data confidence so you only spend time on the safest opportunities.
+          <div className="rounded-2xl bg-white shadow-sm border border-slate-200 px-5 py-6 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-center lg:gap-10">
+              <div className="space-y-4 lg:pr-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.35em] text-emerald-600">
+                  Real-time arbitrage radar
                 </p>
+                <div className="space-y-3">
+                  <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">
+                    {"Find undervalued Pokemon cards in seconds."}
+                  </h1>
+                  <p className="text-sm md:text-base text-slate-600 max-w-2xl">
+                    TCG Deal Finder scores every live eBay listing by discount, seller trust, and data confidence so you only spend time on the safest opportunities.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-700">
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">Coverage</p>
-                <p className="text-base font-semibold text-slate-900">200+ live deals tracked</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">Trusted sellers</p>
-                <p className="text-base font-semibold text-slate-900">40+ verified accounts</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">Fresh data</p>
-                <p className="text-base font-semibold text-slate-900">Updated every day</p>
+              <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-700 sm:grid-cols-3 lg:pl-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-slate-500">Coverage</p>
+                  <p className="text-base font-semibold text-slate-900">200+ live deals tracked</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase text-slate-500">Trusted sellers</p>
+                  <p className="text-base font-semibold text-slate-900">40+ verified accounts</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase text-slate-500">Fresh data</p>
+                  <p className="text-base font-semibold text-slate-900">Updated every day</p>
+                </div>
               </div>
             </div>
           </div>
@@ -195,8 +197,8 @@ export default async function HomePage() {
 
         {/* All live deals */}
         <section>
-          <div className="rounded-2xl bg-white shadow-sm border border-slate-200 px-4 py-4 md:px-6 md:py-5">
-            <h2 className="text-lg font-semibold tracking-tight mb-1">
+          <div className="rounded-2xl bg-white shadow-sm border border-slate-200 px-5 py-5 sm:px-6 lg:px-8 deals-card">
+            <h2 className="text-lg font-semibold tracking-tight mb-2">
               All live deals
             </h2>
             <p className="mb-4 text-sm text-slate-600">

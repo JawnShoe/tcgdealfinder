@@ -224,3 +224,11 @@ a:hover {
     padding: 0.55rem 0.4rem;
   }
 }
+
+@layer components {
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .deals-card .md\:grid-cols-3 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+}

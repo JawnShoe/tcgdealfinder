@@ -167,6 +167,35 @@ export default function DealsTable({
     };
   };
 
+  const MarketFlag = ({ code }: { code: string }) => {
+    const normalized = normalizeMarketCode(code);
+    if (normalized === "EBAY_US") {
+      return (
+        <svg width="20" height="14" viewBox="0 0 20 14" className="inline-block">
+          <rect width="20" height="14" fill="#B22234" />
+          <rect y="1.08" width="20" height="1.08" fill="white" />
+          <rect y="3.23" width="20" height="1.08" fill="white" />
+          <rect y="5.38" width="20" height="1.08" fill="white" />
+          <rect y="7.54" width="20" height="1.08" fill="white" />
+          <rect y="9.69" width="20" height="1.08" fill="white" />
+          <rect y="11.85" width="20" height="1.08" fill="white" />
+          <rect width="8" height="7" fill="#3C3B6E" />
+        </svg>
+      );
+    }
+    if (normalized === "EBAY_CA") {
+      return (
+        <svg width="20" height="14" viewBox="0 0 20 14" className="inline-block">
+          <rect width="20" height="14" fill="white" />
+          <rect width="5" height="14" fill="#FF0000" />
+          <rect x="15" width="5" height="14" fill="#FF0000" />
+          <path d="M10 3 L10.5 5 L12 4.5 L10.8 6 L12.5 6.5 L10.5 7 L11 9 L10 7.5 L9 9 L9.5 7 L7.5 6.5 L9.2 6 L8 4.5 L9.5 5 Z" fill="#FF0000" />
+        </svg>
+      );
+    }
+    return null;
+  };
+
   const updateState = (
     producer: (prev: DealsViewState) => DealsViewState,
     options?: { resetPage?: boolean },
@@ -648,17 +677,19 @@ export default function DealsTable({
                     <th className={`px-3 py-2 text-left ${colClass("card", variant)}`}>
                       Card
                     </th>
-                    <th className={`${colClass("total", variant)} px-3 py-2 text-right`}>
-                      Total (USD)
+                    <th className={`${colClass("total", variant)} whitespace-nowrap px-3 py-2 text-right`}>
+                      Total USD
                     </th>
-                    <th className={`${colClass("historic", variant)} px-3 py-2 text-right`}>
-                      Historic (USD)
+                    <th className={`${colClass("historic", variant)} whitespace-nowrap px-3 py-2 text-right`}>
+                      Historic USD
                     </th>
                     <th className={`${colClass("discount", variant)} px-3 py-2 text-right`}>Discount</th>
                     {!isNewestVariant && variant !== "default" ? (
                       <th className={`${colClass("score", variant)} px-3 py-2 text-right`}>Score</th>
                     ) : null}
-                    <th className={`${colClass("confidence", variant)} px-3 py-2 text-left`}>Confidence</th>
+                    {variant !== "default" ? (
+                      <th className={`${colClass("confidence", variant)} px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"}`}>Confidence</th>
+                    ) : null}
                     <th className={`${colClass("seller", variant)} px-3 py-2 text-left`}>Seller</th>
                     <th className={`${colClass("market", variant)} px-3 py-2 text-left`}>Market</th>
                     <th className={`${colClass("ends", variant)} px-3 py-2 text-left`}>Ends</th>
@@ -668,8 +699,23 @@ export default function DealsTable({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {currentSlice.map((vm) => (
-                    <tr key={vm.deal.id} className="even:bg-slate-50/50 hover:bg-slate-100">
+                  {serverMode && remoteLoading ? (
+                    Array.from({ length: 5 }).map((_, idx) => (
+                      <tr key={`loading-${idx}`} className="animate-pulse">
+                        <td className="px-3 py-4" colSpan={100}>
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-16 w-16 rounded bg-slate-200" />
+                            <div className="flex-1 space-y-2">
+                              <div className="h-4 w-3/4 rounded bg-slate-200" />
+                              <div className="h-3 w-1/2 rounded bg-slate-200" />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    currentSlice.map((vm) => (
+                      <tr key={vm.deal.id} className="even:bg-slate-50/50 hover:bg-slate-100">
                       <td className={`${colClass("card", variant)} px-3 py-4 align-middle`}>
                         <div className="flex items-start gap-2.5">
                           {vm.deal.thumbnailUrl ? (
@@ -736,16 +782,18 @@ export default function DealsTable({
                           </div>
                         </td>
                       ) : null}
-                      <td className={`${colClass("confidence", variant)} px-3 py-4 align-middle text-left`}>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
-                            vm.confidenceLabel,
-                          )}`}
-                          title={`${CONFIDENCE_TOOLTIP} ${getConfidenceLabel(vm.deal.sampleSize ?? null)}`}
-                        >
-                          {getConfidenceDisplayText(vm.confidenceLabel)}
-                        </span>
-                      </td>
+                      {variant !== "default" ? (
+                        <td className={`${colClass("confidence", variant)} px-3 py-4 align-middle ${isNewestVariant ? "text-center" : "text-left"}`}>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
+                              vm.confidenceLabel,
+                            )}`}
+                            title={`${CONFIDENCE_TOOLTIP} ${getConfidenceLabel(vm.deal.sampleSize ?? null)}`}
+                          >
+                            {getConfidenceDisplayText(vm.confidenceLabel)}
+                          </span>
+                        </td>
+                      ) : null}
                       <td className={`${colClass("seller", variant)} px-3 py-4 align-middle text-left text-sm text-slate-700`}>
                         <div className="flex min-w-0 items-center gap-2">
                           <span
@@ -764,8 +812,12 @@ export default function DealsTable({
                       <td className={`${colClass("market", variant)} px-3 py-4 align-middle text-left text-sm text-slate-600${
                         isNewestVariant ? " whitespace-normal break-words" : ""
                       }`}>
-                        <span title={formatMarketCompact(vm.deal.market).fullLabel}>
-                          {formatMarketCompact(vm.deal.market).display}
+                        <span
+                          title={formatMarketLabel(vm.deal.market)}
+                          className="flex items-center gap-1"
+                        >
+                          <MarketFlag code={vm.deal.market ?? DEFAULT_MARKET} />
+                          <span>{normalizeMarketCode(vm.deal.market ?? DEFAULT_MARKET) === "EBAY_US" ? "US" : "CA"}</span>
                         </span>
                       </td>
                       <td className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}>
@@ -777,7 +829,8 @@ export default function DealsTable({
                         </td>
                       ) : null}
                     </tr>
-                  ))}
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -811,13 +864,13 @@ export default function DealsTable({
 
                 <div className="mt-3 grid grid-cols-2 gap-3 text-base">
                   <div>
-                    <p className="text-slate-500">Total (USD)</p>
+                    <p className="text-slate-500">Total USD</p>
                     <p className="text-base font-semibold text-slate-900">
                       {formatCurrency(vm.price)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-slate-500">Historic (USD)</p>
+                    <p className="text-slate-500">Historic USD</p>
                     <p className="text-base">{formatCurrency(vm.deal.historicPriceCad)}</p>
                   </div>
                   <div>

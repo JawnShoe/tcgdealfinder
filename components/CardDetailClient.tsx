@@ -106,6 +106,34 @@ function formatConditionLabel(value: string | null | undefined): string | null {
   return CONDITION_LABELS[value] ?? value.replace(/_/g, " ").toUpperCase();
 }
 
+const MarketFlag = ({ code }: { code: string }) => {
+  if (code === "EBAY_US" || code === "us" || code === "US") {
+    return (
+      <svg width="20" height="14" viewBox="0 0 20 14" className="inline-block">
+        <rect width="20" height="14" fill="#B22234" />
+        <rect y="1.08" width="20" height="1.08" fill="white" />
+        <rect y="3.23" width="20" height="1.08" fill="white" />
+        <rect y="5.38" width="20" height="1.08" fill="white" />
+        <rect y="7.54" width="20" height="1.08" fill="white" />
+        <rect y="9.69" width="20" height="1.08" fill="white" />
+        <rect y="11.85" width="20" height="1.08" fill="white" />
+        <rect width="8" height="7" fill="#3C3B6E" />
+      </svg>
+    );
+  }
+  if (code === "EBAY_CA" || code === "ca" || code === "CA") {
+    return (
+      <svg width="20" height="14" viewBox="0 0 20 14" className="inline-block">
+        <rect width="20" height="14" fill="white" />
+        <rect width="5" height="14" fill="#FF0000" />
+        <rect x="15" width="5" height="14" fill="#FF0000" />
+        <path d="M10 3 L10.5 5 L12 4.5 L10.8 6 L12.5 6.5 L10.5 7 L11 9 L10 7.5 L9 9 L9.5 7 L7.5 6.5 L9.2 6 L8 4.5 L9.5 5 Z" fill="#FF0000" />
+      </svg>
+    );
+  }
+  return null;
+};
+
 export default function CardDetailClient({
   detail,
 }: CardDetailClientProps) {
@@ -477,8 +505,8 @@ export default function CardDetailClient({
             <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-3 py-2 text-left">Listing</th>
-                <th className="px-3 py-2 text-right">Total (USD)</th>
-                <th className="px-3 py-2 text-right">Historic (USD)</th>
+                <th className="whitespace-nowrap px-3 py-2 text-right">Total USD</th>
+                <th className="whitespace-nowrap px-3 py-2 text-right">Historic USD</th>
                 <th className="px-3 py-2 text-right">Discount</th>
                 <th className="px-3 py-2 text-left">Confidence</th>
                 <th className="px-3 py-2 text-left">Seller</th>
@@ -574,8 +602,12 @@ export default function CardDetailClient({
                       </div>
                     </td>
                     <td className="px-3 py-4 align-middle text-sm text-slate-600">
-                      <span title={getMarketLabel(normalizeMarketCode(listing.market))}>
-                        {getMarketCompactLabel(normalizeMarketCode(listing.market))}
+                      <span
+                        title={getMarketLabel(normalizeMarketCode(listing.market))}
+                        className="flex items-center gap-1"
+                      >
+                        <MarketFlag code={normalizeMarketCode(listing.market)} />
+                        <span>{normalizeMarketCode(listing.market) === "EBAY_US" ? "US" : "CA"}</span>
                       </span>
                     </td>
                     <td className="px-3 py-4 align-middle text-right text-slate-600">

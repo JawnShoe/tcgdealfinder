@@ -6,7 +6,11 @@ export default function ListingLookup() {
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
-  const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [result, setResult] = useState<{
+    url: string;
+    matchEligible: boolean;
+    matchRejectReason: string | null;
+  } | null>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -15,7 +19,7 @@ export default function ListingLookup() {
 
     setStatus("loading");
     setMessage(null);
-    setResultUrl(null);
+    setResult(null);
 
     try {
       const params = new URLSearchParams({ itemId: trimmed });
@@ -27,9 +31,18 @@ export default function ListingLookup() {
         throw new Error(body?.message ?? body?.error ?? "Unable to find listing.");
       }
       const json = (await res.json()) as {
-        listing: { url: string; title: string };
+        listing: {
+          url: string;
+          title: string;
+          matchEligible: boolean;
+          matchRejectReason: string | null;
+        };
       };
-      setResultUrl(json.listing.url);
+      setResult({
+        url: json.listing.url,
+        matchEligible: json.listing.matchEligible ?? true,
+        matchRejectReason: json.listing.matchRejectReason ?? null,
+      });
       setMessage(json.listing.title ?? "Listing found.");
       setStatus("success");
     } catch (error) {
@@ -66,10 +79,17 @@ export default function ListingLookup() {
             status === "error" ? "text-rose-600" : "text-emerald-600"
           }`}
         >
-          {resultUrl ? (
-            <a href={resultUrl} target="_blank" rel="noopener noreferrer" className="underline">
-              {message}
-            </a>
+          {result ? (
+            <>
+              <a href={result.url} target="_blank" rel="noopener noreferrer" className="underline">
+                {message}
+              </a>
+              {!result.matchEligible && (
+                <span className="ml-2 inline-flex items-center rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                  Excluded: {result.matchRejectReason ?? "flagged"}
+                </span>
+              )}
+            </>
           ) : (
             message
           )}

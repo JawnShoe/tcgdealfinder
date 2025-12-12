@@ -30,6 +30,9 @@ export async function GET(request: NextRequest) {
     total_price_cad: string | null;
     market: string;
     seller_username: string | null;
+    match_eligible: boolean;
+    match_reject_reason: string | null;
+    reject_source: string | null;
   }>(
     `
       SELECT
@@ -39,7 +42,10 @@ export async function GET(request: NextRequest) {
         l.url,
         l.total_price_cad,
         l.market,
-        l.seller_username
+        l.seller_username,
+        l.match_eligible,
+        l.match_reject_reason,
+        l.reject_source
       FROM listings l
       WHERE l.listing_id = $1
       LIMIT 1;
@@ -66,6 +72,9 @@ export async function GET(request: NextRequest) {
       sellerUsername: match.seller_username,
       totalPriceCad:
         match.total_price_cad != null ? Number(match.total_price_cad) : null,
+      matchEligible: match.match_eligible,
+      matchRejectReason: match.match_reject_reason,
+      rejectSource: match.reject_source,
     },
   });
 }

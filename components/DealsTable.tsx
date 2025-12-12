@@ -599,7 +599,9 @@ export default function DealsTable({
           <table className="min-w-full table-fixed text-sm text-slate-900">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="w-[320px] min-w-[320px] px-3 py-2 text-left">
+                    <th className={`px-3 py-2 text-left ${
+                      isNewestVariant ? "w-[280px] min-w-[280px]" : "w-[320px] min-w-[320px]"
+                    }`}>
                       Card
                     </th>
                     <th className="w-[120px] px-3 py-2 text-right">
@@ -611,8 +613,12 @@ export default function DealsTable({
                     <th className="px-3 py-2 text-right">Discount</th>
                     <th className="px-3 py-2 text-right">Score</th>
                     <th className="px-3 py-2 text-left">Confidence</th>
-                    <th className="px-3 py-2 text-left">Seller</th>
-                    <th className="px-3 py-2 text-left">Market</th>
+                    <th className={`px-3 py-2 text-left ${
+                      isNewestVariant ? "w-[140px]" : ""
+                    }`}>Seller</th>
+                    <th className={`px-3 py-2 text-left ${
+                      isNewestVariant ? "w-[80px]" : ""
+                    }`}>Market</th>
                     <th className="w-[96px] px-3 py-2 text-left">Ends</th>
                     {isAdmin && adminSecret ? (
                       <th className="px-3 py-2 text-left">Admin</th>
@@ -622,7 +628,9 @@ export default function DealsTable({
                 <tbody className="divide-y divide-slate-100">
                   {currentSlice.map((vm) => (
                     <tr key={vm.deal.id} className="hover:bg-slate-50">
-                      <td className="w-[320px] min-w-[320px] px-3 py-4 align-middle">
+                      <td className={`px-3 py-4 align-middle ${
+                        isNewestVariant ? "w-[280px] min-w-[280px]" : "w-[320px] min-w-[320px]"
+                      }`}>
                         <div className="flex items-start gap-2.5">
                           {vm.deal.thumbnailUrl ? (
                             <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
@@ -689,10 +697,14 @@ export default function DealsTable({
                       <td className="px-3 py-4 align-middle text-left text-base text-slate-600">
                         {getConfidenceLabel(vm.deal.sampleSize ?? null)}
                       </td>
-                      <td className="px-3 py-4 align-middle text-left text-sm text-slate-700">
+                      <td className={`px-3 py-4 align-middle text-left text-sm text-slate-700 ${
+                        isNewestVariant ? "w-[140px]" : ""
+                      }`}>
                         <div className="flex min-w-0 items-center gap-2">
                           <span
-                            className="truncate"
+                            className={`truncate ${
+                              isNewestVariant ? "max-w-[100px]" : ""
+                            }`}
                             title={vm.deal.sellerUsername ?? "Unknown"}
                           >
                             {vm.deal.sellerUsername ?? "Unknown"}
@@ -702,7 +714,9 @@ export default function DealsTable({
                           ) : null}
                         </div>
                       </td>
-                      <td className="px-3 py-4 align-middle text-left text-sm text-slate-600">
+                      <td className={`px-3 py-4 align-middle text-left text-sm text-slate-600 ${
+                        isNewestVariant ? "w-[80px] whitespace-normal break-words" : ""
+                      }`}>
                         {formatMarketLabel(vm.deal.market)}
                       </td>
                       <td className="w-[96px] whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600">

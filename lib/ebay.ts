@@ -96,9 +96,6 @@ export const BANNED_TITLE_KEYWORDS = [
   "laser engraved",
   "engraved",
   "display only",
-  "display card",
-  "display piece",
-  "display",
   "for display",
   "for collection only",
   "print only",
@@ -138,15 +135,10 @@ export const BANNED_TITLE_KEYWORDS = [
   "rainbow foil",
   "foil art",
   "poster",
-  "anime card",
-  "anime",
   "mystery box",
   "lot",
-  "bundle",
-  "set of",
   "bulk",
   "korean",
-  "case",
   "booster",
   "deck box",
   "online code",
@@ -313,19 +305,18 @@ export function normalizeCondition(
   return c;
 }
 
-export function isValidListingTitle(rawTitle: string): boolean {
+export function findBannedTitleKeyword(rawTitle: string): string | null {
   const title = cleanTitle(rawTitle);
-
-  // Exclude anything that hints at custom/fan-made/replica/oversized cards.
-  // These tend to be reprints, metal/etched novelties, or display-only items
-  // that do not reflect real market prices.
   for (const banned of BANNED_TITLE_KEYWORDS) {
     if (title.includes(banned)) {
-      return false;
+      return banned;
     }
   }
+  return null;
+}
 
-  return true;
+export function isValidListingTitle(rawTitle: string): boolean {
+  return findBannedTitleKeyword(rawTitle) === null;
 }
 
 const MAX_STANDARD_SHIPPING_CAD = 40;

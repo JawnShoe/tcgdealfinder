@@ -42,6 +42,11 @@ CREATE TABLE IF NOT EXISTS listings (
   ends_at TIMESTAMP,
   historic_price_cad NUMERIC(10, 2),
   discount_percent NUMERIC(6, 2),
+  match_eligible BOOLEAN NOT NULL DEFAULT TRUE,
+  match_reject_reason TEXT,
+  reject_source TEXT,
+  detected_collector_number TEXT,
+  detected_language TEXT NOT NULL DEFAULT 'unknown',
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   UNIQUE (listing_id)

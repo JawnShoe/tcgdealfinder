@@ -2,10 +2,10 @@ import { query } from "../lib/db";
 import {
   fetchEbayListings,
   NormalizedListing,
-  isValidListingTitle,
   normalizeCondition,
   fetchEbayItemDetail,
   type EbayItemDetail,
+  findBannedTitleKeyword,
 } from "../lib/ebay";
 import { computeDiscountPercent } from "../lib/pricing";
 
@@ -92,6 +92,11 @@ async function upsertListing(
   sellerUsername: string | null,
   historicPriceCad: number | null,
   gradeInfo: GradeInfo,
+  matchEligible: boolean,
+  rejectReason: string | null,
+  rejectSource: string | null,
+  detectedCollectorNumber: string | null,
+  detectedLanguage: string,
 ) {
   const priceCad =
     listing.priceCad ??
@@ -116,10 +121,10 @@ async function upsertListing(
     normalizeCondition(conditionBucket) ??
     conditionBucket;
 
-  const normalizedDiscount = computeDiscountPercent(
-    totalPriceCad,
-    historicPriceCad,
-  );
+  const effectiveHistoricPrice = matchEligible ? historicPriceCad : null;
+  const normalizedDiscount = matchEligible
+    ? computeDiscountPercent(totalPriceCad, effectiveHistoricPrice)
+    : null;
   const sellerFeedbackCount =
     listing.sellerFeedbackCount ?? null;
   const sellerPositivePercent =
@@ -150,6 +155,11 @@ async function upsertListing(
       ends_at,
       historic_price_cad,
       discount_percent,
+      match_eligible,
+      match_reject_reason,
+      reject_source,
+      detected_collector_number,
+      detected_language,
       created_at,
       updated_at
     )
@@ -176,6 +186,11 @@ async function upsertListing(
       $19, -- ends_at
       $20, -- historic_price_cad
       $21, -- discount_percent
+      $22, -- match_eligible
+      $23, -- match_reject_reason
+      $24, -- reject_source
+      $25, -- detected_collector_number
+      $26, -- detected_language
       NOW(),
       NOW()
     )
@@ -200,6 +215,11 @@ async function upsertListing(
       ends_at = EXCLUDED.ends_at,
       historic_price_cad = EXCLUDED.historic_price_cad,
       discount_percent = EXCLUDED.discount_percent,
+      match_eligible = EXCLUDED.match_eligible,
+      match_reject_reason = EXCLUDED.match_reject_reason,
+      reject_source = EXCLUDED.reject_source,
+      detected_collector_number = EXCLUDED.detected_collector_number,
+      detected_language = EXCLUDED.detected_language,
       updated_at = NOW();
   `,
     [
@@ -222,8 +242,13 @@ async function upsertListing(
       gradeInfo.source,
       market,
       listing.endsAt ?? null,
-      historicPriceCad,
+      effectiveHistoricPrice,
       normalizedDiscount,
+      matchEligible,
+      rejectReason,
+      rejectSource,
+      detectedCollectorNumber,
+      detectedLanguage,
     ],
   );
 }
@@ -314,6 +339,43 @@ async function main() {
         gradeInfo,
       );
       const targetCardId = await getCardIdForBucket(row, inferredBucket);
+      const bannedKeyword = findBannedTitleKeyword(listing.title ?? "");
+      const detectedCollectorNumberRaw = extractCollectorNumber(
+        listing.title ?? "",
+      );
+      const detectedCollectorNumber = normalizeCollectorNumberValue(
+        detectedCollectorNumberRaw,
+      );
+      const targetCollectorNumber = normalizeCollectorNumberValue(
+        row.card_number ?? null,
+      );
+      const detectedLanguage = detectListingLanguage(listing.title ?? "");
+
+      let matchEligible = true;
+      let rejectReason: string | null = null;
+      let rejectSource: string | null = null;
+
+      if (bannedKeyword) {
+        matchEligible = false;
+        rejectReason = `title_keyword:${bannedKeyword}`;
+        rejectSource = "title_filter";
+      } else if (detectedLanguage === "jp") {
+        matchEligible = false;
+        rejectReason = "language_mismatch";
+        rejectSource = "language_filter";
+      } else if (
+        targetCollectorNumber &&
+        detectedCollectorNumber &&
+        targetCollectorNumber !== detectedCollectorNumber
+      ) {
+        matchEligible = false;
+        rejectReason = "collector_number_mismatch";
+        rejectSource = "collector_number";
+      } else if (sellerUsername && blacklistedSellers.has(sellerUsername)) {
+        matchEligible = false;
+        rejectReason = "seller_blacklisted";
+        rejectSource = "seller_filter";
+      }
 
       if (sellerUsername) {
         const stats =
@@ -322,24 +384,6 @@ async function main() {
         sellerStats.set(sellerUsername, stats);
       }
 
-      if (!isValidListingTitle(listing.title)) {
-        await logRejectedListing(listing, "invalid_title");
-        if (sellerUsername) {
-          const stats =
-            sellerStats.get(sellerUsername) ?? { total: 0, invalid: 0 };
-          stats.invalid += 1;
-          sellerStats.set(sellerUsername, stats);
-        }
-        continue;
-      }
-
-      if (sellerUsername && blacklistedSellers.has(sellerUsername)) {
-        console.log(
-          `Skipping listing ${listing.listingId} from blacklisted seller ${sellerUsername}.`,
-        );
-        await logRejectedListing(listing, "seller_blacklisted");
-        continue;
-      }
       try {
         await upsertListing(
           targetCardId,
@@ -349,13 +393,38 @@ async function main() {
           sellerUsername,
           historicPrice,
           gradeInfo,
+          matchEligible,
+          rejectReason,
+          rejectSource,
+          detectedCollectorNumber,
+          detectedLanguage,
         );
-        updatedCount += 1;
+        if (matchEligible) {
+          updatedCount += 1;
+        }
       } catch (err) {
         console.error(
           `Failed to upsert listing ${listing.listingId} for ${row.name}:`,
           err,
         );
+        continue;
+      }
+
+      if (!matchEligible) {
+        await logRejectedListing(
+          listing,
+          rejectReason ?? "match_rejected_unknown",
+        );
+        if (
+          sellerUsername &&
+          rejectReason !== "seller_blacklisted"
+        ) {
+          const stats =
+            sellerStats.get(sellerUsername) ?? { total: 0, invalid: 0 };
+          stats.invalid += 1;
+          sellerStats.set(sellerUsername, stats);
+        }
+        continue;
       }
     }
 
@@ -567,6 +636,60 @@ function detectGradeFromTitle(title: string): GradeInfo | null {
     }
   }
   return null;
+}
+
+function extractCollectorNumber(rawTitle: string): string | null {
+  if (!rawTitle) return null;
+  const normalized = rawTitle.toUpperCase().replace(/[#]/g, " ");
+  const pattern = /([A-Z]{0,3}\d{1,3})\s*\/\s*([A-Z]{0,3}\d{1,3})/g;
+  let match: RegExpExecArray | null;
+  // eslint-disable-next-line no-cond-assign
+  while ((match = pattern.exec(normalized))) {
+    const left = match[1]?.replace(/\s+/g, "") ?? "";
+    const right = match[2]?.replace(/\s+/g, "") ?? "";
+    if (!/\d/.test(left) || !/\d/.test(right)) {
+      continue;
+    }
+    return `${left}/${right}`;
+  }
+  return null;
+}
+
+function normalizeCollectorNumberValue(
+  input: string | null | undefined,
+): string | null {
+  if (!input) return null;
+  const cleaned = input
+    .toUpperCase()
+    .replace(/[^A-Z0-9/]/g, "")
+    .replace(/\/+/g, "/");
+  return cleaned || null;
+}
+
+type ListingLanguage = "en" | "jp" | "unknown";
+
+function detectListingLanguage(title: string | null | undefined): ListingLanguage {
+  if (!title) {
+    return "unknown";
+  }
+  const lower = title.toLowerCase();
+  if (
+    /\bjapanese\b/.test(lower) ||
+    /\bjpn\b/.test(lower) ||
+    /\bjp\b/.test(lower) ||
+    title.includes("日本語")
+  ) {
+    return "jp";
+  }
+  const hasAsciiLetters = /[a-z]/i.test(title);
+  const hasNonAscii = /[^\x00-\x7F]/.test(title);
+  if (hasAsciiLetters && !hasNonAscii) {
+    return "en";
+  }
+  if (hasAsciiLetters && hasNonAscii) {
+    return "unknown";
+  }
+  return hasNonAscii ? "unknown" : "en";
 }
 
 async function getListingDetail(

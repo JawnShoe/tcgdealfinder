@@ -28,6 +28,7 @@ import { isDealTrusted } from "../lib/dealScore";
 import { FX_RATE_COPY } from "../lib/money";
 import {
   getMarketLabel,
+  getMarketCompactLabel,
   normalizeMarketCode,
   DEFAULT_MARKET,
 } from "../lib/markets";
@@ -490,9 +491,14 @@ export default function CardDetailClient({
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-3 py-6 text-center text-sm text-slate-500"
+                    className="px-3 py-6 text-center"
                   >
-                    No listings match the current filters.
+                    <p className="text-sm text-slate-600">
+                      No listings match your current filters.
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Try adjusting condition or market selection.
+                    </p>
                   </td>
                 </tr>
               ) : (
@@ -501,7 +507,7 @@ export default function CardDetailClient({
                     listing.confidenceWeight ?? null,
                   );
                   return (
-                    <tr key={listing.id} className="hover:bg-slate-50">
+                    <tr key={listing.id} className="even:bg-slate-50/50 hover:bg-slate-100">
                       <td className="px-3 py-4 align-middle">
                         <div className="flex items-start gap-3">
                           {listing.thumbnailUrl ? (
@@ -568,7 +574,9 @@ export default function CardDetailClient({
                       </div>
                     </td>
                     <td className="px-3 py-4 align-middle text-sm text-slate-600">
-                      {getMarketLabel(normalizeMarketCode(listing.market))}
+                      <span title={getMarketLabel(normalizeMarketCode(listing.market))}>
+                        {getMarketCompactLabel(normalizeMarketCode(listing.market))}
+                      </span>
                     </td>
                     <td className="px-3 py-4 align-middle text-right text-slate-600">
                       {formatEndsAt(listing.endsAt)}

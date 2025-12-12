@@ -34,6 +34,18 @@ export function getMarketLabel(code: MarketCode): string {
   return MARKET_LABELS[code] ?? code;
 }
 
+export function getMarketEmoji(code: MarketCode): string {
+  if (code === "EBAY_US") return "🇺🇸";
+  if (code === "EBAY_CA") return "🇨🇦";
+  return "";
+}
+
+export function getMarketCompactLabel(code: MarketCode): string {
+  if (code === "EBAY_US") return "🇺🇸 US";
+  if (code === "EBAY_CA") return "🇨🇦 CA";
+  return code;
+}
+
 export function getExpectedCurrency(code: MarketCode): string {
   return MARKET_CURRENCIES[code];
 }

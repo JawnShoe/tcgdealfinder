@@ -47,14 +47,14 @@ export function CardIdentityBlock({
           href={primaryHref}
           target={titleLinkTarget}
           rel="noopener noreferrer"
-          className="line-clamp-2 break-normal text-base font-semibold text-slate-900 hover:text-slate-700"
+          className="line-clamp-2 break-normal text-base font-bold text-slate-900 hover:text-slate-700"
           title={primary ?? undefined}
         >
           {primary}
         </Link>
       ) : (
         <p
-          className="line-clamp-2 break-normal text-base font-semibold text-slate-900"
+          className="line-clamp-2 break-normal text-base font-bold text-slate-900"
           title={primary ?? undefined}
         >
           {primary}

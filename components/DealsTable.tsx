@@ -45,6 +45,7 @@ import { FX_RATE_COPY } from "../lib/money";
 import {
   DEFAULT_MARKET,
   getMarketLabel,
+  getMarketCompactLabel,
   normalizeMarketCode,
 } from "../lib/markets";
 import { compareStrictBestDiscountValues } from "../lib/dealSort";
@@ -158,6 +159,13 @@ export default function DealsTable({
     isNewestVariant && (value == null || Number.isNaN(value));
   const formatMarketLabel = (market: string | null | undefined) =>
     getMarketLabel(normalizeMarketCode(market ?? DEFAULT_MARKET));
+  const formatMarketCompact = (market: string | null | undefined) => {
+    const code = normalizeMarketCode(market ?? DEFAULT_MARKET);
+    return {
+      display: getMarketCompactLabel(code),
+      fullLabel: getMarketLabel(code),
+    };
+  };
 
   const updateState = (
     producer: (prev: DealsViewState) => DealsViewState,
@@ -647,7 +655,9 @@ export default function DealsTable({
                       Historic (USD)
                     </th>
                     <th className={`${colClass("discount", variant)} px-3 py-2 text-right`}>Discount</th>
-                    <th className={`${colClass("score", variant)} px-3 py-2 text-right`}>Score</th>
+                    {!isNewestVariant && variant !== "default" ? (
+                      <th className={`${colClass("score", variant)} px-3 py-2 text-right`}>Score</th>
+                    ) : null}
                     <th className={`${colClass("confidence", variant)} px-3 py-2 text-left`}>Confidence</th>
                     <th className={`${colClass("seller", variant)} px-3 py-2 text-left`}>Seller</th>
                     <th className={`${colClass("market", variant)} px-3 py-2 text-left`}>Market</th>
@@ -659,7 +669,7 @@ export default function DealsTable({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {currentSlice.map((vm) => (
-                    <tr key={vm.deal.id} className="hover:bg-slate-50">
+                    <tr key={vm.deal.id} className="even:bg-slate-50/50 hover:bg-slate-100">
                       <td className={`${colClass("card", variant)} px-3 py-4 align-middle`}>
                         <div className="flex items-start gap-2.5">
                           {vm.deal.thumbnailUrl ? (
@@ -703,29 +713,38 @@ export default function DealsTable({
                           vm.discount,
                         )} whitespace-nowrap px-3 py-4 align-middle text-right text-base ${
                           isUnscoredDiscount(vm.discount)
-                            ? "font-normal text-slate-500"
+                            ? "font-normal italic text-slate-400"
                             : "font-semibold"
                         }`}
                       >
                         {formatDiscountDisplay(vm.discount)}
                       </td>
-                      <td className={`${colClass("score", variant)} px-3 py-4 align-middle text-right text-base`}>
-                        <div className="flex flex-col items-end gap-1">
-                          <span className={`${scoreClass(vm.score)} font-semibold`}>
-                            {formatScore(vm.score)}
-                          </span>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
-                              vm.confidenceLabel,
-                            )}`}
-                            title={CONFIDENCE_TOOLTIP}
-                          >
-                            {getConfidenceDisplayText(vm.confidenceLabel)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className={`${colClass("confidence", variant)} px-3 py-4 align-middle text-left text-base text-slate-600`}>
-                        {getConfidenceLabel(vm.deal.sampleSize ?? null)}
+                      {!isNewestVariant && variant !== "default" ? (
+                        <td className={`${colClass("score", variant)} px-3 py-4 align-middle text-right text-base`}>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className={`${scoreClass(vm.score)} font-semibold`}>
+                              {formatScore(vm.score)}
+                            </span>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
+                                vm.confidenceLabel,
+                              )}`}
+                              title={CONFIDENCE_TOOLTIP}
+                            >
+                              {getConfidenceDisplayText(vm.confidenceLabel)}
+                            </span>
+                          </div>
+                        </td>
+                      ) : null}
+                      <td className={`${colClass("confidence", variant)} px-3 py-4 align-middle text-left`}>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
+                            vm.confidenceLabel,
+                          )}`}
+                          title={`${CONFIDENCE_TOOLTIP} ${getConfidenceLabel(vm.deal.sampleSize ?? null)}`}
+                        >
+                          {getConfidenceDisplayText(vm.confidenceLabel)}
+                        </span>
                       </td>
                       <td className={`${colClass("seller", variant)} px-3 py-4 align-middle text-left text-sm text-slate-700`}>
                         <div className="flex min-w-0 items-center gap-2">
@@ -745,7 +764,9 @@ export default function DealsTable({
                       <td className={`${colClass("market", variant)} px-3 py-4 align-middle text-left text-sm text-slate-600${
                         isNewestVariant ? " whitespace-normal break-words" : ""
                       }`}>
-                        {formatMarketLabel(vm.deal.market)}
+                        <span title={formatMarketCompact(vm.deal.market).fullLabel}>
+                          {formatMarketCompact(vm.deal.market).display}
+                        </span>
                       </td>
                       <td className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}>
                         {formatEndsAt(vm.deal.endsAt)}
@@ -832,7 +853,9 @@ export default function DealsTable({
                     Confidence: {getConfidenceLabel(vm.deal.sampleSize ?? null)}
                   </span>
                   <span>Seller: {vm.deal.sellerUsername ?? "Unknown"}</span>
-                  <span>Market: {formatMarketLabel(vm.deal.market)}</span>
+                  <span title={formatMarketCompact(vm.deal.market).fullLabel}>
+                    Market: {formatMarketCompact(vm.deal.market).display}
+                  </span>
                   {vm.trustedSeller ? (
                     <span className="inline-flex items-center gap-1">
                       <TrustedBadge />
@@ -852,9 +875,14 @@ export default function DealsTable({
           </div>
         </>
       ) : (
-        <p className="text-sm text-slate-600">
-          No deals match your filters. Try adjusting the criteria.
-        </p>
+        <div className="py-10 text-center">
+          <p className="text-sm text-slate-600">
+            No deals match your current filters.
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            Try adjusting condition, discount, or price range.
+          </p>
+        </div>
       )}
 
       {serverMode && remoteError ? (

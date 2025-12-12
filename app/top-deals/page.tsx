@@ -17,6 +17,7 @@ import {
 import {
   DEFAULT_MARKET,
   getMarketLabel,
+  getMarketCompactLabel,
   normalizeMarketCode,
 } from "../../lib/markets";
 import {
@@ -243,8 +244,13 @@ export default async function TopDealsPage({
           Prices shown in USD (converted from CAD). {FX_RATE_COPY}
         </p>
         {deals.length === 0 ? (
-          <div className="py-10 text-center text-sm text-slate-500">
-            No high-confidence top deals found right now. Try again later.
+          <div className="py-10 text-center">
+            <p className="text-sm text-slate-600">
+              No high-confidence top deals found right now.
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Check back soon for new listings.
+            </p>
           </div>
         ) : (
           <table className="deals-table text-xs md:text-sm">
@@ -265,7 +271,7 @@ export default async function TopDealsPage({
             </thead>
             <tbody>
               {deals.map((deal) => (
-                <tr key={deal.listingId}>
+                <tr key={deal.listingId} className="even:bg-slate-50/50 hover:bg-slate-100">
                   <td className="col-card text-left">
                     <CardIdentityBlock
                       identity={{
@@ -303,7 +309,9 @@ export default async function TopDealsPage({
                     {formatSeller(deal)}
                   </td>
                   <td className="col-market text-slate-600">
-                    {getMarketLabel(normalizeMarketCode(deal.market))}
+                    <span title={getMarketLabel(normalizeMarketCode(deal.market))}>
+                      {getMarketCompactLabel(normalizeMarketCode(deal.market))}
+                    </span>
                   </td>
                   <td className="col-ends text-right text-slate-500">
                     {formatEndsAt(deal.endsAt)}

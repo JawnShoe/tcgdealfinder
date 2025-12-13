@@ -7,6 +7,36 @@ import {
   getConfidenceLabel,
 } from "@/lib/dealFormatting";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
+import { normalizeMarketCode, getMarketLabel } from "@/lib/markets";
+import { ConfidenceChip } from "./ConfidenceChip";
+import { getConfidenceLabel as getWeightLabel } from "@/lib/dealConfidence";
+
+// SVG flag icon component (shared with tables)
+const MarketFlag = ({ code }: { code: string }) => {
+  const normalized = normalizeMarketCode(code);
+  if (normalized === "EBAY_US") {
+    return (
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-label="United States flag">
+        <rect width="16" height="12" fill="#B22234" />
+        <rect y="1" width="16" height="1" fill="white" />
+        <rect y="3" width="16" height="1" fill="white" />
+        <rect y="5" width="16" height="1" fill="white" />
+        <rect y="7" width="16" height="1" fill="white" />
+        <rect y="9" width="16" height="1" fill="white" />
+        <rect y="11" width="16" height="1" fill="white" />
+        <rect width="7" height="6" fill="#3C3B6E" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-label="Canada flag">
+      <rect width="5" height="12" fill="#FF0000" />
+      <rect x="5" width="6" height="12" fill="white" />
+      <rect x="11" width="5" height="12" fill="#FF0000" />
+      <path d="M8 3L8.5 5H10L8.75 6L9.25 8L8 7L6.75 8L7.25 6L6 5H7.5L8 3Z" fill="#FF0000" />
+    </svg>
+  );
+};
 
 type FeaturedDealsStripProps = {
   deals: Deal[];
@@ -25,20 +55,13 @@ export default function FeaturedDealsStrip({
   const featured = buildFeaturedDeals(deals);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6 lg:px-8">
+    <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 sm:px-5 lg:px-6">
       <div className="flex flex-col gap-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-600">
-          Featured
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          High confidence picks
         </p>
-        <h2 className="text-lg font-semibold text-slate-900">
-          Top opportunities right now
-        </h2>
         <p className="text-sm text-slate-600">
-          Highest-discount listings across every market. Refreshed whenever new
-          deals arrive.
-        </p>
-        <p className="text-xs uppercase tracking-wide text-slate-500">
-          Prices shown in USD (converted from CAD). {FX_RATE_COPY}
+          Largest discounts with verified price history. Updated live.
         </p>
       </div>
 
@@ -52,7 +75,7 @@ export default function FeaturedDealsStrip({
             {featured.map(({ deal, price, discount }) => (
               <article
                 key={deal.id}
-                className="min-w-[250px] flex-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:min-w-0"
+                className="min-w-[250px] flex-1 rounded-xl border border-slate-200 bg-white p-3.5 sm:min-w-0"
               >
                 <div className="flex gap-3">
                   {deal.thumbnailUrl ? (
@@ -89,23 +112,20 @@ export default function FeaturedDealsStrip({
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-1 text-xs text-slate-600">
-                  <div className="flex justify-between">
-                    <span>Confidence</span>
-                    <span className="text-slate-900">
-                      {getConfidenceLabel(deal.sampleSize ?? null)}
-                    </span>
-                  </div>
-                  {deal.sampleSize ? (
-                    <div className="flex justify-between">
-                      <span>Sample size</span>
-                      <span className="text-slate-900">{deal.sampleSize}</span>
-                    </div>
-                  ) : null}
-                  <div className="flex justify-between">
-                    <span>Market</span>
-                    <span className="text-slate-900">{deal.market}</span>
-                  </div>
+                <div className="mt-4 flex items-center justify-between text-xs">
+                  <span className="text-slate-600">Price confidence</span>
+                  <ConfidenceChip
+                    weightLabel={getWeightLabel(deal.confidenceWeight ?? null)}
+                    sampleSize={deal.sampleSize}
+                    center={false}
+                  />
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="text-slate-600">Market</span>
+                  <span className="flex items-center gap-1 text-slate-900" title={getMarketLabel(normalizeMarketCode(deal.market))}>
+                    <MarketFlag code={deal.market} />
+                    <span>{normalizeMarketCode(deal.market) === "EBAY_US" ? "US" : "CA"}</span>
+                  </span>
                 </div>
 
                 <div className="mt-4">

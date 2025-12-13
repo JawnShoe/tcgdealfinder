@@ -8,6 +8,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { TrustedBadge } from "./TrustedBadge";
 import { WatchlistButton } from "./WatchlistButton";
 import { CardIdentityBlock } from "./CardIdentity";
+import { ConfidenceChip } from "./ConfidenceChip";
 import {
   CONDITION_FILTERS,
   type ConditionFilterKey,
@@ -36,6 +37,7 @@ import {
   getConfidenceLabel as getWeightLabel,
   getConfidenceBadgeClass,
   getConfidenceDisplayText,
+  getConfidenceCompactText,
   CONFIDENCE_TOOLTIP,
 } from "../lib/dealConfidence";
 
@@ -497,9 +499,16 @@ export default function CardDetailClient({
           <h2 className="text-base font-semibold text-slate-900">Live listings</h2>
           <p className="text-xs text-slate-500">{listingsLabel}</p>
         </div>
-        <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
-          Prices shown in USD (converted from CAD). {FX_RATE_COPY}
-        </p>
+        {(() => {
+          const hasCanadianListings = filteredListings.some(
+            (listing) => normalizeMarketCode(listing.market) === "EBAY_CA"
+          );
+          return hasCanadianListings ? (
+            <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
+              Prices shown in USD (converted from CAD). {FX_RATE_COPY}
+            </p>
+          ) : null;
+        })()}
         <div className="w-full overflow-x-auto">
           <table className="min-w-full table-fixed text-sm text-slate-900">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -508,7 +517,7 @@ export default function CardDetailClient({
                 <th className="whitespace-nowrap px-3 py-2 text-right">Total USD</th>
                 <th className="whitespace-nowrap px-3 py-2 text-right">Historic USD</th>
                 <th className="px-3 py-2 text-right">Discount</th>
-                <th className="px-3 py-2 text-left">Confidence</th>
+                <th className="whitespace-nowrap px-3 py-2 text-center">Price conf.</th>
                 <th className="px-3 py-2 text-left">Seller</th>
                 <th className="px-3 py-2 text-left">Market</th>
                 <th className="px-3 py-2 text-right">Ends</th>
@@ -577,15 +586,12 @@ export default function CardDetailClient({
                     >
                       {formatDiscount(listing.discountPercent)}
                     </td>
-                    <td className="px-3 py-4 align-middle">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
-                          weightLabel,
-                        )}`}
-                        title={CONFIDENCE_TOOLTIP}
-                      >
-                        {getConfidenceDisplayText(weightLabel)}
-                      </span>
+                    <td className="px-3 py-4 align-middle text-center">
+                      <ConfidenceChip
+                        weightLabel={weightLabel}
+                        sampleSize={listing.sampleSize}
+                        center={false}
+                      />
                     </td>
                     <td className="px-3 py-4 align-middle text-sm text-slate-700">
                       <div className="flex min-w-0 items-center gap-2">

@@ -62,50 +62,16 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 pt-4 pb-8 lg:pt-6 lg:pb-12 space-y-5 lg:space-y-7">
-        {/* Hero */}
-        <section>
-          <div className="mx-auto max-w-7xl rounded-2xl bg-white shadow-sm border border-slate-200 px-5 py-6 sm:px-7 lg:px-10">
-            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:items-center lg:gap-12 xl:gap-16">
-              <div className="space-y-4 lg:pr-8">
-                <p className="text-xs font-semibold uppercase tracking-[0.35em] text-emerald-600">
-                  Real-time arbitrage radar
-                </p>
-                <div className="space-y-3">
-                  <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-900">
-                    {"Find undervalued Pokemon cards in seconds."}
-                  </h1>
-                  <p className="text-sm md:text-base text-slate-600 max-w-2xl">
-                    TCG Deal Finder scores every live eBay listing by discount, seller trust, and data confidence so you only spend time on the safest opportunities.
-                  </p>
-                  <div className="flex flex-wrap gap-3 pt-1">
-                    <Link
-                      href="/newest"
-                      className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
-                    >
-                      Browse newest listings
-                    </Link>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-700 sm:grid-cols-3 lg:pl-6">
-                <div>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Coverage</p>
-                  <p className="text-base font-semibold text-slate-900">200+ live deals tracked</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Trusted sellers</p>
-                  <p className="text-base font-semibold text-slate-900">40+ verified accounts</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Fresh data</p>
-                  <p className="text-base font-semibold text-slate-900">Updated every day</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 pt-4 pb-8 lg:pt-6 lg:pb-12 space-y-6">
+        {/* Page header */}
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            Live Pokémon deals
+          </h1>
+          <p className="text-sm text-slate-600">
+            Ranked by discount and price confidence
+          </p>
+        </div>
 
         {/* Featured deals */}
         <section>

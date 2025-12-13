@@ -255,16 +255,13 @@ export default async function EndingSoonPage({
   return (
     <main className="page-shell space-y-6 py-6">
       <div className="panel space-y-3">
-        <h1 className="text-3xl font-bold text-slate-900">Ending Soon</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Ending Soon</h1>
         <p className="text-base text-slate-600">
           Trusted discounted listings ending in the next 24 hours.
         </p>
       </div>
 
       <div className="panel overflow-x-auto">
-        <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
-          Prices shown in USD (converted from CAD). {FX_RATE_COPY}
-        </p>
         {deals.length === 0 ? (
           <div className="py-10 text-center">
             <p className="text-sm text-slate-600">

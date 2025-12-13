@@ -89,9 +89,6 @@ export default function WatchlistPage() {
         <p className="text-base text-slate-600">
           Save cards to track their estimated value and active deals.
         </p>
-        <p className="text-xs uppercase tracking-wide text-slate-500">
-          Prices shown in USD (converted from CAD). {FX_RATE_COPY}
-        </p>
       </div>
 
       {loading ? (

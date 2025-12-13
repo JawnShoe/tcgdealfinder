@@ -1,5 +1,33 @@
 "use client";
 
+/**
+ * TABLE QA CHECKLIST
+ * 
+ * Column visibility by variant/page:
+ * 
+ * Homepage (variant="default"):
+ *   - Card (320px) | Total USD | Historic USD | Discount | Seller | Market (flag + US/CA) | Ends
+ *   - NO Score column (hidden, but used internally for sorting)
+ *   - NO Confidence column (removed to reduce width and improve scanability)
+ * 
+ * /newest page (variant="newest"):
+ *   - Card (280px) | Total USD | Historic USD | Discount | Confidence (centered) | Seller (140px) | Market (flag + US/CA, 80px) | Ends
+ *   - NO Score column (hidden on newest)
+ * 
+ * /cards page (no variant prop, uses default):
+ *   - Card | Total USD | Historic USD | Discount | Score | Confidence (left-aligned) | Seller | Market (flag + US/CA) | Ends
+ * 
+ * Other pages (/top-deals, /ending-soon):
+ *   - Use custom table implementations with flag + US/CA market display
+ * 
+ * Design rules:
+ *   - All tables use SVG flag icons + short code (🇺🇸 US or 🇨🇦 CA)
+ *   - Long seller names truncate with tooltip (truncate class + title attribute)
+ *   - TrustedBadge uses flex-none to stay aligned
+ *   - Headers use whitespace-nowrap on "Total USD" and "Historic USD"
+ *   - No horizontal scroll on standard desktop (1280px+) for homepage and /newest
+ */
+
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -7,6 +35,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminDealActions } from "./AdminDealActions";
 import { TrustedBadge } from "./TrustedBadge";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
+import { ConfidenceChip } from "./ConfidenceChip";
 import type { Deal } from "../types/deal";
 import type { DealsApiMeta, DealsApiResponse } from "@/types/dealsApi";
 import {
@@ -39,6 +68,7 @@ import {
   getConfidenceLabel as getWeightLabel,
   getConfidenceBadgeClass,
   getConfidenceDisplayText,
+  getConfidenceCompactText,
   CONFIDENCE_TOOLTIP,
 } from "../lib/dealConfidence";
 import { FX_RATE_COPY } from "../lib/money";
@@ -657,9 +687,18 @@ export default function DealsTable({
         </label>
       </div>
 
-      <p className="text-xs uppercase tracking-wide text-slate-500">
-        Prices shown in USD (converted from CAD). {FX_RATE_COPY}
-      </p>
+      {(() => {
+        const hasCanadianListings = currentSlice.some(
+          (vm) => normalizeMarketCode(vm.deal.market) === "EBAY_CA"
+        );
+        const marketFilterIncludesCA = viewState.marketKey === "ca" || viewState.marketKey === "all";
+        const showFxNotice = hasCanadianListings || marketFilterIncludesCA;
+        return showFxNotice ? (
+          <p className="text-xs uppercase tracking-wide text-slate-500">
+            Prices shown in USD (converted from CAD). {FX_RATE_COPY}
+          </p>
+        ) : null;
+      })()}
 
       {showNoDiscountNotice ? (
         <p className="text-xs text-slate-500">
@@ -688,7 +727,7 @@ export default function DealsTable({
                       <th className={`${colClass("score", variant)} px-3 py-2 text-right`}>Score</th>
                     ) : null}
                     {variant !== "default" ? (
-                      <th className={`${colClass("confidence", variant)} px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"}`}>Confidence</th>
+                      <th className={`${colClass("confidence", variant)} whitespace-nowrap px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"}`}>Price conf.</th>
                     ) : null}
                     <th className={`${colClass("seller", variant)} px-3 py-2 text-left`}>Seller</th>
                     <th className={`${colClass("market", variant)} px-3 py-2 text-left`}>Market</th>
@@ -783,15 +822,12 @@ export default function DealsTable({
                         </td>
                       ) : null}
                       {variant !== "default" ? (
-                        <td className={`${colClass("confidence", variant)} px-3 py-4 align-middle ${isNewestVariant ? "text-center" : "text-left"}`}>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
-                              vm.confidenceLabel,
-                            )}`}
-                            title={`${CONFIDENCE_TOOLTIP} ${getConfidenceLabel(vm.deal.sampleSize ?? null)}`}
-                          >
-                            {getConfidenceDisplayText(vm.confidenceLabel)}
-                          </span>
+                        <td className={`${colClass("confidence", variant)} px-3 py-4 align-middle`}>
+                          <ConfidenceChip
+                            weightLabel={vm.confidenceLabel}
+                            sampleSize={vm.deal.sampleSize}
+                            center={isNewestVariant}
+                          />
                         </td>
                       ) : null}
                       <td className={`${colClass("seller", variant)} px-3 py-4 align-middle text-left text-sm text-slate-700`}>

@@ -459,9 +459,6 @@ export default async function SetDetailPage({
           Tracking {stats.totalCardsTracked} card
           {stats.totalCardsTracked === 1 ? "" : "s"} from this set.
         </p>
-        <p className="text-xs uppercase tracking-wide text-slate-500">
-          Prices shown in USD (converted from CAD). {FX_RATE_COPY}
-        </p>
         <div className="flex flex-wrap gap-4 text-sm text-slate-700">
           <div>
             <span className="text-slate-500">Cards with deals:</span>{" "}

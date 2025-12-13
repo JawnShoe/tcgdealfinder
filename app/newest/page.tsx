@@ -16,7 +16,7 @@ export default async function NewestListingsPage() {
       <div className="mx-auto max-w-7xl px-4 pt-6 pb-10 sm:px-6 lg:px-10 lg:pb-14">
         <section className="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white px-6 py-6 shadow-sm sm:px-8">
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
               Newest listings
             </h1>
             <p className="text-sm text-slate-600">

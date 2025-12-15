@@ -1,31 +1,24 @@
 "use server";
 
 import { AdminDealActions } from "../../components/AdminDealActions";
-import { TrustedBadge } from "../../components/TrustedBadge";
-import { CardIdentityBlock } from "../../components/CardIdentity";
 import { query } from "../../lib/db";
-import {
-  formatCurrency,
-  discountClass,
-  formatDiscount,
-  formatEndsAt,
-  getConfidenceLabel,
-} from "../../lib/dealFormatting";
-import { FX_RATE_COPY } from "../../lib/money";
+import type { Deal } from "../../types/deal";
+import { buildDealViewModel, type DealViewModel } from "../../lib/dealViewModel";
+import { EndingSoonColumns } from "../../lib/tableColumns";
+import { PAGE_TITLE, PAGE_SUBTITLE, TABLE_CONTAINER } from "../../lib/typography";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../lib/pricing";
-import {
-  DEFAULT_MARKET,
-  getMarketLabel,
-  getMarketCompactLabel,
-  normalizeMarketCode,
-} from "../../lib/markets";
+import { DEFAULT_MARKET } from "../../lib/markets";
 import {
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
 } from "../../lib/schema";
+
+const MIN_SAMPLE_SIZE = 20;
+const TRUSTED_FEEDBACK = 20;
+const TRUSTED_POSITIVE_PERCENT = 98;
 
 type EndingSoonRow = {
   listing_id: number;
@@ -44,79 +37,10 @@ type EndingSoonRow = {
   ends_at: string | null;
   listing_url: string;
   seller_username: string | null;
+  thumbnail_url: string | null;
 };
 
-type EndingSoonDeal = {
-  listingId: number;
-  listingTitle: string | null;
-  cardId: number | null;
-  cardName: string | null;
-  setName: string | null;
-  condition: string | null;
-  totalPriceCad: number | null;
-  medianPriceCad: number | null;
-  sampleSize: number | null;
-  discountPercent: number | null;
-  sellerFeedbackCount: number | null;
-  sellerPositivePercent: number | null;
-  market: string;
-  endsAt: string | null;
-  listingUrl: string;
-  sellerUsername: string | null;
-};
-
-const MIN_SAMPLE_SIZE = 20;
-const TRUSTED_FEEDBACK = 20;
-const TRUSTED_POSITIVE_PERCENT = 98;
-
-function MarketFlag({ code }: { code: string }) {
-  if (code === "EBAY_US" || code === "us" || code === "US") {
-    return (
-      <svg width="20" height="14" viewBox="0 0 20 14" className="inline-block">
-        <rect width="20" height="14" fill="#B22234" />
-        <rect y="1.08" width="20" height="1.08" fill="white" />
-        <rect y="3.23" width="20" height="1.08" fill="white" />
-        <rect y="5.38" width="20" height="1.08" fill="white" />
-        <rect y="7.54" width="20" height="1.08" fill="white" />
-        <rect y="9.69" width="20" height="1.08" fill="white" />
-        <rect y="11.85" width="20" height="1.08" fill="white" />
-        <rect width="8" height="7" fill="#3C3B6E" />
-      </svg>
-    );
-  }
-  if (code === "EBAY_CA" || code === "ca" || code === "CA") {
-    return (
-      <svg width="20" height="14" viewBox="0 0 20 14" className="inline-block">
-        <rect width="20" height="14" fill="white" />
-        <rect width="5" height="14" fill="#FF0000" />
-        <rect x="15" width="5" height="14" fill="#FF0000" />
-        <path d="M10 3 L10.5 5 L12 4.5 L10.8 6 L12.5 6.5 L10.5 7 L11 9 L10 7.5 L9 9 L9.5 7 L7.5 6.5 L9.2 6 L8 4.5 L9.5 5 Z" fill="#FF0000" />
-      </svg>
-    );
-  }
-  return null;
-}
-
-function formatSeller(deal: EndingSoonDeal): JSX.Element {
-  const name = deal.sellerUsername ?? "Unknown";
-  const trusted =
-    deal.sellerFeedbackCount != null &&
-    deal.sellerFeedbackCount >= TRUSTED_FEEDBACK &&
-    deal.sellerPositivePercent != null &&
-    deal.sellerPositivePercent >= TRUSTED_POSITIVE_PERCENT;
-  return (
-    <div className="flex min-w-0 items-center gap-2">
-      <span className="truncate" title={name}>
-        {name}
-      </span>
-      {trusted ? (
-        <TrustedBadge className="flex-none" />
-      ) : null}
-    </div>
-  );
-}
-
-async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
+async function getEndingSoonDeals(): Promise<Deal[]> {
   const market = DEFAULT_MARKET;
   const hasListingsMarketColumn = await ensureListingsMarketColumn();
   const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
@@ -129,6 +53,7 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
         ? `AND hp.market = ${marketLiteral}`
         : "";
   const marketFilterClause = hasListingsMarketColumn ? "AND l.market = $4" : "";
+  
   const res = await query<EndingSoonRow>(
     `
       SELECT
@@ -147,7 +72,8 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
         ${marketSelect} AS market,
         l.ends_at,
         l.url AS listing_url,
-        l.seller_username
+        l.seller_username,
+        l.thumbnail_url
       FROM listings l
       LEFT JOIN cards c ON c.id = l.card_id
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
@@ -185,7 +111,7 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
     ],
   );
 
-  return res.rows.map((row) => {
+  return res.rows.map((row: EndingSoonRow): Deal => {
     const total =
       row.total_price_cad !== null ? Number(row.total_price_cad) : null;
     const historic =
@@ -200,11 +126,13 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
       row.seller_positive_percent !== null
         ? Number(row.seller_positive_percent)
         : null;
+        
     let rawDiscount = computeDiscountPercent(total, historic);
     if (rawDiscount == null && row.discount_percent !== null) {
       const parsed = Number(row.discount_percent);
       rawDiscount = Number.isNaN(parsed) ? null : parsed;
     }
+    
     const displayDiscount =
       sampleSize !== null && sampleSize < 5
         ? null
@@ -215,22 +143,34 @@ async function getEndingSoonDeals(): Promise<EndingSoonDeal[]> {
           });
 
     return {
-      listingId: row.listing_id,
-      listingTitle: row.title ?? null,
-      cardId: row.card_id,
-      cardName: row.card_name,
-      setName: row.set_name,
-      condition: row.condition,
+      id: row.listing_id,
+      title: row.title ?? "Unknown listing",
+      url: row.listing_url,
+      priceCad: null,
+      shippingCad: null,
       totalPriceCad: total,
-      medianPriceCad: historic,
-      sampleSize,
+      historicPriceCad: historic,
       discountPercent: displayDiscount,
-      sellerFeedbackCount,
-      sellerPositivePercent,
+      sampleSize,
       market: row.market,
       endsAt: row.ends_at,
-      listingUrl: row.listing_url,
-      sellerUsername: row.seller_username ?? null,
+      thumbnailUrl: row.thumbnail_url,
+      sellerUsername: row.seller_username,
+      sellerFeedbackCount,
+      sellerPositivePercent,
+      card: row.card_id
+        ? {
+            id: row.card_id,
+            name: row.card_name,
+            setName: row.set_name,
+            cardNumber: null,
+            conditionBucket: row.condition,
+          }
+        : null,
+      condition: row.condition,
+      setName: row.set_name,
+      cardName: row.card_name,
+      cardId: row.card_id,
     };
   });
 }
@@ -247,122 +187,82 @@ export default async function EndingSoonPage({
     ? secretParam[0]
     : secretParam ?? undefined;
   const adminSecret = process.env.ADMIN_SECRET;
-  const isAdmin =
-    Boolean(adminSecret) && requestedSecret === adminSecret;
+  const isAdmin = Boolean(adminSecret) && requestedSecret === adminSecret;
 
   const deals = await getEndingSoonDeals();
+  const viewModels = deals.map((deal) => buildDealViewModel(deal));
 
   return (
-    <main className="page-shell space-y-6 py-6">
-      <div className="panel space-y-3">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Ending Soon</h1>
-        <p className="text-base text-slate-600">
-          Trusted discounted listings ending in the next 24 hours.
-        </p>
-      </div>
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="mx-auto max-w-7xl px-4 pt-6 pb-10 sm:px-6 lg:px-10 lg:pb-14 space-y-4">
+        <div className="space-y-2">
+          <h1 className={PAGE_TITLE}>Ending Soon</h1>
+          <p className={PAGE_SUBTITLE}>
+            Trusted discounted listings ending in the next 24 hours.
+          </p>
+        </div>
 
-      <div className="panel overflow-x-auto">
-        {deals.length === 0 ? (
-          <div className="py-10 text-center">
-            <p className="text-sm text-slate-600">
-              No trusted discounted listings ending in the next 24 hours.
-            </p>
-            <p className="mt-1 text-xs text-slate-500">
-              Check back soon for new listings.
-            </p>
-          </div>
-        ) : (
-          <table className="deals-table text-xs md:text-sm">
-            <thead>
-              <tr>
-                <th className="col-card text-left">Card</th>
-                <th className="col-condition text-left">Condition</th>
-                <th className="col-price whitespace-nowrap text-right">Total USD</th>
-                <th className="col-historic whitespace-nowrap text-right">Historic USD</th>
-                <th className="col-sample text-right">Sample</th>
-                <th className="col-discount text-right">Discount %</th>
-                <th className="col-seller text-left">Seller</th>
-                <th className="col-market text-left">Market</th>
-                <th className="col-ends text-right">Ends</th>
-                <th className="col-link text-right">Listing</th>
-                {isAdmin && <th className="col-admin text-left">Admin</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {deals.map((deal) => (
-                <tr key={deal.listingId} className="even:bg-slate-50/50 hover:bg-slate-100">
-                  <td className="col-card text-left">
-                    <CardIdentityBlock
-                      identity={{
-                        primary: deal.cardName ?? deal.listingTitle ?? "Unknown card",
-                        setName: deal.setName ?? null,
-                        listingTitle: deal.listingTitle,
-                        cardId: deal.cardId,
-                      }}
-                      primaryHref={deal.listingUrl}
-                      showListingTitle
-                    />
-                  </td>
-                  <td className="col-condition text-slate-600">
-                    {deal.condition ?? "--"}
-                  </td>
-                  <td className="col-price text-right">
-                    {formatCurrency(deal.totalPriceCad)}
-                  </td>
-                  <td className="col-historic text-right">
-                    {formatCurrency(deal.medianPriceCad)}
-                  </td>
-                  <td className="col-sample text-right text-slate-500">
-                    {deal.sampleSize != null
-                      ? getConfidenceLabel(deal.sampleSize)
-                      : "--"}
-                  </td>
-                  <td
-                    className={`col-discount text-right ${discountClass(
-                      deal.discountPercent,
-                    )}`}
-                  >
-                    {formatDiscount(deal.discountPercent)}
-                  </td>
-                  <td className="col-seller text-sm text-slate-700">
-                    {formatSeller(deal)}
-                  </td>
-                  <td className="col-market text-slate-600">
-                    <span
-                      title={getMarketLabel(normalizeMarketCode(deal.market))}
-                      className="flex items-center gap-1"
+        <div className={`${TABLE_CONTAINER} overflow-x-auto`}>
+          {viewModels.length === 0 ? (
+            <div className="py-10 text-center">
+              <p className="text-sm text-slate-600">
+                No trusted discounted listings ending in the next 24 hours.
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Check back soon for new listings.
+              </p>
+            </div>
+          ) : (
+            <table className="min-w-full table-fixed text-sm text-slate-900">
+              <thead className="border-b border-slate-200 bg-slate-50">
+                <tr>
+                  {EndingSoonColumns.map((col) => (
+                    <th
+                      key={col.key}
+                      className={`${col.headerClassName} ${col.width ?? ""}`}
                     >
-                      <MarketFlag code={normalizeMarketCode(deal.market)} />
-                      <span>{normalizeMarketCode(deal.market) === "EBAY_US" ? "US" : "CA"}</span>
-                    </span>
-                  </td>
-                  <td className="col-ends text-right text-slate-500">
-                    {formatEndsAt(deal.endsAt)}
-                  </td>
-                  <td className="col-link text-right">
-                    <a
-                      href={deal.listingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sky-700 hover:underline"
-                    >
-                      View
-                    </a>
-                  </td>
+                      {col.headerLabel}
+                    </th>
+                  ))}
                   {isAdmin && (
-                    <td className="col-admin align-top">
-                      <AdminDealActions
-                        listingId={deal.listingId}
-                        sellerUsername={deal.sellerUsername}
-                        adminSecret={isAdmin ? requestedSecret : undefined}
-                      />
-                    </td>
+                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Admin
+                    </th>
                   )}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {viewModels.map((vm) => (
+                  <tr
+                    key={vm.deal.id}
+                    className="even:bg-slate-50/50 hover:bg-slate-100"
+                  >
+                    {EndingSoonColumns.map((col) => (
+                      <td
+                        key={col.key}
+                        className={`${col.cellClassName} ${col.width ?? ""}`}
+                      >
+                        {col.renderCell(vm, {
+                          showListingTitle: true,
+                          showViewCardLink: true,
+                        })}
+                      </td>
+                    ))}
+                    {isAdmin && (
+                      <td className="px-3 py-4 align-middle">
+                        <AdminDealActions
+                          listingId={vm.deal.id}
+                          sellerUsername={vm.deal.sellerUsername}
+                          adminSecret={requestedSecret}
+                        />
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </main>
   );

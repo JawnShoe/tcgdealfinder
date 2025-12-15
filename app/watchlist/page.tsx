@@ -9,7 +9,6 @@ import {
   removeFromWatchlist,
 } from "../../lib/watchlistStorage";
 import { formatCurrency } from "@/lib/dealFormatting";
-import { FX_RATE_COPY } from "@/lib/money";
 
 type WatchlistCard = {
   id: number;

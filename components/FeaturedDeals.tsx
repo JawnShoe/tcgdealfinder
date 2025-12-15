@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { TrustedBadge } from "./TrustedBadge";
+import { buildAffiliateUrl } from "../lib/affiliateUrl";
 import type { Deal } from "../types/deal";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 import {
@@ -66,7 +67,7 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                 <div className="flex-1">
                   <CardIdentityBlock
                     identity={buildCardIdentityFromDeal(deal)}
-                    primaryHref={deal.url}
+                    primaryHref={buildAffiliateUrl(deal.url)}
                     showListingTitle
                     showViewCardLink={false}
                   />
@@ -112,7 +113,7 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
 
               <div className="mt-4 flex gap-2">
                 <a
-                  href={deal.url}
+                  href={buildAffiliateUrl(deal.url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"

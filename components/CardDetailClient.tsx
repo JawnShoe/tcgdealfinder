@@ -9,6 +9,7 @@ import { TrustedBadge } from "./TrustedBadge";
 import { WatchlistButton } from "./WatchlistButton";
 import { CardIdentityBlock } from "./CardIdentity";
 import { ConfidenceChip } from "./ConfidenceChip";
+import { MarketFlag } from "./MarketFlag";
 import {
   CONDITION_FILTERS,
   type ConditionFilterKey,
@@ -26,7 +27,7 @@ import {
 } from "../lib/dealFormatting";
 import { ALERT_THRESHOLD_OPTIONS } from "../lib/alertsConfig";
 import { isDealTrusted } from "../lib/dealScore";
-import { FX_RATE_COPY } from "../lib/money";
+
 import {
   getMarketLabel,
   getMarketCompactLabel,
@@ -40,6 +41,7 @@ import {
   getConfidenceCompactText,
   CONFIDENCE_TOOLTIP,
 } from "../lib/dealConfidence";
+import { buildAffiliateUrl } from "../lib/affiliateUrl";
 
 const PriceHistoryChart = dynamic(() => import("./PriceHistoryChart"), {
   ssr: false,
@@ -108,33 +110,7 @@ function formatConditionLabel(value: string | null | undefined): string | null {
   return CONDITION_LABELS[value] ?? value.replace(/_/g, " ").toUpperCase();
 }
 
-const MarketFlag = ({ code }: { code: string }) => {
-  if (code === "EBAY_US" || code === "us" || code === "US") {
-    return (
-      <svg width="20" height="14" viewBox="0 0 20 14" className="inline-block">
-        <rect width="20" height="14" fill="#B22234" />
-        <rect y="1.08" width="20" height="1.08" fill="white" />
-        <rect y="3.23" width="20" height="1.08" fill="white" />
-        <rect y="5.38" width="20" height="1.08" fill="white" />
-        <rect y="7.54" width="20" height="1.08" fill="white" />
-        <rect y="9.69" width="20" height="1.08" fill="white" />
-        <rect y="11.85" width="20" height="1.08" fill="white" />
-        <rect width="8" height="7" fill="#3C3B6E" />
-      </svg>
-    );
-  }
-  if (code === "EBAY_CA" || code === "ca" || code === "CA") {
-    return (
-      <svg width="20" height="14" viewBox="0 0 20 14" className="inline-block">
-        <rect width="20" height="14" fill="white" />
-        <rect width="5" height="14" fill="#FF0000" />
-        <rect x="15" width="5" height="14" fill="#FF0000" />
-        <path d="M10 3 L10.5 5 L12 4.5 L10.8 6 L12.5 6.5 L10.5 7 L11 9 L10 7.5 L9 9 L9.5 7 L7.5 6.5 L9.2 6 L8 4.5 L9.5 5 Z" fill="#FF0000" />
-      </svg>
-    );
-  }
-  return null;
-};
+
 
 export default function CardDetailClient({
   detail,
@@ -499,16 +475,6 @@ export default function CardDetailClient({
           <h2 className="text-base font-semibold text-slate-900">Live listings</h2>
           <p className="text-xs text-slate-500">{listingsLabel}</p>
         </div>
-        {(() => {
-          const hasCanadianListings = filteredListings.some(
-            (listing) => normalizeMarketCode(listing.market) === "EBAY_CA"
-          );
-          return hasCanadianListings ? (
-            <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
-              Prices shown in USD (converted from CAD). {FX_RATE_COPY}
-            </p>
-          ) : null;
-        })()}
         <div className="w-full overflow-x-auto">
           <table className="min-w-full table-fixed text-sm text-slate-900">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -567,7 +533,7 @@ export default function CardDetailClient({
                               listingTitle: listing.title,
                               cardId: detail.card.id,
                             }}
-                            primaryHref={listing.url}
+                            primaryHref={buildAffiliateUrl(listing.url)}
                             showListingTitle
                             showViewCardLink={false}
                           />
@@ -612,7 +578,7 @@ export default function CardDetailClient({
                         title={getMarketLabel(normalizeMarketCode(listing.market))}
                         className="flex items-center gap-1"
                       >
-                        <MarketFlag code={normalizeMarketCode(listing.market)} />
+                        <MarketFlag market={listing.market} />
                         <span>{normalizeMarketCode(listing.market) === "EBAY_US" ? "US" : "CA"}</span>
                       </span>
                     </td>

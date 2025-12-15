@@ -91,3 +91,91 @@ export function scoreClass(value: number | null | undefined): string {
   if (value >= 40) return "text-slate-700";
   return "text-slate-500";
 }
+
+/**
+ * Format condition bucket to human-readable label.
+ * Returns "--" if null/undefined.
+ */
+export function formatCondition(bucket: string | null | undefined): string {
+  if (!bucket) return "--";
+  const map: Record<string, string> = {
+    raw_nm: "Raw NM",
+    raw_lp: "Raw LP",
+    raw_mp: "Raw MP",
+    raw_hp: "Raw HP",
+    psa_10: "PSA 10",
+    psa_9: "PSA 9",
+    psa_8: "PSA 8",
+    bgs_10: "BGS 10",
+    bgs_95: "BGS 9.5",
+    bgs_9: "BGS 9",
+    cgc_10: "CGC 10",
+    cgc_95: "CGC 9.5",
+    cgc_9: "CGC 9",
+  };
+  return map[bucket] ?? bucket.replace(/_/g, " ").toUpperCase();
+}
+
+/**
+ * Market display utilities.
+ * Returns normalized code and display label.
+ */
+export function formatMarket(market: string | null | undefined): {
+  code: "US" | "CA" | "UNKNOWN";
+  label: string;
+  compactLabel: string;
+} {
+  const normalized = market?.toUpperCase() ?? "EBAY_US";
+  if (normalized === "EBAY_CA" || normalized === "CA") {
+    return {
+      code: "CA",
+      label: "eBay Canada",
+      compactLabel: "CA",
+    };
+  }
+  if (normalized === "EBAY_US" || normalized === "US") {
+    return {
+      code: "US",
+      label: "eBay United States",
+      compactLabel: "US",
+    };
+  }
+  return {
+    code: "UNKNOWN",
+    label: "Unknown Market",
+    compactLabel: "??",
+  };
+}
+
+/**
+ * Format price confidence label for display.
+ * Returns chip text and tooltip string.
+ */
+export function formatPriceConfidence(
+  confidenceLabel: "high" | "medium" | "low" | null,
+  sampleSize: number | null,
+): {
+  chipText: string;
+  tooltipText: string;
+  isEmpty: boolean;
+} {
+  if (!confidenceLabel || sampleSize == null) {
+    return {
+      chipText: "--",
+      tooltipText: "No price data available",
+      isEmpty: true,
+    };
+  }
+  
+  const labelMap = {
+    high: "High",
+    medium: "Med",
+    low: "Low",
+  };
+  
+  return {
+    chipText: `${labelMap[confidenceLabel]} n=${sampleSize}`,
+    tooltipText: `Price confidence: ${confidenceLabel} (n=${sampleSize} sales)`,
+    isEmpty: false,
+  };
+}

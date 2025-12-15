@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { Deal } from "@/types/deal";
-import { FX_RATE_COPY } from "@/lib/money";
+import { MarketFlag } from "./MarketFlag";
 import {
   formatCurrency,
   formatDiscount,
@@ -10,33 +10,7 @@ import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 import { normalizeMarketCode, getMarketLabel } from "@/lib/markets";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { getConfidenceLabel as getWeightLabel } from "@/lib/dealConfidence";
-
-// SVG flag icon component (shared with tables)
-const MarketFlag = ({ code }: { code: string }) => {
-  const normalized = normalizeMarketCode(code);
-  if (normalized === "EBAY_US") {
-    return (
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-label="United States flag">
-        <rect width="16" height="12" fill="#B22234" />
-        <rect y="1" width="16" height="1" fill="white" />
-        <rect y="3" width="16" height="1" fill="white" />
-        <rect y="5" width="16" height="1" fill="white" />
-        <rect y="7" width="16" height="1" fill="white" />
-        <rect y="9" width="16" height="1" fill="white" />
-        <rect y="11" width="16" height="1" fill="white" />
-        <rect width="7" height="6" fill="#3C3B6E" />
-      </svg>
-    );
-  }
-  return (
-    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-label="Canada flag">
-      <rect width="5" height="12" fill="#FF0000" />
-      <rect x="5" width="6" height="12" fill="white" />
-      <rect x="11" width="5" height="12" fill="#FF0000" />
-      <path d="M8 3L8.5 5H10L8.75 6L9.25 8L8 7L6.75 8L7.25 6L6 5H7.5L8 3Z" fill="#FF0000" />
-    </svg>
-  );
-};
+import { buildAffiliateUrl } from "@/lib/affiliateUrl";
 
 type FeaturedDealsStripProps = {
   deals: Deal[];
@@ -97,7 +71,7 @@ export default function FeaturedDealsStrip({
                   <div className="min-w-0 flex-1">
                     <CardIdentityBlock
                       identity={buildCardIdentityFromDeal(deal)}
-                      primaryHref={deal.url}
+                      primaryHref={buildAffiliateUrl(deal.url)}
                       showListingTitle
                       showViewCardLink={false}
                     />
@@ -123,14 +97,14 @@ export default function FeaturedDealsStrip({
                 <div className="mt-2 flex items-center justify-between text-xs">
                   <span className="text-slate-600">Market</span>
                   <span className="flex items-center gap-1 text-slate-900" title={getMarketLabel(normalizeMarketCode(deal.market))}>
-                    <MarketFlag code={deal.market} />
+                    <MarketFlag market={deal.market} />
                     <span>{normalizeMarketCode(deal.market) === "EBAY_US" ? "US" : "CA"}</span>
                   </span>
                 </div>
 
                 <div className="mt-4">
                   <a
-                    href={deal.url}
+                    href={buildAffiliateUrl(deal.url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex w-full items-center justify-center rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"

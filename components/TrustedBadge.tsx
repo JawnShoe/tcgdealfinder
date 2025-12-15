@@ -1,9 +1,13 @@
+import { TRUST_FEEDBACK_THRESHOLD, TRUST_POSITIVE_PERCENT } from "../lib/dealScore";
+
+const TRUSTED_TOOLTIP = `Trusted seller: ${TRUST_POSITIVE_PERCENT}%+ positive feedback, ${TRUST_FEEDBACK_THRESHOLD}+ ratings`;
+
 export function TrustedBadge({ className }: { className?: string }) {
   return (
     <span
       className={`inline-flex items-center justify-center text-emerald-500 ${className ?? ""}`}
-      title="Trusted seller"
-      aria-label="Trusted seller"
+      title={TRUSTED_TOOLTIP}
+      aria-label={TRUSTED_TOOLTIP}
     >
       <svg
         className="h-5 w-5"

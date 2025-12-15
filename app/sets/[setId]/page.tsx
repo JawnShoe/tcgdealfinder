@@ -5,7 +5,6 @@ import DealsTable from "../../../components/DealsTable";
 import type { Deal } from "../../../types/deal";
 import { query } from "../../../lib/db";
 import { formatCurrency } from "../../../lib/dealFormatting";
-import { FX_RATE_COPY } from "../../../lib/money";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,

@@ -4,6 +4,7 @@ let confidenceColumnCache: boolean | null = null;
 let cardLanguageColumnCache: boolean | null = null;
 let listingsMarketColumnCache: boolean | null = null;
 let historicalMarketColumnCache: boolean | null = null;
+let historicalStdDevColumnCache: boolean | null = null;
 
 export async function ensureDealConfidenceColumn(): Promise<boolean> {
   if (confidenceColumnCache != null) {
@@ -35,6 +36,14 @@ export async function ensureHistoricalMarketColumn(): Promise<boolean> {
   }
   historicalMarketColumnCache = await hasColumn("historical_prices", "market");
   return historicalMarketColumnCache;
+}
+
+export async function ensureHistoricalStdDevColumn(): Promise<boolean> {
+  if (historicalStdDevColumnCache != null) {
+    return historicalStdDevColumnCache;
+  }
+  historicalStdDevColumnCache = await hasColumn("historical_prices", "std_dev_cad");
+  return historicalStdDevColumnCache;
 }
 
 async function hasColumn(table: string, column: string): Promise<boolean> {

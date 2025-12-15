@@ -36,6 +36,7 @@ import { AdminDealActions } from "./AdminDealActions";
 import { TrustedBadge } from "./TrustedBadge";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 import { ConfidenceChip } from "./ConfidenceChip";
+import { MarketFlag } from "./MarketFlag";
 import type { Deal } from "../types/deal";
 import type { DealsApiMeta, DealsApiResponse } from "@/types/dealsApi";
 import {
@@ -53,32 +54,25 @@ import {
   formatDiscount,
   formatEndsAt,
   formatScore,
+  formatMarket,
   getConfidenceLabel,
   scoreClass,
 } from "../lib/dealFormatting";
-import { getDealDiscount, getDealPrice } from "../lib/dealMath";
+import type { DealConfidence } from "../lib/dealScore";
 import {
-  computeDealScore,
-  getDealConfidence,
-  isDealTrusted,
-  type DealConfidence,
-} from "../lib/dealScore";
-import {
-  applyConfidenceToScore,
-  getConfidenceLabel as getWeightLabel,
   getConfidenceBadgeClass,
   getConfidenceDisplayText,
-  getConfidenceCompactText,
   CONFIDENCE_TOOLTIP,
 } from "../lib/dealConfidence";
-import { FX_RATE_COPY } from "../lib/money";
-import {
-  DEFAULT_MARKET,
-  getMarketLabel,
-  getMarketCompactLabel,
-  normalizeMarketCode,
-} from "../lib/markets";
+import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
+
+import { DEFAULT_MARKET } from "../lib/markets";
 import { compareStrictBestDiscountValues } from "../lib/dealSort";
+import {
+  getColumnsByVariant,
+  type ColumnSpec,
+  type ColumnKey,
+} from "../lib/tableColumns";
 
 const TOP_DEAL_DISCOUNT = 15;
 const TOP_DEAL_SAMPLE_SIZE = 20;
@@ -105,18 +99,8 @@ type SortOption =
   | "time-left"
   | "confidence-first";
 
-type DealViewModel = {
-  deal: Deal;
-  price: number | null;
-  discount: number | null;
-  score: number | null;
-  trustedSeller: boolean;
-  confidence: DealConfidence;
-  confidenceWeight: number | null;
-  confidenceLabel: "high" | "medium" | "low";
-  cardSortKey: string;
-  endsAtMs: number | null;
-};
+// Note: DealViewModel is now imported from lib/dealViewModel.ts
+// This ensures consistent field names and derivation logic across all tables
 
 type DealsViewState = {
   sortBy: SortOption;
@@ -173,58 +157,6 @@ export default function DealsTable({
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteError, setRemoteError] = useState<string | null>(null);
   const isNewestVariant = variant === "newest";
-  const formatDiscountDisplay = (value: number | null | undefined) => {
-    if (!isNewestVariant) {
-      return formatDiscount(value);
-    }
-    if (value == null || Number.isNaN(value)) {
-      return "Unscored";
-    }
-    if (value < 0) {
-      return formatDiscount(value);
-    }
-    return `+${Math.abs(value).toFixed(1)}% markup`;
-  };
-  const isUnscoredDiscount = (value: number | null | undefined) =>
-    isNewestVariant && (value == null || Number.isNaN(value));
-  const formatMarketLabel = (market: string | null | undefined) =>
-    getMarketLabel(normalizeMarketCode(market ?? DEFAULT_MARKET));
-  const formatMarketCompact = (market: string | null | undefined) => {
-    const code = normalizeMarketCode(market ?? DEFAULT_MARKET);
-    return {
-      display: getMarketCompactLabel(code),
-      fullLabel: getMarketLabel(code),
-    };
-  };
-
-  const MarketFlag = ({ code }: { code: string }) => {
-    const normalized = normalizeMarketCode(code);
-    if (normalized === "EBAY_US") {
-      return (
-        <svg width="20" height="14" viewBox="0 0 20 14" className="inline-block">
-          <rect width="20" height="14" fill="#B22234" />
-          <rect y="1.08" width="20" height="1.08" fill="white" />
-          <rect y="3.23" width="20" height="1.08" fill="white" />
-          <rect y="5.38" width="20" height="1.08" fill="white" />
-          <rect y="7.54" width="20" height="1.08" fill="white" />
-          <rect y="9.69" width="20" height="1.08" fill="white" />
-          <rect y="11.85" width="20" height="1.08" fill="white" />
-          <rect width="8" height="7" fill="#3C3B6E" />
-        </svg>
-      );
-    }
-    if (normalized === "EBAY_CA") {
-      return (
-        <svg width="20" height="14" viewBox="0 0 20 14" className="inline-block">
-          <rect width="20" height="14" fill="white" />
-          <rect width="5" height="14" fill="#FF0000" />
-          <rect x="15" width="5" height="14" fill="#FF0000" />
-          <path d="M10 3 L10.5 5 L12 4.5 L10.8 6 L12.5 6.5 L10.5 7 L11 9 L10 7.5 L9 9 L9.5 7 L7.5 6.5 L9.2 6 L8 4.5 L9.5 5 Z" fill="#FF0000" />
-        </svg>
-      );
-    }
-    return null;
-  };
 
   const updateState = (
     producer: (prev: DealsViewState) => DealsViewState,
@@ -300,43 +232,15 @@ export default function DealsTable({
   const baseDeals = serverMode ? remoteDeals : deals;
   const referenceTime = useMemo(() => Date.now(), [baseDeals]);
 
+  // Use buildDealViewModel() as the single source of truth for derived values
+  // This ensures consistency with tableColumns.tsx and other table variants
   const viewModels = useMemo<DealViewModel[]>(() => {
-    return baseDeals.map((deal) => {
-      const price = getDealPrice(deal);
-      const discount = getDealDiscount(deal);
-      const trustedSeller = isDealTrusted(
-        deal.sellerFeedbackCount ?? null,
-        deal.sellerPositivePercent ?? null,
-      );
-      const confidence = getDealConfidence(deal.sampleSize ?? null);
-      const score = computeDealScore(
-        {
-          discountPercent: discount,
-          isTrustedSeller: trustedSeller,
-          endsAt: deal.endsAt,
-          confidence,
-        },
+    return baseDeals.map((deal) =>
+      buildDealViewModel(deal, {
+        computeScore: true,
         referenceTime,
-      );
-      const confidenceWeight = deal.confidenceWeight ?? null;
-      const weightedScore = applyConfidenceToScore(score, confidenceWeight);
-      const confidenceLabel = getWeightLabel(confidenceWeight);
-      const endsAtMs = deal.endsAt ? Date.parse(deal.endsAt) : null;
-      const cardSortKey = buildCardSortKey(deal);
-
-      return {
-        deal,
-        price,
-        discount,
-        score: weightedScore,
-        trustedSeller,
-        confidence,
-        confidenceWeight,
-        confidenceLabel,
-        cardSortKey,
-        endsAtMs: Number.isNaN(endsAtMs) ? null : endsAtMs,
-      };
-    });
+      })
+    );
   }, [baseDeals, referenceTime]);
 
   const filteredDeals = useMemo(() => {
@@ -346,7 +250,7 @@ export default function DealsTable({
     const maxPriceTarget = viewState.maxPrice ?? null;
 
     return viewModels.filter((vm) => {
-      const { deal, discount, price } = vm;
+      const { deal, discountPercent: discount, totalUsd: price } = vm;
 
       if (
         !matchesConditionFilter(
@@ -403,11 +307,11 @@ export default function DealsTable({
     const sortKey = viewState.sortBy || "best-discount";
     if (isNewestVariant && sortKey === "best-discount") {
       const hasDiscounted = list.some(
-        (vm) => vm.discount != null && vm.discount < 0,
+        (vm) => vm.discountPercent != null && vm.discountPercent < 0,
       );
       if (hasDiscounted) {
         list.sort((a, b) =>
-          compareStrictBestDiscountValues(a.discount, b.discount),
+          compareStrictBestDiscountValues(a.discountPercent, b.discountPercent),
         );
         return { sortedDeals: list, showNoDiscountNotice: false };
       }
@@ -470,6 +374,22 @@ export default function DealsTable({
 
   const inputClasses =
     "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none";
+
+  // Build column spec lookup from tableColumns.tsx
+  // This ensures header labels and base formatting come from the single source of truth
+  const columnSpecs = useMemo(() => {
+    const specs = getColumnsByVariant(variant);
+    const map = new Map<ColumnKey, ColumnSpec>();
+    for (const spec of specs) {
+      map.set(spec.key, spec);
+    }
+    return map;
+  }, [variant]);
+
+  // Helper to get header label from spec, with fallback
+  const getHeaderLabel = (key: ColumnKey, fallback: string): string => {
+    return columnSpecs.get(key)?.headerLabel ?? fallback;
+  };
 
   const colClass = (
     colKey:
@@ -687,19 +607,6 @@ export default function DealsTable({
         </label>
       </div>
 
-      {(() => {
-        const hasCanadianListings = currentSlice.some(
-          (vm) => normalizeMarketCode(vm.deal.market) === "EBAY_CA"
-        );
-        const marketFilterIncludesCA = viewState.marketKey === "ca" || viewState.marketKey === "all";
-        const showFxNotice = hasCanadianListings || marketFilterIncludesCA;
-        return showFxNotice ? (
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Prices shown in USD (converted from CAD). {FX_RATE_COPY}
-          </p>
-        ) : null;
-      })()}
-
       {showNoDiscountNotice ? (
         <p className="text-xs text-slate-500">
           No discounted listings found in this feed.
@@ -714,24 +621,34 @@ export default function DealsTable({
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className={`px-3 py-2 text-left ${colClass("card", variant)}`}>
-                      Card
+                      {getHeaderLabel("card", "Card")}
                     </th>
                     <th className={`${colClass("total", variant)} whitespace-nowrap px-3 py-2 text-right`}>
-                      Total USD
+                      {getHeaderLabel("total", "Total USD")}
                     </th>
                     <th className={`${colClass("historic", variant)} whitespace-nowrap px-3 py-2 text-right`}>
-                      Historic USD
+                      {getHeaderLabel("historic", "Historic USD")}
                     </th>
-                    <th className={`${colClass("discount", variant)} px-3 py-2 text-right`}>Discount</th>
+                    <th className={`${colClass("discount", variant)} px-3 py-2 text-right`}>
+                      {getHeaderLabel("discount", "Discount")}
+                    </th>
                     {!isNewestVariant && variant !== "default" ? (
                       <th className={`${colClass("score", variant)} px-3 py-2 text-right`}>Score</th>
                     ) : null}
                     {variant !== "default" ? (
-                      <th className={`${colClass("confidence", variant)} whitespace-nowrap px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"}`}>Price conf.</th>
+                      <th className={`${colClass("confidence", variant)} whitespace-nowrap px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"}`}>
+                        {getHeaderLabel("priceConf", "Price conf.")}
+                      </th>
                     ) : null}
-                    <th className={`${colClass("seller", variant)} px-3 py-2 text-left`}>Seller</th>
-                    <th className={`${colClass("market", variant)} px-3 py-2 text-left`}>Market</th>
-                    <th className={`${colClass("ends", variant)} px-3 py-2 text-left`}>Ends</th>
+                    <th className={`${colClass("seller", variant)} px-3 py-2 text-left`}>
+                      {getHeaderLabel("seller", "Seller")}
+                    </th>
+                    <th className={`${colClass("market", variant)} px-3 py-2 text-left`}>
+                      {getHeaderLabel("market", "Market")}
+                    </th>
+                    <th className={`${colClass("ends", variant)} px-3 py-2 text-left`}>
+                      {getHeaderLabel("ends", "Ends")}
+                    </th>
                     {isAdmin && adminSecret ? (
                       <th className="px-3 py-2 text-left">Admin</th>
                     ) : null}
@@ -773,7 +690,7 @@ export default function DealsTable({
                           <div className="flex min-w-0 flex-1 flex-col gap-1">
                             <CardIdentityBlock
                               identity={buildCardIdentityFromDeal(vm.deal)}
-                              primaryHref={vm.deal.url}
+                              primaryHref={vm.affiliateUrl}
                               showListingTitle={isNewestVariant}
                               showViewCardLink
                             />
@@ -788,21 +705,17 @@ export default function DealsTable({
                         </div>
                       </td>
                       <td className={`${colClass("total", variant)} px-3 py-4 align-middle text-right text-base font-semibold`}>
-                        {formatCurrency(vm.price)}
+                        {formatCurrency(vm.totalUsd)}
                       </td>
                       <td className={`${colClass("historic", variant)} px-3 py-4 align-middle text-right text-base text-slate-600`}>
-                        {formatCurrency(vm.deal.historicPriceCad)}
+                        {formatCurrency(vm.historicUsd)}
                       </td>
                       <td
                         className={`${colClass("discount", variant)} ${discountClass(
-                          vm.discount,
-                        )} whitespace-nowrap px-3 py-4 align-middle text-right text-base ${
-                          isUnscoredDiscount(vm.discount)
-                            ? "font-normal italic text-slate-400"
-                            : "font-semibold"
-                        }`}
+                          vm.discountPercent,
+                        )} whitespace-nowrap px-3 py-4 align-middle text-right text-base font-semibold`}
                       >
-                        {formatDiscountDisplay(vm.discount)}
+                        {formatDiscount(vm.discountPercent)}
                       </td>
                       {!isNewestVariant && variant !== "default" ? (
                         <td className={`${colClass("score", variant)} px-3 py-4 align-middle text-right text-base`}>
@@ -812,11 +725,11 @@ export default function DealsTable({
                             </span>
                             <span
                               className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
-                                vm.confidenceLabel,
+                                vm.priceConfidenceLabel,
                               )}`}
                               title={CONFIDENCE_TOOLTIP}
                             >
-                              {getConfidenceDisplayText(vm.confidenceLabel)}
+                              {getConfidenceDisplayText(vm.priceConfidenceLabel)}
                             </span>
                           </div>
                         </td>
@@ -824,8 +737,8 @@ export default function DealsTable({
                       {variant !== "default" ? (
                         <td className={`${colClass("confidence", variant)} px-3 py-4 align-middle`}>
                           <ConfidenceChip
-                            weightLabel={vm.confidenceLabel}
-                            sampleSize={vm.deal.sampleSize}
+                            weightLabel={vm.priceConfidenceLabel}
+                            sampleSize={vm.sampleSize}
                             center={isNewestVariant}
                           />
                         </td>
@@ -849,11 +762,11 @@ export default function DealsTable({
                         isNewestVariant ? " whitespace-normal break-words" : ""
                       }`}>
                         <span
-                          title={formatMarketLabel(vm.deal.market)}
+                          title={formatMarket(vm.deal.market).label}
                           className="flex items-center gap-1"
                         >
-                          <MarketFlag code={vm.deal.market ?? DEFAULT_MARKET} />
-                          <span>{normalizeMarketCode(vm.deal.market ?? DEFAULT_MARKET) === "EBAY_US" ? "US" : "CA"}</span>
+                          <MarketFlag market={vm.deal.market ?? DEFAULT_MARKET} />
+                          <span>{formatMarket(vm.deal.market).compactLabel}</span>
                         </span>
                       </td>
                       <td className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}>
@@ -892,7 +805,7 @@ export default function DealsTable({
                   )}
                   <CardIdentityBlock
                     identity={buildCardIdentityFromDeal(vm.deal)}
-                    primaryHref={vm.deal.url}
+                    primaryHref={vm.affiliateUrl}
                     showListingTitle={isNewestVariant}
                     showViewCardLink={false}
                   />
@@ -900,23 +813,19 @@ export default function DealsTable({
 
                 <div className="mt-3 grid grid-cols-2 gap-3 text-base">
                   <div>
-                    <p className="text-slate-500">Total USD</p>
+                    <p className="text-slate-500">{getHeaderLabel("total", "Total USD")}</p>
                     <p className="text-base font-semibold text-slate-900">
-                      {formatCurrency(vm.price)}
+                      {formatCurrency(vm.totalUsd)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-slate-500">Historic USD</p>
-                    <p className="text-base">{formatCurrency(vm.deal.historicPriceCad)}</p>
+                    <p className="text-slate-500">{getHeaderLabel("historic", "Historic USD")}</p>
+                    <p className="text-base">{formatCurrency(vm.historicUsd)}</p>
                   </div>
                   <div>
-                    <p className="text-slate-500">Discount</p>
-                    <p
-                      className={`${discountClass(vm.discount)} text-base ${
-                        isUnscoredDiscount(vm.discount) ? "text-slate-500" : ""
-                      }`}
-                    >
-                      {formatDiscountDisplay(vm.discount)}
+                    <p className="text-slate-500">{getHeaderLabel("discount", "Discount")}</p>
+                    <p className={`${discountClass(vm.discountPercent)} text-base`}>
+                      {formatDiscount(vm.discountPercent)}
                     </p>
                   </div>
                   <div>
@@ -927,11 +836,11 @@ export default function DealsTable({
                       </p>
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
-                          vm.confidenceLabel,
+                          vm.priceConfidenceLabel,
                         )}`}
                         title={CONFIDENCE_TOOLTIP}
                       >
-                        {getConfidenceDisplayText(vm.confidenceLabel)}
+                        {getConfidenceDisplayText(vm.priceConfidenceLabel)}
                       </span>
                     </div>
                   </div>
@@ -939,11 +848,11 @@ export default function DealsTable({
 
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
                   <span>
-                    Confidence: {getConfidenceLabel(vm.deal.sampleSize ?? null)}
+                    Confidence: {getConfidenceLabel(vm.sampleSize)}
                   </span>
                   <span>Seller: {vm.deal.sellerUsername ?? "Unknown"}</span>
-                  <span title={formatMarketCompact(vm.deal.market).fullLabel}>
-                    Market: {formatMarketCompact(vm.deal.market).display}
+                  <span title={formatMarket(vm.deal.market).label}>
+                    Market: {formatMarket(vm.deal.market).compactLabel}
                   </span>
                   {vm.trustedSeller ? (
                     <span className="inline-flex items-center gap-1">
@@ -1025,13 +934,6 @@ function parseNumberInput(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function buildCardSortKey(deal: Deal): string {
-  const setName = (deal.card?.setName ?? deal.setName ?? "").toLowerCase();
-  const number = (deal.card?.cardNumber ?? "").toLowerCase();
-  const name = (deal.card?.name ?? deal.cardName ?? deal.title ?? "").toLowerCase();
-  return `${setName}||${number}||${name}`;
-}
-
 function baselineBadgeLabel(bucket: string | null | undefined): string {
   if (bucket) {
     const friendly = bucket
@@ -1049,8 +951,8 @@ const comparators: Record<
   (a: DealViewModel, b: DealViewModel) => number
 > = {
   "best-discount": (a, b) => {
-    const left = a.discount ?? Infinity;
-    const right = b.discount ?? Infinity;
+    const left = a.discountPercent ?? Infinity;
+    const right = b.discountPercent ?? Infinity;
     const diff = left - right;
     if (diff !== 0) return diff;
     const leftWeight = a.confidenceWeight ?? 0;
@@ -1066,18 +968,18 @@ const comparators: Record<
     return right - left;
   },
   "price-low-high": (a, b) => {
-    const left = a.price ?? Infinity;
-    const right = b.price ?? Infinity;
+    const left = a.totalUsd ?? Infinity;
+    const right = b.totalUsd ?? Infinity;
     return left - right;
   },
   "price-high-low": (a, b) => {
-    const left = a.price ?? -Infinity;
-    const right = b.price ?? -Infinity;
+    const left = a.totalUsd ?? -Infinity;
+    const right = b.totalUsd ?? -Infinity;
     return right - left;
   },
   "historic-high-low": (a, b) => {
-    const left = a.deal.historicPriceCad ?? -Infinity;
-    const right = b.deal.historicPriceCad ?? -Infinity;
+    const left = a.historicUsd ?? -Infinity;
+    const right = b.historicUsd ?? -Infinity;
     return right - left;
   },
   "card-name": (a, b) => a.cardSortKey.localeCompare(b.cardSortKey),

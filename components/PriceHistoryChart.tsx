@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatMoneyFromCad, FX_RATE_COPY } from "@/lib/money";
+import { formatMoneyFromCad } from "@/lib/money";
 
 export type HistoricalPoint = {
   date: string;
@@ -100,9 +100,6 @@ export default function PriceHistoryChart({
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <p className="text-xs text-slate-500">
-        USD shown using an approximate CAD→USD rate. {FX_RATE_COPY}
-      </p>
     </div>
   );
 }

@@ -68,6 +68,12 @@ function sanitizePartial(
   if (typeof data.page === "number" && data.page > 0) {
     partial.page = data.page;
   }
+  if (typeof data.priceConfFilter === "string") {
+    const valid = ["all", "high", "medium", "low"];
+    if (valid.includes(data.priceConfFilter)) {
+      partial.priceConfFilter = data.priceConfFilter;
+    }
+  }
 
   return partial;
 }
@@ -104,6 +110,9 @@ function buildMinimalState(
   }
   if (state.page !== defaults.page) {
     minimal.page = state.page;
+  }
+  if (state.priceConfFilter !== defaults.priceConfFilter) {
+    minimal.priceConfFilter = state.priceConfFilter;
   }
 
   return minimal;

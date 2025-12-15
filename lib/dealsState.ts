@@ -11,6 +11,7 @@ export type DealsViewState = {
   minPrice: number | null;
   maxPrice: number | null;
   page: number;
+  priceConfFilter: string;
 };
 
 export const DEFAULT_DEALS_VIEW_STATE: DealsViewState = {
@@ -23,6 +24,7 @@ export const DEFAULT_DEALS_VIEW_STATE: DealsViewState = {
   minPrice: null,
   maxPrice: null,
   page: 1,
+  priceConfFilter: "all",
 };
 
 const SORT_KEYS = new Set([

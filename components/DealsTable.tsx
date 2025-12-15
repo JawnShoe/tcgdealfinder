@@ -102,6 +102,15 @@ type SortOption =
 // Note: DealViewModel is now imported from lib/dealViewModel.ts
 // This ensures consistent field names and derivation logic across all tables
 
+type ConfidenceFilterKey = "all" | "high" | "medium" | "low";
+
+type HeaderSortKey = "total" | "historic" | "discount" | "ends" | "card";
+
+type HeaderSort = {
+  key: HeaderSortKey | null;
+  dir: "asc" | "desc";
+};
+
 type DealsViewState = {
   sortBy: SortOption;
   conditionKey: ConditionFilterKey;
@@ -112,6 +121,7 @@ type DealsViewState = {
   maxPrice: number | null;
   setFilter: string;
   page: number;
+  priceConfFilter: ConfidenceFilterKey;
 };
 
 const defaultState: DealsViewState = {
@@ -124,6 +134,7 @@ const defaultState: DealsViewState = {
   maxPrice: null,
   setFilter: "",
   page: 1,
+  priceConfFilter: "all",
 };
 
 type DealsTableVariant = "default" | "newest";
@@ -148,6 +159,10 @@ export default function DealsTable({
   const [viewState, setViewState] = useState<DealsViewState>({
     ...defaultState,
     marketKey: initialApiMeta?.market ?? defaultState.marketKey,
+  });
+  const [headerSort, setHeaderSort] = useState<HeaderSort>({
+    key: null,
+    dir: "desc",
   });
   const serverMode = Boolean(initialApiMeta);
   const [remoteMeta, setRemoteMeta] = useState<DealsApiMeta | null>(
@@ -265,6 +280,14 @@ export default function DealsTable({
         return false;
       }
 
+      // Price confidence filter
+      if (viewState.priceConfFilter !== "all") {
+        const confLabel = vm.priceConfidenceLabel ?? "low";
+        if (confLabel !== viewState.priceConfFilter) {
+          return false;
+        }
+      }
+
       if (
         normalizedSet &&
         normalizedSet !== "all" &&
@@ -304,6 +327,67 @@ export default function DealsTable({
 
   const { sortedDeals, showNoDiscountNotice } = useMemo(() => {
     const list = [...filteredDeals];
+    
+    // Header sort overrides dropdown sort
+    if (headerSort.key) {
+      const key = headerSort.key;
+      const dir = headerSort.dir;
+      list.sort((a, b) => {
+        let aVal: number | string;
+        let bVal: number | string;
+        
+        // Get values based on sort key
+        switch (key) {
+          case "total":
+            aVal = a.totalUsd ?? Infinity;
+            bVal = b.totalUsd ?? Infinity;
+            break;
+          case "historic":
+            aVal = a.historicUsd ?? Infinity;
+            bVal = b.historicUsd ?? Infinity;
+            break;
+          case "discount":
+            aVal = a.discountPercent ?? Infinity;
+            bVal = b.discountPercent ?? Infinity;
+            break;
+          case "ends":
+            aVal = a.endsAtMs ?? Infinity;
+            bVal = b.endsAtMs ?? Infinity;
+            break;
+          case "card":
+            aVal = a.cardSortKey;
+            bVal = b.cardSortKey;
+            break;
+          default:
+            aVal = 0;
+            bVal = 0;
+        }
+        
+        // Compare
+        let cmp = 0;
+        if (typeof aVal === "number" && typeof bVal === "number") {
+          cmp = aVal - bVal;
+        } else {
+          cmp = String(aVal).localeCompare(String(bVal));
+        }
+        
+        // Apply direction
+        if (dir === "desc") cmp = -cmp;
+        
+        // Stable sort: tie-break by cardSortKey then listing ID
+        if (cmp === 0) {
+          cmp = a.cardSortKey.localeCompare(b.cardSortKey);
+          if (cmp === 0) {
+            cmp = a.deal.id - b.deal.id;
+          }
+        }
+        
+        return cmp;
+      });
+      return { sortedDeals: list, showNoDiscountNotice: false };
+    }
+    
+    // Use dropdown sort
     const sortKey = viewState.sortBy || "best-discount";
     if (isNewestVariant && sortKey === "best-discount") {
       const hasDiscounted = list.some(
@@ -323,7 +407,7 @@ export default function DealsTable({
     const comparator = comparators[sortKey] ?? comparators["best-discount"];
     list.sort(comparator);
     return { sortedDeals: list, showNoDiscountNotice: false };
-  }, [filteredDeals, viewState.sortBy, isNewestVariant]);
+  }, [filteredDeals, viewState.sortBy, isNewestVariant, headerSort]);
 
   useEffect(() => {
     if (serverMode) return;
@@ -429,10 +513,37 @@ export default function DealsTable({
     }
   };
 
+  // Handler for clicking sortable headers
+  const handleHeaderSort = (key: HeaderSortKey) => {
+    setHeaderSort((prev) => {
+      if (prev.key === key) {
+        // Toggle direction
+        return { key, dir: prev.dir === "asc" ? "desc" : "asc" };
+      }
+      // First click: descending for numeric columns (best values first)
+      // For discount: most negative (best deals) first
+      // For ends: soonest first
+      const defaultDir = key === "card" ? "asc" : "desc";
+      return { key, dir: defaultDir };
+    });
+  };
+
+  // Helper to render sort arrow
+  const SortArrow = ({ colKey }: { colKey: HeaderSortKey }) => {
+    if (headerSort.key !== colKey) {
+      return null; // No arrow when not active
+    }
+    return (
+      <span className="ml-1 inline-block">
+        {headerSort.dir === "asc" ? "▲" : "▼"}
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="mb-4 space-y-3">
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
           <label className="flex flex-col gap-1 text-sm text-slate-600">
             <span className="text-xs font-semibold uppercase text-slate-500">
               Sort by
@@ -440,15 +551,17 @@ export default function DealsTable({
             <select
               className={inputClasses}
               value={viewState.sortBy}
-              onChange={(event) =>
+              onChange={(event) => {
                 updateState(
                   (prev) => ({
                     ...prev,
                     sortBy: event.target.value as SortOption,
                   }),
                   { resetPage: true },
-                )
-              }
+                );
+                // Clear header sort when using dropdown
+                setHeaderSort({ key: null, dir: "desc" });
+              }}
             >
               {Object.keys(SORT_LABEL).map((option) => (
                 <option key={option} value={option}>
@@ -480,6 +593,30 @@ export default function DealsTable({
                   {option.label}
                 </option>
               ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm text-slate-600">
+            <span className="text-xs font-semibold uppercase text-slate-500">
+              Price conf.
+            </span>
+            <select
+              className={inputClasses}
+              value={viewState.priceConfFilter}
+              onChange={(event) =>
+                updateState(
+                  (prev) => ({
+                    ...prev,
+                    priceConfFilter: event.target.value as ConfidenceFilterKey,
+                  }),
+                  { resetPage: true },
+                )
+              }
+            >
+              <option value="all">All</option>
+              <option value="high">High</option>
+              <option value="medium">Med</option>
+              <option value="low">Low</option>
             </select>
           </label>
 
@@ -623,14 +760,29 @@ export default function DealsTable({
                     <th className={`px-3 py-2 text-left ${colClass("card", variant)}`}>
                       {getHeaderLabel("card", "Card")}
                     </th>
-                    <th className={`${colClass("total", variant)} whitespace-nowrap px-3 py-2 text-right`}>
+                    <th 
+                      className={`${colClass("total", variant)} whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
+                      onClick={() => handleHeaderSort("total")}
+                      title="Click to sort by Total USD"
+                    >
                       {getHeaderLabel("total", "Total USD")}
+                      <SortArrow colKey="total" />
                     </th>
-                    <th className={`${colClass("historic", variant)} whitespace-nowrap px-3 py-2 text-right`}>
+                    <th 
+                      className={`${colClass("historic", variant)} whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
+                      onClick={() => handleHeaderSort("historic")}
+                      title="Click to sort by Historic USD"
+                    >
                       {getHeaderLabel("historic", "Historic USD")}
+                      <SortArrow colKey="historic" />
                     </th>
-                    <th className={`${colClass("discount", variant)} px-3 py-2 text-right`}>
+                    <th 
+                      className={`${colClass("discount", variant)} px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
+                      onClick={() => handleHeaderSort("discount")}
+                      title="Click to sort by Discount"
+                    >
                       {getHeaderLabel("discount", "Discount")}
+                      <SortArrow colKey="discount" />
                     </th>
                     {!isNewestVariant && variant !== "default" ? (
                       <th className={`${colClass("score", variant)} px-3 py-2 text-right`}>Score</th>
@@ -646,8 +798,13 @@ export default function DealsTable({
                     <th className={`${colClass("market", variant)} px-3 py-2 text-left`}>
                       {getHeaderLabel("market", "Market")}
                     </th>
-                    <th className={`${colClass("ends", variant)} px-3 py-2 text-left`}>
+                    <th 
+                      className={`${colClass("ends", variant)} px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none`}
+                      onClick={() => handleHeaderSort("ends")}
+                      title="Click to sort by Ends"
+                    >
                       {getHeaderLabel("ends", "Ends")}
+                      <SortArrow colKey="ends" />
                     </th>
                     {isAdmin && adminSecret ? (
                       <th className="px-3 py-2 text-left">Admin</th>

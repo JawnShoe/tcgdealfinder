@@ -12,6 +12,8 @@ import {
   ensureListingsMarketColumn,
 } from "../../../lib/schema";
 import { DEFAULT_MARKET, type MarketCode } from "../../../lib/markets";
+import { getCardStockImageUrl, TCGPLAYER_ATTRIBUTION } from "../../../lib/stockImages";
+import { shouldExcludeListingFromCardSurfaces } from "../../../lib/blacklist";
 
 type CardRecord = {
   id: number;
@@ -45,6 +47,7 @@ type ListingDbRow = {
   seller_feedback_count: number | null;
   seller_positive_percent: string | null;
   seller_username: string | null;
+  seller_store_name: string | null;
   deal_confidence_weight: string | null;
 };
 
@@ -56,6 +59,7 @@ type CardDetail = {
     collectorNumber: string | null;
     rarity: string | null;
     condition: string | null;
+    stockImageUrl?: string | null;
   };
   historicals: Array<{
     condition: string;
@@ -75,8 +79,10 @@ type CardDetail = {
     endsAt: string | null;
     thumbnailUrl: string | null;
     sellerUsername: string | null;
+    sellerStoreName: string | null;
     sellerFeedbackCount: number | null;
     sellerPositivePercent: number | null;
+    confidenceWeight: number | null;
   }>;
 };
 
@@ -197,6 +203,7 @@ async function getListings(
         l.seller_feedback_count,
         l.seller_positive_percent,
         l.seller_username,
+        l.seller_store_name,
         ${
           hasConfidenceColumn
             ? "l.deal_confidence_weight"
@@ -253,7 +260,7 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
     sampleSize: row.sample_size,
   }));
 
-  const listings = listingsRows.map((row) => {
+  let listings = listingsRows.map((row) => {
     const shippingCad =
       row.shipping_cad !== null && row.shipping_cad !== undefined
         ? Number(row.shipping_cad)
@@ -328,11 +335,36 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       endsAt: row.ends_at,
       thumbnailUrl: row.thumbnail_url,
       sellerUsername: row.seller_username ?? null,
+      sellerStoreName: row.seller_store_name ?? null,
       sellerFeedbackCount,
       sellerPositivePercent,
       confidenceWeight,
     };
   });
+
+  // Safety net: filter out any blacklisted/excluded items that slipped through ingestion
+  const filteredListings: Listing[] = [];
+  for (const listing of listings) {
+    const result = await shouldExcludeListingFromCardSurfaces(
+      { title: listing.title ?? "", listingId: String(listing.id) }, // listingId must be stable for overrides/backfill (use DB listing id)
+      {
+        name: cardRecord.name,
+        setName: cardRecord.set_name,
+        number: cardRecord.card_number,
+        rarity: cardRecord.rarity,
+      }
+    );
+    if (!result.excluded) {
+      filteredListings.push(listing);
+    }
+  }
+
+  // Fetch stock image for hero display
+  const stockImage = await getCardStockImageUrl(
+    cardRecord.set_name,
+    cardRecord.name,
+    cardRecord.card_number ?? undefined
+  );
 
   return {
     card: {
@@ -342,9 +374,10 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       collectorNumber: cardRecord.card_number,
       rarity: cardRecord.rarity,
       condition: cardRecord.condition_bucket,
+      stockImageUrl: stockImage?.url ?? null,
     },
     historicals,
-    listings,
+    listings: filteredListings,
   };
 }
 
@@ -368,6 +401,9 @@ export default async function CardPage({ params }: CardPageProps) {
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-7xl px-4 pt-4 pb-8 sm:px-6 lg:px-10 lg:pt-6 lg:pb-12">
         <CardDetailClient detail={detail} />
+        <p className="mt-4 text-xs text-slate-400 text-right">
+          {TCGPLAYER_ATTRIBUTION}
+        </p>
       </div>
     </main>
   );

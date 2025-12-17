@@ -6,11 +6,12 @@ import { query } from "@/lib/db";
 import { runDealsQuery } from "./api/deals/dealsQuery";
 import type { DealsApiResponse } from "@/types/dealsApi";
 import { DEFAULT_MARKET } from "@/lib/markets";
+import { DEFAULT_MARKET_FILTER } from "@/lib/filters";
 import { ensureListingsMarketColumn } from "@/lib/schema";
 
 async function getHomePageDeals(): Promise<DealsApiResponse> {
   const PAGE_SIZE = 50;
-  const market = DEFAULT_MARKET;
+  const market = DEFAULT_MARKET_FILTER;
   const hasMarketColumn = await ensureListingsMarketColumn();
   const marketClause = hasMarketColumn ? "AND l.market = $1" : "";
 

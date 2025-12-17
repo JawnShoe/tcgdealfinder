@@ -129,20 +129,23 @@ export function resolvePreferredCondition(
   return availableConditions[0] ?? null;
 }
 
-export type MarketFilterKey = MarketCode;
+export type MarketFilterKey = MarketCode | "all";
 
-export const MARKET_FILTERS: { key: MarketFilterKey; label: string }[] =
-  SUPPORTED_MARKETS.map((code) => ({
+export const MARKET_FILTERS: { key: MarketFilterKey; label: string }[] = [
+  { key: "all", label: "All Markets" },
+  ...SUPPORTED_MARKETS.map((code) => ({
     key: code,
     label: getMarketLabel(code),
-  }));
+  })),
+];
 
-export const DEFAULT_MARKET_FILTER: MarketFilterKey = DEFAULT_MARKET;
+export const DEFAULT_MARKET_FILTER: MarketFilterKey = "all";
 
 export function matchesMarket(
   market: string | null | undefined,
   filter: MarketFilterKey,
 ): boolean {
   if (!market) return false;
+  if (filter === "all") return true; // Show all markets
   return market.toUpperCase() === filter;
 }

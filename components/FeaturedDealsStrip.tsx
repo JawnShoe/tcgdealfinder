@@ -1,13 +1,18 @@
+"use client";
+
 import Image from "next/image";
 import type { Deal } from "@/types/deal";
 import { MarketFlag } from "./MarketFlag";
+import { TrustedBadge } from "./TrustedBadge";
+import { SellerNameWithTooltip } from "./SellerNameWithTooltip";
+import { getSellerDisplayData } from "@/lib/sellerDisplay";
+import { isDealTrusted } from "@/lib/dealScore";
 import {
   formatCurrency,
   formatDiscount,
-  getConfidenceLabel,
+  formatMarket,
 } from "@/lib/dealFormatting";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
-import { normalizeMarketCode, getMarketLabel } from "@/lib/markets";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { getConfidenceLabel as getWeightLabel } from "@/lib/dealConfidence";
 import { buildAffiliateUrl } from "@/lib/affiliateUrl";
@@ -87,6 +92,23 @@ export default function FeaturedDealsStrip({
                 </div>
 
                 <div className="mt-4 flex items-center justify-between text-xs">
+                  <span className="text-slate-600">Seller</span>
+                  <div className="flex items-center gap-1.5">
+                    <SellerNameWithTooltip
+                      seller={getSellerDisplayData({
+                        username: deal.sellerUsername,
+                        storeName: deal.sellerStoreName,
+                        feedbackCount: deal.sellerFeedbackCount,
+                        feedbackPercent: deal.sellerPositivePercent,
+                      })}
+                      className="text-slate-900 font-medium"
+                    />
+                    {isDealTrusted(deal.sellerFeedbackCount, deal.sellerPositivePercent) && (
+                      <TrustedBadge />
+                    )}
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs">
                   <span className="text-slate-600">Price confidence</span>
                   <ConfidenceChip
                     weightLabel={getWeightLabel(deal.confidenceWeight ?? null)}
@@ -96,9 +118,9 @@ export default function FeaturedDealsStrip({
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs">
                   <span className="text-slate-600">Market</span>
-                  <span className="flex items-center gap-1 text-slate-900" title={getMarketLabel(normalizeMarketCode(deal.market))}>
+                  <span className="inline-flex items-center gap-1 text-slate-900" title={formatMarket(deal.market).label}>
                     <MarketFlag market={deal.market} />
-                    <span>{normalizeMarketCode(deal.market) === "EBAY_US" ? "US" : "CA"}</span>
+                    <span>{formatMarket(deal.market).compactLabel}</span>
                   </span>
                 </div>
 

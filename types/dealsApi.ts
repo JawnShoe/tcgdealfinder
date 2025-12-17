@@ -11,7 +11,7 @@ export interface DealsApiMeta {
   pageSize: number;
   totalItems: number;
   totalPages: number;
-  market: MarketCode;
+  market: MarketCode | "all";
 }
 
 export interface DealsApiResponse extends DealsApiMeta {

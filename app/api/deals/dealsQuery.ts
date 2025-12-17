@@ -20,6 +20,7 @@ import {
   type MarketCode,
   normalizeMarketCode,
 } from "@/lib/markets";
+import { shouldExcludeListingFromCardSurfaces } from "@/lib/blacklist";
 
 type DealRow = {
   id: number;
@@ -38,6 +39,7 @@ type DealRow = {
   thumbnail_url: string | null;
   sample_size: number | null;
   seller_username: string | null;
+  seller_store_name: string | null;
   seller_feedback_count: number | null;
   seller_positive_percent: number | null;
   card_id: number | null;
@@ -83,7 +85,7 @@ export type DealsQueryOptions = {
   sort?: DealsApiSort;
   page?: number;
   pageSize?: number;
-  market?: MarketCode | string | null;
+  market?: MarketCode | "all" | string | null;
 };
 
 export async function runDealsQuery(
@@ -123,7 +125,24 @@ export async function runDealsQuery(
     hasHistoricalMarketColumn,
     market,
   );
-  const items = rows.map(mapRowToDeal);
+  
+  // Map rows to deals and filter out any blacklisted/excluded items (safety net)
+  const allItems = rows.map(mapRowToDeal);
+  const items: Deal[] = [];
+  for (const deal of allItems) {
+    const result = await shouldExcludeListingFromCardSurfaces(
+      { title: deal.title ?? "", listingId: deal.listingId },
+      deal.card ? {
+        name: deal.card.name,
+        setName: deal.card.setName,
+        number: deal.card.cardNumber,
+        rarity: null, // rarity not yet in cards table
+      } : undefined
+    );
+    if (!result.excluded) {
+      items.push(deal);
+    }
+  }
 
   const meta: DealsApiMeta = {
     sort,
@@ -166,7 +185,7 @@ function deriveBaselineConfidence(
 
 async function getTotalCount(
   sortConfig: SortConfig,
-  market: MarketCode,
+  market: MarketCode | "all",
   hasListingsMarketColumn: boolean,
 ): Promise<number> {
   const baseFilters = buildBaseFilters(
@@ -197,7 +216,7 @@ async function fetchListings(
   hasConfidenceColumn: boolean,
   hasListingsMarketColumn: boolean,
   hasHistoricalMarketColumn: boolean,
-  market: MarketCode,
+  market: MarketCode | "all",
 ): Promise<DealRow[]> {
   const baseFilters = buildBaseFilters(
     sortConfig.requireHistoric,
@@ -208,12 +227,12 @@ async function fetchListings(
     ? "AND l.ends_at IS NOT NULL"
     : "";
   const orderByClause = buildOrderByClause(sort, hasConfidenceColumn);
-  const marketLiteral = `'${market}'::text`;
+  const marketLiteral = market !== "all" ? `'${market}'::text` : "NULL::text";
   const marketSelect = hasListingsMarketColumn ? "l.market" : marketLiteral;
   const historicalJoinClause =
-    hasHistoricalMarketColumn && hasListingsMarketColumn
+    hasHistoricalMarketColumn && hasListingsMarketColumn && market !== "all"
       ? `AND hp.market = l.market`
-      : hasHistoricalMarketColumn
+      : hasHistoricalMarketColumn && market !== "all"
         ? `AND hp.market = ${marketLiteral}`
         : "";
 
@@ -244,6 +263,7 @@ async function fetchListings(
         l.updated_at,
         l.thumbnail_url,
         l.seller_username,
+        l.seller_store_name,
         l.seller_feedback_count,
         l.seller_positive_percent,
         hp.sample_size,
@@ -275,9 +295,9 @@ async function fetchListings(
 function buildBaseFilters(
   requireHistoric: boolean,
   hasListingsMarketColumn: boolean,
-  market: MarketCode,
+  market: MarketCode | "all",
 ): string {
-  const marketClause = hasListingsMarketColumn
+  const marketClause = hasListingsMarketColumn && market !== "all"
     ? `AND l.market = '${market}'`
     : "";
   return `
@@ -368,6 +388,7 @@ function mapRowToDeal(row: DealRow): Deal {
       : "none",
     thumbnailUrl: row.thumbnail_url,
     sellerUsername: row.seller_username ?? null,
+    sellerStoreName: row.seller_store_name ?? null,
     discountPercent: displayDiscount,
     sellerFeedbackCount,
     sellerPositivePercent,
@@ -407,7 +428,7 @@ function buildOrderByClause(
               ? "l.deal_confidence_weight DESC NULLS LAST,"
               : ""
           }
-          l.total_price_cad ASC,
+          COALESCE(l.total_usd, l.total_price_cad) ASC,
           l.ends_at ASC NULLS LAST
       `;
     case "newest":

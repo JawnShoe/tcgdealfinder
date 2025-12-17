@@ -1,5 +1,24 @@
 import { query } from "./db";
 
+// =============================================================================
+// TYPES
+// =============================================================================
+
+export type OverrideType = "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE";
+
+export interface ListingOverride {
+  listing_id: string;
+  override_type: OverrideType;
+  reason: string | null;
+  created_at: Date;
+  created_by: string | null;
+  expires_at: Date | null;
+}
+
+// =============================================================================
+// COLUMN CACHES
+// =============================================================================
+
 let confidenceColumnCache: boolean | null = null;
 let cardLanguageColumnCache: boolean | null = null;
 let listingsMarketColumnCache: boolean | null = null;

@@ -22,6 +22,7 @@ import {
   getExpectedCurrency,
   type MarketCode,
   normalizeMarketCode,
+  SUPPORTED_MARKETS,
 } from "../lib/markets";
 
 type SearchConfigRow = {
@@ -189,6 +190,10 @@ async function upsertListing(
   shippingKnown: boolean,
   shippingSource: string | null,
 ) {
+  // Import FX conversion here to avoid circular deps
+  const { convertToUSD } = await import("../lib/fxRates");
+  const { getExpectedCurrency } = await import("../lib/markets");
+  
   const priceCad =
     listing.priceCad ??
     (listing as any).price ??
@@ -207,6 +212,24 @@ async function upsertListing(
     totalPriceCad = null;
   } else if (totalPriceCad == null && priceCad != null && shippingCad != null) {
     totalPriceCad = priceCad + shippingCad;
+  }
+  
+  // Currency handling: Extract from listing or use market default
+  const currency = (listing.priceCurrency ?? getExpectedCurrency(market)).toUpperCase();
+  
+  // Convert to USD for sorting/comparison
+  const priceNative = priceCad;
+  const shippingNative = shippingCad;
+  const totalNative = totalPriceCad;
+  
+  const conversionResult = await convertToUSD(totalNative, currency);
+  const totalUsd = conversionResult?.usd ?? null;
+  const fxRateToUsd = conversionResult?.rate ?? null;
+  
+  if (totalNative != null && totalUsd == null) {
+    // Skip this listing if we can't convert to USD (missing FX rate)
+    console.warn(`⚠️  Skipping listing ${listing.listingId}: No FX rate for ${currency}`);
+    return;
   }
 
   const normalizedCondition =
@@ -236,10 +259,17 @@ async function upsertListing(
       price_cad,
       shipping_cad,
       total_price_cad,
+      currency,
+      price_native,
+      shipping_native,
+      total_native,
+      fx_rate_to_usd,
+      total_usd,
       shipping_known,
       shipping_source,
       seller,
       seller_username,
+      seller_store_name,
       seller_feedback_count,
       seller_positive_percent,
       condition_raw,
@@ -253,11 +283,6 @@ async function upsertListing(
       match_eligible,
       match_reject_reason,
       reject_source,
-      reject_detail,
-      collector_number_raw,
-      collector_number_norm,
-      collector_number_confidence,
-      collector_number_signals,
       detected_collector_number,
       detected_language,
       created_at,
@@ -271,37 +296,39 @@ async function upsertListing(
       $4,  -- url
       $5,  -- image_url
       $6,  -- thumbnail_url
-      $7,  -- price_cad
-      $8,  -- shipping_cad
-      $9,  -- total_price_cad
-      $10, -- shipping_known
-      $11, -- shipping_source
-      $12, -- seller
-      $13, -- seller_username
-      $14, -- seller_feedback_count
-      $15, -- seller_positive_percent
-      $16, -- condition_raw
-      $17, -- grader
-      $18, -- grade_value
-      $19, -- grade_source
-      $20, -- market
-      $21, -- ends_at
-      $22, -- historic_price_cad
-      $23, -- discount_percent
-      $24, -- match_eligible
-      $25, -- match_reject_reason
-      $26, -- reject_source
-      $27, -- reject_detail
-      $28, -- collector_number_raw
-      $29, -- collector_number_norm
-      $30, -- collector_number_confidence
-      $31, -- collector_number_signals
-      $32, -- detected_collector_number
-      $33, -- detected_language
+      $7,  -- price_cad (keep for backward compat)
+      $8,  -- shipping_cad (keep for backward compat)
+      $9,  -- total_price_cad (keep for backward compat)
+      $10, -- currency
+      $11, -- price_native
+      $12, -- shipping_native
+      $13, -- total_native
+      $14, -- fx_rate_to_usd
+      $15, -- total_usd
+      $16, -- shipping_known
+      $17, -- shipping_source
+      $18, -- seller
+      $19, -- seller_username
+      $20, -- seller_store_name
+      $21, -- seller_feedback_count
+      $22, -- seller_positive_percent
+      $23, -- condition_raw
+      $24, -- grader
+      $25, -- grade_value
+      $26, -- grade_source
+      $27, -- market
+      $28, -- ends_at
+      $29, -- historic_price_cad
+      $30, -- discount_percent
+      $31, -- match_eligible
+      $32, -- match_reject_reason
+      $33, -- reject_source
+      $34, -- detected_collector_number
+      $35, -- detected_language
       NOW(),
       NOW()
     )
-    ON CONFLICT (listing_id) DO UPDATE SET
+    ON CONFLICT (listing_id, market) DO UPDATE SET
       card_id = EXCLUDED.card_id,
       title = EXCLUDED.title,
       url = EXCLUDED.url,
@@ -310,10 +337,17 @@ async function upsertListing(
       price_cad = EXCLUDED.price_cad,
       shipping_cad = EXCLUDED.shipping_cad,
       total_price_cad = EXCLUDED.total_price_cad,
+      currency = EXCLUDED.currency,
+      price_native = EXCLUDED.price_native,
+      shipping_native = EXCLUDED.shipping_native,
+      total_native = EXCLUDED.total_native,
+      fx_rate_to_usd = EXCLUDED.fx_rate_to_usd,
+      total_usd = EXCLUDED.total_usd,
       shipping_known = EXCLUDED.shipping_known,
       shipping_source = EXCLUDED.shipping_source,
       seller = EXCLUDED.seller,
       seller_username = EXCLUDED.seller_username,
+      seller_store_name = EXCLUDED.seller_store_name,
       seller_feedback_count = EXCLUDED.seller_feedback_count,
       seller_positive_percent = EXCLUDED.seller_positive_percent,
       condition_raw = EXCLUDED.condition_raw,
@@ -327,11 +361,6 @@ async function upsertListing(
       match_eligible = EXCLUDED.match_eligible,
       match_reject_reason = EXCLUDED.match_reject_reason,
       reject_source = EXCLUDED.reject_source,
-      reject_detail = EXCLUDED.reject_detail,
-      collector_number_raw = EXCLUDED.collector_number_raw,
-      collector_number_norm = EXCLUDED.collector_number_norm,
-      collector_number_confidence = EXCLUDED.collector_number_confidence,
-      collector_number_signals = EXCLUDED.collector_number_signals,
       detected_collector_number = EXCLUDED.detected_collector_number,
       detected_language = EXCLUDED.detected_language,
       updated_at = NOW();
@@ -346,10 +375,17 @@ async function upsertListing(
       priceCad,
       shippingCad,
       totalPriceCad,
+      currency,
+      priceNative,
+      shippingNative,
+      totalNative,
+      fxRateToUsd,
+      totalUsd,
       shippingKnown,
       shippingSource,
       listing.seller ?? null,
       sellerUsername,
+      listing.sellerStoreName ?? null,
       sellerFeedbackCount,
       sellerPositivePercent,
       normalizedCondition,
@@ -363,11 +399,6 @@ async function upsertListing(
       matchEligible,
       rejectReason,
       rejectSource,
-      rejectDetail,
-      collectorNumberRaw,
-      collectorNumberNorm,
-      collectorNumberConfidence,
-      collectorNumberSignals,
       detectedCollectorNumber,
       detectedLanguage,
     ],
@@ -378,15 +409,16 @@ async function getHistoricalPrice(
   cardId: number,
   market: MarketCode,
 ): Promise<number | null> {
+  // TODO: historical_prices needs market column migration
+  // For now, use US-only historical prices
   const res = await query<{ median_price_cad: string }>(
     `
       SELECT median_price_cad
       FROM historical_prices
       WHERE card_id = $1
-        AND market = $2
       LIMIT 1;
     `,
-    [cardId, market],
+    [cardId],
   );
 
   const value = res.rows[0]?.median_price_cad;
@@ -408,9 +440,9 @@ async function main() {
       c.name,
       c.set_name,
       c.card_number,
-      c.collector_number_raw,
-      c.collector_number_norm,
-      c.collector_number_confidence,
+      NULL::TEXT AS collector_number_raw,
+      NULL::TEXT AS collector_number_norm,
+      NULL::TEXT AS collector_number_confidence,
       c.condition_bucket,
       cfg.search_query,
       cfg.market
@@ -429,33 +461,35 @@ async function main() {
 
   for (const row of rows) {
     console.log(
-      `Fetching listings for card: ${row.name} (${row.condition_bucket}), query="${row.search_query}"`,
-    );
-    const historicPrice = await getHistoricalPrice(row.card_id, market);
-    if (historicPrice !== null) {
-      console.log(
-        `Using historic price $${historicPrice.toFixed(2)} for ${row.name} (${row.condition_bucket}).`,
-      );
-    } else {
-      console.log(
-        `No historic price available for ${row.name} (${row.condition_bucket}).`,
-      );
-    }
-    const market = normalizeMarketCode(row.market);
-    const listings = await fetchEbayListings(
-      row.search_query,
-      market,
+      `\nProcessing card: ${row.name} (${row.condition_bucket}), query="${row.search_query}"`,
     );
 
-    console.log(
-      `Fetched ${listings.length} listings for ${row.name} (${row.condition_bucket}).`,
-    );
+    // Loop through all markets for each search config
+    for (const marketCode of SUPPORTED_MARKETS) {
+      const market = normalizeMarketCode(marketCode);
+      console.log(`  → Fetching ${market} listings...`);
+      
+      const historicPrice = await getHistoricalPrice(row.card_id, market);
+      if (historicPrice !== null) {
+        console.log(
+          `    Historic price: $${historicPrice.toFixed(2)}`,
+        );
+      }
+      
+      const listings = await fetchEbayListings(
+        row.search_query,
+        market,
+      );
 
-    let updatedCount = 0;
-    const sellerStats = new Map<
-      string,
-      { total: number; invalid: number }
-    >();
+      console.log(
+        `    Found ${listings.length} listings`,
+      );
+
+      let updatedCount = 0;
+      const sellerStats = new Map<
+        string,
+        { total: number; invalid: number }
+      >();
 
     for (const listing of listings) {
       const sellerUsername =
@@ -572,7 +606,7 @@ async function main() {
       try {
         await upsertListing(
           targetCardId,
-          row.market,
+          market,
           inferredBucket,
           listing,
           sellerUsername,
@@ -621,32 +655,33 @@ async function main() {
       }
     }
 
-    for (const [sellerUsername, stats] of sellerStats) {
-      if (
-        stats.total >= AUTO_BLACKLIST_MIN_TOTAL &&
-        stats.invalid / stats.total >= AUTO_BLACKLIST_MIN_RATIO
-      ) {
-        await query(
-          `
-            INSERT INTO seller_blacklist (seller_username)
-            VALUES ($1)
-            ON CONFLICT (seller_username) DO NOTHING;
-          `,
-          [sellerUsername],
-        );
-        if (!blacklistedSellers.has(sellerUsername)) {
-          blacklistedSellers.add(sellerUsername);
-          console.log(
-            `Auto-blacklisted seller ${sellerUsername}: ${stats.invalid}/${stats.total} listings invalid.`,
+      for (const [sellerUsername, stats] of sellerStats) {
+        if (
+          stats.total >= AUTO_BLACKLIST_MIN_TOTAL &&
+          stats.invalid / stats.total >= AUTO_BLACKLIST_MIN_RATIO
+        ) {
+          await query(
+            `
+              INSERT INTO seller_blacklist (seller_username)
+              VALUES ($1)
+              ON CONFLICT (seller_username) DO NOTHING;
+            `,
+            [sellerUsername],
           );
+          if (!blacklistedSellers.has(sellerUsername)) {
+            blacklistedSellers.add(sellerUsername);
+            console.log(
+              `    Auto-blacklisted seller ${sellerUsername}: ${stats.invalid}/${stats.total} listings invalid.`,
+            );
+          }
         }
       }
-    }
 
-    console.log(
-      `Updated ${updatedCount} listings for ${row.name} (${row.condition_bucket}).`,
-    );
-  }
+      console.log(
+        `    ✅ ${market}: Updated ${updatedCount} listings`,
+      );
+    } // End markets loop
+  } // End rows loop
 
   console.log("Listing update complete.");
   if (accessoryRejects > 0) {

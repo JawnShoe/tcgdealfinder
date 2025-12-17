@@ -1,10 +1,6 @@
-"use server";
-
-import { AdminDealActions } from "../../components/AdminDealActions";
+import EndingSoonClient from "../../components/EndingSoonClient";
 import { query } from "../../lib/db";
 import type { Deal } from "../../types/deal";
-import { buildDealViewModel, type DealViewModel } from "../../lib/dealViewModel";
-import { EndingSoonColumns } from "../../lib/tableColumns";
 import { PAGE_TITLE, PAGE_SUBTITLE, TABLE_CONTAINER } from "../../lib/typography";
 import {
   computeDiscountPercent,
@@ -15,6 +11,7 @@ import {
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
 } from "../../lib/schema";
+import { shouldExcludeListingFromCardSurfaces } from "../../lib/blacklist";
 
 const MIN_SAMPLE_SIZE = 20;
 const TRUSTED_FEEDBACK = 20;
@@ -37,6 +34,7 @@ type EndingSoonRow = {
   ends_at: string | null;
   listing_url: string;
   seller_username: string | null;
+  seller_store_name: string | null;
   thumbnail_url: string | null;
 };
 
@@ -73,6 +71,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
         l.ends_at,
         l.url AS listing_url,
         l.seller_username,
+        l.seller_store_name,
         l.thumbnail_url
       FROM listings l
       LEFT JOIN cards c ON c.id = l.card_id
@@ -156,6 +155,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
       endsAt: row.ends_at,
       thumbnailUrl: row.thumbnail_url,
       sellerUsername: row.seller_username,
+      sellerStoreName: row.seller_store_name,
       sellerFeedbackCount,
       sellerPositivePercent,
       card: row.card_id
@@ -173,6 +173,25 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
       cardId: row.card_id,
     };
   });
+
+  // Safety net: filter out any blacklisted/excluded items that slipped through ingestion
+  const filtered: Deal[] = [];
+  for (const deal of deals) {
+    const result = await shouldExcludeListingFromCardSurfaces(
+      { title: deal.title ?? "", listingId: String(deal.id) }, // listingId must be stable for overrides/backfill (use DB listing id)
+      deal.card ? {
+        name: deal.card.name,
+        setName: deal.card.setName,
+        number: deal.card.cardNumber,
+        rarity: null, // rarity not yet in cards table
+      } : undefined
+    );
+    if (!result.excluded) {
+      filtered.push(deal);
+    }
+  }
+
+  return filtered;
 }
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -190,7 +209,6 @@ export default async function EndingSoonPage({
   const isAdmin = Boolean(adminSecret) && requestedSecret === adminSecret;
 
   const deals = await getEndingSoonDeals();
-  const viewModels = deals.map((deal) => buildDealViewModel(deal));
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -203,65 +221,11 @@ export default async function EndingSoonPage({
         </div>
 
         <div className={`${TABLE_CONTAINER} overflow-x-auto`}>
-          {viewModels.length === 0 ? (
-            <div className="py-10 text-center">
-              <p className="text-sm text-slate-600">
-                No trusted discounted listings ending in the next 24 hours.
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Check back soon for new listings.
-              </p>
-            </div>
-          ) : (
-            <table className="min-w-full table-fixed text-sm text-slate-900">
-              <thead className="border-b border-slate-200 bg-slate-50">
-                <tr>
-                  {EndingSoonColumns.map((col) => (
-                    <th
-                      key={col.key}
-                      className={`${col.headerClassName} ${col.width ?? ""}`}
-                    >
-                      {col.headerLabel}
-                    </th>
-                  ))}
-                  {isAdmin && (
-                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Admin
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {viewModels.map((vm) => (
-                  <tr
-                    key={vm.deal.id}
-                    className="even:bg-slate-50/50 hover:bg-slate-100"
-                  >
-                    {EndingSoonColumns.map((col) => (
-                      <td
-                        key={col.key}
-                        className={`${col.cellClassName} ${col.width ?? ""}`}
-                      >
-                        {col.renderCell(vm, {
-                          showListingTitle: true,
-                          showViewCardLink: true,
-                        })}
-                      </td>
-                    ))}
-                    {isAdmin && (
-                      <td className="px-3 py-4 align-middle">
-                        <AdminDealActions
-                          listingId={vm.deal.id}
-                          sellerUsername={vm.deal.sellerUsername}
-                          adminSecret={requestedSecret}
-                        />
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <EndingSoonClient
+            deals={deals}
+            isAdmin={isAdmin}
+            adminSecret={requestedSecret}
+          />
         </div>
       </div>
     </main>

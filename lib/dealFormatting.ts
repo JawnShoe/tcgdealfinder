@@ -58,7 +58,14 @@ export function formatEndsAt(
     return `${diffDays}d ${diffHours % 24}h`;
   }
 
-  return date.toLocaleString();
+  // Use ISO format to avoid hydration mismatch between server and client
+  // Format: YYYY-MM-DD HH:mm UTC
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
 }
 
 export function getConfidenceLabel(
@@ -121,29 +128,30 @@ export function formatCondition(bucket: string | null | undefined): string {
  * Returns normalized code and display label.
  */
 export function formatMarket(market: string | null | undefined): {
-  code: "US" | "CA" | "UNKNOWN";
+  code: "US" | "CA" | "GB" | "AU" | "UNKNOWN";
   label: string;
   compactLabel: string;
 } {
   const normalized = market?.toUpperCase() ?? "EBAY_US";
-  if (normalized === "EBAY_CA" || normalized === "CA") {
-    return {
-      code: "CA",
-      label: "eBay Canada",
-      compactLabel: "CA",
-    };
-  }
+  
   if (normalized === "EBAY_US" || normalized === "US") {
-    return {
-      code: "US",
-      label: "eBay United States",
-      compactLabel: "US",
-    };
+    return { code: "US", label: "eBay United States", compactLabel: "US" };
   }
+  if (normalized === "EBAY_CA" || normalized === "CA") {
+    return { code: "CA", label: "eBay Canada", compactLabel: "CA" };
+  }
+  if (normalized === "EBAY_GB" || normalized === "GB" || normalized === "UK" || normalized === "EBAY_UK") {
+    return { code: "GB", label: "eBay United Kingdom", compactLabel: "UK" };
+  }
+  if (normalized === "EBAY_AU" || normalized === "AU") {
+    return { code: "AU", label: "eBay Australia", compactLabel: "AU" };
+  }
+  
+  // Fallback: should never happen with clean data, but provide safe default
   return {
     code: "UNKNOWN",
-    label: "Unknown Market",
-    compactLabel: "??",
+    label: "eBay United States",
+    compactLabel: "US",
   };
 }
 

@@ -1,43 +1,32 @@
-"use server";
-
 import DealsTable from "@/components/DealsTable";
 import { runDealsQuery } from "@/app/api/deals/dealsQuery";
-import { DEFAULT_MARKET } from "@/lib/markets";
+import { DEFAULT_MARKET_FILTER } from "@/lib/filters";
+import { PAGE_TITLE, PAGE_SUBTITLE, TABLE_CONTAINER } from "@/lib/typography";
 
 export default async function NewestListingsPage() {
   const initial = await runDealsQuery({
     sort: "newest",
     page: 1,
-    market: DEFAULT_MARKET,
+    market: DEFAULT_MARKET_FILTER,
   });
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-7xl px-4 pt-6 pb-10 sm:px-6 lg:px-10 lg:pb-14">
-        <section className="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white px-6 py-6 shadow-sm sm:px-8">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-              Newest listings
-            </h1>
-            <p className="text-sm text-slate-600">
-              Fresh inventory straight from our ingestion pipeline. Listings appear here even if
-              they are unscored or outside the top-ranked slice.
-            </p>
-            <p className="text-xs font-medium uppercase tracking-wide text-amber-600">
-              Some listings may be unscored until enough sold data exists.
-            </p>
-          </div>
-        </section>
+    <main className="bg-slate-50 text-slate-900">
+      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-10 space-y-4">
+        <div className="space-y-2">
+          <h1 className={PAGE_TITLE}>Newest Listings</h1>
+          <p className={PAGE_SUBTITLE}>
+            Fresh inventory straight from our ingestion pipeline. Some listings may be unscored until enough sold data exists.
+          </p>
+        </div>
 
-        <section className="mt-6">
-          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-7 lg:px-10">
-            <DealsTable
-              deals={initial.items}
-              initialApiMeta={initial}
-              variant="newest"
-            />
-          </div>
-        </section>
+        <div className={TABLE_CONTAINER}>
+          <DealsTable
+            deals={initial.items}
+            initialApiMeta={initial}
+            variant="newest"
+          />
+        </div>
       </div>
     </main>
   );

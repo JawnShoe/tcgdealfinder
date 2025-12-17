@@ -1,21 +1,21 @@
-import { AdminDealActions } from "../../components/AdminDealActions";
+import TopDealsClient from "../../components/TopDealsClient";
 import { query } from "../../lib/db";
 import type { Deal } from "../../types/deal";
-import { buildDealViewModel, type DealViewModel } from "../../lib/dealViewModel";
-import { TopDealsColumns } from "../../lib/tableColumns";
 import { PAGE_TITLE, PAGE_SUBTITLE, TABLE_CONTAINER } from "../../lib/typography";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../lib/pricing";
 import { computeDealConfidenceWeight } from "../../lib/dealConfidence";
-import { DEFAULT_MARKET } from "../../lib/markets";
+import { DEFAULT_MARKET_FILTER } from "../../lib/filters";
 import {
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
   ensureDealConfidenceColumn,
   ensureHistoricalStdDevColumn,
 } from "../../lib/schema";
+import { getCardStockImageUrls, TCGPLAYER_ATTRIBUTION } from "../../lib/stockImages";
+import { shouldExcludeListingFromCardSurfaces } from "../../lib/blacklist";
 
 const LIMIT = 100;
 const MIN_SAMPLE_SIZE = 20;
@@ -44,25 +44,26 @@ type TopDealRow = {
   seller_feedback_count: number | null;
   seller_positive_percent: string | null;
   seller_username: string | null;
+  seller_store_name: string | null;
   deal_confidence_weight: string | null;
 };
 
 async function getTopDeals(): Promise<Deal[]> {
-  const market = DEFAULT_MARKET;
+  const market = DEFAULT_MARKET_FILTER;
   const hasListingsMarketColumn = await ensureListingsMarketColumn();
   const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
   const hasDealConfidenceColumn = await ensureDealConfidenceColumn();
   const hasStdDevColumn = await ensureHistoricalStdDevColumn();
   
-  const marketLiteral = `'${market}'::text`;
+  const marketLiteral = market !== "all" ? `'${market}'::text` : "NULL::text";
   const marketSelect = hasListingsMarketColumn ? "l.market" : marketLiteral;
   const historicalJoinClause =
     hasHistoricalMarketColumn && hasListingsMarketColumn
       ? "AND hp.market = l.market"
-      : hasHistoricalMarketColumn
+      : hasHistoricalMarketColumn && market !== "all"
         ? `AND hp.market = ${marketLiteral}`
         : "";
-  const marketFilterClause = hasListingsMarketColumn ? "AND l.market = $5" : "";
+  const marketFilterClause = hasListingsMarketColumn && market !== "all" ? "AND l.market = $5" : "";
   const confidenceSelect = hasDealConfidenceColumn
     ? "l.deal_confidence_weight"
     : "NULL::numeric";
@@ -93,6 +94,7 @@ async function getTopDeals(): Promise<Deal[]> {
         l.seller_feedback_count,
         l.seller_positive_percent,
         l.seller_username,
+        l.seller_store_name,
         ${confidenceSelect} AS deal_confidence_weight
       FROM listings l
       LEFT JOIN cards c ON c.id = l.card_id
@@ -127,11 +129,11 @@ async function getTopDeals(): Promise<Deal[]> {
       MIN_SELLER_FEEDBACK_COUNT,
       MIN_SELLER_POSITIVE_PERCENT,
       LIMIT,
-      ...(hasListingsMarketColumn ? [market] : []),
+      ...(hasListingsMarketColumn && market !== "all" ? [market] : []),
     ],
   );
 
-  return res.rows
+  const deals = res.rows
     .map((row: TopDealRow): Deal | null => {
       const total = row.total_price_cad ? Number(row.total_price_cad) : null;
       const historic = row.historic_price_cad
@@ -198,6 +200,7 @@ async function getTopDeals(): Promise<Deal[]> {
         endsAt: row.ends_at,
         thumbnailUrl: row.thumbnail_url,
         sellerUsername: row.seller_username,
+        sellerStoreName: row.seller_store_name,
         sellerFeedbackCount,
         sellerPositivePercent,
         card: row.card_id
@@ -216,6 +219,47 @@ async function getTopDeals(): Promise<Deal[]> {
       };
     })
     .filter((deal: Deal | null): deal is Deal => deal !== null);
+
+  // Safety net: filter out any blacklisted/excluded items that slipped through ingestion
+  const filteredDeals: Deal[] = [];
+  for (const deal of deals) {
+    const result = await shouldExcludeListingFromCardSurfaces(
+      { title: deal.title ?? "", listingId: String(deal.id) }, // listingId must be stable for overrides/backfill (use DB listing id)
+      deal.card ? {
+        name: deal.card.name,
+        setName: deal.card.setName,
+        number: deal.card.cardNumber,
+        rarity: null, // rarity not yet in cards table
+      } : undefined
+    );
+    if (!result.excluded) {
+      filteredDeals.push(deal);
+    }
+  }
+
+  // Fetch stock images for all deals
+  const cardsForImages = filteredDeals
+    .filter((d) => d.cardId && d.cardName && d.setName)
+    .map((d) => ({
+      cardId: d.cardId!,
+      name: d.cardName,
+      setName: d.setName,
+      cardNumber: d.card?.cardNumber ?? null,
+    }));
+
+  const stockImages = await getCardStockImageUrls(cardsForImages);
+
+  // Attach stock images to deals
+  for (const deal of filteredDeals) {
+    if (deal.cardId) {
+      const stockImage = stockImages.get(deal.cardId);
+      if (stockImage) {
+        deal.stockImageUrl = stockImage.url;
+      }
+    }
+  }
+
+  return filteredDeals;
 }
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -233,11 +277,10 @@ export default async function TopDealsPage({
   const isAdmin = Boolean(adminSecret) && requestedSecret === adminSecret;
 
   const deals = await getTopDeals();
-  const viewModels = deals.map((deal) => buildDealViewModel(deal));
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-7xl px-4 pt-6 pb-10 sm:px-6 lg:px-10 lg:pb-14 space-y-4">
+    <main className="bg-slate-50 text-slate-900">
+      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-10 space-y-4">
         <div className="space-y-2">
           <h1 className={PAGE_TITLE}>Top Deals</h1>
           <p className={PAGE_SUBTITLE}>
@@ -245,66 +288,15 @@ export default async function TopDealsPage({
           </p>
         </div>
 
-        <div className={`${TABLE_CONTAINER} overflow-x-auto`}>
-          {viewModels.length === 0 ? (
-            <div className="py-10 text-center">
-              <p className="text-sm text-slate-600">
-                No high-confidence top deals found right now.
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Check back soon for new listings.
-              </p>
-            </div>
-          ) : (
-            <table className="min-w-full table-fixed text-sm text-slate-900">
-              <thead className="border-b border-slate-200 bg-slate-50">
-                <tr>
-                  {TopDealsColumns.map((col) => (
-                    <th
-                      key={col.key}
-                      className={`${col.headerClassName} ${col.width ?? ""}`}
-                    >
-                      {col.headerLabel}
-                    </th>
-                  ))}
-                  {isAdmin && (
-                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Admin
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {viewModels.map((vm) => (
-                  <tr
-                    key={vm.deal.id}
-                    className="even:bg-slate-50/50 hover:bg-slate-100"
-                  >
-                    {TopDealsColumns.map((col) => (
-                      <td
-                        key={col.key}
-                        className={`${col.cellClassName} ${col.width ?? ""}`}
-                      >
-                        {col.renderCell(vm, {
-                          showListingTitle: true,
-                          showViewCardLink: true,
-                        })}
-                      </td>
-                    ))}
-                    {isAdmin && (
-                      <td className="px-3 py-4 align-middle">
-                        <AdminDealActions
-                          listingId={vm.deal.id}
-                          sellerUsername={vm.deal.sellerUsername}
-                          adminSecret={requestedSecret}
-                        />
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        <div className={TABLE_CONTAINER}>
+          <TopDealsClient
+            deals={deals}
+            isAdmin={isAdmin}
+            adminSecret={requestedSecret}
+          />
+          <p className="mt-4 text-xs text-slate-400 text-right">
+            {TCGPLAYER_ATTRIBUTION}
+          </p>
         </div>
       </div>
     </main>

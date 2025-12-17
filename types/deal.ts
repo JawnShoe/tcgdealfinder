@@ -15,7 +15,9 @@ export type Deal = {
   market: string;
   endsAt: string | null;
   thumbnailUrl: string | null;
+  stockImageUrl?: string | null; // TCGplayer stock image
   sellerUsername: string | null;
+  sellerStoreName?: string | null;
   sellerFeedbackCount?: number | null;
   sellerPositivePercent?: number | null;
   card: {

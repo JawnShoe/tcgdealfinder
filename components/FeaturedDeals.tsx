@@ -1,3 +1,4 @@
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -5,6 +6,8 @@ import Link from "next/link";
 import { TrustedBadge } from "./TrustedBadge";
 import { buildAffiliateUrl } from "../lib/affiliateUrl";
 import type { Deal } from "../types/deal";
+import { SellerNameWithTooltip } from "./SellerNameWithTooltip";
+import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 import {
   discountClass,
@@ -105,7 +108,15 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                 <div className="mt-1 flex items-center justify-between">
                   <span>Seller</span>
                   <span className="inline-flex items-center gap-1 text-slate-800">
-                    {deal.sellerUsername ?? "Unknown seller"}
+                    <SellerNameWithTooltip
+                      seller={getSellerDisplayData({
+                        username: deal.sellerUsername,
+                        storeName: deal.sellerStoreName,
+                        feedbackCount: deal.sellerFeedbackCount,
+                        feedbackPercent: deal.sellerPositivePercent,
+                      })}
+                      className="text-sm text-slate-600"
+                    />
                     {trustedSeller && <TrustedBadge />}
                   </span>
                 </div>

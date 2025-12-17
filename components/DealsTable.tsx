@@ -37,6 +37,8 @@ import { TrustedBadge } from "./TrustedBadge";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { MarketFlag } from "./MarketFlag";
+import { SellerNameWithTooltip } from "./SellerNameWithTooltip";
+import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import type { Deal } from "../types/deal";
 import type { DealsApiMeta, DealsApiResponse } from "@/types/dealsApi";
 import {
@@ -740,7 +742,7 @@ export default function DealsTable({
               )
             }
           />
-          <span>Top deals only (>= 15% off & >= 20 sales)</span>
+          <span>Top deals only (&gt;= 15% off &amp; &gt;= 20 sales)</span>
         </label>
       </div>
 
@@ -906,9 +908,16 @@ export default function DealsTable({
                             className={`truncate ${
                               isNewestVariant ? "max-w-[100px]" : ""
                             }`}
-                            title={vm.deal.sellerUsername ?? "Unknown"}
                           >
-                            {vm.deal.sellerUsername ?? "Unknown"}
+                            <SellerNameWithTooltip
+                              seller={getSellerDisplayData({
+                                username: vm.deal.sellerUsername,
+                                storeName: vm.deal.sellerStoreName,
+                                feedbackCount: vm.deal.sellerFeedbackCount,
+                                feedbackPercent: vm.deal.sellerPositivePercent,
+                              })}
+                              className="text-slate-600"
+                            />
                           </span>
                           {vm.trustedSeller ? (
                             <TrustedBadge className="flex-none" />
@@ -1007,7 +1016,18 @@ export default function DealsTable({
                   <span>
                     Confidence: {getConfidenceLabel(vm.sampleSize)}
                   </span>
-                  <span>Seller: {vm.deal.sellerUsername ?? "Unknown"}</span>
+                  <span className="flex items-center gap-1">
+                    <span className="text-slate-500">Seller:</span>
+                    <SellerNameWithTooltip
+                      seller={getSellerDisplayData({
+                        username: vm.deal.sellerUsername,
+                        storeName: vm.deal.sellerStoreName,
+                        feedbackCount: vm.deal.sellerFeedbackCount,
+                        feedbackPercent: vm.deal.sellerPositivePercent,
+                      })}
+                      className="text-slate-600"
+                    />
+                  </span>
                   <span title={formatMarket(vm.deal.market).label}>
                     Market: {formatMarket(vm.deal.market).compactLabel}
                   </span>

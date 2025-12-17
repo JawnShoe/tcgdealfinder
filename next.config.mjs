@@ -5,6 +5,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "i.ebayimg.com",
       },
+      {
+        protocol: "https",
+        hostname: "images.pokemontcg.io",
+      },
     ],
   },
 };

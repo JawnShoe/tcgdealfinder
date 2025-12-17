@@ -10,6 +10,8 @@ import { WatchlistButton } from "./WatchlistButton";
 import { CardIdentityBlock } from "./CardIdentity";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { MarketFlag } from "./MarketFlag";
+import { SellerNameWithTooltip } from "./SellerNameWithTooltip";
+import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import {
   CONDITION_FILTERS,
   type ConditionFilterKey,
@@ -25,6 +27,7 @@ import {
   formatEndsAt,
   getConfidenceLabel as getSampleConfidenceLabel,
 } from "../lib/dealFormatting";
+import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 import { ALERT_THRESHOLD_OPTIONS } from "../lib/alertsConfig";
 import { isDealTrusted } from "../lib/dealScore";
 
@@ -42,6 +45,7 @@ import {
   CONFIDENCE_TOOLTIP,
 } from "../lib/dealConfidence";
 import { buildAffiliateUrl } from "../lib/affiliateUrl";
+import type { Deal } from "../types/deal";
 
 const PriceHistoryChart = dynamic(() => import("./PriceHistoryChart"), {
   ssr: false,
@@ -66,6 +70,7 @@ type ListingRow = {
   endsAt: string | null;
   thumbnailUrl: string | null;
   sellerUsername: string | null;
+  sellerStoreName: string | null;
   sellerFeedbackCount: number | null;
   sellerPositivePercent: number | null;
   confidenceWeight: number | null;
@@ -80,6 +85,7 @@ export type CardDetailClientProps = {
       collectorNumber: string | null;
       rarity: string | null;
       condition: string | null;
+      stockImageUrl?: string | null; // TCGplayer stock image
     };
     historicals: HistoricalPoint[];
     listings: ListingRow[];
@@ -88,6 +94,13 @@ export type CardDetailClientProps = {
 
 type PriceHistoryStatus = "idle" | "loading" | "ready" | "error";
 type AlertStatus = "idle" | "loading" | "success" | "error";
+
+type ConfidenceFilterKey = "all" | "high" | "medium" | "low";
+type HeaderSortKey = "total" | "historic" | "discount" | "ends" | "seller";
+type HeaderSort = {
+  key: HeaderSortKey | null;
+  dir: "asc" | "desc";
+};
 
 const CONDITION_LABELS: Record<string, string> = {
   raw_nm: "Raw (NM)",
@@ -112,6 +125,36 @@ function formatConditionLabel(value: string | null | undefined): string | null {
 
 
 
+// Convert ListingRow to Deal for buildDealViewModel
+function listingRowToDeal(listing: ListingRow, cardId: number, cardName: string, setName: string): Deal {
+  return {
+    id: listing.id,
+    cardId,
+    cardName,
+    setName,
+    condition: listing.condition,
+    listingTitle: listing.title,
+    listingUrl: listing.url,
+    thumbnailUrl: listing.thumbnailUrl,
+    totalPriceCad: listing.totalPriceCad,
+    historicPriceCad: listing.historicPriceCad,
+    discountPercent: listing.discountPercent,
+    sampleSize: listing.sampleSize,
+    market: listing.market,
+    endsAt: listing.endsAt,
+    sellerUsername: listing.sellerUsername,
+    sellerStoreName: listing.sellerStoreName,
+    sellerFeedbackCount: listing.sellerFeedbackCount,
+    sellerPositivePercent: listing.sellerPositivePercent,
+    confidenceWeight: listing.confidenceWeight,
+    createdAt: new Date().toISOString(), // Not used in display
+    updatedAt: new Date().toISOString(),
+    collectorNumber: null,
+    rarity: null,
+    language: null,
+  };
+}
+
 export default function CardDetailClient({
   detail,
 }: CardDetailClientProps) {
@@ -124,6 +167,11 @@ export default function CardDetailClient({
   const [marketFilter, setMarketFilter] = useState<MarketFilterKey>(
     MARKET_FILTERS[0]?.key ?? "all",
   );
+  const [priceConfFilter, setPriceConfFilter] = useState<ConfidenceFilterKey>("all");
+  const [headerSort, setHeaderSort] = useState<HeaderSort>({
+    key: "total", // Default: Total ASC
+    dir: "asc",
+  });
   const [priceHistory, setPriceHistory] = useState<
     { date: string; median: number; sample: number }[]
   >([]);
@@ -169,13 +217,90 @@ export default function CardDetailClient({
     };
   }, [card.id]);
 
+  // Convert listings to view models
+  const viewModels = useMemo<DealViewModel[]>(() => {
+    return listings.map((listing) => {
+      const deal = listingRowToDeal(listing, card.id, card.name, card.setName);
+      return buildDealViewModel(deal, {
+        computeScore: false, // CardDetail doesn't use score
+        referenceTime: Date.now(),
+      });
+    });
+  }, [listings, card.id, card.name, card.setName]);
+
   const filteredListings = useMemo(() => {
-    return listings.filter(
-      (listing) =>
-        matchesConditionFilter(listing.condition, conditionFilter) &&
-        matchesMarket(listing.market, marketFilter),
+    let filtered = viewModels.filter(
+      (vm) =>
+        matchesConditionFilter(vm.deal.condition, conditionFilter) &&
+        matchesMarket(vm.deal.market, marketFilter),
     );
-  }, [listings, conditionFilter, marketFilter]);
+
+    // Price confidence filter
+    if (priceConfFilter !== "all") {
+      filtered = filtered.filter((vm) => {
+        const confLabel = vm.priceConfidenceLabel ?? "low";
+        return confLabel === priceConfFilter;
+      });
+    }
+
+    // Header sort
+    if (headerSort.key) {
+      const key = headerSort.key;
+      const dir = headerSort.dir;
+      filtered = [...filtered].sort((a, b) => {
+        let aVal: number | string;
+        let bVal: number | string;
+
+        switch (key) {
+          case "total":
+            // Nulls sort last in both ASC and DESC
+            aVal = a.totalUsd ?? (dir === "asc" ? Infinity : -Infinity);
+            bVal = b.totalUsd ?? (dir === "asc" ? Infinity : -Infinity);
+            break;
+          case "historic":
+            aVal = a.historicUsd ?? (dir === "asc" ? Infinity : -Infinity);
+            bVal = b.historicUsd ?? (dir === "asc" ? Infinity : -Infinity);
+            break;
+          case "discount":
+            aVal = a.discountPercent ?? (dir === "asc" ? Infinity : -Infinity);
+            bVal = b.discountPercent ?? (dir === "asc" ? Infinity : -Infinity);
+            break;
+          case "ends":
+            aVal = a.endsAtMs ?? (dir === "asc" ? Infinity : -Infinity);
+            bVal = b.endsAtMs ?? (dir === "asc" ? Infinity : -Infinity);
+            break;
+          case "seller":
+            aVal = a.deal.sellerUsername ?? "zzz";
+            bVal = b.deal.sellerUsername ?? "zzz";
+            break;
+          default:
+            aVal = 0;
+            bVal = 0;
+        }
+
+        let cmp = 0;
+        if (typeof aVal === "number" && typeof bVal === "number") {
+          cmp = aVal - bVal;
+        } else {
+          cmp = String(aVal).localeCompare(String(bVal));
+        }
+
+        if (dir === "desc") cmp = -cmp;
+
+        // Stable tie-break
+        if (cmp === 0) {
+          cmp = a.cardSortKey.localeCompare(b.cardSortKey);
+          if (cmp === 0) {
+            cmp = a.deal.id - b.deal.id;
+          }
+        }
+
+        return cmp;
+      });
+    }
+
+    return filtered;
+  }, [viewModels, conditionFilter, marketFilter, priceConfFilter, headerSort]);
 
   const selectedHistorical = useMemo(() => {
     return (
@@ -187,10 +312,10 @@ export default function CardDetailClient({
 
   const bestTrustedDeal = useMemo(() => {
     return filteredListings
-      .filter((listing) =>
+      .filter((vm) =>
         isDealTrusted(
-          listing.sellerFeedbackCount,
-          listing.sellerPositivePercent,
+          vm.deal.sellerFeedbackCount,
+          vm.deal.sellerPositivePercent,
         ),
       )
       .sort((a, b) => {
@@ -199,8 +324,8 @@ export default function CardDetailClient({
         if (discountA !== discountB) {
           return discountA - discountB;
         }
-        const priceA = a.totalPriceCad ?? Number.POSITIVE_INFINITY;
-        const priceB = b.totalPriceCad ?? Number.POSITIVE_INFINITY;
+        const priceA = a.totalUsd ?? Number.POSITIVE_INFINITY;
+        const priceB = b.totalUsd ?? Number.POSITIVE_INFINITY;
         return priceA - priceB;
       })[0];
   }, [filteredListings]);
@@ -213,6 +338,29 @@ export default function CardDetailClient({
   const historyCountText = `${historyPointCount} sale${
     historyPointCount === 1 ? "" : "s"
   } recorded`;
+
+  const handleHeaderSort = (key: HeaderSortKey) => {
+    setHeaderSort((prev) => {
+      if (prev.key === key) {
+        return { key, dir: prev.dir === "asc" ? "desc" : "asc" };
+      }
+      const defaultDir = key === "seller" ? "asc" : "desc";
+      return { key, dir: defaultDir };
+    });
+  };
+
+  const SortArrow = ({ colKey }: { colKey: HeaderSortKey }) => {
+    const isActive = headerSort.key === colKey;
+    return (
+      <span className="ml-1 inline-block w-3 text-center">
+        {isActive ? (
+          <span>{headerSort.dir === "asc" ? "▲" : "▼"}</span>
+        ) : (
+          <span className="invisible">▼</span>
+        )}
+      </span>
+    );
+  };
 
   const handleAlertSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -266,9 +414,9 @@ export default function CardDetailClient({
         <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-12">
           <div className="flex flex-col gap-4">
             <div className="aspect-[3/4] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-              {filteredListings[0]?.thumbnailUrl ? (
+              {(card.stockImageUrl ?? filteredListings[0]?.thumbnailUrl) ? (
                 <Image
-                  src={filteredListings[0].thumbnailUrl as string}
+                  src={(card.stockImageUrl ?? filteredListings[0]?.thumbnailUrl) as string}
                   alt={card.name}
                   width={320}
                   height={420}
@@ -281,6 +429,9 @@ export default function CardDetailClient({
               )}
             </div>
             <div className="space-y-1 text-center text-sm text-slate-600 lg:text-left">
+              {card.stockImageUrl && (
+                <p className="text-xs text-slate-400">Stock image</p>
+              )}
               <p>{card.setName}</p>
               {card.collectorNumber && <p>#{card.collectorNumber}</p>}
               {card.rarity && <p>Rarity: {card.rarity}</p>}
@@ -308,7 +459,7 @@ export default function CardDetailClient({
                   <WatchlistButton cardId={card.id} />
                 </div>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className={`grid gap-4 ${bestTrustedDeal && bestTrustedDeal.totalUsd && bestTrustedDeal.deal.market ? "md:grid-cols-2" : ""}`}>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs uppercase text-slate-500">
                     Historic median (USD)
@@ -322,31 +473,44 @@ export default function CardDetailClient({
                       : "Limited data"}
                   </p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs uppercase text-slate-500">
-                    Best trusted deal (USD)
-                  </p>
-                  <p className="text-2xl font-semibold text-slate-900">
-                    {bestTrustedDeal
-                      ? formatCurrency(bestTrustedDeal.totalPriceCad)
-                      : "--"}
-                  </p>
-                  <p
-                    className={`text-sm ${discountClass(
-                      bestTrustedDeal?.discountPercent ?? null,
-                    )}`}
-                  >
-                    {bestTrustedDeal
-                      ? formatDiscount(bestTrustedDeal.discountPercent)
-                      : "No trusted listings"}
-                  </p>
-                  {bestTrustedDeal && (
-                    <p className="text-xs text-slate-500">
-                      {bestTrustedDeal.market} /{" "}
-                      {formatEndsAt(bestTrustedDeal.endsAt)}
+                {bestTrustedDeal && bestTrustedDeal.totalUsd && bestTrustedDeal.deal.market && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs uppercase text-slate-500">
+                      Best trusted deal (USD)
                     </p>
-                  )}
-                </div>
+                    <a
+                      href={bestTrustedDeal.affiliateUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <p className="text-2xl font-semibold text-slate-900 hover:text-blue-600 transition-colors">
+                        {formatCurrency(bestTrustedDeal.totalUsd)}
+                      </p>
+                    </a>
+                    <p
+                      className={`text-sm ${discountClass(
+                        bestTrustedDeal.discountPercent ?? null,
+                      )}`}
+                    >
+                      {formatDiscount(bestTrustedDeal.discountPercent)}
+                    </p>
+                    {bestTrustedDeal.deal.endsAt && (
+                      <p className="text-xs text-slate-500">
+                        {bestTrustedDeal.marketCode} /{" "}
+                        {formatEndsAt(bestTrustedDeal.deal.endsAt)}
+                      </p>
+                    )}
+                    <a
+                      href={bestTrustedDeal.affiliateUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-block text-xs text-blue-600 hover:text-blue-700 hover:underline font-medium"
+                    >
+                      View listing →
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -403,7 +567,7 @@ export default function CardDetailClient({
 
       <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="grid w-full gap-3 text-sm text-slate-700 sm:grid-cols-2">
+          <div className="grid w-full gap-3 text-sm text-slate-700 sm:grid-cols-3">
             <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase text-slate-500">
                 Condition
@@ -420,6 +584,23 @@ export default function CardDetailClient({
                     {option.label}
                   </option>
                 ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase text-slate-500">
+                Price conf.
+              </span>
+              <select
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+                value={priceConfFilter}
+                onChange={(event) =>
+                  setPriceConfFilter(event.target.value as ConfidenceFilterKey)
+                }
+              >
+                <option value="all">All</option>
+                <option value="high">High</option>
+                <option value="medium">Med</option>
+                <option value="low">Low</option>
               </select>
             </label>
             <label className="flex flex-col gap-1">
@@ -480,13 +661,58 @@ export default function CardDetailClient({
             <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-3 py-2 text-left">Listing</th>
-                <th className="whitespace-nowrap px-3 py-2 text-right">Total USD</th>
-                <th className="whitespace-nowrap px-3 py-2 text-right">Historic USD</th>
-                <th className="px-3 py-2 text-right">Discount</th>
+                <th 
+                  className="whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
+                  onClick={() => handleHeaderSort("total")}
+                  title="Click to sort by Total USD"
+                >
+                  <span className="inline-flex items-center justify-end">
+                    <span>Total USD</span>
+                    <SortArrow colKey="total" />
+                  </span>
+                </th>
+                <th 
+                  className="whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
+                  onClick={() => handleHeaderSort("historic")}
+                  title="Click to sort by Historic USD"
+                >
+                  <span className="inline-flex items-center justify-end">
+                    <span>Historic USD</span>
+                    <SortArrow colKey="historic" />
+                  </span>
+                </th>
+                <th 
+                  className="px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
+                  onClick={() => handleHeaderSort("discount")}
+                  title="Click to sort by Discount"
+                >
+                  <span className="inline-flex items-center justify-end">
+                    <span>Discount</span>
+                    <SortArrow colKey="discount" />
+                  </span>
+                </th>
                 <th className="whitespace-nowrap px-3 py-2 text-center">Price conf.</th>
-                <th className="px-3 py-2 text-left">Seller</th>
+                <th 
+                  className="px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none"
+                  onClick={() => handleHeaderSort("seller")}
+                  title="Click to sort by Seller"
+                >
+                  <span className="inline-flex items-center">
+                    <span>Seller</span>
+                    <SortArrow colKey="seller" />
+                  </span>
+                </th>
                 <th className="px-3 py-2 text-left">Market</th>
-                <th className="px-3 py-2 text-right">Ends</th>
+                <th 
+                  className="px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
+                  onClick={() => handleHeaderSort("ends")}
+                  title="Click to sort by Ends"
+                >
+                  <span className="inline-flex items-center justify-end">
+                    <span>Ends</span>
+                    <SortArrow colKey="ends" />
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -505,10 +731,9 @@ export default function CardDetailClient({
                   </td>
                 </tr>
               ) : (
-                filteredListings.map((listing) => {
-                  const weightLabel = getWeightLabel(
-                    listing.confidenceWeight ?? null,
-                  );
+                filteredListings.map((vm) => {
+                  const listing = vm.deal;
+                  const weightLabel = vm.priceConfidenceLabel;
                   return (
                     <tr key={listing.id} className="even:bg-slate-50/50 hover:bg-slate-100">
                       <td className="px-3 py-4 align-middle">
@@ -517,7 +742,7 @@ export default function CardDetailClient({
                             <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
                               <Image
                                 src={listing.thumbnailUrl}
-                                alt={listing.title}
+                                alt={listing.listingTitle ?? ""}
                                 width={64}
                                 height={64}
                                 className="h-full w-full object-contain"
@@ -528,45 +753,50 @@ export default function CardDetailClient({
                           )}
                           <CardIdentityBlock
                             identity={{
-                              primary: detail.card.name ?? listing.title,
+                              primary: detail.card.name ?? listing.listingTitle,
                               setName: detail.card.setName ?? null,
-                              listingTitle: listing.title,
+                              listingTitle: listing.listingTitle,
                               cardId: detail.card.id,
                             }}
-                            primaryHref={buildAffiliateUrl(listing.url)}
+                            primaryHref={buildAffiliateUrl(listing.listingUrl ?? "")}
                             showListingTitle
                             showViewCardLink={false}
                           />
                         </div>
                       </td>
                     <td className="px-3 py-4 align-middle text-right text-base font-semibold">
-                      {formatCurrency(listing.totalPriceCad)}
+                      {formatCurrency(vm.totalUsd)}
                     </td>
                     <td className="px-3 py-4 align-middle text-right text-base text-slate-600">
-                      {formatCurrency(listing.historicPriceCad)}
+                      {formatCurrency(vm.historicUsd)}
                     </td>
                     <td
                       className={`px-3 py-4 align-middle text-right text-base font-semibold ${discountClass(
-                        listing.discountPercent,
+                        vm.discountPercent,
                       )}`}
                     >
-                      {formatDiscount(listing.discountPercent)}
+                      {formatDiscount(vm.discountPercent)}
                     </td>
                     <td className="px-3 py-4 align-middle text-center">
                       <ConfidenceChip
                         weightLabel={weightLabel}
-                        sampleSize={listing.sampleSize}
+                        sampleSize={vm.sampleSize}
                         center={false}
                       />
                     </td>
-                    <td className="px-3 py-4 align-middle text-sm text-slate-700">
+                    <td className="px-3 py-4 align-middle text-sm text-slate-700 w-[160px] overflow-visible">
                       <div className="flex min-w-0 items-center gap-2">
-                        <span
-                          className="truncate"
-                          title={listing.sellerUsername ?? "Unknown"}
-                        >
-                          {listing.sellerUsername ?? "Unknown"}
-                        </span>
+                        <div className="min-w-0 max-w-[120px]">
+                          <SellerNameWithTooltip
+                            seller={getSellerDisplayData({
+                              username: listing.sellerUsername,
+                              storeName: listing.sellerStoreName,
+                              feedbackCount: listing.sellerFeedbackCount,
+                              feedbackPercent: listing.sellerPositivePercent,
+                            })}
+                            className="text-slate-700 truncate block"
+                          />
+                        </div>
                         {isDealTrusted(
                           listing.sellerFeedbackCount,
                           listing.sellerPositivePercent,

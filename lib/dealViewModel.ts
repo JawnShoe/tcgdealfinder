@@ -8,6 +8,7 @@ import { getDealPrice, getDealDiscount } from "./dealMath";
 import { getDealConfidence, isDealTrusted, type DealConfidence } from "./dealScore";
 import { getConfidenceLabel as getWeightLabel } from "./dealConfidence";
 import { buildAffiliateUrl } from "./affiliateUrl";
+import { normalizeMarketCode } from "./markets";
 
 export type DealViewModel = {
   // Original deal data (with affiliate-tagged URL)
@@ -28,8 +29,9 @@ export type DealViewModel = {
   
   // Presentation fields
   conditionLabel: string | null;
-  marketCode: "US" | "CA" | string;
+  marketCode: "US" | "CA" | "GB" | "AU" | "all" | string;
   thumbnailUrl: string | null;
+  stockImageUrl: string | null; // TCGplayer stock image (preferred for card identity)
   
   // Internal scoring (for sorting, not always displayed)
   score: number | null;
@@ -99,22 +101,13 @@ export function buildDealViewModel(
     conditionLabel: deal.condition ?? deal.card?.conditionBucket ?? null,
     marketCode: normalizeMarketCode(deal.market),
     thumbnailUrl: deal.thumbnailUrl ?? null,
+    stockImageUrl: deal.stockImageUrl ?? null,
     score,
     confidence,
     confidenceWeight,
     cardSortKey,
     endsAtMs: Number.isNaN(endsAtMs) ? null : endsAtMs,
   };
-}
-
-/**
- * Helper to normalize market code for consistency.
- */
-function normalizeMarketCode(market: string | null | undefined): string {
-  const normalized = market?.toUpperCase() ?? "EBAY_US";
-  if (normalized === "EBAY_CA" || normalized === "CA") return "CA";
-  if (normalized === "EBAY_US" || normalized === "US") return "US";
-  return normalized;
 }
 
 /**

@@ -7,6 +7,8 @@ import Image from "next/image";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "../components/CardIdentity";
 import { TrustedBadge } from "../components/TrustedBadge";
 import { ConfidenceChip } from "../components/ConfidenceChip";
+import { SellerNameWithTooltip } from "../components/SellerNameWithTooltip";
+import { getSellerDisplayData } from "./sellerDisplay";
 import type { DealViewModel } from "./dealViewModel";
 import {
   formatCurrency,
@@ -26,6 +28,7 @@ export type ColumnKey =
   | "total"
   | "historic"
   | "discount"
+  | "score"
   | "priceConf"
   | "seller"
   | "market"
@@ -38,6 +41,10 @@ export type ColumnSpec = {
   cellClassName: string;
   width?: string; // e.g., "w-[280px]" or undefined for flexible
   renderCell: (vm: DealViewModel, options?: RenderOptions) => JSX.Element;
+  // Sort metadata (optional, only used by TopDealsClient and CardDetailClient)
+  sortable?: boolean;
+  sortKey?: keyof DealViewModel;
+  defaultDirection?: "asc" | "desc";
 };
 
 export type RenderOptions = {
@@ -57,36 +64,40 @@ const CardColumn: ColumnSpec = {
   headerClassName: `${TABLE_TH}`,
   cellClassName: `${TABLE_TD}`,
   width: "w-[320px] min-w-[320px]",
-  renderCell: (vm, options) => (
-    <div className="flex items-start gap-2.5">
-      {vm.thumbnailUrl ? (
-        <div className="flex h-16 w-16 md:h-12 md:w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
-          <Image
-            src={vm.thumbnailUrl}
-            alt={vm.deal.title}
-            width={64}
-            height={64}
-            className="h-full w-full object-contain"
+  renderCell: (vm, options) => {
+    // Prefer stock image (TCGplayer) over listing thumbnail
+    const imageUrl = vm.stockImageUrl ?? vm.thumbnailUrl;
+    return (
+      <div className="flex items-start gap-2.5">
+        {imageUrl ? (
+          <div className="flex h-16 w-16 md:h-12 md:w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
+            <Image
+              src={imageUrl}
+              alt={vm.deal.title}
+              width={64}
+              height={64}
+              className="h-full w-full object-contain"
+            />
+          </div>
+        ) : (
+          <div className="flex h-16 w-16 md:h-12 md:w-12 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
+        )}
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <CardIdentityBlock
+            identity={buildCardIdentityFromDeal(vm.deal)}
+            primaryHref={vm.affiliateUrl}
+            showListingTitle={options?.showListingTitle ?? false}
+            showViewCardLink={options?.showViewCardLink ?? true}
           />
+          {vm.deal.historicBaselineConfidence === "none" ? (
+            <p className="text-xs text-amber-600">
+              {baselineBadgeLabel(vm.deal.historicBaselineBucketUsed)}
+            </p>
+          ) : null}
         </div>
-      ) : (
-        <div className="flex h-16 w-16 md:h-12 md:w-12 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
-      )}
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <CardIdentityBlock
-          identity={buildCardIdentityFromDeal(vm.deal)}
-          primaryHref={vm.affiliateUrl}
-          showListingTitle={options?.showListingTitle ?? false}
-          showViewCardLink={options?.showViewCardLink ?? true}
-        />
-        {vm.deal.historicBaselineConfidence === "none" ? (
-          <p className="text-xs text-amber-600">
-            {baselineBadgeLabel(vm.deal.historicBaselineBucketUsed)}
-          </p>
-        ) : null}
       </div>
-    </div>
-  ),
+    );
+  },
 };
 
 const CardColumnNarrow: ColumnSpec = {
@@ -178,6 +189,22 @@ const DiscountColumn: ColumnSpec = {
   ),
 };
 
+const ScoreColumn: ColumnSpec = {
+  key: "score" as ColumnKey,
+  headerLabel: "Score",
+  headerClassName: `${TABLE_TH_RIGHT}`,
+  cellClassName: `${TABLE_TD_RIGHT}`,
+  width: "w-[80px]",
+  renderCell: (vm) => {
+    const scoreClass = vm.score !== null && vm.score >= 80 ? "text-emerald-600" : vm.score !== null && vm.score >= 60 ? "text-slate-900" : "text-slate-600";
+    return (
+      <span className={`${scoreClass} ${NUM_CELL} font-semibold`}>
+        {vm.score !== null ? Math.round(vm.score) : "--"}
+      </span>
+    );
+  },
+};
+
 const PriceConfColumn: ColumnSpec = {
   key: "priceConf",
   headerLabel: "Price conf.",
@@ -210,11 +237,18 @@ const SellerColumn: ColumnSpec = {
   headerLabel: "Seller",
   headerClassName: `${TABLE_TH}`,
   cellClassName: `${TABLE_TD}`,
+  width: "w-[160px]",
   renderCell: (vm) => (
     <div className="flex min-w-0 items-center gap-2">
-      <span className="truncate md:max-w-[120px]" title={vm.deal.sellerUsername ?? "Unknown"}>
-        {vm.deal.sellerUsername ?? "Unknown"}
-      </span>
+      <SellerNameWithTooltip
+        seller={getSellerDisplayData({
+          username: vm.deal.sellerUsername,
+          storeName: vm.deal.sellerStoreName,
+          feedbackCount: vm.deal.sellerFeedbackCount,
+          feedbackPercent: vm.deal.sellerPositivePercent,
+        })}
+        className="truncate max-w-[120px] text-slate-600"
+      />
       {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
     </div>
   ),
@@ -225,9 +259,15 @@ const SellerColumnNarrow: ColumnSpec = {
   width: "w-[140px]",
   renderCell: (vm) => (
     <div className="flex min-w-0 items-center gap-2">
-      <span className="truncate max-w-[100px]" title={vm.deal.sellerUsername ?? "Unknown"}>
-        {vm.deal.sellerUsername ?? "Unknown"}
-      </span>
+      <SellerNameWithTooltip
+        seller={getSellerDisplayData({
+          username: vm.deal.sellerUsername,
+          storeName: vm.deal.sellerStoreName,
+          feedbackCount: vm.deal.sellerFeedbackCount,
+          feedbackPercent: vm.deal.sellerPositivePercent,
+        })}
+        className="truncate max-w-[100px] text-slate-600"
+      />
       {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
     </div>
   ),
@@ -294,22 +334,23 @@ export const NewestColumns: ColumnSpec[] = [
 
 export const CardDetailListingsColumns: ColumnSpec[] = [
   ListingColumn,
-  TotalColumn,
-  HistoricColumn,
-  DiscountColumn,
+  { ...TotalColumn, sortable: true, sortKey: "totalUsd", defaultDirection: "asc" },
+  { ...HistoricColumn, sortable: true, sortKey: "historicUsd", defaultDirection: "desc" },
+  { ...DiscountColumn, sortable: true, sortKey: "discountPercent", defaultDirection: "desc" },
   PriceConfColumnCentered,
   SellerColumn,
   MarketColumn,
-  EndsColumn,
+  { ...EndsColumn, sortable: true, sortKey: "endsAtMs", defaultDirection: "asc" },
 ];
 
 export const TopDealsColumns: ColumnSpec[] = [
   CardColumn,
   ConditionColumn,
-  TotalColumn,
-  HistoricColumn,
-  DiscountColumn,
-  PriceConfColumnCentered,
+  { ...TotalColumn, sortable: true, sortKey: "totalUsd", defaultDirection: "asc" },
+  { ...HistoricColumn, sortable: true, sortKey: "historicUsd", defaultDirection: "desc" },
+  { ...DiscountColumn, sortable: true, sortKey: "discountPercent", defaultDirection: "desc" },
+  { ...ScoreColumn, sortable: true, sortKey: "score", defaultDirection: "desc" },
+  { ...PriceConfColumnCentered, sortable: true, sortKey: "confidenceWeight", defaultDirection: "desc" },
   SellerColumn,
   MarketColumn,
 ];

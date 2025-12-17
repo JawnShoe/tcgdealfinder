@@ -3,7 +3,7 @@
  * Single source of truth for seller name rendering across all components.
  */
 
-export type SellerInfo = {
+type SellerInfo = {
   username: string | null | undefined;
   storeName?: string | null | undefined;
   feedbackCount?: number | null | undefined;
@@ -31,6 +31,16 @@ export type SellerDisplayData = {
   };
 };
 
+export function normalizeSellerStoreName(
+  name?: string | null,
+): string | null {
+  if (!name) {
+    return null;
+  }
+  const trimmed = name.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 /**
  * Global display rule: sellerDisplayName = sellerStoreName ?? sellerUsername
  * 
@@ -39,7 +49,7 @@ export type SellerDisplayData = {
  */
 export function getSellerDisplayData(seller: SellerInfo): SellerDisplayData {
   const username = seller.username?.trim() || null;
-  const storeName = seller.storeName?.trim() || null;
+  const storeName = normalizeSellerStoreName(seller.storeName);
   
   // Display priority: store name > username > placeholder
   const displayName = storeName || username || "Unknown";
@@ -104,4 +114,29 @@ export function getSellerAriaLabel(seller: SellerInfo): string {
   const data = getSellerDisplayData(seller);
   const parts = data.tooltip.rows.map(row => `${row.label}: ${row.value}`);
   return `${data.tooltip.title} - ${parts.join(", ")}`;
+}
+
+type SellerNameCarrier = {
+  sellerStoreName?: string | null;
+  sellerUsername?: string | null;
+};
+
+const STORE_NAME_WARN_THRESHOLD = 0.25;
+
+export function warnIfStoreNamesMissing(
+  items: SellerNameCarrier[],
+  context: string,
+): void {
+  if (process.env.NODE_ENV === "production" || items.length === 0) {
+    return;
+  }
+  const missing = items.filter(
+    (item) => !item.sellerStoreName && item.sellerUsername,
+  ).length;
+  const ratio = missing / items.length;
+  if (ratio > STORE_NAME_WARN_THRESHOLD) {
+    console.warn(
+      `[seller-store-name] ${context}: ${missing}/${items.length} listings missing seller_store_name`,
+    );
+  }
 }

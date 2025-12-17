@@ -61,6 +61,9 @@ CREATE TABLE IF NOT EXISTS listings (
   detected_collector_number TEXT,
   deal_confidence_weight NUMERIC(5, 3),
   detected_language TEXT NOT NULL DEFAULT 'unknown',
+  integrity_status TEXT NOT NULL DEFAULT 'OK',
+  integrity_reason TEXT,
+  integrity_score INT,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   UNIQUE (listing_id)
@@ -68,6 +71,7 @@ CREATE TABLE IF NOT EXISTS listings (
 
 CREATE INDEX IF NOT EXISTS listings_market_idx ON listings (market);
 CREATE INDEX IF NOT EXISTS listings_market_card_id_idx ON listings (market, card_id);
+CREATE INDEX IF NOT EXISTS listings_integrity_status_idx ON listings (integrity_status);
 
 CREATE TABLE IF NOT EXISTS ebay_sold_listings (
   id SERIAL PRIMARY KEY,

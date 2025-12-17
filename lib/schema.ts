@@ -24,6 +24,16 @@ let cardLanguageColumnCache: boolean | null = null;
 let listingsMarketColumnCache: boolean | null = null;
 let historicalMarketColumnCache: boolean | null = null;
 let historicalStdDevColumnCache: boolean | null = null;
+let listingsIntegrityColumnsCache: boolean | null = null;
+
+const REQUIRED_LISTINGS_INTEGRITY_COLUMNS = [
+  "integrity_status",
+  "integrity_reason",
+  "integrity_score",
+] as const;
+
+export const LISTINGS_INTEGRITY_MISSING_MESSAGE =
+  "Missing listings.integrity_* columns. Run migrations/002_add_listing_integrity_fields.sql against DATABASE_URL.";
 
 export async function ensureDealConfidenceColumn(): Promise<boolean> {
   if (confidenceColumnCache != null) {
@@ -63,6 +73,22 @@ export async function ensureHistoricalStdDevColumn(): Promise<boolean> {
   }
   historicalStdDevColumnCache = await hasColumn("historical_prices", "std_dev_cad");
   return historicalStdDevColumnCache;
+}
+
+export async function ensureListingsIntegrityColumns(): Promise<boolean> {
+  if (listingsIntegrityColumnsCache != null) {
+    return listingsIntegrityColumnsCache;
+  }
+  const checks = await Promise.all(
+    REQUIRED_LISTINGS_INTEGRITY_COLUMNS.map((column) =>
+      hasColumn("listings", column),
+    ),
+  );
+  listingsIntegrityColumnsCache = checks.every(Boolean);
+  if (!listingsIntegrityColumnsCache) {
+    console.error(LISTINGS_INTEGRITY_MISSING_MESSAGE);
+  }
+  return listingsIntegrityColumnsCache;
 }
 
 async function hasColumn(table: string, column: string): Promise<boolean> {

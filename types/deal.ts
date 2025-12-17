@@ -32,4 +32,8 @@ export type Deal = {
   cardName: string | null;
   cardId: number | null;
   listingId?: string | null;
+  integrityStatus?: "OK" | "REVIEW";
+  integrityReason?: string | null;
+  integrityScore?: number | null;
+  overrideType?: "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE";
 };

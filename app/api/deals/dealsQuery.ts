@@ -3,6 +3,8 @@ import {
   ensureDealConfidenceColumn,
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
+  ensureListingsIntegrityColumns,
+  LISTINGS_INTEGRITY_MISSING_MESSAGE,
 } from "@/lib/schema";
 import {
   computeDiscountPercent,
@@ -21,6 +23,10 @@ import {
   normalizeMarketCode,
 } from "@/lib/markets";
 import { shouldExcludeListingFromCardSurfaces } from "@/lib/blacklist";
+import {
+  warnIfStoreNamesMissing,
+  normalizeSellerStoreName,
+} from "@/lib/sellerDisplay";
 
 type DealRow = {
   id: number;
@@ -48,6 +54,9 @@ type DealRow = {
   card_number: string | null;
   card_condition_bucket: string | null;
   deal_confidence_weight: string | null;
+  integrity_status: string | null;
+  integrity_reason: string | null;
+  integrity_score: number | null;
 };
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -91,6 +100,10 @@ export type DealsQueryOptions = {
 export async function runDealsQuery(
   options: DealsQueryOptions = {},
 ): Promise<DealsApiResponse> {
+  const hasIntegrityColumns = await ensureListingsIntegrityColumns();
+  if (!hasIntegrityColumns) {
+    throw new Error(LISTINGS_INTEGRITY_MISSING_MESSAGE);
+  }
   const sort: DealsApiSort = options.sort ?? "best";
   const sortConfig = SORT_CONFIG[sort] ?? SORT_CONFIG.best;
   const hasConfidenceColumn = await ensureDealConfidenceColumn();
@@ -128,6 +141,7 @@ export async function runDealsQuery(
   
   // Map rows to deals and filter out any blacklisted/excluded items (safety net)
   const allItems = rows.map(mapRowToDeal);
+  warnIfStoreNamesMissing(allItems, `dealsQuery:${sort}`);
   const items: Deal[] = [];
   for (const deal of allItems) {
     const result = await shouldExcludeListingFromCardSurfaces(
@@ -139,9 +153,17 @@ export async function runDealsQuery(
         rarity: null, // rarity not yet in cards table
       } : undefined
     );
-    if (!result.excluded) {
-      items.push(deal);
+    if (result.excluded) {
+      continue;
     }
+    if (
+      sort === "best" &&
+      deal.integrityStatus === "REVIEW" &&
+      result.overrideType !== "ALLOW"
+    ) {
+      continue;
+    }
+    items.push(deal);
   }
 
   const meta: DealsApiMeta = {
@@ -266,6 +288,9 @@ async function fetchListings(
         l.seller_store_name,
         l.seller_feedback_count,
         l.seller_positive_percent,
+        l.integrity_status,
+        l.integrity_reason,
+        l.integrity_score,
         hp.sample_size,
         c.id   AS card_id,
         c.name AS card_name,
@@ -388,7 +413,7 @@ function mapRowToDeal(row: DealRow): Deal {
       : "none",
     thumbnailUrl: row.thumbnail_url,
     sellerUsername: row.seller_username ?? null,
-    sellerStoreName: row.seller_store_name ?? null,
+    sellerStoreName: normalizeSellerStoreName(row.seller_store_name),
     discountPercent: displayDiscount,
     sellerFeedbackCount,
     sellerPositivePercent,
@@ -410,6 +435,10 @@ function mapRowToDeal(row: DealRow): Deal {
             cardNumber: row.card_number,
             conditionBucket: row.card_condition_bucket,
           },
+    integrityStatus: (row.integrity_status ?? "OK") as "OK" | "REVIEW",
+    integrityReason: row.integrity_reason ?? null,
+    integrityScore:
+      row.integrity_score != null ? Number(row.integrity_score) : null,
   };
 }
 

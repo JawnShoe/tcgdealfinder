@@ -24,6 +24,11 @@ import {
   normalizeMarketCode,
   SUPPORTED_MARKETS,
 } from "../lib/markets";
+import {
+  ensureListingsIntegrityColumns,
+  LISTINGS_INTEGRITY_MISSING_MESSAGE,
+} from "../lib/schema";
+import { fetchStorefrontInfo } from "../lib/ebayStorefront";
 
 type SearchConfigRow = {
   card_id: number;
@@ -99,6 +104,65 @@ type GradeInfo = {
   bucket: string | null;
   source: "specifics" | "title" | "none";
 };
+
+type IntegrityStatus = "OK" | "REVIEW";
+
+type IntegrityResult = {
+  status: IntegrityStatus;
+  reason: string | null;
+  score: number | null;
+};
+
+function isGradedBucketName(bucket: string | null | undefined): boolean {
+  if (!bucket) return false;
+  const normalized = bucket.toLowerCase();
+  return (
+    normalized.startsWith("psa_") ||
+    normalized.startsWith("bgs_") ||
+    normalized.startsWith("cgc_")
+  );
+}
+
+function isRawBucket(bucket: string | null | undefined): boolean {
+  if (!bucket) return false;
+  return bucket.toLowerCase().startsWith("raw");
+}
+
+function computeIntegrityStatus(options: {
+  conditionBucket: string | null | undefined;
+  totalPriceCad: number | null;
+  totalPriceUsd: number | null;
+  historicPriceCad: number | null;
+}): IntegrityResult {
+  const { conditionBucket, totalPriceCad, totalPriceUsd, historicPriceCad } =
+    options;
+  let status: IntegrityStatus = "OK";
+  let reason: string | null = null;
+  let score: number | null = null;
+
+  const comparablePrice =
+    totalPriceUsd ?? totalPriceCad ?? null;
+  const comparableHistoric = historicPriceCad ?? null;
+
+  const eligibleForFloorCheck =
+    comparablePrice != null &&
+    comparablePrice > 0 &&
+    comparableHistoric != null &&
+    comparableHistoric > 0 &&
+    !isGradedBucketName(conditionBucket) &&
+    isRawBucket(conditionBucket);
+
+  if (eligibleForFloorCheck) {
+    const ratio = comparablePrice! / comparableHistoric!;
+    if (ratio < 0.35) {
+      status = "REVIEW";
+      reason = "price_floor_violation";
+      score = Math.round(ratio * 100);
+    }
+  }
+
+  return { status, reason, score };
+}
 
 export function decideCollectorNumberRejection(
   cardCollector: CollectorNumberResult,
@@ -245,6 +309,36 @@ async function upsertListing(
     listing.sellerFeedbackCount ?? null;
   const sellerPositivePercent =
     listing.sellerPositivePercent ?? null;
+  let sellerStoreName = listing.sellerStoreName ?? null;
+  let sellerStoreNameSource: string | null = null;
+  let sellerStoreNameCheckedAt: Date | null = null;
+
+  if (!sellerStoreName) {
+    try {
+      const storefront = await fetchStorefrontInfo(
+        listing.listingId,
+        market as MarketCode,
+        sellerUsername,
+      );
+      if (storefront?.storeName) {
+        sellerStoreName = storefront.storeName;
+        sellerStoreNameSource = storefront.source;
+        sellerStoreNameCheckedAt = new Date();
+      }
+    } catch (error) {
+      console.error(
+        `[storefront] Failed to enrich ${listing.listingId}: ${
+          (error as Error).message
+        }`,
+      );
+    }
+  }
+  const integrity = computeIntegrityStatus({
+    conditionBucket: normalizedCondition,
+    totalPriceCad,
+    totalPriceUsd: totalUsd,
+    historicPriceCad: effectiveHistoricPrice,
+  });
 
   await query(
     `
@@ -270,6 +364,8 @@ async function upsertListing(
       seller,
       seller_username,
       seller_store_name,
+      seller_store_name_source,
+      seller_store_name_last_checked_at,
       seller_feedback_count,
       seller_positive_percent,
       condition_raw,
@@ -285,6 +381,9 @@ async function upsertListing(
       reject_source,
       detected_collector_number,
       detected_language,
+      integrity_status,
+      integrity_reason,
+      integrity_score,
       created_at,
       updated_at
     )
@@ -310,21 +409,26 @@ async function upsertListing(
       $18, -- seller
       $19, -- seller_username
       $20, -- seller_store_name
-      $21, -- seller_feedback_count
-      $22, -- seller_positive_percent
-      $23, -- condition_raw
-      $24, -- grader
-      $25, -- grade_value
-      $26, -- grade_source
-      $27, -- market
-      $28, -- ends_at
-      $29, -- historic_price_cad
-      $30, -- discount_percent
-      $31, -- match_eligible
-      $32, -- match_reject_reason
-      $33, -- reject_source
-      $34, -- detected_collector_number
-      $35, -- detected_language
+      $21, -- seller_store_name_source
+      $22, -- seller_store_name_last_checked_at
+      $23, -- seller_feedback_count
+      $24, -- seller_positive_percent
+      $25, -- condition_raw
+      $26, -- grader
+      $27, -- grade_value
+      $28, -- grade_source
+      $29, -- market
+      $30, -- ends_at
+      $31, -- historic_price_cad
+      $32, -- discount_percent
+      $33, -- match_eligible
+      $34, -- match_reject_reason
+      $35, -- reject_source
+      $36, -- detected_collector_number
+      $37, -- detected_language
+      $38, -- integrity_status
+      $39, -- integrity_reason
+      $40, -- integrity_score
       NOW(),
       NOW()
     )
@@ -347,7 +451,18 @@ async function upsertListing(
       shipping_source = EXCLUDED.shipping_source,
       seller = EXCLUDED.seller,
       seller_username = EXCLUDED.seller_username,
-      seller_store_name = EXCLUDED.seller_store_name,
+      seller_store_name = COALESCE(
+        EXCLUDED.seller_store_name,
+        listings.seller_store_name
+      ),
+      seller_store_name_source = CASE
+        WHEN EXCLUDED.seller_store_name IS NOT NULL THEN EXCLUDED.seller_store_name_source
+        ELSE listings.seller_store_name_source
+      END,
+      seller_store_name_last_checked_at = COALESCE(
+        EXCLUDED.seller_store_name_last_checked_at,
+        listings.seller_store_name_last_checked_at
+      ),
       seller_feedback_count = EXCLUDED.seller_feedback_count,
       seller_positive_percent = EXCLUDED.seller_positive_percent,
       condition_raw = EXCLUDED.condition_raw,
@@ -363,6 +478,9 @@ async function upsertListing(
       reject_source = EXCLUDED.reject_source,
       detected_collector_number = EXCLUDED.detected_collector_number,
       detected_language = EXCLUDED.detected_language,
+      integrity_status = EXCLUDED.integrity_status,
+      integrity_reason = EXCLUDED.integrity_reason,
+      integrity_score = EXCLUDED.integrity_score,
       updated_at = NOW();
   `,
     [
@@ -385,7 +503,9 @@ async function upsertListing(
       shippingSource,
       listing.seller ?? null,
       sellerUsername,
-      listing.sellerStoreName ?? null,
+      sellerStoreName ?? null,
+      sellerStoreNameSource ?? null,
+      sellerStoreNameCheckedAt,
       sellerFeedbackCount,
       sellerPositivePercent,
       normalizedCondition,
@@ -401,6 +521,9 @@ async function upsertListing(
       rejectSource,
       detectedCollectorNumber,
       detectedLanguage,
+      integrity.status,
+      integrity.reason,
+      integrity.score,
     ],
   );
 }
@@ -426,6 +549,10 @@ async function getHistoricalPrice(
 }
 
 async function main() {
+  const hasIntegrityColumns = await ensureListingsIntegrityColumns();
+  if (!hasIntegrityColumns) {
+    throw new Error(LISTINGS_INTEGRITY_MISSING_MESSAGE);
+  }
   console.log("Starting listings update...");
   const blacklistedSellers = await getBlacklistedSellers();
   console.log(

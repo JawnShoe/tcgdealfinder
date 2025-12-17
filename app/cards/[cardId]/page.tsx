@@ -10,10 +10,16 @@ import {
   ensureCardLanguageColumn,
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
+  ensureListingsIntegrityColumns,
+  LISTINGS_INTEGRITY_MISSING_MESSAGE,
 } from "../../../lib/schema";
 import { DEFAULT_MARKET, type MarketCode } from "../../../lib/markets";
 import { getCardStockImageUrl, TCGPLAYER_ATTRIBUTION } from "../../../lib/stockImages";
 import { shouldExcludeListingFromCardSurfaces } from "../../../lib/blacklist";
+import {
+  warnIfStoreNamesMissing,
+  normalizeSellerStoreName,
+} from "../../../lib/sellerDisplay";
 
 type CardRecord = {
   id: number;
@@ -49,6 +55,10 @@ type ListingDbRow = {
   seller_username: string | null;
   seller_store_name: string | null;
   deal_confidence_weight: string | null;
+  integrity_status: string | null;
+  integrity_reason: string | null;
+  integrity_score: number | null;
+  override_type: string | null;
 };
 
 type CardDetail = {
@@ -83,6 +93,10 @@ type CardDetail = {
     sellerFeedbackCount: number | null;
     sellerPositivePercent: number | null;
     confidenceWeight: number | null;
+    integrityStatus: "OK" | "REVIEW";
+    integrityReason: string | null;
+    integrityScore: number | null;
+    overrideType: "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE" | null;
   }>;
 };
 
@@ -208,11 +222,16 @@ async function getListings(
           hasConfidenceColumn
             ? "l.deal_confidence_weight"
             : "NULL::numeric"
-        } AS deal_confidence_weight
+        } AS deal_confidence_weight,
+        l.integrity_status,
+        l.integrity_reason,
+        l.integrity_score,
+        lo.override_type
       FROM listings l
       JOIN cards c ON c.id = l.card_id
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
         ${historicalJoinClause}
+      LEFT JOIN listing_overrides lo ON lo.listing_id = l.listing_id
       WHERE l.card_id = ANY($1)
         ${marketFilterClause}
         AND l.seller_username IS NOT NULL
@@ -232,6 +251,10 @@ async function getListings(
 }
 
 async function getCardDetail(cardId: number): Promise<CardDetail | null> {
+  const hasIntegrityColumns = await ensureListingsIntegrityColumns();
+  if (!hasIntegrityColumns) {
+    throw new Error(LISTINGS_INTEGRITY_MISSING_MESSAGE);
+  }
   const hasLanguageColumn = await ensureCardLanguageColumn();
   const hasListingsMarketColumn = await ensureListingsMarketColumn();
   const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
@@ -335,10 +358,19 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       endsAt: row.ends_at,
       thumbnailUrl: row.thumbnail_url,
       sellerUsername: row.seller_username ?? null,
-      sellerStoreName: row.seller_store_name ?? null,
+      sellerStoreName: normalizeSellerStoreName(row.seller_store_name),
       sellerFeedbackCount,
       sellerPositivePercent,
       confidenceWeight,
+      integrityStatus: (row.integrity_status ?? "OK") as "OK" | "REVIEW",
+      integrityReason: row.integrity_reason ?? null,
+      integrityScore:
+        row.integrity_score != null ? Number(row.integrity_score) : null,
+      overrideType: (row.override_type as
+        | "ALLOW"
+        | "HARD_BLOCK"
+        | "SOFT_EXCLUDE"
+        | null) ?? null,
     };
   });
 
@@ -366,7 +398,7 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
     cardRecord.card_number ?? undefined
   );
 
-  return {
+  const result = {
     card: {
       id: cardRecord.id,
       name: cardRecord.name,
@@ -379,6 +411,8 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
     historicals,
     listings: filteredListings,
   };
+  warnIfStoreNamesMissing(filteredListings, "cardDetail");
+  return result;
 }
 
 type CardPageProps = {

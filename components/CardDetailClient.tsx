@@ -74,6 +74,10 @@ type ListingRow = {
   sellerFeedbackCount: number | null;
   sellerPositivePercent: number | null;
   confidenceWeight: number | null;
+  integrityStatus: "OK" | "REVIEW";
+  integrityReason: string | null;
+  integrityScore: number | null;
+  overrideType: "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE" | null;
 };
 
 export type CardDetailClientProps = {
@@ -147,6 +151,10 @@ function listingRowToDeal(listing: ListingRow, cardId: number, cardName: string,
     sellerFeedbackCount: listing.sellerFeedbackCount,
     sellerPositivePercent: listing.sellerPositivePercent,
     confidenceWeight: listing.confidenceWeight,
+    integrityStatus: listing.integrityStatus,
+    integrityReason: listing.integrityReason,
+    integrityScore: listing.integrityScore,
+    overrideType: listing.overrideType ?? undefined,
     createdAt: new Date().toISOString(), // Not used in display
     updatedAt: new Date().toISOString(),
     collectorNumber: null,
@@ -312,11 +320,14 @@ export default function CardDetailClient({
 
   const bestTrustedDeal = useMemo(() => {
     return filteredListings
-      .filter((vm) =>
-        isDealTrusted(
-          vm.deal.sellerFeedbackCount,
-          vm.deal.sellerPositivePercent,
-        ),
+      .filter(
+        (vm) =>
+          (vm.deal.overrideType === "ALLOW" ||
+            vm.integrityStatus !== "REVIEW") &&
+          isDealTrusted(
+            vm.deal.sellerFeedbackCount,
+            vm.deal.sellerPositivePercent,
+          ),
       )
       .sort((a, b) => {
         const discountA = a.discountPercent ?? Number.POSITIVE_INFINITY;
@@ -329,6 +340,24 @@ export default function CardDetailClient({
         return priceA - priceB;
       })[0];
   }, [filteredListings]);
+
+  const bestTrustedDealUrl = useMemo(() => {
+    if (!bestTrustedDeal) {
+      return null;
+    }
+
+    if (bestTrustedDeal.affiliateUrl) {
+      return bestTrustedDeal.affiliateUrl;
+    }
+
+    const rawUrl =
+      (bestTrustedDeal.deal as Deal & { listingUrl?: string }).listingUrl ??
+      bestTrustedDeal.deal.url ??
+      listings.find((row) => row.id === bestTrustedDeal.deal.id)?.url ??
+      null;
+
+    return rawUrl ? buildAffiliateUrl(rawUrl) : null;
+  }, [bestTrustedDeal, listings]);
 
   const listingsLabel = `${filteredListings.length} listings / ${getSampleConfidenceLabel(
     selectedHistorical?.sampleSize ?? null,
@@ -478,37 +507,57 @@ export default function CardDetailClient({
                     <p className="text-xs uppercase text-slate-500">
                       Best trusted deal (USD)
                     </p>
-                    <a
-                      href={bestTrustedDeal.affiliateUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block"
-                    >
-                      <p className="text-2xl font-semibold text-slate-900 hover:text-blue-600 transition-colors">
+                    <div className="mt-1 space-y-2">
+                      <p className="text-2xl font-semibold text-slate-900">
                         {formatCurrency(bestTrustedDeal.totalUsd)}
                       </p>
-                    </a>
-                    <p
-                      className={`text-sm ${discountClass(
-                        bestTrustedDeal.discountPercent ?? null,
-                      )}`}
-                    >
-                      {formatDiscount(bestTrustedDeal.discountPercent)}
-                    </p>
+                      <p
+                        className={`text-sm ${discountClass(
+                          bestTrustedDeal.discountPercent ?? null,
+                        )}`}
+                      >
+                        {formatDiscount(bestTrustedDeal.discountPercent)}
+                      </p>
+                      {bestTrustedDealUrl && (
+                        <a
+                          href={bestTrustedDealUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-slate-700 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                        >
+                          <span>View listing</span>
+                          <svg
+                            viewBox="0 0 20 20"
+                            fill="none"
+                            aria-hidden="true"
+                            className="h-3.5 w-3.5 stroke-current"
+                            strokeWidth="1.5"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M11 4h5v5"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M16 4l-5.75 5.75"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 6H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3"
+                            />
+                          </svg>
+                        </a>
+                      )}
+                    </div>
                     {bestTrustedDeal.deal.endsAt && (
                       <p className="text-xs text-slate-500">
                         {bestTrustedDeal.marketCode} /{" "}
                         {formatEndsAt(bestTrustedDeal.deal.endsAt)}
                       </p>
                     )}
-                    <a
-                      href={bestTrustedDeal.affiliateUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 inline-block text-xs text-blue-600 hover:text-blue-700 hover:underline font-medium"
-                    >
-                      View listing →
-                    </a>
                   </div>
                 )}
               </div>
@@ -762,6 +811,17 @@ export default function CardDetailClient({
                             showListingTitle
                             showViewCardLink={false}
                           />
+                          {vm.integrityStatus === "REVIEW" && (
+                            <span
+                              className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
+                              title={
+                                listing.integrityReason ??
+                                "Flagged automatically for manual review"
+                              }
+                            >
+                              Review
+                            </span>
+                          )}
                         </div>
                       </td>
                     <td className="px-3 py-4 align-middle text-right text-base font-semibold">

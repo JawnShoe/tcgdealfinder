@@ -271,7 +271,7 @@ export function AdminAlertsClient({
                         <Link
                           href={`/cards/${watch.cardId}`}
                           target="_blank"
-                          className="text-xs text-sky-600 hover:underline"
+                          className="text-xs text-sky-600 transition hover:text-sky-800"
                         >
                           View card
                         </Link>
@@ -289,7 +289,7 @@ export function AdminAlertsClient({
                       <div className="flex flex-col gap-1">
                         <button
                           type="button"
-                          className="text-xs text-slate-700 hover:underline"
+                          className="text-xs text-slate-700 transition hover:text-slate-900"
                           onClick={() =>
                             handleToggle(watch.id, !watch.active)
                           }
@@ -298,7 +298,7 @@ export function AdminAlertsClient({
                         </button>
                         <button
                           type="button"
-                          className="text-xs text-red-600 hover:underline"
+                          className="text-xs text-red-600 transition hover:text-red-700"
                           onClick={() => handleDelete(watch.id)}
                         >
                           Delete
@@ -357,7 +357,7 @@ export function AdminAlertsClient({
                         <Link
                           href={`/cards/${alert.cardId}`}
                           target="_blank"
-                          className="text-xs text-sky-600 hover:underline"
+                          className="text-xs text-sky-600 transition hover:text-sky-800"
                         >
                           View card
                         </Link>

@@ -2,6 +2,10 @@ import DealsTable from "../../components/DealsTable";
 import type { Deal } from "../../types/deal";
 import { query } from "../../lib/db";
 import { getDisplayDiscountPercent } from "../../lib/pricing";
+import {
+  warnIfStoreNamesMissing,
+  normalizeSellerStoreName,
+} from "../../lib/sellerDisplay";
 
 const WINDOW_HOURS = 36;
 const ALERT_LIMIT = 150;
@@ -23,6 +27,7 @@ type AlertRow = {
   listing_thumbnail_url: string | null;
   listing_ends_at: string | null;
   seller_username: string | null;
+  seller_store_name: string | null;
   seller_feedback_count: number | null;
   seller_positive_percent: string | null;
   sample_size: number | null;
@@ -48,6 +53,7 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
         l.thumbnail_url AS listing_thumbnail_url,
         l.ends_at AS listing_ends_at,
         l.seller_username,
+        l.seller_store_name,
         l.seller_feedback_count,
         l.seller_positive_percent,
         hp.sample_size
@@ -62,7 +68,7 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
     [ALERT_LIMIT],
   );
 
-  return res.rows.map((row) => {
+  const deals = res.rows.map((row) => {
     const totalPrice =
       row.total_price_cad != null ? Number(row.total_price_cad) : null;
     const historicPrice =
@@ -103,6 +109,7 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
       endsAt: row.listing_ends_at,
       thumbnailUrl: row.listing_thumbnail_url,
       sellerUsername: row.seller_username,
+      sellerStoreName: normalizeSellerStoreName(row.seller_store_name),
       sellerFeedbackCount,
       sellerPositivePercent,
       card: {
@@ -118,6 +125,8 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
       cardId: row.card_id,
     } satisfies Deal;
   });
+  warnIfStoreNamesMissing(deals, "alerts");
+  return deals;
 }
 
 export default async function AlertsPage() {
@@ -135,7 +144,7 @@ export default async function AlertsPage() {
       {deals.length === 0 ? (
         <div className="panel space-y-3 text-center text-sm text-slate-600">
           <p>No alerts found in the last {WINDOW_HOURS} hours.</p>
-          <a href="/" className="text-sky-600 hover:underline">
+          <a href="/" className="inline-link">
             Browse current deals
           </a>
         </div>

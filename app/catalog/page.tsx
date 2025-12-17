@@ -93,7 +93,7 @@ export default async function CatalogPage() {
                   <td className="px-3 py-2 text-right">
                     <Link
                       href={`/catalog/sets/${set.id}`}
-                      className="text-sm text-sky-700 hover:underline"
+                      className="text-sm text-sky-700 transition hover:text-sky-900"
                     >
                       View all cards
                     </Link>

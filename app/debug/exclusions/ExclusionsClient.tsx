@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import type { ExcludedListing } from "./page";
 import { formatDateUTC } from "@/lib/dateFormatting";
 import type { OverrideType, ListingOverride } from "@/lib/schema";
+import { getSellerDisplayData } from "@/lib/sellerDisplay";
 
 // =============================================================================
 // TYPES
@@ -379,7 +380,7 @@ export default function ExclusionsClient({ listings, sinceDate }: Props) {
                                   href={override.url || `/cards/${override.card_id || ""}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="block truncate text-sm text-slate-200 hover:text-amber-400 hover:underline"
+                                  className="block truncate text-sm text-slate-200 hover:text-amber-400"
                                   title={override.title}
                                 >
                                   {override.title}
@@ -700,6 +701,10 @@ function ListingRow({
     : listing.priceCad
       ? `$${listing.priceCad.toFixed(2)}`
       : "—";
+  const sellerDisplay = getSellerDisplayData({
+    username: listing.sellerUsername ?? listing.seller ?? null,
+    storeName: listing.sellerStoreName ?? null,
+  });
   
   return (
     <>
@@ -721,12 +726,15 @@ function ListingRow({
             href={listing.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block truncate text-xs text-slate-200 hover:text-amber-400 hover:underline lg:text-sm"
+            className="block truncate text-xs text-slate-200 hover:text-amber-400 lg:text-sm"
             onClick={(e) => e.stopPropagation()}
             title={listing.title}
           >
             {listing.title}
           </a>
+          <div className="text-[11px] text-slate-500">
+            Seller: {sellerDisplay.displayName}
+          </div>
         </td>
         <td className="overflow-hidden px-2 py-2 lg:px-3">
           <KindBadge kind={listing.exclusionKind} />
@@ -872,6 +880,9 @@ function MobileCard({
           <span className="font-mono text-amber-400">"{listing.exclusionHit}"</span>
         )}
       </div>
+      <div className="mb-2 text-xs text-slate-500">
+        Seller: {sellerDisplay.displayName}
+      </div>
       
       {listing.cardName && (
         <div className="mb-2 text-xs text-slate-500">
@@ -960,6 +971,10 @@ function KindBadge({ kind }: { kind: "hard" | "soft" }) {
 
 
 function ExpandedDetails({ listing }: { listing: ExcludedListing }) {
+  const sellerInfo = getSellerDisplayData({
+    username: listing.sellerUsername ?? listing.seller ?? null,
+    storeName: listing.sellerStoreName ?? null,
+  });
   return (
     <div className="grid gap-2 text-xs sm:grid-cols-2">
       <div>
@@ -979,8 +994,15 @@ function ExpandedDetails({ listing }: { listing: ExcludedListing }) {
       <div>
         <span className="text-slate-500">Seller:</span>{" "}
         <span className="text-slate-300">
-          {listing.seller || listing.sellerUsername || "—"}
+          {sellerInfo.displayName}
         </span>
+        {listing.sellerUsername &&
+          listing.sellerUsername.toLowerCase() !==
+            sellerInfo.displayName.toLowerCase() && (
+            <span className="ml-1 text-slate-500">
+              ({listing.sellerUsername})
+            </span>
+          )}
       </div>
       <div className="sm:col-span-2">
         <span className="text-slate-500">Reason:</span>{" "}
@@ -998,7 +1020,7 @@ function ExpandedDetails({ listing }: { listing: ExcludedListing }) {
           href={listing.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="break-all text-amber-400 hover:underline"
+          className="break-all text-amber-400 hover:text-amber-300"
         >
           {listing.url}
         </a>

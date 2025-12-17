@@ -70,7 +70,7 @@ export function AdminDealActions({
             sellerUsername: normalizedSeller,
           })
         }
-        className="text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400"
+        className="text-red-600 transition hover:text-red-700 disabled:cursor-not-allowed disabled:text-slate-400"
       >
         Blacklist seller
       </button>
@@ -81,7 +81,7 @@ export function AdminDealActions({
           typeof listingId === "number" &&
           callAdminApi("/api/admin/hide-listing", { listingId })
         }
-        className="text-slate-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400"
+        className="text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:text-slate-400"
       >
         Hide listing
       </button>

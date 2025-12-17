@@ -132,7 +132,7 @@ export default async function AdminBlacklistPage({
                       />
                       <button
                         type="submit"
-                        className="text-xs text-red-600 hover:underline"
+                        className="text-xs text-red-600 transition hover:text-red-700"
                       >
                         Remove
                       </button>
@@ -183,7 +183,7 @@ export default async function AdminBlacklistPage({
                         href={`https://www.ebay.com/itm/${row.ebay_item_id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sky-700 hover:underline"
+                        className="text-sky-700 transition hover:text-sky-900"
                       >
                         View
                       </a>

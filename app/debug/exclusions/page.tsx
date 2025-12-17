@@ -9,7 +9,9 @@ import {
 } from "@/lib/blacklist";
 import { getMarketEmoji } from "@/lib/markets";
 import { checkDebugAuth } from "@/lib/debugAuth";
+import { normalizeSellerStoreName } from "@/lib/sellerDisplay";
 import ExclusionsClient from "./ExclusionsClient";
+import { IntegrityReviewPanel } from "./IntegrityReviewPanel";
 
 // =============================================================================
 // TYPES
@@ -28,6 +30,7 @@ type ExcludedListing = {
   totalPriceCad: number | null;
   sellerUsername: string | null;
   seller: string | null;
+  sellerStoreName: string | null;
   createdAt: Date | null;
   endsAt: Date | null;
   cardId: number | null;
@@ -138,6 +141,7 @@ type ListingRow = {
   total_price_cad: string | null;
   seller_username: string | null;
   seller: string | null;
+  seller_store_name: string | null;
   created_at: Date | null;
   ends_at: Date | null;
   card_id: number | null;
@@ -166,6 +170,7 @@ async function fetchRecentListings(hours: number, limit: number): Promise<Listin
       l.total_price_cad,
       l.seller_username,
       l.seller,
+      l.seller_store_name,
       l.created_at,
       l.ends_at,
       l.card_id,
@@ -240,13 +245,14 @@ async function processExclusions(
         id: row.id,
         listingId: row.listing_id,
         title: row.title,
-        url: row.url,
-        market: row.market,
-        priceCad: row.price_cad ? parseFloat(row.price_cad) : null,
-        shippingCad: row.shipping_cad ? parseFloat(row.shipping_cad) : null,
-        totalPriceCad: row.total_price_cad ? parseFloat(row.total_price_cad) : null,
-        sellerUsername: row.seller_username,
-        seller: row.seller,
+      url: row.url,
+      market: row.market,
+      priceCad: row.price_cad ? parseFloat(row.price_cad) : null,
+      shippingCad: row.shipping_cad ? parseFloat(row.shipping_cad) : null,
+      totalPriceCad: row.total_price_cad ? parseFloat(row.total_price_cad) : null,
+      sellerUsername: row.seller_username,
+      seller: row.seller,
+      sellerStoreName: normalizeSellerStoreName(row.seller_store_name),
         createdAt: row.created_at,
         endsAt: row.ends_at,
         cardId: row.card_id,
@@ -444,6 +450,7 @@ export default async function ExclusionsQuarantinePage({
         
         {/* Client Component for Interactive Table */}
         <ExclusionsClient listings={excluded} sinceDate={sinceDate} />
+        <IntegrityReviewPanel sinceIso={sinceDate.toISOString()} />
       </div>
     </main>
   );

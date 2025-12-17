@@ -180,7 +180,7 @@ export default async function SetsPage() {
                     {set.cardsWithDeals > 0 ? (
                       <Link
                         href={`/sets/${encodeSetSlug(set.name)}`}
-                        className="text-sm text-sky-700 hover:underline"
+                        className="text-sm text-sky-700 transition hover:text-sky-900"
                       >
                         View deals
                       </Link>
@@ -190,7 +190,7 @@ export default async function SetsPage() {
                     {set.id > 0 ? (
                       <Link
                         href={`/catalog/sets/${set.id}`}
-                        className="text-sm text-sky-700 hover:underline"
+                        className="text-sm text-sky-700 transition hover:text-sky-900"
                       >
                         View all cards
                       </Link>

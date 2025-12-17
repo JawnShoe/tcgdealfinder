@@ -10,8 +10,14 @@ import { DEFAULT_MARKET } from "../../lib/markets";
 import {
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
+  ensureListingsIntegrityColumns,
+  LISTINGS_INTEGRITY_MISSING_MESSAGE,
 } from "../../lib/schema";
 import { shouldExcludeListingFromCardSurfaces } from "../../lib/blacklist";
+import {
+  warnIfStoreNamesMissing,
+  normalizeSellerStoreName,
+} from "../../lib/sellerDisplay";
 
 const MIN_SAMPLE_SIZE = 20;
 const TRUSTED_FEEDBACK = 20;
@@ -39,6 +45,10 @@ type EndingSoonRow = {
 };
 
 async function getEndingSoonDeals(): Promise<Deal[]> {
+  const hasIntegrityColumns = await ensureListingsIntegrityColumns();
+  if (!hasIntegrityColumns) {
+    throw new Error(LISTINGS_INTEGRITY_MISSING_MESSAGE);
+  }
   const market = DEFAULT_MARKET;
   const hasListingsMarketColumn = await ensureListingsMarketColumn();
   const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
@@ -110,7 +120,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
     ],
   );
 
-  return res.rows.map((row: EndingSoonRow): Deal => {
+  const deals = res.rows.map((row: EndingSoonRow): Deal => {
     const total =
       row.total_price_cad !== null ? Number(row.total_price_cad) : null;
     const historic =
@@ -155,7 +165,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
       endsAt: row.ends_at,
       thumbnailUrl: row.thumbnail_url,
       sellerUsername: row.seller_username,
-      sellerStoreName: row.seller_store_name,
+      sellerStoreName: normalizeSellerStoreName(row.seller_store_name),
       sellerFeedbackCount,
       sellerPositivePercent,
       card: row.card_id
@@ -191,6 +201,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
     }
   }
 
+  warnIfStoreNamesMissing(filtered, "endingSoon");
   return filtered;
 }
 

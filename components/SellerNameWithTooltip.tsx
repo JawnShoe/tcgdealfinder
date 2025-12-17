@@ -128,7 +128,7 @@ export function SellerNameWithTooltip({
       <button
         ref={buttonRef}
         type="button"
-        className={`${className} cursor-help underline decoration-dotted decoration-slate-300 hover:decoration-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded`}
+        className={`${className} cursor-help underline decoration-dotted decoration-slate-300 hover:decoration-slate-400 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 rounded`}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         onClick={() => setShowTooltip(!showTooltip)}

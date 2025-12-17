@@ -14,6 +14,10 @@ import {
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
 } from "../../../lib/schema";
+import {
+  warnIfStoreNamesMissing,
+  normalizeSellerStoreName,
+} from "../../../lib/sellerDisplay";
 
 const HOT_CARD_LIMIT = 8;
 const HOT_CARD_THRESHOLD = -5;
@@ -58,6 +62,7 @@ type DealRow = {
   thumbnail_url: string | null;
   sample_size: number | null;
   seller_username: string | null;
+  seller_store_name: string | null;
   seller_feedback_count: number | null;
   seller_positive_percent: string | null;
   card_id: number | null;
@@ -227,7 +232,7 @@ async function getHotCards(
     params,
   );
 
-  return res.rows.map((row) => {
+  const deals = res.rows.map((row) => {
     const median =
       row.median_price_cad != null ? Number(row.median_price_cad) : null;
     const bestPrice =
@@ -265,6 +270,8 @@ async function getHotCards(
       bestDealUrl: row.deal_url,
     };
   });
+  warnIfStoreNamesMissing(deals, "setDeals");
+  return deals;
 }
 
 async function getSetDeals(
@@ -303,6 +310,7 @@ async function getSetDeals(
         l.ends_at,
         l.thumbnail_url,
         l.seller_username,
+        l.seller_store_name,
         l.seller_feedback_count,
         l.seller_positive_percent,
         hp.sample_size,
@@ -389,6 +397,7 @@ async function getSetDeals(
       sellerUsername: row.seller_username,
       sellerFeedbackCount,
       sellerPositivePercent,
+      sellerStoreName: normalizeSellerStoreName(row.seller_store_name),
       card: row.card_id
         ? {
             id: row.card_id,
@@ -450,7 +459,10 @@ export default async function SetDetailPage({
   return (
     <main className="page-shell space-y-6 py-6">
       <div className="panel space-y-2">
-        <Link href="/sets" className="text-xs text-slate-500 hover:underline">
+        <Link
+          href="/sets"
+          className="text-xs text-slate-500 transition hover:text-slate-700"
+        >
           ← Browse all sets
         </Link>
         <h1 className="text-3xl font-bold text-slate-900">{setName}</h1>
@@ -499,9 +511,12 @@ export default async function SetDetailPage({
                 className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <div className="text-sm font-semibold text-slate-900">
-                  <Link href={`/cards/${card.id}`} className="hover:underline">
-                    {card.name}
-                  </Link>
+                    <Link
+                      href={`/cards/${card.id}`}
+                      className="transition hover:text-slate-600"
+                    >
+                      {card.name}
+                    </Link>
                 </div>
                 <div className="text-xs text-slate-500">
                   #{card.cardNumber ?? "—"} • {card.condition ?? "Unknown"}

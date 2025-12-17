@@ -470,7 +470,7 @@ let cachedToken:
 
 // ---- OAuth: get application access token for Browse API ----
 
-async function getAppAccessToken(): Promise<string> {
+export async function getAppAccessToken(): Promise<string> {
   const { clientId, clientSecret } = getEbayEnv();
 
   const now = Math.floor(Date.now() / 1000);

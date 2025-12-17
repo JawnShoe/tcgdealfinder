@@ -21,6 +21,19 @@ a {
 
 a:hover {
   color: #0c4a6e;
+  text-decoration: none;
+}
+
+p a,
+.prose a,
+.inline-link {
+  text-decoration: none;
+  text-underline-offset: 0.2em;
+}
+
+p a:hover,
+.prose a:hover,
+.inline-link:hover {
   text-decoration: underline;
 }
 

@@ -32,6 +32,9 @@ export type DealViewModel = {
   marketCode: "US" | "CA" | "GB" | "AU" | "all" | string;
   thumbnailUrl: string | null;
   stockImageUrl: string | null; // TCGplayer stock image (preferred for card identity)
+  integrityStatus: "OK" | "REVIEW";
+  integrityReason: string | null;
+  integrityScore: number | null;
   
   // Internal scoring (for sorting, not always displayed)
   score: number | null;
@@ -102,6 +105,10 @@ export function buildDealViewModel(
     marketCode: normalizeMarketCode(deal.market),
     thumbnailUrl: deal.thumbnailUrl ?? null,
     stockImageUrl: deal.stockImageUrl ?? null,
+    integrityStatus: (deal.integrityStatus ?? "OK") as "OK" | "REVIEW",
+    integrityReason: deal.integrityReason ?? null,
+    integrityScore:
+      deal.integrityScore != null ? Number(deal.integrityScore) : null,
     score,
     confidence,
     confidenceWeight,

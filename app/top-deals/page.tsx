@@ -13,9 +13,15 @@ import {
   ensureListingsMarketColumn,
   ensureDealConfidenceColumn,
   ensureHistoricalStdDevColumn,
+  ensureListingsIntegrityColumns,
+  LISTINGS_INTEGRITY_MISSING_MESSAGE,
 } from "../../lib/schema";
 import { getCardStockImageUrls, TCGPLAYER_ATTRIBUTION } from "../../lib/stockImages";
 import { shouldExcludeListingFromCardSurfaces } from "../../lib/blacklist";
+import {
+  warnIfStoreNamesMissing,
+  normalizeSellerStoreName,
+} from "../../lib/sellerDisplay";
 
 const LIMIT = 100;
 const MIN_SAMPLE_SIZE = 20;
@@ -46,9 +52,16 @@ type TopDealRow = {
   seller_username: string | null;
   seller_store_name: string | null;
   deal_confidence_weight: string | null;
+  integrity_status: string | null;
+  integrity_reason: string | null;
+  integrity_score: number | null;
 };
 
 async function getTopDeals(): Promise<Deal[]> {
+  const hasIntegrityColumns = await ensureListingsIntegrityColumns();
+  if (!hasIntegrityColumns) {
+    throw new Error(LISTINGS_INTEGRITY_MISSING_MESSAGE);
+  }
   const market = DEFAULT_MARKET_FILTER;
   const hasListingsMarketColumn = await ensureListingsMarketColumn();
   const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
@@ -96,6 +109,9 @@ async function getTopDeals(): Promise<Deal[]> {
         l.seller_username,
         l.seller_store_name,
         ${confidenceSelect} AS deal_confidence_weight
+        , l.integrity_status
+        , l.integrity_reason
+        , l.integrity_score
       FROM listings l
       LEFT JOIN cards c ON c.id = l.card_id
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
@@ -185,7 +201,7 @@ async function getTopDeals(): Promise<Deal[]> {
         });
       }
 
-      return {
+      const mappedDeal: Deal = {
         id: row.listing_id,
         title: row.title,
         url: row.url,
@@ -200,7 +216,7 @@ async function getTopDeals(): Promise<Deal[]> {
         endsAt: row.ends_at,
         thumbnailUrl: row.thumbnail_url,
         sellerUsername: row.seller_username,
-        sellerStoreName: row.seller_store_name,
+        sellerStoreName: normalizeSellerStoreName(row.seller_store_name),
         sellerFeedbackCount,
         sellerPositivePercent,
         card: row.card_id
@@ -216,7 +232,12 @@ async function getTopDeals(): Promise<Deal[]> {
         setName: row.set_name,
         cardName: row.card_name,
         cardId: row.card_id,
+        integrityStatus: (row.integrity_status ?? "OK") as "OK" | "REVIEW",
+        integrityReason: row.integrity_reason ?? null,
+        integrityScore:
+          row.integrity_score != null ? Number(row.integrity_score) : null,
       };
+      return mappedDeal;
     })
     .filter((deal: Deal | null): deal is Deal => deal !== null);
 
@@ -232,10 +253,18 @@ async function getTopDeals(): Promise<Deal[]> {
         rarity: null, // rarity not yet in cards table
       } : undefined
     );
-    if (!result.excluded) {
-      filteredDeals.push(deal);
+    if (result.excluded) {
+      continue;
     }
+    if (
+      deal.integrityStatus === "REVIEW" &&
+      result.overrideType !== "ALLOW"
+    ) {
+      continue;
+    }
+    filteredDeals.push(deal);
   }
+  warnIfStoreNamesMissing(filteredDeals, "topDeals");
 
   // Fetch stock images for all deals
   const cardsForImages = filteredDeals

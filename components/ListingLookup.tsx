@@ -121,7 +121,12 @@ export default function ListingLookup() {
           >
             {result ? (
               <>
-                <a href={result.url} target="_blank" rel="noopener noreferrer" className="underline">
+                <a
+                  href={result.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-link"
+                >
                   {message}
                 </a>
                 {!result.matchEligible && (

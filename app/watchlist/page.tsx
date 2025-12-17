@@ -95,7 +95,7 @@ export default function WatchlistPage() {
       ) : empty ? (
         <div className="panel space-y-3 text-center text-sm text-slate-600">
           <p>No cards in your watchlist yet.</p>
-          <Link href="/" className="text-sky-600 hover:underline">
+          <Link href="/" className="inline-link">
             Browse current deals
           </Link>
         </div>

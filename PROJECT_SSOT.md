@@ -209,7 +209,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ### Admin blacklist history guard
 - **Change**: `/admin/blacklist` shows active sellers even if `seller_blacklist_history` is missing; banner prompts migration
-- **Commit**: TBD
+- **Commit**: 51f477b
 
 ### Admin cookie gate + listing exclusion tool
 - **Admin auth**: Cookie-based gate (`admin_auth` via `/api/admin/login`), 404 on `/admin/*`, admin APIs accept cookie with deprecated `x-admin-secret` fallback

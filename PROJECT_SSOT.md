@@ -176,6 +176,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 ### Debug exclusions seller blacklist status + deep-link
 - **Implementation**: Seller blacklist visibility implemented on `/debug/exclusions` with deep-link to `/admin/blacklist?seller=...` (commit 48648e9)
 - **Documentation**: SSOT clarification only (commit fe8c59c)
+- **SSOT fix**: Clarified implementation vs documentation commits (commit fb27c1a)
 - **Invariant**: All blacklist mutations (add/remove/restore) remain restricted to `/admin/blacklist`
 
 ### Freshness timestamp wiring audit + unify

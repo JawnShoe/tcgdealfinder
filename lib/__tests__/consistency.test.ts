@@ -12,6 +12,7 @@ import {
   formatCondition,
   formatMarket,
   formatEndsAt,
+  formatFreshness,
 } from "../dealFormatting";
 import { buildDealViewModel, type DealViewModel } from "../dealViewModel";
 import { TABLE_TH_NOWRAP } from "../typography";
@@ -198,7 +199,28 @@ test("formatCondition maps condition buckets to human labels", () => {
 });
 
 /**
- * Test 12: All column specs have required properties
+ * Test 12: formatFreshness hides future and stale timestamps
+ */
+test("formatFreshness returns null for future or stale timestamps", () => {
+  const originalNow = Date.now;
+  const fixedNow = new Date("2025-01-01T00:00:00Z").getTime();
+  Date.now = () => fixedNow;
+
+  try {
+    const future = new Date(fixedNow + 5 * 60 * 1000).toISOString();
+    const stale = new Date(fixedNow - 5 * 60 * 60 * 1000).toISOString();
+    const fresh = new Date(fixedNow - 30 * 60 * 1000).toISOString();
+
+    assert.strictEqual(formatFreshness(future), null);
+    assert.strictEqual(formatFreshness(stale), null);
+    assert.strictEqual(formatFreshness(fresh), "30m");
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
+/**
+ * Test 13: All column specs have required properties
  */
 test("All column specs have required properties", () => {
   const allColumns = [

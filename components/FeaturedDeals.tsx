@@ -15,7 +15,6 @@ import {
   formatUSD,
   formatDiscount,
   formatMarket,
-  formatFreshness,
 } from "../lib/dealFormatting";
 import { MarketFlag } from "./MarketFlag";
 
@@ -93,11 +92,6 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                     <span className="text-base font-semibold text-slate-900">
                       {formatUSD(price)}
                     </span>
-                    {formatFreshness(deal.updatedAt) && (
-                      <span className="text-xs text-slate-500">
-                        · {formatFreshness(deal.updatedAt)}
-                      </span>
-                    )}
                     <span
                       className={`font-medium ${discountClass(discount)}`}
                     >

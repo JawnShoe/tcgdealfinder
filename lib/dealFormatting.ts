@@ -251,6 +251,9 @@ export function formatFreshness(
   }
 
   const diffMs = Date.now() - date.getTime();
+  if (diffMs < 0) {
+    return null;
+  }
   const diffMinutes = Math.floor(diffMs / 60000);
 
   // Only show if recent enough

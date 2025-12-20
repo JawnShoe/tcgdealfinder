@@ -92,14 +92,17 @@
 
 | Route | Status | Notes |
 |-------|--------|-------|
-| `/admin/exclusions` | ⚠️ ADMIN | Admin navigation hub for exclusions |
+| `/admin` | ⚠️ ADMIN | Admin hub (tabs: Exclusions, Blacklist, Listings) |
+| `/admin/exclusions` | ⚠️ ADMIN | Exclusions quarantine panel (read-only) |
 | `/admin/alerts` | ⚠️ ADMIN | Alert management |
 | `/admin/blacklist` | ⚠️ ADMIN | Seller blacklist management |
 | `/admin/listings` | ⚠️ ADMIN | Single-listing exclusion tool |
-| `/debug/exclusions` | ⚠️ DEBUG | Integrity review panel |
+| `/debug/exclusions` | ⚠️ DEBUG | Debug-only exclusions + integrity review (deprecated for operators) |
 
 - `/admin/blacklist` shows active blacklist entries plus history; unblacklist writes history first and restore re-adds without deleting history.
-- `/debug/exclusions` displays seller blacklist status pills and an admin tools chip (unlock modal; no URL secrets, no direct deep-link); it is read-only.
+- `/admin` is the canonical operator workflow (hub + tabs); `/admin/exclusions` renders the exclusions panel in admin.
+- `/debug/exclusions` is debug-only and deprecated for operators; a banner points operators to `/admin`.
+- `/debug/exclusions` displays seller blacklist status pills and an admin tools chip (unlock modal; no URL secrets, no direct deep-link).
 - Blacklist mutations + history remain on `/admin/blacklist` only.
 - Listing exclusions (single listing) are managed only on `/admin/listings`.
 - `/admin/blacklist` shows a banner if `seller_blacklist_history` is missing.
@@ -202,7 +205,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
-**Status**: DONE — Admin navigation toolbar (2025-12-20)
+**Status**: DONE - Admin hub + exclusions consolidation (2025-12-20)
 - Completed; see entry in Completed.
 
 ---
@@ -210,9 +213,14 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 ## COMPLETED (2025-12-20)
 
 ### Admin navigation toolbar
-- **Change**: Added shared Admin Tools toolbar on `/admin/exclusions`, `/admin/blacklist`, `/admin/listings`; new `/admin/exclusions` page links to debug exclusions
-- **Status**: COMPLETE (toolbar only; no hub)
+- **Change**: Added shared Admin Tools toolbar on `/admin/exclusions`, `/admin/blacklist`, `/admin/listings`.
+- **Status**: COMPLETE (toolbar added)
 - **Commit**: a7eb235
+
+### Admin hub + exclusions consolidation
+- **Change**: Added `/admin` hub with tabs (Exclusions, Blacklist, Listings); `/admin/exclusions` renders the exclusions panel in admin (read-only); `/debug/exclusions` shows a deprecation banner for operators.
+- **Status**: COMPLETE
+- **Invariant**: Admin cookie gate unchanged; debug token gate unchanged; no URL secrets.
 
 ### Admin blacklist history guard
 - **Change**: `/admin/blacklist` shows active sellers even if `seller_blacklist_history` is missing; banner prompts migration

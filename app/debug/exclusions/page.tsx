@@ -5,10 +5,8 @@ import {
   parseLimit,
   fetchRecentListings,
   processExclusions,
-  type ExcludedListing,
-  type ExclusionStats,
+  type TimeframePreset,
 } from "./exclusionsData";
-import { getMarketEmoji } from "@/lib/markets";
 import { checkDebugAuth } from "@/lib/debugAuth";
 import ExclusionsClient from "./ExclusionsClient";
 import { IntegrityReviewPanel } from "./IntegrityReviewPanel";
@@ -84,6 +82,12 @@ export default async function ExclusionsQuarantinePage({
             Review and manage excluded listings (hard blocks + soft merch exclusions).
             Use ALLOW/HARD_BLOCK/SOFT_EXCLUDE buttons to apply overrides.
           </p>
+        </div>
+
+        <div className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Operator workflow moved to <span className="font-mono">/admin</span>{" "}
+          (Exclusions tab). This debug page remains available for debug-only
+          triage.
         </div>
         
         {/* Active Filters */}
@@ -250,5 +254,3 @@ function TopHitsCard({
   );
 }
 
-// Export types for client component
-export type { ExcludedListing };

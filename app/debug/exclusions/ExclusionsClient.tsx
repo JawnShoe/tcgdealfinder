@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import type { ExcludedListing } from "./page";
+import type { ExcludedListing } from "./exclusionsData";
 import { formatDateUTC } from "@/lib/dateFormatting";
 import type { OverrideType, ListingOverride } from "@/lib/schema";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
@@ -388,9 +388,9 @@ export default function ExclusionsClient({
           </p>
         )}
       </div>
-      
       {/* Manual Overrides Panel */}
-      <div className="mb-6 rounded-lg border border-amber-700/50 bg-slate-800/50">
+      {enableOverrides ? (
+        <div className="mb-6 rounded-lg border border-amber-700/50 bg-slate-800/50">
         <button
           className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-800"
           onClick={() => setShowOverridesPanel(!showOverridesPanel)}
@@ -560,7 +560,8 @@ export default function ExclusionsClient({
           </div>
         )}
       </div>
-      
+      ) : null}
+
       {/* Results Count */}
       <div className="mb-4 text-sm text-slate-400">
         Displaying {filteredListings.length} excluded listings
@@ -610,6 +611,7 @@ export default function ExclusionsClient({
                 override={overrides.get(listing.listingId)}
                 onConfirm={(action) => setConfirmModal({ listing, action })}
                 onUndo={() => handleUndo(listing.listingId)}
+                enableActions={enableActions}
               />
             ))}
           </tbody>
@@ -627,6 +629,7 @@ export default function ExclusionsClient({
             onUndo={() => handleUndo(listing.listingId)}
             expanded={expandedIds.has(listing.id)}
             onToggleExpand={() => toggleExpand(listing.id)}
+            enableActions={enableActions}
           />
         ))}
       </div>
@@ -997,6 +1000,7 @@ function MobileCard({
   override,
   onConfirm,
   onUndo,
+  enableActions,
 }: {
   listing: ExcludedListing;
   expanded: boolean;
@@ -1004,6 +1008,7 @@ function MobileCard({
   override: ListingOverride | undefined;
   onConfirm: (action: OverrideType) => void;
   onUndo: () => void;
+  enableActions: boolean;
 }) {
   const marketDisplay = getMarketDisplay(listing.market);
   const timeStr = listing.createdAt
@@ -1027,8 +1032,7 @@ function MobileCard({
     ? "bg-rose-900/50 text-rose-300"
     : "bg-emerald-900/50 text-emerald-300";
   const isExcluded =
-    override?.override_type === "HARD_BLOCK" ||
-    override?.override_type === "SOFT_EXCLUDE";
+    listing.exclusionKind === "hard" || listing.exclusionKind === "soft";
   
   return (
     <div
@@ -1066,7 +1070,7 @@ function MobileCard({
       </div>
       <div className="mb-2 text-xs text-slate-500">
         Seller: {sellerDisplay.displayName}
-      </div>
+        </div>
       <div className="mb-2 flex items-center gap-2 text-[11px] text-slate-400">
         <span className={`rounded-full px-2 py-0.5 font-medium ${blacklistClass}`}>
           {blacklistLabel}
@@ -1086,37 +1090,41 @@ function MobileCard({
       )}
       
       <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-        {override ? (
-          <button
-            className="rounded bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-600"
-            onClick={() => onUndo()}
-          >
-            ↺ Undo Override
-          </button>
+        {enableActions ? (
+          override ? (
+            <button
+              className="rounded bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-600"
+              onClick={() => onUndo()}
+            >
+              Undo Override
+            </button>
+          ) : (
+            <>
+              <button
+                className="rounded bg-green-900/50 px-3 py-1.5 text-xs font-medium text-green-300 transition hover:bg-green-800/50"
+                onClick={() => onConfirm("ALLOW")}
+              >
+                Allow
+              </button>
+              <button
+                className="rounded bg-red-900/50 px-3 py-1.5 text-xs font-medium text-red-300 transition hover:bg-red-800/50"
+                onClick={() => onConfirm("HARD_BLOCK")}
+              >
+                Hard Block
+              </button>
+              <button
+                className="rounded bg-blue-900/50 px-3 py-1.5 text-xs font-medium text-blue-300 transition hover:bg-blue-800/50"
+                onClick={() => onConfirm("SOFT_EXCLUDE")}
+              >
+                Soft Exclude
+              </button>
+            </>
+          )
         ) : (
-          <>
-            <button
-              className="rounded bg-green-900/50 px-3 py-1.5 text-xs font-medium text-green-300 transition hover:bg-green-800/50"
-              onClick={() => onConfirm("ALLOW")}
-            >
-              Allow
-            </button>
-            <button
-              className="rounded bg-red-900/50 px-3 py-1.5 text-xs font-medium text-red-300 transition hover:bg-red-800/50"
-              onClick={() => onConfirm("HARD_BLOCK")}
-            >
-              Hard Block
-            </button>
-            <button
-              className="rounded bg-blue-900/50 px-3 py-1.5 text-xs font-medium text-blue-300 transition hover:bg-blue-800/50"
-              onClick={() => onConfirm("SOFT_EXCLUDE")}
-            >
-              Soft Exclude
-            </button>
-          </>
+          <span className="text-xs text-slate-500">Read-only</span>
         )}
       </div>
-      
+
       {expanded && (
         <div className="mt-3 border-t border-slate-700 pt-3">
           <ExpandedDetails listing={listing} />

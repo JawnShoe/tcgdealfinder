@@ -10,6 +10,28 @@
 **Ops / Maintenance**:
 - Removed experimental git worktree `tcg-pr1a` on 2025-12-18 (no code changes).
 
+### Security / Admin Access
+**Admin gate mechanism**:
+- `/admin/blacklist`: `?secret=` query param must match `ADMIN_SECRET` env; otherwise `notFound()` (404).
+- `/admin/alerts`: `?secret=` query param must match hardcoded `ADMIN_SECRET` string in the page; otherwise `notFound()` (404).
+- `/api/admin/*`: expects `x-admin-secret` header; returns `401 Unauthorized` when missing/invalid.
+- `/debug/*`: uses `DEBUG_ADMIN_TOKEN` via cookie/header/query (see `lib/debugAuth.ts`); separate from admin gate.
+
+**Admin-protected routes**:
+- Pages: `/admin/blacklist`, `/admin/alerts`
+- APIs: `/api/admin/alerts/create`, `/api/admin/alerts/toggle`, `/api/admin/alerts/delete`, `/api/admin/blacklist-seller`, `/api/admin/hide-listing`
+
+**404 vs 401**:
+- Admin pages intentionally return 404 on auth failure (`notFound()`), hiding route existence.
+- Admin APIs return 401 on auth failure.
+
+**Deep-link behavior**:
+- Deep-links from `/debug/exclusions` to `/admin/blacklist` without a valid `?secret=` will 404.
+- This is expected behavior given the current gate.
+
+**Invariant**:
+- No admin secrets in shared URLs; operators should not paste or log `?secret=` values.
+
 **FRESHNESS + TIMEZONE CLARIFICATION (2025-12-20)**:
 - Canonical freshness timestamp across the system is `Deal.updatedAt`, sourced from `listings.updated_at` in the database.
 - Freshness ("Updated Xm ago") renders ONLY when `updated_at` <= 4 hours old.

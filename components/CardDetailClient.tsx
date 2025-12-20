@@ -202,10 +202,6 @@ export default function CardDetailClient({
     key: "total", // Default: Total ASC
     dir: "asc",
   });
-  const [bestDealRefreshInfo, setBestDealRefreshInfo] = useState<{
-    label: string;
-    tooltip: string;
-  } | null>(null);
   const [priceHistory, setPriceHistory] = useState<
     { date: string; median: number; sample: number }[]
   >([]);
@@ -393,15 +389,9 @@ export default function CardDetailClient({
     historyPointCount === 1 ? "" : "s"
   } recorded`;
 
-  useEffect(() => {
-    const now = new Date();
-    const tooltip = `${now.toISOString().slice(0, 16).replace("T", " ")} UTC`;
-    const label = now.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    setBestDealRefreshInfo({ label, tooltip });
-  }, []);
+  const bestDealFreshness = bestTrustedDeal
+    ? formatFreshness(bestTrustedDeal.deal.updatedAt)
+    : null;
 
   const bestTrustedPriceBreakdown = useMemo(() => {
     if (!bestTrustedDeal) return null;
@@ -559,9 +549,9 @@ export default function CardDetailClient({
                         <p className="text-2xl font-semibold text-slate-900">
                           {formatUSD(bestTrustedDeal.totalUsd)}
                         </p>
-                        {formatFreshness(bestTrustedDeal.deal.updatedAt) && (
+                        {bestDealFreshness && (
                           <span className="text-xs text-slate-500">
-                            · {formatFreshness(bestTrustedDeal.deal.updatedAt)}
+                            · {bestDealFreshness}
                           </span>
                         )}
                       </div>
@@ -625,12 +615,9 @@ export default function CardDetailClient({
                         {getEndsAtDisplay(bestTrustedDeal.deal.endsAt).label}
                       </p>
                     )}
-                    <p
-                      className="mt-3 text-xs text-slate-500"
-                      title={bestDealRefreshInfo?.tooltip ?? undefined}
-                    >
-                      {bestDealRefreshInfo
-                        ? `Last updated ${bestDealRefreshInfo.label} • Price may have changed on eBay`
+                    <p className="mt-3 text-xs text-slate-500">
+                      {bestDealFreshness
+                        ? `Updated ${bestDealFreshness} ago • Price may have changed on eBay`
                         : "Price may have changed on eBay"}
                     </p>
                   </div>

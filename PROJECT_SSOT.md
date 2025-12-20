@@ -150,12 +150,17 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
-**Status**: DONE — Freshness micro-signal correctness + FeaturedDeals de-crowd + blacklist history/undo (2025-12-20)
+**Status**: DONE — Freshness timestamp wiring audit + unify (2025-12-20)
 - Completed; see entry in Completed.
 
 ---
 
 ## COMPLETED (2025-12-20)
+
+### Freshness timestamp wiring audit + unify
+- **Classification**: Bug fix (Tier 1 consistency)
+- **Canonical field**: `Deal.updatedAt` (from `listings.updated_at`) is used across tables + card detail + Best Trusted Deal
+- **UI rule**: freshness shows only when <= 4 hours; future timestamps render nothing; Best Trusted Deal uses "Updated Xm ago" (no time-of-day)
 
 ### Freshness micro-signal correctness + FeaturedDeals de-crowd + blacklist history/undo
 - **Classification**: Bug fix + UI parity + admin safety
@@ -219,6 +224,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 - **Blast Radius**: `types/deal.ts`, `app/api/deals/dealsQuery.ts`, `lib/dealFormatting.ts`, `components/DealsTable.tsx`, `components/FeaturedDeals.tsx`, `components/CardDetailClient.tsx`, plus all pages that construct Deal objects
 - **Changes**: Added subtle freshness indicator showing how recently deals were checked
   - Added `updatedAt` field to `Deal` type
+  - Canonical timestamp: `listings.updated_at` / `Deal.updatedAt` used across tables + card detail + Best Trusted Deal
   - Created `formatFreshness()` helper function with 4-hour threshold
   - Returns "Xm" or "Xh" format when recent; returns `null` when stale or future-dated (negative durations never display)
   - Added inline freshness display next to deal prices on:
@@ -413,6 +419,7 @@ Builds trust with users by providing real-time data cues.
 
 **Implementation** (2025-12-19, updated 2025-12-20):
 - Added subtle inline freshness indicator showing "Xm" or "Xh" next to deal prices
+- Uses a single canonical timestamp (`Deal.updatedAt` from listings.updated_at) across tables + card detail + Best Trusted Deal
 - Only displays when deal updated within last 4 hours; future timestamps render nothing (no negative durations)
 - Feature addition (display-only trust signal using existing updated_at timestamp; no scoring, ingestion, or pricing changes)
 - Appears on tables + card detail pages; removed from homepage FeaturedDeals cards to reduce crowding

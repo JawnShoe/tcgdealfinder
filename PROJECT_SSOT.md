@@ -197,6 +197,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ### Debug exclusions seller blacklist status + deep-link
 - **Implementation**: Seller blacklist visibility implemented on `/debug/exclusions` (commit 48648e9)
+- **Update**: Deep-link replaced by admin-access note (commit 20947ab)
 - **Documentation**: SSOT clarification only (commit fe8c59c)
 - **SSOT fix**: Clarified implementation vs documentation commits (commit fb27c1a)
 - **Invariant**: All blacklist mutations (add/remove/restore) remain restricted to `/admin/blacklist`

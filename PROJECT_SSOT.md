@@ -1,6 +1,6 @@
 # PROJECT SSOT — TCG Deal Finder
 
-**Last Updated**: 2025-12-18
+**Last Updated**: 2025-12-20
 **Status**: Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete ✅); Empty States + Retention Nudges DONE ✅; Card Page Internal Navigation DONE ✅
 
 ---
@@ -9,6 +9,20 @@
 
 **Ops / Maintenance**:
 - Removed experimental git worktree `tcg-pr1a` on 2025-12-18 (no code changes).
+
+**FRESHNESS + TIMEZONE CLARIFICATION (2025-12-20)**:
+- Canonical freshness timestamp across the system is `Deal.updatedAt`, sourced from `listings.updated_at` in the database.
+- Freshness ("Updated Xm ago") renders ONLY when `updated_at` <= 4 hours old.
+- Future timestamps (negative freshness) are explicitly guarded and render nothing.
+
+**IMPORTANT (Neon / DB)**:
+- Neon/Postgres timestamps (`now()`, `updated_at`) are stored and returned in UTC.
+- When checking freshness manually in Neon, timestamps may appear "in the future" if compared directly to local time.
+- This is expected behavior; always compare in UTC or convert before reasoning about freshness.
+
+**OPS NOTE**:
+- If listings ingestion fails or is throttled (e.g. Shopping API IP limit exceeded), `updated_at` will not advance.
+- In that case, freshness will not appear on UI surfaces even though rendering logic is correct.
 
 **Audits**:
 - **Pokémon Set Coverage** (2025-12-18): Confirmed API-complete. Database contains all 170 sets from Pokémon TCG API v2 with perfect 1:1 match. All sets have `pokemontcg_io_set_id` populated. Rendering verified on `/sets` and `/sets/[setId]`. Marked as [DONE ✅] in ROI backlog.
@@ -161,6 +175,9 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 - **Classification**: Bug fix (Tier 1 consistency)
 - **Canonical field**: `Deal.updatedAt` (from `listings.updated_at`) is used across tables + card detail + Best Trusted Deal
 - **UI rule**: freshness shows only when <= 4 hours; future timestamps render nothing; Best Trusted Deal uses "Updated Xm ago" (no time-of-day)
+- ✔ Unified freshness rendering across tables, card detail, and Best Trusted Deal using `Deal.updatedAt`
+- ✔ Removed time-of-day freshness labels; standardized on relative freshness only (<=4h)
+- ✔ Guarded against future/negative freshness values
 
 ### Freshness micro-signal correctness + FeaturedDeals de-crowd + blacklist history/undo
 - **Classification**: Bug fix + UI parity + admin safety

@@ -208,7 +208,6 @@ type DealsTableVariant = "default" | "newest";
 interface DealsTableProps {
   deals: Deal[];
   isAdmin?: boolean;
-  adminSecret?: string;
   initialApiMeta?: DealsApiMeta | null;
   page?: number;
   totalPages?: number;
@@ -218,7 +217,6 @@ interface DealsTableProps {
 export default function DealsTable({
   deals,
   isAdmin = false,
-  adminSecret,
   initialApiMeta = null,
   variant = "default",
 }: DealsTableProps) {
@@ -889,7 +887,7 @@ export default function DealsTable({
                       {getHeaderLabel("ends", "Ends")}
                       <SortArrow colKey="ends" />
                     </th>
-                    {isAdmin && adminSecret ? (
+                    {isAdmin ? (
                       <th className="px-3 py-2 text-left">Admin</th>
                     ) : null}
                   </tr>
@@ -1064,7 +1062,7 @@ export default function DealsTable({
                       <td className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}>
                       {renderEndsValue(vm.deal.endsAt)}
                       </td>
-                      {isAdmin && adminSecret ? (
+                      {isAdmin ? (
                         <td className="px-3 py-4 align-middle text-sm">
                           <AdminDealActions
                             listingId={
@@ -1073,7 +1071,7 @@ export default function DealsTable({
                                 : vm.deal.id
                             }
                             sellerUsername={vm.deal.sellerUsername}
-                            adminSecret={adminSecret}
+                            isAdmin={isAdmin}
                           />
                         </td>
                       ) : null}
@@ -1220,7 +1218,7 @@ export default function DealsTable({
                   })()}
                 </div>
 
-                {isAdmin && adminSecret ? (
+                {isAdmin ? (
                   <div className="mt-3">
                     <AdminDealActions
                       listingId={
@@ -1229,7 +1227,7 @@ export default function DealsTable({
                           : vm.deal.id
                       }
                       sellerUsername={vm.deal.sellerUsername}
-                      adminSecret={adminSecret}
+                      isAdmin={isAdmin}
                     />
                   </div>
                 ) : null}

@@ -6,7 +6,7 @@ import { useState } from "react";
 interface AdminDealActionsProps {
   listingId?: number | null;
   sellerUsername?: string | null;
-  adminSecret?: string;
+  isAdmin?: boolean;
 }
 
 function normalizeUsername(username: string | null | undefined): string | null {
@@ -17,13 +17,13 @@ function normalizeUsername(username: string | null | undefined): string | null {
 export function AdminDealActions({
   listingId,
   sellerUsername,
-  adminSecret,
+  isAdmin = false,
 }: AdminDealActionsProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!adminSecret) {
+  if (!isAdmin) {
     return null;
   }
 
@@ -33,15 +33,11 @@ export function AdminDealActions({
     setIsLoading(true);
     setError(null);
     try {
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-      };
-      if (adminSecret) {
-        headers["x-admin-secret"] = adminSecret;
-      }
       const res = await fetch(url, {
         method: "POST",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 

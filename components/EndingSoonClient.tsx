@@ -8,13 +8,11 @@ import type { Deal } from "../types/deal";
 interface EndingSoonClientProps {
   deals: Deal[];
   isAdmin?: boolean;
-  adminSecret?: string;
 }
 
 export default function EndingSoonClient({
   deals,
   isAdmin = false,
-  adminSecret,
 }: EndingSoonClientProps) {
   const viewModels = deals.map((deal) => buildDealViewModel(deal));
 
@@ -72,7 +70,7 @@ export default function EndingSoonClient({
                 <AdminDealActions
                   listingId={vm.deal.id}
                   sellerUsername={vm.deal.sellerUsername}
-                  adminSecret={adminSecret}
+                  isAdmin={isAdmin}
                 />
               </td>
             )}

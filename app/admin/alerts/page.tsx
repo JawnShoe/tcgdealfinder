@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 
 import { AdminAlertsClient } from "../../../components/AdminAlertsClient";
 import { query } from "../../../lib/db";
-
-const ADMIN_SECRET = "V6DU6T^P9fSx";
+import { isAdminAuthenticated } from "../../../lib/adminAuth";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -42,12 +41,7 @@ export default async function AdminAlertsPage({
 }: {
   searchParams?: SearchParams;
 }) {
-  const secretParam = searchParams?.secret;
-  const providedSecret = Array.isArray(secretParam)
-    ? secretParam[0]
-    : secretParam ?? "";
-
-  if (providedSecret !== ADMIN_SECRET) {
+  if (!process.env.ADMIN_SECRET || !isAdminAuthenticated()) {
     notFound();
   }
 
@@ -131,11 +125,7 @@ export default async function AdminAlertsPage({
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
-      <AdminAlertsClient
-        watches={watches}
-        alerts={alerts}
-        adminSecret={ADMIN_SECRET}
-      />
+      <AdminAlertsClient watches={watches} alerts={alerts} />
     </main>
   );
 }

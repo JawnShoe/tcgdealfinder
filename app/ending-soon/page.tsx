@@ -18,6 +18,7 @@ import {
   warnIfStoreNamesMissing,
   normalizeSellerStoreName,
 } from "../../lib/sellerDisplay";
+import { isAdminAuthenticated } from "../../lib/adminAuth";
 
 const MIN_SAMPLE_SIZE = 20;
 const TRUSTED_FEEDBACK = 20;
@@ -219,12 +220,7 @@ export default async function EndingSoonPage({
 }: {
   searchParams?: SearchParams;
 }) {
-  const secretParam = searchParams?.secret;
-  const requestedSecret = Array.isArray(secretParam)
-    ? secretParam[0]
-    : secretParam ?? undefined;
-  const adminSecret = process.env.ADMIN_SECRET;
-  const isAdmin = Boolean(adminSecret) && requestedSecret === adminSecret;
+  const isAdmin = Boolean(process.env.ADMIN_SECRET) && isAdminAuthenticated();
 
   const deals = await getEndingSoonDeals();
 
@@ -242,7 +238,6 @@ export default async function EndingSoonPage({
           <EndingSoonClient
             deals={deals}
             isAdmin={isAdmin}
-            adminSecret={requestedSecret}
           />
         </div>
       </div>

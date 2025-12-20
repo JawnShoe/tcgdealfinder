@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { query } from "../../../../../lib/db";
-
-const ADMIN_SECRET = "V6DU6T^P9fSx";
-
-function isAuthorized(secret: string | null): boolean {
-  return secret === ADMIN_SECRET;
-}
+import { checkAdminApiAuth } from "../../../../../lib/adminAuth";
 
 export async function POST(request: Request) {
-  const secretHeader = request.headers.get("x-admin-secret");
-  if (!isAuthorized(secretHeader)) {
+  const auth = checkAdminApiAuth(request);
+  if (!auth.authorized) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 

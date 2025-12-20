@@ -159,6 +159,12 @@ export default function ExclusionsClient({ listings, sinceDate }: Props) {
   const [allOverrides, setAllOverrides] = useState<EnrichedOverride[]>([]);
   const [overrideFilter, setOverrideFilter] = useState<"all" | OverrideType>("all");
   const [overrideSearch, setOverrideSearch] = useState("");
+  const [showAdminUnlock, setShowAdminUnlock] = useState(false);
+  const [adminSecretInput, setAdminSecretInput] = useState("");
+  const [adminUnlockStatus, setAdminUnlockStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [adminUnlockError, setAdminUnlockError] = useState<string | null>(null);
   
   // Load overrides on mount
   useEffect(() => {
@@ -186,6 +192,29 @@ export default function ExclusionsClient({ listings, sinceDate }: Props) {
       setAllOverrides(data.overrides || []);
     } catch (error) {
       console.error("Failed to fetch all overrides:", error);
+    }
+  }
+
+  async function handleAdminUnlock() {
+    setAdminUnlockStatus("loading");
+    setAdminUnlockError(null);
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ secret: adminSecretInput }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Unauthorized");
+      }
+      setAdminUnlockStatus("success");
+      setAdminSecretInput("");
+    } catch (error) {
+      setAdminUnlockStatus("error");
+      setAdminUnlockError(
+        error instanceof Error ? error.message : "Failed to unlock",
+      );
     }
   }
   
@@ -298,6 +327,30 @@ export default function ExclusionsClient({ listings, sinceDate }: Props) {
         )}
       </div>
       
+      {/* Admin Access Panel */}
+      <div className="mb-6 rounded-lg border border-slate-700/60 bg-slate-900/60">
+        <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-slate-200">Admin access</p>
+            <p className="text-xs text-slate-400">
+              Unlock admin-only tools with a cookie (no secrets in URLs). Admin pages
+              404 when unauthenticated.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowAdminUnlock(true);
+              setAdminUnlockStatus("idle");
+              setAdminUnlockError(null);
+            }}
+            className="rounded bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-slate-600"
+          >
+            Unlock admin
+          </button>
+        </div>
+      </div>
+
       {/* Manual Overrides Panel */}
       <div className="mb-6 rounded-lg border border-amber-700/50 bg-slate-800/50">
         <button
@@ -651,6 +704,61 @@ export default function ExclusionsClient({ listings, sinceDate }: Props) {
         </div>
       )}
 
+      {showAdminUnlock && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          onClick={() => setShowAdminUnlock(false)}
+        >
+          <div
+            className="mx-4 w-full max-w-md rounded-lg bg-slate-800 p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-2 text-lg font-bold text-amber-400">
+              Admin unlock
+            </h3>
+            <p className="mb-4 text-xs text-slate-400">
+              Enter the admin secret to set a secure cookie. No secrets are stored
+              in URLs.
+            </p>
+            <div className="space-y-3">
+              <input
+                type="password"
+                autoFocus
+                value={adminSecretInput}
+                onChange={(e) => setAdminSecretInput(e.target.value)}
+                className="w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                placeholder="Admin secret"
+              />
+              {adminUnlockStatus === "success" ? (
+                <p className="text-xs text-emerald-400">
+                  Admin unlocked. You can open /admin/blacklist or /admin/listings.
+                </p>
+              ) : null}
+              {adminUnlockError ? (
+                <p className="text-xs text-rose-400">{adminUnlockError}</p>
+              ) : null}
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                className="rounded border border-slate-600 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700"
+                onClick={() => setShowAdminUnlock(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded bg-amber-500 px-3 py-1.5 text-xs font-semibold text-slate-900 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={handleAdminUnlock}
+                disabled={adminUnlockStatus === "loading" || !adminSecretInput}
+              >
+                {adminUnlockStatus === "loading" ? "Unlocking..." : "Unlock"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notifications */}
       <div className="fixed bottom-4 right-4 z-50 space-y-2">
         {toasts.map((toast) => (
@@ -747,9 +855,8 @@ function ListingRow({
               {blacklistLabel}
             </span>
             <span>
-              Admin access required (404 if not authenticated). Open
-              {" "}
-              /admin/blacklist with your admin secret.
+              Admin access required (404 if not authenticated). Use Admin unlock,
+              then open /admin/blacklist.
             </span>
           </div>
         </td>
@@ -916,9 +1023,8 @@ function MobileCard({
           {blacklistLabel}
         </span>
         <span>
-          Admin access required (404 if not authenticated). Open
-          {" "}
-          /admin/blacklist with your admin secret.
+          Admin access required (404 if not authenticated). Use Admin unlock,
+          then open /admin/blacklist.
         </span>
       </div>
       

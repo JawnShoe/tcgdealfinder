@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { query } from "../../../lib/db";
+import { isAdminAuthenticated } from "../../../lib/adminAuth";
 
 async function removeSeller(formData: FormData) {
   "use server";
@@ -159,11 +160,7 @@ export default async function AdminBlacklistPage({
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
   const expected = process.env.ADMIN_SECRET;
-  const provided = Array.isArray(searchParams?.secret)
-    ? searchParams?.secret[0]
-    : searchParams?.secret;
-
-  if (!expected || provided !== expected) {
+  if (!expected || !isAdminAuthenticated()) {
     notFound();
   }
 

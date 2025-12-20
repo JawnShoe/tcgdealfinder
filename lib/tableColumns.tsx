@@ -70,7 +70,6 @@ export type RenderOptions = {
   showListingTitle?: boolean;
   showViewCardLink?: boolean;
   isAdmin?: boolean;
-  adminSecret?: string;
 };
 
 /**

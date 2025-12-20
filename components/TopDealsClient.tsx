@@ -16,13 +16,11 @@ type HeaderSort = {
 interface TopDealsClientProps {
   deals: Deal[];
   isAdmin?: boolean;
-  adminSecret?: string;
 }
 
 export default function TopDealsClient({
   deals,
   isAdmin = false,
-  adminSecret,
 }: TopDealsClientProps) {
   const [priceConfFilter, setPriceConfFilter] = useState<ConfidenceFilterKey>("all");
   const [headerSort, setHeaderSort] = useState<HeaderSort>({
@@ -246,7 +244,7 @@ export default function TopDealsClient({
                       <AdminDealActions
                         listingId={vm.deal.id}
                         sellerUsername={vm.deal.sellerUsername}
-                        adminSecret={adminSecret}
+                        isAdmin={isAdmin}
                       />
                     </td>
                   )}

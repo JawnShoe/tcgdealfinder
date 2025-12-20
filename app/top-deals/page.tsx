@@ -22,6 +22,7 @@ import {
   warnIfStoreNamesMissing,
   normalizeSellerStoreName,
 } from "../../lib/sellerDisplay";
+import { isAdminAuthenticated } from "../../lib/adminAuth";
 
 const LIMIT = 100;
 const MIN_SAMPLE_SIZE = 20;
@@ -305,12 +306,7 @@ export default async function TopDealsPage({
 }: {
   searchParams?: SearchParams;
 }) {
-  const secretParam = searchParams?.secret;
-  const requestedSecret = Array.isArray(secretParam)
-    ? secretParam[0]
-    : secretParam ?? undefined;
-  const adminSecret = process.env.ADMIN_SECRET;
-  const isAdmin = Boolean(adminSecret) && requestedSecret === adminSecret;
+  const isAdmin = Boolean(process.env.ADMIN_SECRET) && isAdminAuthenticated();
 
   const deals = await getTopDeals();
 
@@ -328,7 +324,6 @@ export default async function TopDealsPage({
           <TopDealsClient
             deals={deals}
             isAdmin={isAdmin}
-            adminSecret={requestedSecret}
           />
           <p className="mt-4 text-xs text-slate-400 text-right">
             {TCGPLAYER_ATTRIBUTION}

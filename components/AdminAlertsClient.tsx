@@ -50,7 +50,6 @@ type AlertRow = {
 type Props = {
   watches: WatchRow[];
   alerts: AlertRow[];
-  adminSecret: string;
 };
 
 function formatDate(value: string | null) {
@@ -73,7 +72,6 @@ function describeRule(watch: WatchRow) {
 export function AdminAlertsClient({
   watches,
   alerts,
-  adminSecret,
 }: Props) {
   const router = useRouter();
   const [cardId, setCardId] = useState("");
@@ -90,7 +88,6 @@ export function AdminAlertsClient({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-admin-secret": adminSecret,
       },
       body: JSON.stringify(body),
     });

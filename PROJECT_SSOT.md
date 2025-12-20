@@ -93,7 +93,7 @@
 | `/debug/exclusions` | ⚠️ DEBUG | Integrity review panel |
 
 - `/admin/blacklist` shows active blacklist entries plus history; unblacklist writes history first and restore re-adds without deleting history.
-- `/debug/exclusions` displays seller blacklist status and an admin unlock modal (no URL secrets, no direct deep-link); it is read-only.
+- `/debug/exclusions` displays seller blacklist status pills and an admin tools chip (unlock modal; no URL secrets, no direct deep-link); it is read-only.
 - Blacklist mutations + history remain on `/admin/blacklist` only.
 - Listing exclusions (single listing) are managed only on `/admin/listings`.
 
@@ -211,6 +211,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 ### Debug exclusions seller blacklist status + admin unlock
 - **Implementation**: Seller blacklist visibility implemented on `/debug/exclusions` (commit 48648e9)
 - **Update**: Deep-link removed; admin unlock modal added (commit 70a6297)
+- **Polish**: Admin tools chip + compact status pills (commit 13843ce)
 - **Documentation**: SSOT clarification only (commit fe8c59c)
 - **SSOT fix**: Clarified implementation vs documentation commits (commit fb27c1a)
 - **Invariant**: All blacklist mutations (add/remove/restore) remain restricted to `/admin/blacklist`

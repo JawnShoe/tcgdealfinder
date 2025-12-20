@@ -58,13 +58,17 @@ type RejectedListingRow = {
   created_at: Date;
 };
 
-async function getBlacklistedSellers(): Promise<BlacklistedSeller[]> {
+async function getBlacklistedSellers(
+  sellerFilter?: string | null,
+): Promise<BlacklistedSeller[]> {
   const res = await query<BlacklistedSeller>(
     `
       SELECT seller_username, created_at
       FROM seller_blacklist
+      ${sellerFilter ? "WHERE seller_username = $1" : ""}
       ORDER BY seller_username ASC;
     `,
+    sellerFilter ? [sellerFilter] : [],
   );
   return res.rows.map((row: BlacklistedSeller) => ({
     seller_username: row.seller_username,
@@ -93,14 +97,18 @@ async function getRejectedListings(): Promise<RejectedListingRow[]> {
   }));
 }
 
-async function getBlacklistHistory(): Promise<BlacklistHistoryRow[]> {
+async function getBlacklistHistory(
+  sellerFilter?: string | null,
+): Promise<BlacklistHistoryRow[]> {
   const res = await query<BlacklistHistoryRow>(
     `
       SELECT id, seller_username, added_at, removed_at
       FROM seller_blacklist_history
+      ${sellerFilter ? "WHERE seller_username = $1" : ""}
       ORDER BY removed_at DESC
       LIMIT 200;
     `,
+    sellerFilter ? [sellerFilter] : [],
   );
   return res.rows;
 }
@@ -159,9 +167,14 @@ export default async function AdminBlacklistPage({
     notFound();
   }
 
+  const sellerFilterRaw = Array.isArray(searchParams?.seller)
+    ? searchParams?.seller[0]
+    : searchParams?.seller;
+  const sellerFilter = sellerFilterRaw?.trim().toLowerCase() || null;
+
   const [sellers, history, rejected] = await Promise.all([
-    getBlacklistedSellers(),
-    getBlacklistHistory(),
+    getBlacklistedSellers(sellerFilter),
+    getBlacklistHistory(sellerFilter),
     getRejectedListings(),
   ]);
 
@@ -175,6 +188,19 @@ export default async function AdminBlacklistPage({
           Review seller blacklist and recently rejected listings (title
           filters, seller bans, etc.).
         </p>
+        {sellerFilter && (
+          <p className="mt-2 text-xs text-slate-500">
+            Filtered to seller:{" "}
+            <span className="font-mono text-slate-700">{sellerFilter}</span>{" "}
+            ·{" "}
+            <a
+              href="/admin/blacklist"
+              className="text-amber-600 hover:text-amber-700"
+            >
+              Clear filter
+            </a>
+          </p>
+        )}
       </div>
 
       <section className="panel">

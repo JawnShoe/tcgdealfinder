@@ -703,10 +703,18 @@ function ListingRow({
     : listing.priceCad
       ? `$${listing.priceCad.toFixed(2)}`
       : "--";
+  const sellerUsername = listing.sellerUsername ?? listing.seller ?? null;
   const sellerDisplay = getSellerDisplayData({
-    username: listing.sellerUsername ?? listing.seller ?? null,
+    username: sellerUsername,
     storeName: listing.sellerStoreName ?? null,
   });
+  const blacklistLabel = listing.sellerBlacklisted ? "BLACKLISTED" : "OK";
+  const blacklistClass = listing.sellerBlacklisted
+    ? "bg-rose-900/50 text-rose-300"
+    : "bg-emerald-900/50 text-emerald-300";
+  const blacklistLink = sellerUsername
+    ? `/admin/blacklist?seller=${encodeURIComponent(sellerUsername)}`
+    : null;
   
   return (
     <>
@@ -736,6 +744,22 @@ function ListingRow({
           </a>
           <div className="text-[11px] text-slate-500">
             Seller: {sellerDisplay.displayName}
+          </div>
+          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
+            <span className={`rounded-full px-2 py-0.5 font-medium ${blacklistClass}`}>
+              {blacklistLabel}
+            </span>
+            {blacklistLink ? (
+              <a
+                href={blacklistLink}
+                className="text-amber-400 hover:text-amber-300"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View in blacklist
+              </a>
+            ) : (
+              <span>Seller unavailable</span>
+            )}
           </div>
         </td>
         <td className="overflow-hidden px-2 py-2 lg:px-3">
@@ -849,10 +873,18 @@ function MobileCard({
     : listing.priceCad
       ? `$${listing.priceCad.toFixed(2)}`
       : "—";
+  const sellerUsername = listing.sellerUsername ?? listing.seller ?? null;
   const sellerDisplay = getSellerDisplayData({
-    username: listing.sellerUsername ?? listing.seller ?? null,
+    username: sellerUsername,
     storeName: listing.sellerStoreName ?? null,
   });
+  const blacklistLabel = listing.sellerBlacklisted ? "BLACKLISTED" : "OK";
+  const blacklistClass = listing.sellerBlacklisted
+    ? "bg-rose-900/50 text-rose-300"
+    : "bg-emerald-900/50 text-emerald-300";
+  const blacklistLink = sellerUsername
+    ? `/admin/blacklist?seller=${encodeURIComponent(sellerUsername)}`
+    : null;
   
   return (
     <div
@@ -890,6 +922,22 @@ function MobileCard({
       </div>
       <div className="mb-2 text-xs text-slate-500">
         Seller: {sellerDisplay.displayName}
+      </div>
+      <div className="mb-2 flex items-center gap-2 text-[11px] text-slate-400">
+        <span className={`rounded-full px-2 py-0.5 font-medium ${blacklistClass}`}>
+          {blacklistLabel}
+        </span>
+        {blacklistLink ? (
+          <a
+            href={blacklistLink}
+            className="text-amber-400 hover:text-amber-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            View in blacklist
+          </a>
+        ) : (
+          <span>Seller unavailable</span>
+        )}
       </div>
       
       {listing.cardName && (

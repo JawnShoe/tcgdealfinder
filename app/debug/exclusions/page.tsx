@@ -31,6 +31,7 @@ type ExcludedListing = {
   sellerUsername: string | null;
   seller: string | null;
   sellerStoreName: string | null;
+  sellerBlacklisted: boolean;
   createdAt: Date | null;
   endsAt: Date | null;
   cardId: number | null;
@@ -142,6 +143,7 @@ type ListingRow = {
   seller_username: string | null;
   seller: string | null;
   seller_store_name: string | null;
+  seller_blacklisted: boolean;
   created_at: Date | null;
   ends_at: Date | null;
   card_id: number | null;
@@ -171,6 +173,7 @@ async function fetchRecentListings(hours: number, limit: number): Promise<Listin
       l.seller_username,
       l.seller,
       l.seller_store_name,
+      (sb.seller_username IS NOT NULL) AS seller_blacklisted,
       l.created_at,
       l.ends_at,
       l.card_id,
@@ -180,6 +183,7 @@ async function fetchRecentListings(hours: number, limit: number): Promise<Listin
       NULL::TEXT AS card_rarity
     FROM listings l
     LEFT JOIN cards c ON l.card_id = c.id
+    LEFT JOIN seller_blacklist sb ON sb.seller_username = l.seller_username
     WHERE l.created_at >= $1
     ORDER BY l.created_at DESC
     LIMIT $2`,
@@ -253,6 +257,7 @@ async function processExclusions(
       sellerUsername: row.seller_username,
       seller: row.seller,
       sellerStoreName: normalizeSellerStoreName(row.seller_store_name),
+      sellerBlacklisted: Boolean(row.seller_blacklisted),
         createdAt: row.created_at,
         endsAt: row.ends_at,
         cardId: row.card_id,

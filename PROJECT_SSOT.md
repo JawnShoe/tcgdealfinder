@@ -19,7 +19,7 @@
 - `/debug/*` uses `DEBUG_ADMIN_TOKEN` via cookie/header/query (see `lib/debugAuth.ts`); separate from admin gate.
 
 **Admin-protected routes**:
-- Pages: `/admin/blacklist`, `/admin/alerts`, `/admin/listings`
+- Pages: `/admin/exclusions`, `/admin/blacklist`, `/admin/alerts`, `/admin/listings`
 - APIs: `/api/admin/alerts/create`, `/api/admin/alerts/toggle`, `/api/admin/alerts/delete`, `/api/admin/blacklist-seller`, `/api/admin/hide-listing`
 
 **404 vs 401**:
@@ -92,6 +92,7 @@
 
 | Route | Status | Notes |
 |-------|--------|-------|
+| `/admin/exclusions` | ⚠️ ADMIN | Admin navigation hub for exclusions |
 | `/admin/alerts` | ⚠️ ADMIN | Alert management |
 | `/admin/blacklist` | ⚠️ ADMIN | Seller blacklist management |
 | `/admin/listings` | ⚠️ ADMIN | Single-listing exclusion tool |
@@ -201,12 +202,17 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
-**Status**: DONE — Admin blacklist history guard (2025-12-20)
+**Status**: DONE — Admin navigation toolbar (2025-12-20)
 - Completed; see entry in Completed.
 
 ---
 
 ## COMPLETED (2025-12-20)
+
+### Admin navigation toolbar
+- **Change**: Added shared Admin Tools toolbar on `/admin/exclusions`, `/admin/blacklist`, `/admin/listings`; new `/admin/exclusions` page links to debug exclusions
+- **Status**: COMPLETE (toolbar only; no hub)
+- **Commit**: a7eb235
 
 ### Admin blacklist history guard
 - **Change**: `/admin/blacklist` shows active sellers even if `seller_blacklist_history` is missing; banner prompts migration

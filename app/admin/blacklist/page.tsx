@@ -100,18 +100,26 @@ async function getRejectedListings(): Promise<RejectedListingRow[]> {
 
 async function getBlacklistHistory(
   sellerFilter?: string | null,
-): Promise<BlacklistHistoryRow[]> {
-  const res = await query<BlacklistHistoryRow>(
-    `
-      SELECT id, seller_username, added_at, removed_at
-      FROM seller_blacklist_history
-      ${sellerFilter ? "WHERE seller_username = $1" : ""}
-      ORDER BY removed_at DESC
-      LIMIT 200;
-    `,
-    sellerFilter ? [sellerFilter] : [],
-  );
-  return res.rows;
+): Promise<{ rows: BlacklistHistoryRow[]; missingTable: boolean }> {
+  try {
+    const res = await query<BlacklistHistoryRow>(
+      `
+        SELECT id, seller_username, added_at, removed_at
+        FROM seller_blacklist_history
+        ${sellerFilter ? "WHERE seller_username = $1" : ""}
+        ORDER BY removed_at DESC
+        LIMIT 200;
+      `,
+      sellerFilter ? [sellerFilter] : [],
+    );
+    return { rows: res.rows, missingTable: false };
+  } catch (error) {
+    const err = error as { code?: string };
+    if (err.code === "42P01") {
+      return { rows: [], missingTable: true };
+    }
+    throw error;
+  }
 }
 
 async function restoreSeller(formData: FormData) {
@@ -169,11 +177,12 @@ export default async function AdminBlacklistPage({
     : searchParams?.seller;
   const sellerFilter = sellerFilterRaw?.trim().toLowerCase() || null;
 
-  const [sellers, history, rejected] = await Promise.all([
+  const [sellers, historyResult, rejected] = await Promise.all([
     getBlacklistedSellers(sellerFilter),
     getBlacklistHistory(sellerFilter),
     getRejectedListings(),
   ]);
+  const { rows: history, missingTable } = historyResult;
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
@@ -250,6 +259,11 @@ export default async function AdminBlacklistPage({
 
       <section className="panel">
         <h2 className="text-lg font-semibold mb-2">Blacklist History</h2>
+        {missingTable ? (
+          <p className="mb-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            History table missing; apply migration 004.
+          </p>
+        ) : null}
         {history.length === 0 ? (
           <p className="text-sm text-slate-500">No history yet.</p>
         ) : (

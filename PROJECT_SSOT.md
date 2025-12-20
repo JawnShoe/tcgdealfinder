@@ -31,6 +31,10 @@
 **Invariant**:
 - No admin secrets in URLs; do not paste or log admin secrets.
 
+**Neon migration note**:
+- To apply `migrations/004_add_seller_blacklist_history.sql`, open Neon SQL editor and run the file contents.
+- Verify with: `SELECT to_regclass('public.seller_blacklist_history') IS NOT NULL AS exists;`
+
 ### Listing Exclusion (Admin)
 - Single-listing exclusions live in `listing_overrides` (`override_type = HARD_BLOCK`) and are managed via `/admin/listings`.
 - Excluded listings never surface on public pages (enforced in `shouldExcludeListingFromCardSurfaces` used by deals queries + page filters).
@@ -96,6 +100,7 @@
 - `/debug/exclusions` displays seller blacklist status pills and an admin tools chip (unlock modal; no URL secrets, no direct deep-link); it is read-only.
 - Blacklist mutations + history remain on `/admin/blacklist` only.
 - Listing exclusions (single listing) are managed only on `/admin/listings`.
+- `/admin/blacklist` shows a banner if `seller_blacklist_history` is missing.
 
 ---
 
@@ -195,12 +200,16 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
-**Status**: DONE — Admin cookie gate + listing exclusion tool (2025-12-20)
+**Status**: DONE — Admin blacklist history guard (2025-12-20)
 - Completed; see entry in Completed.
 
 ---
 
 ## COMPLETED (2025-12-20)
+
+### Admin blacklist history guard
+- **Change**: `/admin/blacklist` shows active sellers even if `seller_blacklist_history` is missing; banner prompts migration
+- **Commit**: TBD
 
 ### Admin cookie gate + listing exclusion tool
 - **Admin auth**: Cookie-based gate (`admin_auth` via `/api/admin/login`), 404 on `/admin/*`, admin APIs accept cookie with deprecated `x-admin-secret` fallback

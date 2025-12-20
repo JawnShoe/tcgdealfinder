@@ -213,13 +213,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
   return filtered;
 }
 
-type SearchParams = Record<string, string | string[] | undefined>;
-
-export default async function EndingSoonPage({
-  searchParams,
-}: {
-  searchParams?: SearchParams;
-}) {
+export default async function EndingSoonPage() {
   const isAdmin = Boolean(process.env.ADMIN_SECRET) && isAdminAuthenticated();
 
   const deals = await getEndingSoonDeals();

@@ -299,13 +299,7 @@ async function getTopDeals(): Promise<Deal[]> {
   return filteredDeals;
 }
 
-type SearchParams = Record<string, string | string[] | undefined>;
-
-export default async function TopDealsPage({
-  searchParams,
-}: {
-  searchParams?: SearchParams;
-}) {
+export default async function TopDealsPage() {
   const isAdmin = Boolean(process.env.ADMIN_SECRET) && isAdminAuthenticated();
 
   const deals = await getTopDeals();

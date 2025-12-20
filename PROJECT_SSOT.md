@@ -65,6 +65,8 @@
 | `/debug/exclusions` | ⚠️ DEBUG | Integrity review panel |
 
 - `/admin/blacklist` shows active blacklist entries plus history; unblacklist writes history first and restore re-adds without deleting history.
+- `/debug/exclusions` displays seller blacklist status and links to `/admin/blacklist?seller=...` for safe review; it is read-only.
+- Blacklist mutations + history remain on `/admin/blacklist` only.
 
 ---
 
@@ -164,12 +166,17 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
-**Status**: DONE — Freshness timestamp wiring audit + unify (2025-12-20)
+**Status**: DONE — Debug exclusions seller blacklist status + deep-link (2025-12-20)
 - Completed; see entry in Completed.
 
 ---
 
 ## COMPLETED (2025-12-20)
+
+### Debug exclusions seller blacklist status + deep-link
+- **Change**: `/debug/exclusions` shows BLACKLISTED/OK per row with a deep-link to `/admin/blacklist?seller=...`; admin page supports optional `seller` filter
+- **Invariant**: blacklist mutations + history stay on `/admin/blacklist` only
+- **Commit**: 48648e9
 
 ### Freshness timestamp wiring audit + unify
 - **Classification**: Bug fix (Tier 1 consistency)

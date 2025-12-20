@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { query } from "../../../lib/db";
 import { isAdminAuthenticated } from "../../../lib/adminAuth";
+import { AdminToolbar } from "../../../components/AdminToolbar";
 
 type ListingExclusionRow = {
   listing_id: string;
@@ -84,6 +85,7 @@ export default async function AdminListingsPage() {
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+      <AdminToolbar current="listings" />
       <div className="panel">
         <h1 className="text-2xl font-semibold text-slate-900">
           Listing Exclusions

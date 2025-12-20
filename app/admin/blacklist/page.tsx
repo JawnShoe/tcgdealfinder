@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { query } from "../../../lib/db";
 import { isAdminAuthenticated } from "../../../lib/adminAuth";
+import { AdminToolbar } from "../../../components/AdminToolbar";
 
 async function removeSeller(formData: FormData) {
   "use server";
@@ -186,6 +187,7 @@ export default async function AdminBlacklistPage({
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+      <AdminToolbar current="blacklist" />
       <div className="panel">
         <h1 className="text-2xl font-semibold text-slate-900">
           Blacklist Monitor

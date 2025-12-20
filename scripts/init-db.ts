@@ -100,6 +100,13 @@ CREATE TABLE IF NOT EXISTS seller_blacklist (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS seller_blacklist_history (
+  id SERIAL PRIMARY KEY,
+  seller_username TEXT NOT NULL,
+  added_at TIMESTAMPTZ NOT NULL,
+  removed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS rejected_listings (
   id SERIAL PRIMARY KEY,
   ebay_item_id TEXT,

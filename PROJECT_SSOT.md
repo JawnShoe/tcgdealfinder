@@ -50,6 +50,8 @@
 | `/admin/blacklist` | ⚠️ ADMIN | Seller blacklist management |
 | `/debug/exclusions` | ⚠️ DEBUG | Integrity review panel |
 
+- `/admin/blacklist` shows active blacklist entries plus history; unblacklist writes history first and restore re-adds without deleting history.
+
 ---
 
 ## LOCKED SYSTEMS (DO NOT TOUCH)
@@ -148,13 +150,18 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
-**Status**: IN PROGRESS — Shopping → Browse API Migration (Hybrid; core ingestion via Browse, legacy Shopping retained for best-effort storefront enrichment only)
-- Evidence Packet: docs/browse_api_migration_audit.md
-- Phase: Evidence-only (no code changes authorized)
+**Status**: DONE — Freshness micro-signal correctness + FeaturedDeals de-crowd + blacklist history/undo (2025-12-20)
+- Completed; see entry in Completed.
 
 ---
 
 ## COMPLETED (2025-12-20)
+
+### Freshness micro-signal correctness + FeaturedDeals de-crowd + blacklist history/undo
+- **Classification**: Bug fix + UI parity + admin safety
+- **Freshness**: `formatFreshness()` hides future timestamps; negative durations cannot render; 4-hour rule enforced
+- **FeaturedDeals**: freshness removed from homepage cards only (tables + card detail retain the 4-hour rule)
+- **Blacklist**: `/admin/blacklist` shows active + history; unblacklist writes history before delete; restore re-adds without deleting history
 
 ### Store Name Source Audit — DONE (NO-GO)
 - Checked Sell Stores API `getStore`, Trading API `GetStore`/`GetUser`/`GetItem`, and Buy Browse API seller payloads.
@@ -207,17 +214,17 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 - **Result**: Improved discoverability and navigation between cards in the same set
 
 ### Deal Freshness Micro-Signal ✅
-- **Fixed**: All deal display surfaces (DealsTable, FeaturedDeals, CardDetailClient)
+- **Fixed**: DealsTable + CardDetailClient (FeaturedDeals freshness removed on homepage cards to reduce crowding)
 - **Change Classification**: Feature addition (display-only trust signal using existing updated_at timestamp; no scoring, ingestion, or pricing changes)
 - **Blast Radius**: `types/deal.ts`, `app/api/deals/dealsQuery.ts`, `lib/dealFormatting.ts`, `components/DealsTable.tsx`, `components/FeaturedDeals.tsx`, `components/CardDetailClient.tsx`, plus all pages that construct Deal objects
 - **Changes**: Added subtle freshness indicator showing how recently deals were checked
   - Added `updatedAt` field to `Deal` type
   - Created `formatFreshness()` helper function with 4-hour threshold
-  - Returns "Xm" or "Xh" format when recent; returns `null` when stale (no negative messaging)
-  - Added inline freshness display next to deal prices across all surfaces:
+  - Returns "Xm" or "Xh" format when recent; returns `null` when stale or future-dated (negative durations never display)
+  - Added inline freshness display next to deal prices on:
     - **DealsTable**: Desktop + mobile views (shows below price)
-    - **FeaturedDeals**: Inline with price + discount ("$47.99 · 12m")
     - **CardDetailClient**: Best Trusted Deal box + listings table
+  - **FeaturedDeals**: freshness removed from homepage cards (de-crowd decision)
   - Styling: `text-xs text-slate-500` (matches seller sales badge visual priority)
   - Only displays when `updatedAt ≤ 4 hours`; disappears entirely when older
 - **Result**: Quiet trust signal reassuring users that deal data is fresh without adding visual noise
@@ -404,11 +411,11 @@ Display "Checked X minutes ago" or a subtle freshness indicator to show how rece
 
 Builds trust with users by providing real-time data cues.
 
-**Implementation** (2025-12-19):
+**Implementation** (2025-12-19, updated 2025-12-20):
 - Added subtle inline freshness indicator showing "Xm" or "Xh" next to deal prices
-- Only displays when deal updated within last 4 hours (disappears when stale)
+- Only displays when deal updated within last 4 hours; future timestamps render nothing (no negative durations)
 - Feature addition (display-only trust signal using existing updated_at timestamp; no scoring, ingestion, or pricing changes)
-- Appears on all deal surfaces: tables, featured deals, card detail pages
+- Appears on tables + card detail pages; removed from homepage FeaturedDeals cards to reduce crowding
 - Styling matches seller sales badge (text-xs text-slate-500)
 
 "No Deals Right Now" Intelligence [NOT STARTED]

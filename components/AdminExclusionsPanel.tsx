@@ -48,19 +48,19 @@ export async function AdminExclusionsPanel({
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
-        <span className="rounded bg-slate-700 px-2 py-1 text-white">
+        <span className="rounded border border-slate-200 bg-white px-2 py-1 text-slate-700">
           Since: {timeframe.label}
         </span>
-        <span className="rounded bg-slate-700 px-2 py-1 text-white">
+        <span className="rounded border border-slate-200 bg-white px-2 py-1 text-slate-700">
           Kind: {kindFilter}
         </span>
-        <span className="rounded bg-slate-700 px-2 py-1 text-white">
+        <span className="rounded border border-slate-200 bg-white px-2 py-1 text-slate-700">
           Limit: {limitVal}
         </span>
-        <span className="rounded bg-slate-700 px-2 py-1 text-white">
+        <span className="rounded border border-slate-200 bg-white px-2 py-1 text-slate-700">
           Scanned: {stats.totalScanned}
         </span>
-        <span className="rounded bg-amber-900 px-2 py-1 text-amber-200">
+        <span className="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">
           Excluded: {stats.totalExcluded}
         </span>
       </div>
@@ -73,10 +73,10 @@ export async function AdminExclusionsPanel({
               <a
                 key={t}
                 href={`${basePath}?${queryPrefix}since=${t}&kind=${kindFilter}&limit=${limitVal}`}
-                className={`rounded px-3 py-1 text-sm transition ${
+                className={`rounded border px-3 py-1 text-sm transition ${
                   timeframe.label === t
-                    ? "bg-amber-600 text-white"
-                    : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
                 {t}
@@ -91,10 +91,10 @@ export async function AdminExclusionsPanel({
             <a
               key={k}
               href={`${basePath}?${queryPrefix}since=${timeframe.label.replace(" (custom)", "")}&kind=${k}&limit=${limitVal}`}
-              className={`rounded px-3 py-1 text-sm transition ${
+              className={`rounded border px-3 py-1 text-sm transition ${
                 kindFilter === k
-                  ? "bg-amber-600 text-white"
-                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
               {k}
@@ -108,10 +108,10 @@ export async function AdminExclusionsPanel({
             <a
               key={l}
               href={`${basePath}?${queryPrefix}since=${timeframe.label.replace(" (custom)", "")}&kind=${kindFilter}&limit=${l}`}
-              className={`rounded px-3 py-1 text-sm transition ${
+              className={`rounded border px-3 py-1 text-sm transition ${
                 limitVal === l
-                  ? "bg-amber-600 text-white"
-                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
               {l}
@@ -138,6 +138,7 @@ export async function AdminExclusionsPanel({
         enableOverrides={false}
         enableActions={false}
         showAdminTools={false}
+        theme="admin"
       />
     </>
   );
@@ -153,21 +154,21 @@ function StatCard({
   color: "slate" | "amber" | "red" | "blue";
 }) {
   const bgColors = {
-    slate: "bg-slate-800",
-    amber: "bg-amber-900/50",
-    red: "bg-red-900/50",
-    blue: "bg-blue-900/50",
+    slate: "bg-white",
+    amber: "bg-amber-50",
+    red: "bg-rose-50",
+    blue: "bg-blue-50",
   };
   const textColors = {
-    slate: "text-slate-100",
-    amber: "text-amber-300",
-    red: "text-red-300",
-    blue: "text-blue-300",
+    slate: "text-slate-900",
+    amber: "text-amber-700",
+    red: "text-rose-700",
+    blue: "text-blue-700",
   };
 
   return (
-    <div className={`rounded-lg ${bgColors[color]} p-4`}>
-      <div className="text-xs text-slate-400 uppercase">{label}</div>
+    <div className={`rounded-lg border border-slate-200 ${bgColors[color]} p-4`}>
+      <div className="text-xs text-slate-500 uppercase">{label}</div>
       <div className={`text-2xl font-bold ${textColors[color]}`}>
         {value.toLocaleString()}
       </div>
@@ -184,10 +185,10 @@ function TopHitsCard({
   hits: Array<{ hit: string; count: number }>;
   color: "red" | "blue";
 }) {
-  const headerColor = color === "red" ? "text-red-400" : "text-blue-400";
+  const headerColor = color === "red" ? "text-rose-700" : "text-blue-700";
 
   return (
-    <div className="rounded-lg bg-slate-800 p-4">
+    <div className="rounded-lg border border-slate-200 bg-white p-4">
       <h3 className={`mb-2 text-sm font-semibold ${headerColor}`}>{title}</h3>
       {hits.length === 0 ? (
         <p className="text-sm text-slate-500">No hits</p>
@@ -195,8 +196,8 @@ function TopHitsCard({
         <ul className="space-y-1 text-sm">
           {hits.map((h, i) => (
             <li key={i} className="flex justify-between">
-              <span className="font-mono text-slate-300">&quot;{h.hit}&quot;</span>
-              <span className="text-slate-400">{h.count}</span>
+              <span className="font-mono text-slate-700">&quot;{h.hit}&quot;</span>
+              <span className="text-slate-500">{h.count}</span>
             </li>
           ))}
         </ul>

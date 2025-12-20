@@ -16,6 +16,7 @@ type Props = {
   enableOverrides?: boolean;
   enableActions?: boolean;
   showAdminTools?: boolean;
+  theme?: "debug" | "admin";
 };
 
 // Removed OverrideStatus - using ListingOverride from schema directly
@@ -153,6 +154,7 @@ export default function ExclusionsClient({
   enableOverrides = true,
   enableActions = true,
   showAdminTools = true,
+  theme = "debug",
 }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
@@ -325,7 +327,7 @@ export default function ExclusionsClient({
   };
   
   return (
-    <div>
+    <div className={theme === "admin" ? "text-slate-900" : ""}>
       {showAdminTools ? (
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <button
@@ -380,10 +382,14 @@ export default function ExclusionsClient({
           placeholder="🔍 Filter by title, keyword, card name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+          className={
+            theme === "admin"
+              ? "w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              : "w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+          }
         />
         {searchQuery && (
-          <p className="mt-1 text-xs text-slate-400">
+          <p className={theme === "admin" ? "mt-1 text-xs text-slate-500" : "mt-1 text-xs text-slate-400"}>
             Showing {filteredListings.length} of {listings.length} listings
           </p>
         )}
@@ -563,45 +569,127 @@ export default function ExclusionsClient({
       ) : null}
 
       {/* Results Count */}
-      <div className="mb-4 text-sm text-slate-400">
+      <div className={theme === "admin" ? "mb-4 text-sm text-slate-500" : "mb-4 text-sm text-slate-400"}>
         Displaying {filteredListings.length} excluded listings
       </div>
       
       {/* Desktop Table */}
-      <div className="hidden overflow-x-auto rounded-lg border border-slate-700 md:block xl:overflow-x-visible">
-        <table className="w-full table-fixed divide-y divide-slate-700" style={{ minWidth: "1000px" }}>
-          <thead className="bg-slate-800">
+      <div
+        className={
+          theme === "admin"
+            ? "hidden overflow-x-auto rounded-lg border border-slate-300 bg-white md:block xl:overflow-x-visible"
+            : "hidden overflow-x-auto rounded-lg border border-slate-700 md:block xl:overflow-x-visible"
+        }
+      >
+        <table
+          className={
+            theme === "admin"
+              ? "w-full table-fixed divide-y divide-slate-200"
+              : "w-full table-fixed divide-y divide-slate-700"
+          }
+          style={{ minWidth: "1000px" }}
+        >
+          <thead className={theme === "admin" ? "bg-slate-50" : "bg-slate-800"}>
             <tr>
-              <th className="px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3" style={{ width: "85px" }}>
+              <th
+                className={
+                  theme === "admin"
+                    ? "px-2 py-2 text-left text-xs font-medium uppercase text-slate-500 lg:px-3"
+                    : "px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3"
+                }
+                style={{ width: "85px" }}
+              >
                 Time
               </th>
-              <th className="px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3" style={{ width: "70px" }}>
+              <th
+                className={
+                  theme === "admin"
+                    ? "px-2 py-2 text-left text-xs font-medium uppercase text-slate-500 lg:px-3"
+                    : "px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3"
+                }
+                style={{ width: "70px" }}
+              >
                 Market
               </th>
-              <th className="px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3" style={{ width: "75px" }}>
+              <th
+                className={
+                  theme === "admin"
+                    ? "px-2 py-2 text-left text-xs font-medium uppercase text-slate-500 lg:px-3"
+                    : "px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3"
+                }
+                style={{ width: "75px" }}
+              >
                 Price
               </th>
-              <th className="px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3" style={{ width: "220px" }}>
+              <th
+                className={
+                  theme === "admin"
+                    ? "px-2 py-2 text-left text-xs font-medium uppercase text-slate-500 lg:px-3"
+                    : "px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3"
+                }
+                style={{ width: "220px" }}
+              >
                 Title
               </th>
-              <th className="px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3" style={{ width: "65px" }}>
+              <th
+                className={
+                  theme === "admin"
+                    ? "px-2 py-2 text-left text-xs font-medium uppercase text-slate-500 lg:px-3"
+                    : "px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3"
+                }
+                style={{ width: "65px" }}
+              >
                 Kind
               </th>
-              <th className="px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3" style={{ width: "100px" }}>
+              <th
+                className={
+                  theme === "admin"
+                    ? "px-2 py-2 text-left text-xs font-medium uppercase text-slate-500 lg:px-3"
+                    : "px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3"
+                }
+                style={{ width: "100px" }}
+              >
                 Override
               </th>
-              <th className="px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3" style={{ width: "180px" }}>
+              <th
+                className={
+                  theme === "admin"
+                    ? "px-2 py-2 text-left text-xs font-medium uppercase text-slate-500 lg:px-3"
+                    : "px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3"
+                }
+                style={{ width: "180px" }}
+              >
                 Reason / Hit
               </th>
-              <th className="px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3" style={{ width: "140px" }}>
+              <th
+                className={
+                  theme === "admin"
+                    ? "px-2 py-2 text-left text-xs font-medium uppercase text-slate-500 lg:px-3"
+                    : "px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3"
+                }
+                style={{ width: "140px" }}
+              >
                 Card
               </th>
-              <th className="px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3" style={{ width: "245px" }}>
+              <th
+                className={
+                  theme === "admin"
+                    ? "px-2 py-2 text-left text-xs font-medium uppercase text-slate-500 lg:px-3"
+                    : "px-2 py-2 text-left text-xs font-medium uppercase text-slate-400 lg:px-3"
+                }
+                style={{ width: "245px" }}
+              >
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900">
+          <tbody
+            className={
+              theme === "admin"
+                ? "divide-y divide-slate-200 bg-white"
+                : "divide-y divide-slate-800 bg-slate-900"
+            }
+          >
             {filteredListings.map((listing) => (
               <ListingRow
                 key={listing.id}
@@ -612,6 +700,7 @@ export default function ExclusionsClient({
                 onConfirm={(action) => setConfirmModal({ listing, action })}
                 onUndo={() => handleUndo(listing.listingId)}
                 enableActions={enableActions}
+                theme={theme}
               />
             ))}
           </tbody>
@@ -630,12 +719,19 @@ export default function ExclusionsClient({
             expanded={expandedIds.has(listing.id)}
             onToggleExpand={() => toggleExpand(listing.id)}
             enableActions={enableActions}
+            theme={theme}
           />
         ))}
       </div>
       
       {filteredListings.length === 0 && (
-        <div className="py-12 text-center text-slate-500">
+        <div
+          className={
+            theme === "admin"
+              ? "py-12 text-center text-slate-500"
+              : "py-12 text-center text-slate-500"
+          }
+        >
           No excluded listings found matching your criteria.
         </div>
       )}
@@ -833,6 +929,7 @@ function ListingRow({
   onConfirm,
   onUndo,
   enableActions,
+  theme,
 }: {
   listing: ExcludedListing;
   expanded: boolean;
@@ -841,6 +938,7 @@ function ListingRow({
   onConfirm: (action: OverrideType) => void;
   onUndo: () => void;
   enableActions: boolean;
+  theme: "debug" | "admin";
 }) {
   const marketDisplay = getMarketDisplay(listing.market);
   const timeStr = listing.createdAt
@@ -861,23 +959,50 @@ function ListingRow({
   });
   const blacklistLabel = listing.sellerBlacklisted ? "BLACKLISTED" : "OK";
   const blacklistClass = listing.sellerBlacklisted
-    ? "bg-rose-900/50 text-rose-300"
-    : "bg-emerald-900/50 text-emerald-300";
+    ? theme === "admin"
+      ? "bg-rose-100 text-rose-700"
+      : "bg-rose-900/50 text-rose-300"
+    : theme === "admin"
+      ? "bg-emerald-100 text-emerald-700"
+      : "bg-emerald-900/50 text-emerald-300";
   const isExcluded = listing.exclusionKind === "hard" || listing.exclusionKind === "soft";
   
   return (
     <>
       <tr
-        className="cursor-pointer hover:bg-slate-800/50"
+        className={
+          theme === "admin"
+            ? "cursor-pointer hover:bg-slate-50"
+            : "cursor-pointer hover:bg-slate-800/50"
+        }
         onClick={onToggleExpand}
       >
-        <td className="overflow-hidden whitespace-nowrap px-2 py-2 text-xs text-slate-400 lg:px-3" title={timeStr}>
+        <td
+          className={
+            theme === "admin"
+              ? "overflow-hidden whitespace-nowrap px-2 py-2 text-xs text-slate-500 lg:px-3"
+              : "overflow-hidden whitespace-nowrap px-2 py-2 text-xs text-slate-400 lg:px-3"
+          }
+          title={timeStr}
+        >
           {listing.createdAt ? formatDateOnly(listing.createdAt) : listing.endsAt ? formatDateOnly(listing.endsAt) : "—"}
         </td>
-        <td className="overflow-hidden whitespace-nowrap px-2 py-2 text-xs lg:px-3 lg:text-sm">
+        <td
+          className={
+            theme === "admin"
+              ? "overflow-hidden whitespace-nowrap px-2 py-2 text-xs text-slate-700 lg:px-3 lg:text-sm"
+              : "overflow-hidden whitespace-nowrap px-2 py-2 text-xs lg:px-3 lg:text-sm"
+          }
+        >
           {marketDisplay}
         </td>
-        <td className="overflow-hidden whitespace-nowrap px-2 py-2 text-xs text-slate-300 lg:px-3 lg:text-sm">
+        <td
+          className={
+            theme === "admin"
+              ? "overflow-hidden whitespace-nowrap px-2 py-2 text-xs text-slate-700 lg:px-3 lg:text-sm"
+              : "overflow-hidden whitespace-nowrap px-2 py-2 text-xs text-slate-300 lg:px-3 lg:text-sm"
+          }
+        >
           {priceStr}
         </td>
         <td className="overflow-hidden px-2 py-2 lg:px-3" style={{ maxWidth: "220px" }}>
@@ -885,35 +1010,47 @@ function ListingRow({
             href={listing.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block truncate text-xs text-slate-200 hover:text-amber-400 lg:text-sm"
+            className={
+              theme === "admin"
+                ? "block truncate text-xs text-slate-900 hover:text-amber-600 lg:text-sm"
+                : "block truncate text-xs text-slate-200 hover:text-amber-400 lg:text-sm"
+            }
             onClick={(e) => e.stopPropagation()}
             title={listing.title}
           >
             {listing.title}
           </a>
-          <div className="text-[11px] text-slate-500">
+          <div className={theme === "admin" ? "text-[11px] text-slate-500" : "text-[11px] text-slate-500"}>
             Seller: {sellerDisplay.displayName}
           </div>
-          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
+          <div className={theme === "admin" ? "mt-1 flex items-center gap-2 text-[11px] text-slate-500" : "mt-1 flex items-center gap-2 text-[11px] text-slate-400"}>
             <span className={`rounded-full px-2 py-0.5 font-medium ${blacklistClass}`}>
               {blacklistLabel}
             </span>
             {isExcluded ? (
-              <span className="rounded-full bg-amber-900/50 px-2 py-0.5 font-medium text-amber-300">
+              <span
+                className={
+                  theme === "admin"
+                    ? "rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700"
+                    : "rounded-full bg-amber-900/50 px-2 py-0.5 font-medium text-amber-300"
+                }
+              >
                 EXCLUDED
               </span>
             ) : null}
           </div>
         </td>
-        <td className="overflow-hidden px-2 py-2 lg:px-3">
-          <KindBadge kind={listing.exclusionKind} />
+        <td className={theme === "admin" ? "overflow-hidden px-2 py-2 lg:px-3 text-slate-700" : "overflow-hidden px-2 py-2 lg:px-3"}>
+          <KindBadge kind={listing.exclusionKind} theme={theme} />
         </td>
         <td className="overflow-hidden px-2 py-2 lg:px-3">
-          {override && <OverrideBadge override={override} />}
+          {override && <OverrideBadge override={override} theme={theme} />}
         </td>
         <td className="px-2 py-2 text-xs lg:px-3" style={{ maxWidth: "180px" }}>
           <div className="whitespace-normal break-words">
-            <span className="text-slate-400">{listing.exclusionReason}</span>
+            <span className={theme === "admin" ? "text-slate-600" : "text-slate-400"}>
+              {listing.exclusionReason}
+            </span>
             {listing.exclusionHit && (
               <span className="ml-1 font-mono text-amber-400">
                 &quot;{listing.exclusionHit}&quot;
@@ -921,7 +1058,14 @@ function ListingRow({
             )}
           </div>
         </td>
-        <td className="overflow-hidden px-2 py-2 text-xs text-slate-400 lg:px-3" style={{ maxWidth: "140px" }}>
+        <td
+          className={
+            theme === "admin"
+              ? "overflow-hidden px-2 py-2 text-xs text-slate-500 lg:px-3"
+              : "overflow-hidden px-2 py-2 text-xs text-slate-400 lg:px-3"
+          }
+          style={{ maxWidth: "140px" }}
+        >
           {listing.cardName ? (
             <div 
               className="truncate" 
@@ -929,7 +1073,7 @@ function ListingRow({
             >
               {listing.cardName}
               {listing.cardSetName && (
-                <span className="text-slate-500">
+                <span className={theme === "admin" ? "text-slate-500" : "text-slate-500"}>
                   {" "}
                   ({listing.cardSetName}
                   {listing.cardNumber && ` #${listing.cardNumber}`})
@@ -979,9 +1123,9 @@ function ListingRow({
         </td>
       </tr>
       {expanded && (
-        <tr className="bg-slate-800/30">
+        <tr className={theme === "admin" ? "bg-slate-50" : "bg-slate-800/30"}>
           <td colSpan={8} className="px-4 py-3">
-            <ExpandedDetails listing={listing} />
+            <ExpandedDetails listing={listing} theme={theme} />
           </td>
         </tr>
       )}
@@ -1001,6 +1145,7 @@ function MobileCard({
   onConfirm,
   onUndo,
   enableActions,
+  theme,
 }: {
   listing: ExcludedListing;
   expanded: boolean;
@@ -1009,6 +1154,7 @@ function MobileCard({
   onConfirm: (action: OverrideType) => void;
   onUndo: () => void;
   enableActions: boolean;
+  theme: "debug" | "admin";
 }) {
   const marketDisplay = getMarketDisplay(listing.market);
   const timeStr = listing.createdAt
@@ -1029,61 +1175,83 @@ function MobileCard({
   });
   const blacklistLabel = listing.sellerBlacklisted ? "BLACKLISTED" : "OK";
   const blacklistClass = listing.sellerBlacklisted
-    ? "bg-rose-900/50 text-rose-300"
-    : "bg-emerald-900/50 text-emerald-300";
+    ? theme === "admin"
+      ? "bg-rose-100 text-rose-700"
+      : "bg-rose-900/50 text-rose-300"
+    : theme === "admin"
+      ? "bg-emerald-100 text-emerald-700"
+      : "bg-emerald-900/50 text-emerald-300";
   const isExcluded =
     listing.exclusionKind === "hard" || listing.exclusionKind === "soft";
   
   return (
     <div
-      className="rounded-lg border border-slate-700 bg-slate-800 p-3"
+      className={
+        theme === "admin"
+          ? "rounded-lg border border-slate-200 bg-white p-3"
+          : "rounded-lg border border-slate-700 bg-slate-800 p-3"
+      }
       onClick={onToggleExpand}
     >
       <div className="mb-2 flex items-start justify-between">
         <div className="flex gap-2">
-          <KindBadge kind={listing.exclusionKind} />
-          {override && <OverrideBadge override={override} />}
+          <KindBadge kind={listing.exclusionKind} theme={theme} />
+          {override && <OverrideBadge override={override} theme={theme} />}
         </div>
-        <span className="text-xs text-slate-500">{timeStr}</span>
+        <span className={theme === "admin" ? "text-xs text-slate-500" : "text-xs text-slate-500"}>
+          {timeStr}
+        </span>
       </div>
       
       <a
         href={listing.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="mb-2 block text-sm text-slate-200 hover:text-amber-400"
+        className={
+          theme === "admin"
+            ? "mb-2 block text-sm text-slate-900 hover:text-amber-600"
+            : "mb-2 block text-sm text-slate-200 hover:text-amber-400"
+        }
         onClick={(e) => e.stopPropagation()}
       >
         {listing.title}
       </a>
       
       <div className="mb-2 flex flex-wrap gap-2 text-xs">
-        <span className="text-slate-400">
+        <span className={theme === "admin" ? "text-slate-500" : "text-slate-400"}>
           {marketDisplay}
         </span>
-        <span className="text-slate-300">{priceStr}</span>
+        <span className={theme === "admin" ? "text-slate-700" : "text-slate-300"}>
+          {priceStr}
+        </span>
         {listing.exclusionHit && (
           <span className="font-mono text-amber-400">
             &quot;{listing.exclusionHit}&quot;
           </span>
         )}
       </div>
-      <div className="mb-2 text-xs text-slate-500">
+      <div className={theme === "admin" ? "mb-2 text-xs text-slate-500" : "mb-2 text-xs text-slate-500"}>
         Seller: {sellerDisplay.displayName}
-        </div>
-      <div className="mb-2 flex items-center gap-2 text-[11px] text-slate-400">
+      </div>
+      <div className={theme === "admin" ? "mb-2 flex items-center gap-2 text-[11px] text-slate-500" : "mb-2 flex items-center gap-2 text-[11px] text-slate-400"}>
         <span className={`rounded-full px-2 py-0.5 font-medium ${blacklistClass}`}>
           {blacklistLabel}
         </span>
         {isExcluded ? (
-          <span className="rounded-full bg-amber-900/50 px-2 py-0.5 font-medium text-amber-300">
+          <span
+            className={
+              theme === "admin"
+                ? "rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700"
+                : "rounded-full bg-amber-900/50 px-2 py-0.5 font-medium text-amber-300"
+            }
+          >
             EXCLUDED
           </span>
         ) : null}
       </div>
       
       {listing.cardName && (
-        <div className="mb-2 text-xs text-slate-500">
+        <div className={theme === "admin" ? "mb-2 text-xs text-slate-500" : "mb-2 text-xs text-slate-500"}>
           Card: {listing.cardName}
           {listing.cardSetName && ` (${listing.cardSetName})`}
         </div>
@@ -1126,8 +1294,14 @@ function MobileCard({
       </div>
 
       {expanded && (
-        <div className="mt-3 border-t border-slate-700 pt-3">
-          <ExpandedDetails listing={listing} />
+        <div
+          className={
+            theme === "admin"
+              ? "mt-3 border-t border-slate-200 pt-3"
+              : "mt-3 border-t border-slate-700 pt-3"
+          }
+        >
+          <ExpandedDetails listing={listing} theme={theme} />
         </div>
       )}
     </div>
@@ -1135,19 +1309,33 @@ function MobileCard({
 }
 
 
-function OverrideBadge({ override }: { override: ListingOverride }) {
-  const config = {
-    ALLOW: { bg: "bg-green-900/70", text: "text-green-200", label: "✓ ALLOW" },
-    HARD_BLOCK: { bg: "bg-red-900/70", text: "text-red-200", label: "⊗ HARD BLOCK" },
-    SOFT_EXCLUDE: { bg: "bg-blue-900/70", text: "text-blue-200", label: "◐ SOFT EXCLUDE" },
-  }[override.override_type];
+function OverrideBadge({
+  override,
+  theme,
+}: {
+  override: ListingOverride;
+  theme: "debug" | "admin";
+}) {
+  const config =
+    theme === "admin"
+      ? {
+          ALLOW: { bg: "bg-green-100", text: "text-green-700", label: "✓ ALLOW" },
+          HARD_BLOCK: { bg: "bg-red-100", text: "text-red-700", label: "⊗ HARD BLOCK" },
+          SOFT_EXCLUDE: { bg: "bg-blue-100", text: "text-blue-700", label: "◐ SOFT EXCLUDE" },
+        }
+      : {
+          ALLOW: { bg: "bg-green-900/70", text: "text-green-200", label: "✓ ALLOW" },
+          HARD_BLOCK: { bg: "bg-red-900/70", text: "text-red-200", label: "⊗ HARD BLOCK" },
+          SOFT_EXCLUDE: { bg: "bg-blue-900/70", text: "text-blue-200", label: "◐ SOFT EXCLUDE" },
+        };
+  const current = config[override.override_type];
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${current.bg} ${current.text}`}
       title={override.reason || "Override applied"}
     >
-      {config.label}
+      {current.label}
     </span>
   );
 }
@@ -1155,16 +1343,34 @@ function OverrideBadge({ override }: { override: ListingOverride }) {
 // HELPER COMPONENTS
 // =============================================================================
 
-function KindBadge({ kind }: { kind: "hard" | "soft" }) {
+function KindBadge({
+  kind,
+  theme,
+}: {
+  kind: "hard" | "soft";
+  theme: "debug" | "admin";
+}) {
   if (kind === "hard") {
     return (
-      <span className="inline-flex items-center rounded-full bg-red-900/50 px-2 py-0.5 text-xs font-medium text-red-300">
+      <span
+        className={
+          theme === "admin"
+            ? "inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
+            : "inline-flex items-center rounded-full bg-red-900/50 px-2 py-0.5 text-xs font-medium text-red-300"
+        }
+      >
         HARD
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center rounded-full bg-blue-900/50 px-2 py-0.5 text-xs font-medium text-blue-300">
+    <span
+      className={
+        theme === "admin"
+          ? "inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700"
+          : "inline-flex items-center rounded-full bg-blue-900/50 px-2 py-0.5 text-xs font-medium text-blue-300"
+      }
+    >
       SOFT
     </span>
   );
@@ -1172,7 +1378,13 @@ function KindBadge({ kind }: { kind: "hard" | "soft" }) {
 
 
 
-function ExpandedDetails({ listing }: { listing: ExcludedListing }) {
+function ExpandedDetails({
+  listing,
+  theme,
+}: {
+  listing: ExcludedListing;
+  theme: "debug" | "admin";
+}) {
   const sellerInfo = getSellerDisplayData({
     username: listing.sellerUsername ?? listing.seller ?? null,
     storeName: listing.sellerStoreName ?? null,
@@ -1181,21 +1393,27 @@ function ExpandedDetails({ listing }: { listing: ExcludedListing }) {
     <div className="grid gap-2 text-xs sm:grid-cols-2">
       <div>
         <span className="text-slate-500">Listing ID:</span>{" "}
-        <span className="font-mono text-slate-300">{listing.listingId}</span>
+        <span className={theme === "admin" ? "font-mono text-slate-700" : "font-mono text-slate-300"}>
+          {listing.listingId}
+        </span>
       </div>
       <div>
         <span className="text-slate-500">DB ID:</span>{" "}
-        <span className="font-mono text-slate-300">{listing.id}</span>
+        <span className={theme === "admin" ? "font-mono text-slate-700" : "font-mono text-slate-300"}>
+          {listing.id}
+        </span>
       </div>
       {listing.cardId && (
         <div>
           <span className="text-slate-500">Card ID:</span>{" "}
-          <span className="font-mono text-slate-300">{listing.cardId}</span>
+          <span className={theme === "admin" ? "font-mono text-slate-700" : "font-mono text-slate-300"}>
+            {listing.cardId}
+          </span>
         </div>
       )}
       <div>
         <span className="text-slate-500">Seller:</span>{" "}
-        <span className="text-slate-300">
+        <span className={theme === "admin" ? "text-slate-700" : "text-slate-300"}>
           {sellerInfo.displayName}
         </span>
         {listing.sellerUsername &&
@@ -1208,7 +1426,9 @@ function ExpandedDetails({ listing }: { listing: ExcludedListing }) {
       </div>
       <div className="sm:col-span-2">
         <span className="text-slate-500">Reason:</span>{" "}
-        <span className="text-slate-300">{listing.exclusionReason}</span>
+        <span className={theme === "admin" ? "text-slate-700" : "text-slate-300"}>
+          {listing.exclusionReason}
+        </span>
       </div>
       {listing.exclusionHit && (
         <div className="sm:col-span-2">
@@ -1224,7 +1444,11 @@ function ExpandedDetails({ listing }: { listing: ExcludedListing }) {
           href={listing.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="break-all text-amber-400 hover:text-amber-300"
+          className={
+            theme === "admin"
+              ? "break-all text-amber-600 hover:text-amber-500"
+              : "break-all text-amber-400 hover:text-amber-300"
+          }
         >
           {listing.url}
         </a>

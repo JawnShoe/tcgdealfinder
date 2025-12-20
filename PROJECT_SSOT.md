@@ -222,6 +222,11 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 - **Status**: COMPLETE
 - **Invariant**: Admin cookie gate unchanged; debug token gate unchanged; no URL secrets.
 
+### Admin exclusions theme parity
+- **Change**: Admin hub Exclusions tab now matches admin theme (light surfaces, tables, badges).
+- **Routes/components**: `/admin`, `/admin/exclusions`, `components/AdminExclusionsPanel.tsx`, `app/debug/exclusions/ExclusionsClient.tsx`
+- **Status**: COMPLETE (2025-12-20)
+
 ### Admin blacklist history guard
 - **Change**: `/admin/blacklist` shows active sellers even if `seller_blacklist_history` is missing; banner prompts migration
 - **Commit**: 51f477b

@@ -12,13 +12,13 @@
 
 ### Security / Admin Access
 **Admin gate mechanism**:
-- `/admin/blacklist`: `?secret=` query param must match `ADMIN_SECRET` env; otherwise `notFound()` (404).
-- `/admin/alerts`: `?secret=` query param must match hardcoded `ADMIN_SECRET` string in the page; otherwise `notFound()` (404).
-- `/api/admin/*`: expects `x-admin-secret` header; returns `401 Unauthorized` when missing/invalid.
-- `/debug/*`: uses `DEBUG_ADMIN_TOKEN` via cookie/header/query (see `lib/debugAuth.ts`); separate from admin gate.
+- Admin unlock via `POST /api/admin/login` with secret in body; sets HttpOnly `admin_auth` cookie (SameSite=Strict, Secure, Path=/, Max-Age=7d).
+- `/admin/*` pages check `admin_auth` cookie and return `notFound()` (404) when missing/invalid.
+- `/api/admin/*` routes check `admin_auth` cookie; `x-admin-secret` header is a deprecated fallback for internal scripts.
+- `/debug/*` uses `DEBUG_ADMIN_TOKEN` via cookie/header/query (see `lib/debugAuth.ts`); separate from admin gate.
 
 **Admin-protected routes**:
-- Pages: `/admin/blacklist`, `/admin/alerts`
+- Pages: `/admin/blacklist`, `/admin/alerts`, `/admin/listings`
 - APIs: `/api/admin/alerts/create`, `/api/admin/alerts/toggle`, `/api/admin/alerts/delete`, `/api/admin/blacklist-seller`, `/api/admin/hide-listing`
 
 **404 vs 401**:
@@ -26,11 +26,16 @@
 - Admin APIs return 401 on auth failure.
 
 **Deep-link behavior**:
-- Deep-links from `/debug/exclusions` to `/admin/blacklist` without a valid `?secret=` will 404.
-- This is expected behavior given the current gate.
+- Admin pages 404 until the cookie is set; debug surfaces only provide an unlock modal and no secret-bearing links.
 
 **Invariant**:
-- No admin secrets in shared URLs; operators should not paste or log `?secret=` values.
+- No admin secrets in URLs; do not paste or log admin secrets.
+
+### Listing Exclusion (Admin)
+- Single-listing exclusions live in `listing_overrides` (`override_type = HARD_BLOCK`) and are managed via `/admin/listings`.
+- Excluded listings never surface on public pages (enforced in `shouldExcludeListingFromCardSurfaces` used by deals queries + page filters).
+- Use listing exclusion for isolated bad listings; use seller blacklist for systemic seller abuse.
+- Debug views display overrides as exclusion badges.
 
 **FRESHNESS + TIMEZONE CLARIFICATION (2025-12-20)**:
 - Canonical freshness timestamp across the system is `Deal.updatedAt`, sourced from `listings.updated_at` in the database.
@@ -84,11 +89,13 @@
 |-------|--------|-------|
 | `/admin/alerts` | ⚠️ ADMIN | Alert management |
 | `/admin/blacklist` | ⚠️ ADMIN | Seller blacklist management |
+| `/admin/listings` | ⚠️ ADMIN | Single-listing exclusion tool |
 | `/debug/exclusions` | ⚠️ DEBUG | Integrity review panel |
 
 - `/admin/blacklist` shows active blacklist entries plus history; unblacklist writes history first and restore re-adds without deleting history.
-- `/debug/exclusions` displays seller blacklist status and an admin-access note (no direct deep-link); it is read-only.
+- `/debug/exclusions` displays seller blacklist status and an admin unlock modal (no URL secrets, no direct deep-link); it is read-only.
 - Blacklist mutations + history remain on `/admin/blacklist` only.
+- Listing exclusions (single listing) are managed only on `/admin/listings`.
 
 ---
 
@@ -188,16 +195,22 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
-**Status**: DONE — Debug exclusions seller blacklist status + deep-link (2025-12-20)
+**Status**: DONE — Admin cookie gate + listing exclusion tool (2025-12-20)
 - Completed; see entry in Completed.
 
 ---
 
 ## COMPLETED (2025-12-20)
 
-### Debug exclusions seller blacklist status + deep-link
+### Admin cookie gate + listing exclusion tool
+- **Admin auth**: Cookie-based gate (`admin_auth` via `/api/admin/login`), 404 on `/admin/*`, admin APIs accept cookie with deprecated `x-admin-secret` fallback
+- **Listing exclusion**: `/admin/listings` manages single-listing exclusions via `listing_overrides` (`HARD_BLOCK`), used for precise listing removal without seller-wide ban
+- **Applied**: `v1|226490668389|0` excluded (reason: manual: misleading listing)
+- **Commits**: 70a6297, 29c41b8
+
+### Debug exclusions seller blacklist status + admin unlock
 - **Implementation**: Seller blacklist visibility implemented on `/debug/exclusions` (commit 48648e9)
-- **Update**: Deep-link replaced by admin-access note (commit 20947ab)
+- **Update**: Deep-link removed; admin unlock modal added (commit 70a6297)
 - **Documentation**: SSOT clarification only (commit fe8c59c)
 - **SSOT fix**: Clarified implementation vs documentation commits (commit fb27c1a)
 - **Invariant**: All blacklist mutations (add/remove/restore) remain restricted to `/admin/blacklist`

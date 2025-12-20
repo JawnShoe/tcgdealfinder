@@ -13,6 +13,9 @@ import { getSellerDisplayData } from "@/lib/sellerDisplay";
 type Props = {
   listings: ExcludedListing[];
   sinceDate: Date;
+  enableOverrides?: boolean;
+  enableActions?: boolean;
+  showAdminTools?: boolean;
 };
 
 // Removed OverrideStatus - using ListingOverride from schema directly
@@ -144,12 +147,18 @@ function formatDateOnly(date: Date): string {
 // MAIN COMPONENT
 // =============================================================================
 
-export default function ExclusionsClient({ listings, sinceDate }: Props) {
+export default function ExclusionsClient({
+  listings,
+  sinceDate,
+  enableOverrides = true,
+  enableActions = true,
+  showAdminTools = true,
+}: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [overrides, setOverrides] = useState<Map<string, ListingOverride>>(new Map());
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [loadingOverrides, setLoadingOverrides] = useState(true);
+  const [loadingOverrides, setLoadingOverrides] = useState(enableOverrides);
   const [confirmModal, setConfirmModal] = useState<{
     listing: ExcludedListing;
     action: OverrideType;
@@ -169,18 +178,23 @@ export default function ExclusionsClient({ listings, sinceDate }: Props) {
   
   // Load overrides on mount
   useEffect(() => {
+    if (!enableOverrides) {
+      setOverrides(new Map());
+      setLoadingOverrides(false);
+      return;
+    }
     fetchOverrides(sinceDate).then((map) => {
       setOverrides(map);
       setLoadingOverrides(false);
     });
-  }, [sinceDate]);
+  }, [sinceDate, enableOverrides]);
   
   // Load all overrides for panel
   useEffect(() => {
-    if (showOverridesPanel) {
+    if (enableOverrides && showOverridesPanel) {
       fetchAllOverrides();
     }
-  }, [showOverridesPanel]);
+  }, [showOverridesPanel, enableOverrides]);
   
   async function fetchAllOverrides() {
     try {
@@ -312,50 +326,52 @@ export default function ExclusionsClient({ listings, sinceDate }: Props) {
   
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => {
-            if (!isAdminUnlocked) {
-              setShowAdminUnlock(true);
-              setAdminUnlockStatus("idle");
-              setAdminUnlockError(null);
-            }
-          }}
-          className="rounded-full border border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-amber-400 hover:text-amber-300"
-        >
-          Admin tools
-        </button>
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-            isAdminUnlocked
-              ? "bg-emerald-900/50 text-emerald-300"
-              : "bg-slate-800 text-slate-400"
-          }`}
-        >
-          {isAdminUnlocked ? "Unlocked" : "Locked"}
-        </span>
-        {isAdminUnlocked ? (
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-            <a
-              href="/admin/blacklist"
-              className="text-amber-400 hover:text-amber-300"
-            >
-              Open seller blacklist
-            </a>
-            <a
-              href="/admin/listings"
-              className="text-amber-400 hover:text-amber-300"
-            >
-              Open listing exclusions
-            </a>
-          </div>
-        ) : (
-          <span className="text-xs text-slate-500">
-            Unlock to access admin pages (404 until unlocked).
+      {showAdminTools ? (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (!isAdminUnlocked) {
+                setShowAdminUnlock(true);
+                setAdminUnlockStatus("idle");
+                setAdminUnlockError(null);
+              }
+            }}
+            className="rounded-full border border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:border-amber-400 hover:text-amber-300"
+          >
+            Admin tools
+          </button>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+              isAdminUnlocked
+                ? "bg-emerald-900/50 text-emerald-300"
+                : "bg-slate-800 text-slate-400"
+            }`}
+          >
+            {isAdminUnlocked ? "Unlocked" : "Locked"}
           </span>
-        )}
-      </div>
+          {isAdminUnlocked ? (
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+              <a
+                href="/admin/blacklist"
+                className="text-amber-400 hover:text-amber-300"
+              >
+                Open seller blacklist
+              </a>
+              <a
+                href="/admin/listings"
+                className="text-amber-400 hover:text-amber-300"
+              >
+                Open listing exclusions
+              </a>
+            </div>
+          ) : (
+            <span className="text-xs text-slate-500">
+              Unlock to access admin pages (404 until unlocked).
+            </span>
+          )}
+        </div>
+      ) : null}
 
       {/* Search Input */}
       <div className="mb-4">
@@ -813,6 +829,7 @@ function ListingRow({
   override,
   onConfirm,
   onUndo,
+  enableActions,
 }: {
   listing: ExcludedListing;
   expanded: boolean;
@@ -820,6 +837,7 @@ function ListingRow({
   override: ListingOverride | undefined;
   onConfirm: (action: OverrideType) => void;
   onUndo: () => void;
+  enableActions: boolean;
 }) {
   const marketDisplay = getMarketDisplay(listing.market);
   const timeStr = listing.createdAt
@@ -842,9 +860,7 @@ function ListingRow({
   const blacklistClass = listing.sellerBlacklisted
     ? "bg-rose-900/50 text-rose-300"
     : "bg-emerald-900/50 text-emerald-300";
-  const isExcluded =
-    override?.override_type === "HARD_BLOCK" ||
-    override?.override_type === "SOFT_EXCLUDE";
+  const isExcluded = listing.exclusionKind === "hard" || listing.exclusionKind === "soft";
   
   return (
     <>
@@ -922,37 +938,41 @@ function ListingRow({
           )}
         </td>
         <td className="overflow-hidden px-2 py-2 lg:px-3" style={{ width: "245px" }}>
-          <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            {override ? (
-              <button
-                className="rounded bg-slate-700 px-2 py-1 text-xs font-medium text-slate-300 transition hover:bg-slate-600 whitespace-nowrap"
-                onClick={() => onUndo()}
-              >
-                ↺ Undo
-              </button>
-            ) : (
-              <>
+          {enableActions ? (
+            <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              {override ? (
                 <button
-                  className="rounded bg-green-900/50 px-2 py-1 text-xs font-medium text-green-300 transition hover:bg-green-800/50 whitespace-nowrap h-7"
-                  onClick={() => onConfirm("ALLOW")}
+                  className="rounded bg-slate-700 px-2 py-1 text-xs font-medium text-slate-300 transition hover:bg-slate-600 whitespace-nowrap"
+                  onClick={() => onUndo()}
                 >
-                  Allow
+                  ↺ Undo
                 </button>
-                <button
-                  className="rounded bg-red-900/50 px-2 py-1 text-xs font-medium text-red-300 transition hover:bg-red-800/50 whitespace-nowrap h-7"
-                  onClick={() => onConfirm("HARD_BLOCK")}
-                >
-                  Hard Block
-                </button>
-                <button
-                  className="rounded bg-blue-900/50 px-2 py-1 text-xs font-medium text-blue-300 transition hover:bg-blue-800/50 whitespace-nowrap h-7"
-                  onClick={() => onConfirm("SOFT_EXCLUDE")}
-                >
-                  Soft Exclude
-                </button>
-              </>
-            )}
-          </div>
+              ) : (
+                <>
+                  <button
+                    className="rounded bg-green-900/50 px-2 py-1 text-xs font-medium text-green-300 transition hover:bg-green-800/50 whitespace-nowrap h-7"
+                    onClick={() => onConfirm("ALLOW")}
+                  >
+                    Allow
+                  </button>
+                  <button
+                    className="rounded bg-red-900/50 px-2 py-1 text-xs font-medium text-red-300 transition hover:bg-red-800/50 whitespace-nowrap h-7"
+                    onClick={() => onConfirm("HARD_BLOCK")}
+                  >
+                    Hard Block
+                  </button>
+                  <button
+                    className="rounded bg-blue-900/50 px-2 py-1 text-xs font-medium text-blue-300 transition hover:bg-blue-800/50 whitespace-nowrap h-7"
+                    onClick={() => onConfirm("SOFT_EXCLUDE")}
+                  >
+                    Soft Exclude
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <span className="text-xs text-slate-500">Read-only</span>
+          )}
         </td>
       </tr>
       {expanded && (

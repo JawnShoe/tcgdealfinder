@@ -9,6 +9,7 @@
 
 **Ops / Maintenance**:
 - Removed experimental git worktree `tcg-pr1a` on 2025-12-18 (no code changes).
+- Applied Neon migration `004_add_seller_blacklist_history` on 2025-12-20; verified via `to_regclass()`; `/admin/blacklist` banner cleared; history rows confirmed on unblacklist.
 
 ### Security / Admin Access
 **Admin gate mechanism**:

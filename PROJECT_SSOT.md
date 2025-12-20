@@ -174,9 +174,9 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 ## COMPLETED (2025-12-20)
 
 ### Debug exclusions seller blacklist status + deep-link
-- **Change**: `/debug/exclusions` shows BLACKLISTED/OK per row with a deep-link to `/admin/blacklist?seller=...`; admin page supports optional `seller` filter
-- **Invariant**: blacklist mutations + history stay on `/admin/blacklist` only
-- **Commit**: 48648e9
+- **Implementation**: Seller blacklist visibility implemented on `/debug/exclusions` with deep-link to `/admin/blacklist?seller=...` (commit 48648e9)
+- **Documentation**: SSOT clarification only (commit fe8c59c)
+- **Invariant**: All blacklist mutations (add/remove/restore) remain restricted to `/admin/blacklist`
 
 ### Freshness timestamp wiring audit + unify
 - **Classification**: Bug fix (Tier 1 consistency)

@@ -4,19 +4,20 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { TrustedBadge } from "./TrustedBadge";
+import { WatchlistStarButton } from "./WatchlistStarButton";
 import { buildAffiliateUrl } from "../lib/affiliateUrl";
 import type { Deal } from "../types/deal";
-import { SellerNameWithTooltip } from "./SellerNameWithTooltip";
+import { SellerNameWithTooltip, formatSellerSalesCount } from "./SellerNameWithTooltip";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 import {
   discountClass,
-  formatCurrency,
+  formatUSD,
   formatDiscount,
-  formatEndsAt,
-  formatScore,
-  scoreClass,
+  formatMarket,
+  formatFreshness,
 } from "../lib/dealFormatting";
+import { MarketFlag } from "./MarketFlag";
 
 export type FeaturedDealView = {
   deal: Deal;
@@ -31,6 +32,7 @@ type FeaturedDealsProps = {
 };
 
 export function FeaturedDeals({ deals }: FeaturedDealsProps) {
+  const deduped = dedupeFeaturedDeals(deals);
   return (
     <div className="panel space-y-4">
       <div>
@@ -38,19 +40,23 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
           Featured deals today
         </h2>
         <p className="text-sm text-slate-600">
-          Top listings ranked by our deal quality score. Discounts,
-          seller trust, time left, and data confidence all factor in.
+          Top listings ranked by our deal quality score. Discounts, seller trust, and data confidence drive placement.
         </p>
       </div>
 
-      {deals.length === 0 ? (
+      {deduped.length === 0 ? (
         <div className="rounded border border-dashed px-4 py-6 text-center text-sm text-slate-500">
           No standout deals hit our featured threshold yet. Check back
           later or browse all deals below.
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {deals.map(({ deal, price, discount, score, trustedSeller }) => (
+          {deduped.map(({ deal, price, discount, trustedSeller }) => {
+            const market = formatMarket(deal.market);
+            const salesText = formatSellerSalesCount(
+              deal.sellerFeedbackCount ?? null,
+            );
+            return (
             <div
               key={deal.id}
               className="flex flex-col rounded-lg border bg-white p-4 shadow-sm"
@@ -68,56 +74,75 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                   <div className="h-20 w-20 rounded-md bg-slate-200" />
                 )}
                 <div className="flex-1">
-                  <CardIdentityBlock
-                    identity={buildCardIdentityFromDeal(deal)}
-                    primaryHref={buildAffiliateUrl(deal.url)}
-                    showListingTitle
-                    showViewCardLink={false}
-                  />
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                    <span className="font-semibold text-slate-900">
-                      {formatCurrency(price)}
+                  <div className="flex items-start justify-between gap-2">
+                    <CardIdentityBlock
+                      identity={buildCardIdentityFromDeal(deal)}
+                      primaryHref={buildAffiliateUrl(deal.url)}
+                      showListingTitle
+                      showViewCardLink={false}
+                    />
+                    <WatchlistStarButton
+                      cardId={deal.card?.id ?? deal.cardId ?? null}
+                      cardName={
+                        deal.card?.name ?? deal.cardName ?? deal.title ?? null
+                      }
+                      setName={deal.card?.setName ?? deal.setName ?? null}
+                    />
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-base font-semibold text-slate-900">
+                      {formatUSD(price)}
                     </span>
+                    {formatFreshness(deal.updatedAt) && (
+                      <span className="text-xs text-slate-500">
+                        · {formatFreshness(deal.updatedAt)}
+                      </span>
+                    )}
                     <span
                       className={`font-medium ${discountClass(discount)}`}
                     >
                       {formatDiscount(discount)}
                     </span>
-                    <span
-                      className={`rounded-full bg-slate-100 px-2 py-0.5 font-semibold ${scoreClass(
-                        score,
-                      )}`}
-                    >
-                      Score {formatScore(score)}
-                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-3 flex-1 text-xs text-slate-600">
-                <div className="flex items-center justify-between">
-                  <span>Ends</span>
-                  <span className="text-slate-800">
-                    {formatEndsAt(deal.endsAt, { short: true })}
+              <div className="mt-3 flex-1 text-sm text-slate-600">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-xs uppercase tracking-wide text-slate-500">
+                    Seller
                   </span>
+                  <div className="flex flex-col items-end gap-0.5 text-right">
+                    <span className="inline-flex items-center gap-1 text-slate-800">
+                      <SellerNameWithTooltip
+                        seller={getSellerDisplayData({
+                          username: deal.sellerUsername,
+                          storeName: deal.sellerStoreName,
+                          feedbackCount: deal.sellerFeedbackCount,
+                          feedbackPercent: deal.sellerPositivePercent,
+                        })}
+                        className="text-sm text-slate-600"
+                      />
+                      {trustedSeller && <TrustedBadge />}
+                    </span>
+                    {salesText ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
+                        <span aria-hidden="true">⭐</span>
+                        <span>{salesText} sales</span>
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
-                <div className="mt-1 flex items-center justify-between">
-                  <span>Market</span>
-                  <span className="text-slate-800">{deal.market}</span>
-                </div>
-                <div className="mt-1 flex items-center justify-between">
-                  <span>Seller</span>
-                  <span className="inline-flex items-center gap-1 text-slate-800">
-                    <SellerNameWithTooltip
-                      seller={getSellerDisplayData({
-                        username: deal.sellerUsername,
-                        storeName: deal.sellerStoreName,
-                        feedbackCount: deal.sellerFeedbackCount,
-                        feedbackPercent: deal.sellerPositivePercent,
-                      })}
-                      className="text-sm text-slate-600"
-                    />
-                    {trustedSeller && <TrustedBadge />}
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <span className="text-xs uppercase tracking-wide text-slate-500">
+                    Market
+                  </span>
+                  <span
+                    className="inline-flex items-center gap-1 text-slate-800"
+                    title={market.label}
+                  >
+                    <MarketFlag market={deal.market} />
+                    <span>{market.code}</span>
                   </span>
                 </div>
               </div>
@@ -141,9 +166,30 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
+}
+
+function dedupeFeaturedDeals(deals: FeaturedDealView[]): FeaturedDealView[] {
+  const seen = new Set<number>();
+  const result: FeaturedDealView[] = [];
+
+  for (const item of deals) {
+    const cardId = item.deal.card?.id ?? item.deal.cardId ?? null;
+    if (cardId == null) {
+      result.push(item);
+      continue;
+    }
+    if (seen.has(cardId)) {
+      continue;
+    }
+    seen.add(cardId);
+    result.push(item);
+  }
+
+  return result;
 }

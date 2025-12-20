@@ -5,6 +5,7 @@ export type Deal = {
   priceCad: number | null;
   shippingCad: number | null;
   totalPriceCad: number | null;
+  totalUsd: number | null;
   historicPriceCad: number | null;
   discountPercent: number | null;
   sampleSize: number | null;
@@ -14,6 +15,7 @@ export type Deal = {
   confidenceWeight?: number | null;
   market: string;
   endsAt: string | null;
+  updatedAt: string | null;
   thumbnailUrl: string | null;
   stockImageUrl?: string | null; // TCGplayer stock image
   sellerUsername: string | null;

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import DealsTable from "../../../components/DealsTable";
+import { WatchlistStarButton } from "../../../components/WatchlistStarButton";
 import type { Deal } from "../../../types/deal";
 import { query } from "../../../lib/db";
 import { formatCurrency } from "../../../lib/dealFormatting";
@@ -37,6 +38,24 @@ type SetOverviewStats = {
   bestDiscountPercent: number | null;
 };
 
+type SetMetadata = {
+  id: number | null;
+  name: string;
+  series: string | null;
+  releaseDate: string | null;
+  totalCards: number | null;
+  symbolUrl: string | null;
+  logoUrl: string | null;
+};
+
+type CatalogCard = {
+  id: number;
+  name: string;
+  number: string | null;
+  rarity: string | null;
+  supertype: string | null;
+};
+
 type HotCard = {
   id: number;
   name: string;
@@ -48,6 +67,21 @@ type HotCard = {
   bestDealUrl: string | null;
 };
 
+
+type HotCardRowData = {
+  id: number;
+  name: string;
+  card_number: string | null;
+  condition_bucket: string | null;
+  median_price_cad: string | null;
+  deal_total_price_cad: string | null;
+  deal_discount_percent: string | null;
+  deal_url: string | null;
+  deal_seller_feedback_count: number | null;
+  deal_seller_positive_percent: number | null;
+};
+
+
 type DealRow = {
   id: number;
   title: string;
@@ -55,10 +89,12 @@ type DealRow = {
   price_cad: string | null;
   shipping_cad: string | null;
   total_price_cad: string | null;
+  total_usd: string | null;
   historic_price_cad: string | null;
   discount_percent: string | null;
   market: string;
   ends_at: string | null;
+  updated_at: string | null;
   thumbnail_url: string | null;
   sample_size: number | null;
   seller_username: string | null;
@@ -92,6 +128,48 @@ async function ensureSetExists(setName: string): Promise<boolean> {
     [setName],
   );
   return Boolean(res.rows[0]?.exists);
+}
+
+async function getSetMetadata(setName: string): Promise<SetMetadata | null> {
+  const res = await query<{
+    id: number;
+    name: string;
+    pokemontcg_series: string | null;
+    release_date: string | null;
+    pokemontcg_total_cards: number | null;
+    symbol_url: string | null;
+    logo_url: string | null;
+  }>(
+    `
+      SELECT
+        id,
+        name,
+        pokemontcg_series,
+        release_date,
+        pokemontcg_total_cards,
+        symbol_url,
+        logo_url
+      FROM catalog_sets
+      WHERE name = $1
+      LIMIT 1;
+    `,
+    [setName],
+  );
+
+  if (res.rows.length === 0) {
+    return null;
+  }
+
+  const row = res.rows[0];
+  return {
+    id: row.id,
+    name: row.name,
+    series: row.pokemontcg_series,
+    releaseDate: row.release_date,
+    totalCards: row.pokemontcg_total_cards,
+    symbolUrl: row.symbol_url,
+    logoUrl: row.logo_url,
+  };
 }
 
 async function getSetOverview(
@@ -270,7 +348,6 @@ async function getHotCards(
       bestDealUrl: row.deal_url,
     };
   });
-  warnIfStoreNamesMissing(deals, "setDeals");
   return deals;
 }
 
@@ -304,10 +381,12 @@ async function getSetDeals(
         l.price_cad,
         l.shipping_cad,
         l.total_price_cad,
+        l.total_usd,
         l.historic_price_cad,
         l.discount_percent,
         ${marketSelect} AS market,
         l.ends_at,
+        l.updated_at,
         l.thumbnail_url,
         l.seller_username,
         l.seller_store_name,
@@ -349,6 +428,7 @@ async function getSetDeals(
       row.shipping_cad != null ? Number(row.shipping_cad) : null;
     const totalPriceCad =
       row.total_price_cad != null ? Number(row.total_price_cad) : null;
+    const totalUsd = row.total_usd != null ? Number(row.total_usd) : null;
     const historicPriceCad =
       row.historic_price_cad != null ? Number(row.historic_price_cad) : null;
     const sampleSize =
@@ -388,11 +468,13 @@ async function getSetDeals(
       priceCad,
       shippingCad,
       totalPriceCad,
+      totalUsd,
       historicPriceCad,
       discountPercent: displayDiscount,
       sampleSize,
       market: row.market,
       endsAt: row.ends_at,
+      updatedAt: row.updated_at,
       thumbnailUrl: row.thumbnail_url,
       sellerUsername: row.seller_username,
       sellerFeedbackCount,
@@ -430,15 +512,29 @@ function discountBadgeClass(value: number | null): string {
   return "discount-neutral";
 }
 
+function formatDate(value: string | Date | null): string | null {
+  if (!value) {
+    return null;
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toLocaleDateString();
+}
+
 export default async function SetDetailPage({
   params,
 }: {
   params: { setId: string };
 }) {
   const setName = decodeSetName(params.setId);
-  const exists = await ensureSetExists(setName);
-  if (!exists) {
-    notFound();
+  const metadata = await getSetMetadata(setName);
+  if (!metadata) {
+    const exists = await ensureSetExists(setName);
+    if (!exists) {
+      notFound();
+    }
   }
 
   const market = DEFAULT_MARKET;
@@ -450,47 +546,146 @@ export default async function SetDetailPage({
     hasHistoricalMarketColumn,
   };
 
-  const [stats, hotCards, deals] = await Promise.all([
+  const catalogCardsPromise = metadata?.id
+    ? getCatalogCards(metadata.id)
+    : Promise.resolve<CatalogCard[]>([]);
+
+  const [stats, hotCards, deals, catalogCards] = await Promise.all([
     getSetOverview(setName, marketContext),
     getHotCards(setName, marketContext),
     getSetDeals(setName, marketContext),
+    catalogCardsPromise,
   ]);
 
+  const displayName = metadata?.name ?? setName;
+  const releaseLabel = formatDate(metadata?.releaseDate ?? null) ?? "Unknown";
+  const seriesLabel = metadata?.series ?? "Pokémon";
+  const totalCardsLabel =
+    metadata?.totalCards ?? (stats.totalCardsTracked || null);
+  const catalogCardCount = catalogCards.length;
+  const coveragePercent =
+    totalCardsLabel && totalCardsLabel > 0
+      ? Math.round((catalogCardCount / totalCardsLabel) * 100)
+      : null;
+  const catalogCoverageLabel = totalCardsLabel
+    ? `${catalogCardCount} / ${totalCardsLabel}${
+        coveragePercent != null ? ` (${coveragePercent}%)` : ""
+      }`
+    : `${catalogCardCount}`;
+
   return (
-    <main className="page-shell space-y-6 py-6">
-      <div className="panel space-y-2">
-        <Link
-          href="/sets"
-          className="text-xs text-slate-500 transition hover:text-slate-700"
-        >
-          ← Browse all sets
-        </Link>
-        <h1 className="text-3xl font-bold text-slate-900">{setName}</h1>
-        <p className="text-sm text-slate-600">
-          Tracking {stats.totalCardsTracked} card
-          {stats.totalCardsTracked === 1 ? "" : "s"} from this set.
-        </p>
-        <div className="flex flex-wrap gap-4 text-sm text-slate-700">
-          <div>
-            <span className="text-slate-500">Cards with deals:</span>{" "}
-            <strong>{stats.cardCountWithDeals}</strong>
+    <main className="bg-slate-50 text-slate-900">
+      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-10 space-y-8 pb-8">
+        <header className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-4">
+            <Link
+              href="/sets"
+              className="text-sm text-slate-500 transition hover:text-slate-700"
+            >
+              Back to sets
+            </Link>
+            <div className="flex items-start gap-4">
+              {renderSetIconFromMetadata(metadata)}
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Pokémon set
+                </p>
+                <h1 className="text-3xl font-bold text-slate-900">
+                  {displayName}
+                </h1>
+                <p className="text-base text-slate-600">
+                  Part of {seriesLabel}. Released {releaseLabel}.
+                </p>
+              </div>
+            </div>
           </div>
-          <div>
-            <span className="text-slate-500">Active listings:</span>{" "}
-            <strong>{stats.activeListingsCount}</strong>
-          </div>
-          <div>
-            <span className="text-slate-500">Avg discount:</span>{" "}
-            <strong>{formatDiscount(stats.avgDiscountPercent)}</strong>
-          </div>
-          <div>
-            <span className="text-slate-500">Best discount:</span>{" "}
-            <strong>{formatDiscount(stats.bestDiscountPercent)}</strong>
+          <div className="flex flex-wrap gap-3 text-sm">
+            <Link
+              href="#deals"
+              className="inline-flex items-center rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Jump to deals
+            </Link>
+            <a
+              href="#catalog-cards"
+              className="inline-flex items-center rounded-full border border-slate-200 px-4 py-2 text-slate-600 transition hover:bg-slate-50"
+            >
+              Jump to catalog cards
+            </a>
           </div>
         </div>
-      </div>
+        <div className="grid gap-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Series
+            </p>
+            <p className="text-base font-semibold text-slate-900">
+              {seriesLabel}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Release date
+            </p>
+            <p className="text-base font-semibold text-slate-900">
+              {releaseLabel}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Total cards
+            </p>
+            <p className="text-base font-semibold text-slate-900">
+              {totalCardsLabel ?? "Unknown"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Catalog coverage
+            </p>
+            <p className="text-base font-semibold text-slate-900">
+              {catalogCoverageLabel}
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Cards with deals
+            </p>
+            <p className="text-base font-semibold text-slate-900">
+              {stats.cardCountWithDeals}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Active listings
+            </p>
+            <p className="text-base font-semibold text-slate-900">
+              {stats.activeListingsCount}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Avg discount
+            </p>
+            <p className="text-base font-semibold text-slate-900">
+              {formatDiscount(stats.avgDiscountPercent)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Best discount
+            </p>
+            <p className="text-base font-semibold text-slate-900">
+              {formatDiscount(stats.bestDiscountPercent)}
+            </p>
+          </div>
+        </div>
+      </header>
 
-      <div className="panel space-y-3">
+      <section className="panel space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">
             Hot cards in this set
@@ -510,13 +705,20 @@ export default async function SetDetailPage({
                 key={card.id}
                 className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
               >
-                <div className="text-sm font-semibold text-slate-900">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="text-sm font-semibold text-slate-900">
                     <Link
                       href={`/cards/${card.id}`}
                       className="transition hover:text-slate-600"
                     >
                       {card.name}
                     </Link>
+                  </div>
+                  <WatchlistStarButton
+                    cardId={card.id}
+                    cardName={card.name}
+                    setName={setName}
+                  />
                 </div>
                 <div className="text-xs text-slate-500">
                   #{card.cardNumber ?? "—"} • {card.condition ?? "Unknown"}
@@ -551,9 +753,15 @@ export default async function SetDetailPage({
             ))}
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="panel">
+      <section id="deals" className="panel space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Live deals</h2>
+          <p className="text-xs text-slate-500">
+            Sorted by best discount with trust filters applied
+          </p>
+        </div>
         {deals.length === 0 ? (
           <div className="py-10 text-center text-sm text-slate-500">
             No active listings for this set right now.
@@ -561,7 +769,139 @@ export default async function SetDetailPage({
         ) : (
           <DealsTable deals={deals} page={1} totalPages={1} />
         )}
+      </section>
+
+      <section id="catalog-cards" className="space-y-4">
+        <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Catalog cards</h2>
+            <p className="text-sm text-slate-500">
+              {catalogCardCount > 0
+                ? `${catalogCardCount} cards imported for this set`
+                : "Awaiting catalog sync"}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3 text-sm">
+            <Link
+              href="/sets"
+              className="inline-flex items-center rounded border border-slate-300 px-3 py-1.5 text-slate-700 transition hover:bg-white"
+            >
+              Back to sets
+            </Link>
+            <a
+              href="#deals"
+              className="inline-flex items-center rounded border border-slate-200 px-3 py-1.5 text-slate-500 transition hover:bg-white"
+            >
+              View live deals
+            </a>
+          </div>
+        </div>
+        {catalogCards.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center text-sm text-slate-500">
+            <p className="font-medium text-slate-700">No catalog cards yet</p>
+            <p className="mt-1">
+              We have the set, but card-level catalog data hasn&apos;t been imported for it yet.
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-3">
+              <Link
+                href="/sets"
+                className="inline-flex items-center rounded border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-white"
+              >
+                Back to sets
+              </Link>
+              <a
+                href="#deals"
+                className="inline-flex items-center rounded border border-slate-200 px-4 py-2 text-slate-500 hover:bg-white"
+              >
+                View live deals
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <th className="px-4 py-3">#</th>
+                    <th className="px-4 py-3">Card</th>
+                    <th className="px-4 py-3">Rarity</th>
+                    <th className="px-4 py-3">Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {catalogCards.map((card, index) => (
+                    <tr
+                      key={card.id}
+                      className={index === 0 ? "" : "border-t border-slate-100"}
+                    >
+                      <td className="px-4 py-3 text-slate-500">
+                        {card.number ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-slate-900">
+                        {card.name}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {card.rarity ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {card.supertype ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </section>
       </div>
     </main>
   );
 }
+
+function renderSetIconFromMetadata(set: SetMetadata | null): JSX.Element | null {
+  const src = set?.symbolUrl ?? set?.logoUrl;
+  if (!src) return null;
+  return (
+    <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-slate-50">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={set?.name ? `${set.name} logo` : "Set logo"}
+        className="h-8 w-8 object-contain"
+        loading="lazy"
+        decoding="async"
+      />
+    </span>
+  );
+}
+
+async function getCatalogCards(catalogSetId: number): Promise<CatalogCard[]> {
+  const res = await query<{
+    id: number;
+    name: string;
+    number: string | null;
+    rarity: string | null;
+    supertype: string | null;
+  }>(
+    `
+      SELECT
+        id,
+        name,
+        number,
+        rarity,
+        supertype
+      FROM catalog_cards
+      WHERE catalog_set_id = $1
+      ORDER BY
+        COALESCE(NULLIF(number, ''), 'ZZZ') ASC,
+        name ASC;
+    `,
+    [catalogSetId],
+  );
+
+  return res.rows;
+}
+
+

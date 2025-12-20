@@ -6,11 +6,11 @@ import dynamic from "next/dynamic";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { TrustedBadge } from "./TrustedBadge";
-import { WatchlistButton } from "./WatchlistButton";
+import { WatchlistStarButton } from "./WatchlistStarButton";
 import { CardIdentityBlock } from "./CardIdentity";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { MarketFlag } from "./MarketFlag";
-import { SellerNameWithTooltip } from "./SellerNameWithTooltip";
+import { SellerNameWithTooltip, formatSellerSalesCount } from "./SellerNameWithTooltip";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import {
   CONDITION_FILTERS,
@@ -23,9 +23,11 @@ import {
 import {
   discountClass,
   formatCurrency,
+  formatUSD,
   formatDiscount,
-  formatEndsAt,
+  getEndsAtDisplay,
   getConfidenceLabel as getSampleConfidenceLabel,
+  formatFreshness,
 } from "../lib/dealFormatting";
 import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 import { ALERT_THRESHOLD_OPTIONS } from "../lib/alertsConfig";
@@ -34,6 +36,7 @@ import { isDealTrusted } from "../lib/dealScore";
 import {
   getMarketLabel,
   getMarketCompactLabel,
+  getMarketEmoji,
   normalizeMarketCode,
   DEFAULT_MARKET,
 } from "../lib/markets";
@@ -63,11 +66,13 @@ type ListingRow = {
   title: string;
   url: string;
   totalPriceCad: number | null;
+  totalUsd: number | null;
   historicPriceCad: number | null;
   discountPercent: number | null;
   sampleSize: number | null;
   market: string;
   endsAt: string | null;
+  updatedAt: string | null;
   thumbnailUrl: string | null;
   sellerUsername: string | null;
   sellerStoreName: string | null;
@@ -93,6 +98,11 @@ export type CardDetailClientProps = {
     };
     historicals: HistoricalPoint[];
     listings: ListingRow[];
+    moreFromSet: Array<{
+      id: number;
+      name: string;
+      cardNumber: string | null;
+    }>;
   };
 };
 
@@ -130,43 +140,55 @@ function formatConditionLabel(value: string | null | undefined): string | null {
 
 
 // Convert ListingRow to Deal for buildDealViewModel
-function listingRowToDeal(listing: ListingRow, cardId: number, cardName: string, setName: string): Deal {
+function listingRowToDeal(
+  listing: ListingRow,
+  cardId: number,
+  cardName: string,
+  setName: string,
+): Deal {
   return {
     id: listing.id,
-    cardId,
-    cardName,
-    setName,
-    condition: listing.condition,
-    listingTitle: listing.title,
-    listingUrl: listing.url,
-    thumbnailUrl: listing.thumbnailUrl,
+    title: listing.title,
+    url: listing.url,
+    priceCad: listing.totalPriceCad,
+    shippingCad: null,
     totalPriceCad: listing.totalPriceCad,
+    totalUsd: listing.totalUsd,
     historicPriceCad: listing.historicPriceCad,
     discountPercent: listing.discountPercent,
     sampleSize: listing.sampleSize,
     market: listing.market,
     endsAt: listing.endsAt,
+    updatedAt: listing.updatedAt,
+    thumbnailUrl: listing.thumbnailUrl,
     sellerUsername: listing.sellerUsername,
-    sellerStoreName: listing.sellerStoreName,
-    sellerFeedbackCount: listing.sellerFeedbackCount,
-    sellerPositivePercent: listing.sellerPositivePercent,
-    confidenceWeight: listing.confidenceWeight,
+    sellerStoreName: listing.sellerStoreName ?? undefined,
+    sellerFeedbackCount: listing.sellerFeedbackCount ?? undefined,
+    sellerPositivePercent: listing.sellerPositivePercent ?? undefined,
+    card: {
+      id: cardId,
+      name: cardName,
+      setName,
+      cardNumber: null,
+      conditionBucket: listing.condition,
+    },
+    condition: listing.condition,
+    setName,
+    cardName,
+    cardId,
+    listingId: String(listing.id),
+    confidenceWeight: listing.confidenceWeight ?? undefined,
     integrityStatus: listing.integrityStatus,
-    integrityReason: listing.integrityReason,
-    integrityScore: listing.integrityScore,
+    integrityReason: listing.integrityReason ?? undefined,
+    integrityScore: listing.integrityScore ?? undefined,
     overrideType: listing.overrideType ?? undefined,
-    createdAt: new Date().toISOString(), // Not used in display
-    updatedAt: new Date().toISOString(),
-    collectorNumber: null,
-    rarity: null,
-    language: null,
   };
 }
 
 export default function CardDetailClient({
   detail,
 }: CardDetailClientProps) {
-  const { card, historicals, listings } = detail;
+  const { card, historicals, listings, moreFromSet } = detail;
   const conditionLabel = formatConditionLabel(card.condition ?? null);
 
   const [conditionFilter, setConditionFilter] = useState<ConditionFilterKey>(
@@ -180,6 +202,10 @@ export default function CardDetailClient({
     key: "total", // Default: Total ASC
     dir: "asc",
   });
+  const [bestDealRefreshInfo, setBestDealRefreshInfo] = useState<{
+    label: string;
+    tooltip: string;
+  } | null>(null);
   const [priceHistory, setPriceHistory] = useState<
     { date: string; median: number; sample: number }[]
   >([]);
@@ -351,7 +377,6 @@ export default function CardDetailClient({
     }
 
     const rawUrl =
-      (bestTrustedDeal.deal as Deal & { listingUrl?: string }).listingUrl ??
       bestTrustedDeal.deal.url ??
       listings.find((row) => row.id === bestTrustedDeal.deal.id)?.url ??
       null;
@@ -367,6 +392,24 @@ export default function CardDetailClient({
   const historyCountText = `${historyPointCount} sale${
     historyPointCount === 1 ? "" : "s"
   } recorded`;
+
+  useEffect(() => {
+    const now = new Date();
+    const tooltip = `${now.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+    const label = now.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    setBestDealRefreshInfo({ label, tooltip });
+  }, []);
+
+  const bestTrustedPriceBreakdown = useMemo(() => {
+    if (!bestTrustedDeal) return null;
+    return {
+      item: bestTrustedDeal.deal.priceCad ?? null,
+      shipping: bestTrustedDeal.deal.shippingCad ?? null,
+    };
+  }, [bestTrustedDeal]);
 
   const handleHeaderSort = (key: HeaderSortKey) => {
     setHeaderSort((prev) => {
@@ -485,7 +528,11 @@ export default function CardDetailClient({
                   <p className="text-sm text-slate-600">{card.setName}</p>
                 </div>
                 <div className="sm:pt-1">
-                  <WatchlistButton cardId={card.id} />
+                  <WatchlistStarButton
+                    cardId={card.id}
+                    cardName={card.name}
+                    setName={card.setName}
+                  />
                 </div>
               </div>
               <div className={`grid gap-4 ${bestTrustedDeal && bestTrustedDeal.totalUsd && bestTrustedDeal.deal.market ? "md:grid-cols-2" : ""}`}>
@@ -508,9 +555,26 @@ export default function CardDetailClient({
                       Best trusted deal (USD)
                     </p>
                     <div className="mt-1 space-y-2">
-                      <p className="text-2xl font-semibold text-slate-900">
-                        {formatCurrency(bestTrustedDeal.totalUsd)}
-                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-2xl font-semibold text-slate-900">
+                          {formatUSD(bestTrustedDeal.totalUsd)}
+                        </p>
+                        {formatFreshness(bestTrustedDeal.deal.updatedAt) && (
+                          <span className="text-xs text-slate-500">
+                            · {formatFreshness(bestTrustedDeal.deal.updatedAt)}
+                          </span>
+                        )}
+                      </div>
+                      {bestTrustedPriceBreakdown && (
+                        <p className="text-xs text-slate-500">
+                          {bestTrustedPriceBreakdown.item != null
+                            ? `Item ${formatUSD(bestTrustedPriceBreakdown.item)}`
+                            : "Item price unavailable"}{" "}
+                          {bestTrustedPriceBreakdown.shipping != null
+                            ? `+ Shipping ${formatUSD(bestTrustedPriceBreakdown.shipping)}`
+                            : "+ shipping at checkout"}
+                        </p>
+                      )}
                       <p
                         className={`text-sm ${discountClass(
                           bestTrustedDeal.discountPercent ?? null,
@@ -553,11 +617,22 @@ export default function CardDetailClient({
                       )}
                     </div>
                     {bestTrustedDeal.deal.endsAt && (
-                      <p className="text-xs text-slate-500">
+                      <p
+                        className="text-xs text-slate-500"
+                        title={getEndsAtDisplay(bestTrustedDeal.deal.endsAt).tooltip}
+                      >
                         {bestTrustedDeal.marketCode} /{" "}
-                        {formatEndsAt(bestTrustedDeal.deal.endsAt)}
+                        {getEndsAtDisplay(bestTrustedDeal.deal.endsAt).label}
                       </p>
                     )}
+                    <p
+                      className="mt-3 text-xs text-slate-500"
+                      title={bestDealRefreshInfo?.tooltip ?? undefined}
+                    >
+                      {bestDealRefreshInfo
+                        ? `Last updated ${bestDealRefreshInfo.label} • Price may have changed on eBay`
+                        : "Price may have changed on eBay"}
+                    </p>
                   </div>
                 )}
               </div>
@@ -613,6 +688,51 @@ export default function CardDetailClient({
           </div>
         </div>
       </section>
+
+      {moreFromSet.length > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6 lg:px-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-slate-900">More from this set</h2>
+            <Link
+              href={`/sets/${encodeURIComponent(card.setName)}#catalog-cards`}
+              className="text-sm text-slate-600 transition hover:text-slate-900"
+            >
+              View set page →
+            </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {moreFromSet.map((relatedCard) => (
+              <Link
+                key={relatedCard.id}
+                href={`/cards/${relatedCard.id}`}
+                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 transition hover:bg-slate-100"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-slate-900">
+                    {relatedCard.name}
+                  </p>
+                  {relatedCard.cardNumber && (
+                    <p className="text-xs text-slate-500">#{relatedCard.cardNumber}</p>
+                  )}
+                </div>
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  aria-hidden="true"
+                  className="h-4 w-4 flex-none stroke-slate-400"
+                  strokeWidth="1.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M7 10h6m-3-3l3 3-3 3"
+                  />
+                </svg>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -771,18 +891,37 @@ export default function CardDetailClient({
                     colSpan={7}
                     className="px-3 py-6 text-center"
                   >
-                    <p className="text-sm text-slate-600">
-                      No listings match your current filters.
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Try adjusting condition or market selection.
-                    </p>
+                    {listings.length === 0 ? (
+                      <>
+                        <p className="text-sm text-slate-600">
+                          No live deals right now
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Deals appear periodically for this card.
+                        </p>
+                        <p className="mt-2 text-sm text-slate-500">
+                          ⭐ Watch this card
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-slate-600">
+                          No listings match your current filters.
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Try adjusting condition or market selection.
+                        </p>
+                      </>
+                    )}
                   </td>
                 </tr>
               ) : (
                 filteredListings.map((vm) => {
                   const listing = vm.deal;
                   const weightLabel = vm.priceConfidenceLabel;
+                  const sellerSalesText = formatSellerSalesCount(
+                    listing.sellerFeedbackCount ?? null,
+                  );
                   return (
                     <tr key={listing.id} className="even:bg-slate-50/50 hover:bg-slate-100">
                       <td className="px-3 py-4 align-middle">
@@ -791,7 +930,7 @@ export default function CardDetailClient({
                             <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
                               <Image
                                 src={listing.thumbnailUrl}
-                                alt={listing.listingTitle ?? ""}
+                                alt={listing.title ?? ""}
                                 width={64}
                                 height={64}
                                 className="h-full w-full object-contain"
@@ -802,12 +941,12 @@ export default function CardDetailClient({
                           )}
                           <CardIdentityBlock
                             identity={{
-                              primary: detail.card.name ?? listing.listingTitle,
+                              primary: detail.card.name ?? listing.title,
                               setName: detail.card.setName ?? null,
-                              listingTitle: listing.listingTitle,
+                              listingTitle: listing.title,
                               cardId: detail.card.id,
                             }}
-                            primaryHref={buildAffiliateUrl(listing.listingUrl ?? "")}
+                            primaryHref={buildAffiliateUrl(listing.url ?? "")}
                             showListingTitle
                             showViewCardLink={false}
                           />
@@ -824,11 +963,20 @@ export default function CardDetailClient({
                           )}
                         </div>
                       </td>
-                    <td className="px-3 py-4 align-middle text-right text-base font-semibold">
-                      {formatCurrency(vm.totalUsd)}
+                    <td className="px-3 py-4 align-middle text-right">
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-base font-semibold">
+                          {formatUSD(vm.totalUsd)}
+                        </span>
+                        {formatFreshness(listing.updatedAt) && (
+                          <span className="text-xs text-slate-500">
+                            {formatFreshness(listing.updatedAt)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-4 align-middle text-right text-base text-slate-600">
-                      {formatCurrency(vm.historicUsd)}
+                      {formatUSD(vm.historicUsd)}
                     </td>
                     <td
                       className={`px-3 py-4 align-middle text-right text-base font-semibold ${discountClass(
@@ -845,35 +993,54 @@ export default function CardDetailClient({
                       />
                     </td>
                     <td className="px-3 py-4 align-middle text-sm text-slate-700 w-[160px] overflow-visible">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <div className="min-w-0 max-w-[120px]">
-                          <SellerNameWithTooltip
-                            seller={getSellerDisplayData({
-                              username: listing.sellerUsername,
-                              storeName: listing.sellerStoreName,
-                              feedbackCount: listing.sellerFeedbackCount,
-                              feedbackPercent: listing.sellerPositivePercent,
-                            })}
-                            className="text-slate-700 truncate block"
-                          />
+                      <div className="flex min-w-0 items-start gap-2">
+                        <div className="min-w-0">
+                          <div className="flex min-w-0 items-center gap-1">
+                            <SellerNameWithTooltip
+                              seller={getSellerDisplayData({
+                                username: listing.sellerUsername,
+                                storeName: listing.sellerStoreName,
+                                feedbackCount: listing.sellerFeedbackCount,
+                                feedbackPercent: listing.sellerPositivePercent,
+                              })}
+                              className="text-slate-700 truncate block"
+                            />
+                            {isDealTrusted(
+                              listing.sellerFeedbackCount,
+                              listing.sellerPositivePercent,
+                            ) && <TrustedBadge className="flex-none" />}
+                          </div>
+                          {sellerSalesText ? (
+                            <div className="mt-0.5 text-[11px] text-slate-500">
+                              <span aria-hidden="true">⭐</span>{" "}
+                              <span>{sellerSalesText} sales</span>
+                            </div>
+                          ) : null}
                         </div>
-                        {isDealTrusted(
-                          listing.sellerFeedbackCount,
-                          listing.sellerPositivePercent,
-                        ) && <TrustedBadge className="flex-none" />}
                       </div>
                     </td>
                     <td className="px-3 py-4 align-middle text-sm text-slate-600">
-                      <span
-                        title={getMarketLabel(normalizeMarketCode(listing.market))}
-                        className="flex items-center gap-1"
-                      >
-                        <MarketFlag market={listing.market} />
-                        <span>{normalizeMarketCode(listing.market) === "EBAY_US" ? "US" : "CA"}</span>
-                      </span>
+                      {(() => {
+                        const normalized = normalizeMarketCode(listing.market);
+                        const marketCode =
+                          normalized === "all" ? DEFAULT_MARKET : normalized;
+                        return (
+                          <span
+                            title={getMarketLabel(marketCode)}
+                            className="flex items-center gap-1"
+                          >
+                            <MarketFlag market={marketCode} />
+                            <span className="text-xs text-slate-500">
+                              {getMarketEmoji(marketCode)}
+                            </span>
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-3 py-4 align-middle text-right text-slate-600">
-                      {formatEndsAt(listing.endsAt)}
+                      <span title={getEndsAtDisplay(listing.endsAt).tooltip}>
+                        {getEndsAtDisplay(listing.endsAt).label}
+                      </span>
                     </td>
                   </tr>
                   );

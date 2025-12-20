@@ -32,17 +32,17 @@ export interface ColumnDefinition {
   noShrink: boolean;
 }
 
-export interface ColumnLayoutMap {
+export type ColumnLayoutMap = {
   [key in ColumnKey]?: ColumnDefinition;
-}
+};
 
-export interface TableLayoutConfig {
+export type TableLayoutConfig = {
   [variant in TableVariant]?: {
     columns: ColumnLayoutMap;
     /** Total minimum width when all columns are displayed */
     totalMinWidth: string;
   };
-}
+};
 
 /**
  * Core column definitions shared across variants

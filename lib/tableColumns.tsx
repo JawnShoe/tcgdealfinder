@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Column specifications for all table variants.
  * Single source of truth for headers, widths, and cell rendering.
@@ -7,19 +9,36 @@ import Image from "next/image";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "../components/CardIdentity";
 import { TrustedBadge } from "../components/TrustedBadge";
 import { ConfidenceChip } from "../components/ConfidenceChip";
-import { SellerNameWithTooltip } from "../components/SellerNameWithTooltip";
+import { SellerNameWithTooltip, formatSellerSalesCount } from "../components/SellerNameWithTooltip";
+import { WatchlistStarButton } from "../components/WatchlistStarButton";
 import { getSellerDisplayData } from "./sellerDisplay";
 import type { DealViewModel } from "./dealViewModel";
 import {
   formatCurrency,
+  formatUSD,
   formatDiscount,
-  formatEndsAt,
+  getEndsAtDisplay,
   formatCondition,
   formatMarket,
   discountClass,
 } from "./dealFormatting";
 import { MarketFlag } from "../components/MarketFlag";
 import { TABLE_TH, TABLE_TH_RIGHT, TABLE_TH_NOWRAP, TABLE_TD, TABLE_TD_RIGHT, NUM_CELL, NUM_CELL_SECONDARY } from "./typography";
+
+function renderSellerSalesBadge(
+  salesCount: number | null | undefined,
+): JSX.Element | null {
+  const formatted = formatSellerSalesCount(salesCount);
+  if (!formatted) {
+    return null;
+  }
+  return (
+    <span className="flex items-center gap-1 whitespace-nowrap text-[11px] text-slate-500">
+      <span aria-hidden="true">⭐</span>
+      <span>{formatted} sales</span>
+    </span>
+  );
+}
 
 export type ColumnKey =
   | "card"
@@ -67,6 +86,13 @@ const CardColumn: ColumnSpec = {
   renderCell: (vm, options) => {
     // Prefer stock image (TCGplayer) over listing thumbnail
     const imageUrl = vm.stockImageUrl ?? vm.thumbnailUrl;
+    const cardId = vm.deal.card?.id ?? vm.deal.cardId ?? null;
+    const cardName =
+      vm.deal.card?.name ??
+      vm.deal.cardName ??
+      vm.deal.title ??
+      null;
+    const setName = vm.deal.card?.setName ?? vm.deal.setName ?? null;
     return (
       <div className="flex items-start gap-2.5">
         {imageUrl ? (
@@ -82,18 +108,26 @@ const CardColumn: ColumnSpec = {
         ) : (
           <div className="flex h-16 w-16 md:h-12 md:w-12 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
         )}
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <CardIdentityBlock
-            identity={buildCardIdentityFromDeal(vm.deal)}
-            primaryHref={vm.affiliateUrl}
-            showListingTitle={options?.showListingTitle ?? false}
-            showViewCardLink={options?.showViewCardLink ?? true}
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <CardIdentityBlock
+              identity={buildCardIdentityFromDeal(vm.deal)}
+              primaryHref={vm.affiliateUrl}
+              showListingTitle={options?.showListingTitle ?? false}
+              showViewCardLink={options?.showViewCardLink ?? true}
+            />
+            {vm.deal.historicBaselineConfidence === "none" ? (
+              <p className="text-xs text-amber-600">
+                {baselineBadgeLabel(vm.deal.historicBaselineBucketUsed)}
+              </p>
+            ) : null}
+          </div>
+          <WatchlistStarButton
+            cardId={cardId ?? undefined}
+            cardName={cardName ?? undefined}
+            setName={setName ?? null}
+            className="flex-shrink-0"
           />
-          {vm.deal.historicBaselineConfidence === "none" ? (
-            <p className="text-xs text-amber-600">
-              {baselineBadgeLabel(vm.deal.historicBaselineBucketUsed)}
-            </p>
-          ) : null}
         </div>
       </div>
     );
@@ -162,7 +196,7 @@ const TotalColumn: ColumnSpec = {
   cellClassName: `${TABLE_TD_RIGHT}`,
   width: "w-[120px]",
   renderCell: (vm) => (
-    <span className={NUM_CELL}>{formatCurrency(vm.totalUsd)}</span>
+    <span className={NUM_CELL}>{formatUSD(vm.totalUsd)}</span>
   ),
 };
 
@@ -238,39 +272,55 @@ const SellerColumn: ColumnSpec = {
   headerClassName: `${TABLE_TH}`,
   cellClassName: `${TABLE_TD}`,
   width: "w-[160px]",
-  renderCell: (vm) => (
-    <div className="flex min-w-0 items-center gap-2">
-      <SellerNameWithTooltip
-        seller={getSellerDisplayData({
-          username: vm.deal.sellerUsername,
-          storeName: vm.deal.sellerStoreName,
-          feedbackCount: vm.deal.sellerFeedbackCount,
-          feedbackPercent: vm.deal.sellerPositivePercent,
-        })}
-        className="truncate max-w-[120px] text-slate-600"
-      />
-      {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
-    </div>
-  ),
+  renderCell: (vm) => {
+    const sales = renderSellerSalesBadge(vm.deal.sellerFeedbackCount);
+    return (
+      <div className="flex min-w-0 items-start gap-2">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-1">
+            <SellerNameWithTooltip
+              seller={getSellerDisplayData({
+                username: vm.deal.sellerUsername,
+                storeName: vm.deal.sellerStoreName,
+                feedbackCount: vm.deal.sellerFeedbackCount,
+                feedbackPercent: vm.deal.sellerPositivePercent,
+              })}
+              className="truncate max-w-[120px] text-slate-600"
+            />
+            {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
+          </div>
+          {sales ? <div className="mt-0.5">{sales}</div> : null}
+        </div>
+      </div>
+    );
+  },
 };
 
 const SellerColumnNarrow: ColumnSpec = {
   ...SellerColumn,
   width: "w-[140px]",
-  renderCell: (vm) => (
-    <div className="flex min-w-0 items-center gap-2">
-      <SellerNameWithTooltip
-        seller={getSellerDisplayData({
-          username: vm.deal.sellerUsername,
-          storeName: vm.deal.sellerStoreName,
-          feedbackCount: vm.deal.sellerFeedbackCount,
-          feedbackPercent: vm.deal.sellerPositivePercent,
-        })}
-        className="truncate max-w-[100px] text-slate-600"
-      />
-      {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
-    </div>
-  ),
+  renderCell: (vm) => {
+    const sales = renderSellerSalesBadge(vm.deal.sellerFeedbackCount);
+    return (
+      <div className="flex min-w-0 items-start gap-2">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-1">
+            <SellerNameWithTooltip
+              seller={getSellerDisplayData({
+                username: vm.deal.sellerUsername,
+                storeName: vm.deal.sellerStoreName,
+                feedbackCount: vm.deal.sellerFeedbackCount,
+                feedbackPercent: vm.deal.sellerPositivePercent,
+              })}
+              className="truncate max-w-[100px] text-slate-600"
+            />
+            {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
+          </div>
+          {sales ? <div className="mt-0.5">{sales}</div> : null}
+        </div>
+      </div>
+    );
+  },
 };
 
 const MarketColumn: ColumnSpec = {
@@ -300,11 +350,17 @@ const EndsColumn: ColumnSpec = {
   headerClassName: `${TABLE_TH}`,
   cellClassName: `${TABLE_TD}`,
   width: "w-[96px]",
-  renderCell: (vm) => (
-    <span className="whitespace-normal text-sm text-slate-600">
-      {formatEndsAt(vm.deal.endsAt)}
-    </span>
-  ),
+  renderCell: (vm) => {
+    const endsDisplay = getEndsAtDisplay(vm.deal.endsAt);
+    return (
+      <span
+        className="whitespace-normal text-sm text-slate-600"
+        title={endsDisplay.tooltip}
+      >
+        {endsDisplay.label}
+      </span>
+    );
+  },
 };
 
 /**
@@ -345,14 +401,12 @@ export const CardDetailListingsColumns: ColumnSpec[] = [
 
 export const TopDealsColumns: ColumnSpec[] = [
   CardColumn,
-  ConditionColumn,
   { ...TotalColumn, sortable: true, sortKey: "totalUsd", defaultDirection: "asc" },
   { ...HistoricColumn, sortable: true, sortKey: "historicUsd", defaultDirection: "desc" },
   { ...DiscountColumn, sortable: true, sortKey: "discountPercent", defaultDirection: "desc" },
-  { ...ScoreColumn, sortable: true, sortKey: "score", defaultDirection: "desc" },
-  { ...PriceConfColumnCentered, sortable: true, sortKey: "confidenceWeight", defaultDirection: "desc" },
   SellerColumn,
   MarketColumn,
+  { ...EndsColumn, sortable: true, sortKey: "endsAtMs", defaultDirection: "asc" },
 ];
 
 export const EndingSoonColumns: ColumnSpec[] = [

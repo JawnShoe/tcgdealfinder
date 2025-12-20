@@ -9,7 +9,8 @@
 body {
   margin: 0;
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  line-height: 1.65;
+  font-size: 1.05rem;
+  line-height: 1.7;
   background-color: transparent;
   color: inherit;
 }
@@ -59,13 +60,13 @@ p a:hover,
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 0.85rem;
-  padding: 1.5rem;
+  padding: 1.7rem;
   box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
 }
 
 @media (min-width: 768px) {
   .panel {
-    padding: 2rem;
+    padding: 2.2rem;
   }
 }
 
@@ -74,7 +75,7 @@ p a:hover,
 .deals-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: 1.02rem;
 }
 
 .table-section thead tr,
@@ -82,7 +83,7 @@ p a:hover,
   background-color: #eaf0f8;
   color: #475569;
   text-transform: uppercase;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   letter-spacing: 0.03em;
 }
 
@@ -90,7 +91,7 @@ p a:hover,
 .table-section td,
 .deals-table th,
 .deals-table td {
-  padding: 0.75rem 0.65rem;
+  padding: 0.85rem 0.75rem;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -111,21 +112,21 @@ p a:hover,
 
 /* Form Controls */
 .deal-control__label {
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: #475569;
   display: inline-block;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
 }
 
 .deal-control__select,
 .deal-control__input {
   width: 100%;
-  padding: 0.55rem 0.75rem;
+  padding: 0.65rem 0.85rem;
   border: 1px solid #cbd5f5;
   border-radius: 0.55rem;
   background-color: #fff;
-  font-size: 0.9rem;
+  font-size: 0.98rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -182,8 +183,8 @@ p a:hover,
 .watchlist-button {
   border: 1px solid #cbd5f5;
   border-radius: 999px;
-  padding: 0.35rem 0.9rem;
-  font-size: 0.85rem;
+  padding: 0.45rem 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   background-color: #ffffff;
 }
@@ -197,8 +198,8 @@ p a:hover,
 .watchlist-button-icon {
   border: 1px solid #cbd5f5;
   border-radius: 999px;
-  font-size: 0.8rem;
-  padding: 0.2rem 0.4rem;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.5rem;
 }
 
 .watchlist-button-icon.watchlist-active {
@@ -227,14 +228,14 @@ p a:hover,
 /* Mobile optimizations */
 @media (max-width: 640px) {
   .panel {
-    padding: 1rem;
+    padding: 1.2rem;
     border-radius: 0.65rem;
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
   }
 
   .deals-table th,
   .deals-table td {
-    padding: 0.55rem 0.4rem;
+    padding: 0.65rem 0.5rem;
   }
 }
 

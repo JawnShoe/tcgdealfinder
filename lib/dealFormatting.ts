@@ -1,4 +1,4 @@
-import { formatMoneyFromCad } from "./money";
+import { formatMoneyFromCad, type Currency } from "./money";
 
 type FormatEndsAtOptions = {
   short?: boolean;
@@ -6,9 +6,28 @@ type FormatEndsAtOptions = {
 
 export function formatCurrency(
   value: number | null | undefined,
-  currency = "USD",
+  currency: Currency = "USD",
 ): string {
   return formatMoneyFromCad(value ?? null, currency);
+}
+
+/**
+ * Format a USD amount for display.
+ * Value is already in USD (no conversion applied).
+ */
+export function formatUSD(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) {
+    return "--";
+  }
+  if (!Number.isFinite(value)) {
+    return "--";
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 export function formatDiscount(
@@ -32,40 +51,65 @@ export function discountClass(
   return "discount-neutral";
 }
 
+function formatUtcTimestamp(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
+}
+
+function formatRelativeEnds(
+  date: Date,
+  shortLabel: boolean,
+): string {
+  const diffMs = date.getTime() - Date.now();
+  if (diffMs <= 0) {
+    return shortLabel ? "Ended" : "Ended";
+  }
+
+  const diffMinutes = Math.floor(diffMs / 60000);
+  if (diffMinutes < 60) {
+    const label = diffMinutes <= 1 ? "<1m" : `${diffMinutes}m`;
+    return shortLabel ? label : `Ends in ${label}`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    const minutes = diffMinutes % 60;
+    const label =
+      minutes > 0 ? `${diffHours}h ${minutes}m` : `${diffHours}h`;
+    return shortLabel ? label : `Ends in ${label}`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  const hours = diffHours % 24;
+  const label = hours > 0 ? `${diffDays}d ${hours}h` : `${diffDays}d`;
+  return shortLabel ? label : `Ends in ${label}`;
+}
+
+export function getEndsAtDisplay(
+  value: string | null | undefined,
+  options?: FormatEndsAtOptions,
+): { label: string; tooltip: string } {
+  if (!value) {
+    return { label: "--", tooltip: "--" };
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return { label: "--", tooltip: "--" };
+  }
+  const tooltip = formatUtcTimestamp(date);
+  const label = formatRelativeEnds(date, Boolean(options?.short));
+  return { label, tooltip };
+}
+
 export function formatEndsAt(
   value: string | null | undefined,
   options?: FormatEndsAtOptions,
 ): string {
-  if (!value) return "--";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "--";
-  }
-
-  if (options?.short) {
-    const diffMs = date.getTime() - Date.now();
-    if (diffMs <= 0) return "Ended";
-    const diffMinutes = Math.floor(diffMs / 60000);
-    if (diffMinutes < 60) {
-      return `${diffMinutes}m`;
-    }
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) {
-      const minutes = diffMinutes % 60;
-      return `${diffHours}h ${minutes}m`;
-    }
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}d ${diffHours % 24}h`;
-  }
-
-  // Use ISO format to avoid hydration mismatch between server and client
-  // Format: YYYY-MM-DD HH:mm UTC
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  const hours = String(date.getUTCHours()).padStart(2, '0');
-  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
+  return getEndsAtDisplay(value, options).label;
 }
 
 export function getConfidenceLabel(
@@ -174,16 +218,52 @@ export function formatPriceConfidence(
       isEmpty: true,
     };
   }
-  
+
   const labelMap = {
     high: "High",
     medium: "Med",
     low: "Low",
   };
-  
+
   return {
     chipText: `${labelMap[confidenceLabel]} n=${sampleSize}`,
     tooltipText: `Price confidence: ${confidenceLabel} (n=${sampleSize} sales)`,
     isEmpty: false,
   };
+}
+
+/**
+ * Format deal freshness indicator.
+ * Returns null if data is stale (older than threshold).
+ * Returns short relative time string if fresh enough.
+ */
+export function formatFreshness(
+  updatedAt: string | null | undefined,
+  thresholdHours: number = 4,
+): string | null {
+  if (!updatedAt) {
+    return null;
+  }
+
+  const date = new Date(updatedAt);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+
+  // Only show if recent enough
+  const thresholdMinutes = thresholdHours * 60;
+  if (diffMinutes > thresholdMinutes) {
+    return null;
+  }
+
+  // Format as "Xm" for minutes, "Xh" for hours
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  return `${diffHours}h`;
 }

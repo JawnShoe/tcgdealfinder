@@ -33,12 +33,15 @@ export function AdminDealActions({
     setIsLoading(true);
     setError(null);
     try {
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+      if (adminSecret) {
+        headers["x-admin-secret"] = adminSecret;
+      }
       const res = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-secret": adminSecret,
-        },
+        headers,
         body: JSON.stringify(payload),
       });
 

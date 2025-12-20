@@ -31,6 +31,7 @@ type EndingSoonRow = {
   title: string | null;
   condition: string | null;
   total_price_cad: string | null;
+  total_usd: string | null;
   historic_price_cad: string | null;
   sample_size: number | null;
   discount_percent: string | null;
@@ -38,6 +39,7 @@ type EndingSoonRow = {
   seller_positive_percent: string | null;
   market: string;
   ends_at: string | null;
+  updated_at: string | null;
   listing_url: string;
   seller_username: string | null;
   seller_store_name: string | null;
@@ -72,6 +74,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
         c.set_name,
         c.condition_bucket AS condition,
         l.total_price_cad,
+        l.total_usd,
         l.historic_price_cad,
         hp.sample_size,
         l.discount_percent,
@@ -79,6 +82,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
         l.seller_positive_percent,
         ${marketSelect} AS market,
         l.ends_at,
+        l.updated_at,
         l.url AS listing_url,
         l.seller_username,
         l.seller_store_name,
@@ -123,6 +127,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
   const deals = res.rows.map((row: EndingSoonRow): Deal => {
     const total =
       row.total_price_cad !== null ? Number(row.total_price_cad) : null;
+    const totalUsd = row.total_usd !== null ? Number(row.total_usd) : null;
     const historic =
       row.historic_price_cad !== null ? Number(row.historic_price_cad) : null;
     const sampleSize =
@@ -158,11 +163,13 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
       priceCad: null,
       shippingCad: null,
       totalPriceCad: total,
+      totalUsd,
       historicPriceCad: historic,
       discountPercent: displayDiscount,
       sampleSize,
       market: row.market,
       endsAt: row.ends_at,
+      updatedAt: row.updated_at,
       thumbnailUrl: row.thumbnail_url,
       sellerUsername: row.seller_username,
       sellerStoreName: normalizeSellerStoreName(row.seller_store_name),

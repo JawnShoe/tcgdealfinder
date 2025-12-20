@@ -585,7 +585,9 @@ export default function ExclusionsClient({ listings, sinceDate }: Props) {
               {confirmModal.listing.exclusionHit && (
                 <div>
                   <span className="text-slate-400">Hit Pattern:</span>{" "}
-                  <span className="font-mono text-amber-400">"{confirmModal.listing.exclusionHit}"</span>
+                  <span className="font-mono text-amber-400">
+                    &quot;{confirmModal.listing.exclusionHit}&quot;
+                  </span>
                 </div>
               )}
               
@@ -700,7 +702,7 @@ function ListingRow({
     ? `$${listing.totalPriceCad.toFixed(2)}`
     : listing.priceCad
       ? `$${listing.priceCad.toFixed(2)}`
-      : "—";
+      : "--";
   const sellerDisplay = getSellerDisplayData({
     username: listing.sellerUsername ?? listing.seller ?? null,
     storeName: listing.sellerStoreName ?? null,
@@ -747,7 +749,7 @@ function ListingRow({
             <span className="text-slate-400">{listing.exclusionReason}</span>
             {listing.exclusionHit && (
               <span className="ml-1 font-mono text-amber-400">
-                "{listing.exclusionHit}"
+                &quot;{listing.exclusionHit}&quot;
               </span>
             )}
           </div>
@@ -847,6 +849,10 @@ function MobileCard({
     : listing.priceCad
       ? `$${listing.priceCad.toFixed(2)}`
       : "—";
+  const sellerDisplay = getSellerDisplayData({
+    username: listing.sellerUsername ?? listing.seller ?? null,
+    storeName: listing.sellerStoreName ?? null,
+  });
   
   return (
     <div
@@ -877,7 +883,9 @@ function MobileCard({
         </span>
         <span className="text-slate-300">{priceStr}</span>
         {listing.exclusionHit && (
-          <span className="font-mono text-amber-400">"{listing.exclusionHit}"</span>
+          <span className="font-mono text-amber-400">
+            &quot;{listing.exclusionHit}&quot;
+          </span>
         )}
       </div>
       <div className="mb-2 text-xs text-slate-500">
@@ -1011,7 +1019,9 @@ function ExpandedDetails({ listing }: { listing: ExcludedListing }) {
       {listing.exclusionHit && (
         <div className="sm:col-span-2">
           <span className="text-slate-500">Hit Keyword:</span>{" "}
-          <span className="font-mono text-amber-400">"{listing.exclusionHit}"</span>
+          <span className="font-mono text-amber-400">
+            &quot;{listing.exclusionHit}&quot;
+          </span>
         </div>
       )}
       <div className="sm:col-span-2">

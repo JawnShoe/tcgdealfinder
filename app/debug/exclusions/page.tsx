@@ -512,7 +512,7 @@ function TopHitsCard({
         <ul className="space-y-1 text-sm">
           {hits.map((h, i) => (
             <li key={i} className="flex justify-between">
-              <span className="font-mono text-slate-300">"{h.hit}"</span>
+              <span className="font-mono text-slate-300">&quot;{h.hit}&quot;</span>
               <span className="text-slate-400">{h.count}</span>
             </li>
           ))}

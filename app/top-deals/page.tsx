@@ -34,10 +34,12 @@ type TopDealRow = {
   title: string;
   url: string;
   total_price_cad: string | null;
+  total_usd: string | null;
   historic_price_cad: string | null;
   discount_percent: string | null;
   market: string;
   ends_at: string | null;
+  updated_at: string | null;
   thumbnail_url: string | null;
   card_id: number | null;
   card_name: string | null;
@@ -91,10 +93,12 @@ async function getTopDeals(): Promise<Deal[]> {
         l.title,
         l.url,
         l.total_price_cad,
+        l.total_usd,
         l.historic_price_cad,
         l.discount_percent,
         ${marketSelect} AS market,
         l.ends_at,
+        l.updated_at,
         l.thumbnail_url,
         c.id   AS card_id,
         c.name AS card_name,
@@ -152,6 +156,7 @@ async function getTopDeals(): Promise<Deal[]> {
   const deals = res.rows
     .map((row: TopDealRow): Deal | null => {
       const total = row.total_price_cad ? Number(row.total_price_cad) : null;
+      const totalUsd = row.total_usd ? Number(row.total_usd) : null;
       const historic = row.historic_price_cad
         ? Number(row.historic_price_cad)
         : null;
@@ -208,12 +213,14 @@ async function getTopDeals(): Promise<Deal[]> {
         priceCad: total ? total - (row.shipping_cad ? Number(row.shipping_cad) : 0) : null,
         shippingCad: row.shipping_cad ? Number(row.shipping_cad) : null,
         totalPriceCad: total,
+        totalUsd,
         historicPriceCad: historic,
         discountPercent: displayDiscount,
         sampleSize,
         confidenceWeight,
         market: row.market,
         endsAt: row.ends_at,
+        updatedAt: row.updated_at,
         thumbnailUrl: row.thumbnail_url,
         sellerUsername: row.seller_username,
         sellerStoreName: normalizeSellerStoreName(row.seller_store_name),

@@ -378,7 +378,7 @@ export const GRADED_CARD_INDICATORS = [
  * If title matches these patterns, it's likely a real card
  * Used to avoid false positives
  */
-export const REAL_CARD_INDICATORS = [
+export const REAL_CARD_INDICATORS: Array<RegExp | string> = [
   // Set number patterns (e.g., "215/203", "186/196")
   /\d{1,3}\/\d{1,3}/,
   // Common card identifiers

@@ -4,7 +4,7 @@
  */
 
 import type { Deal } from "../types/deal";
-import { getDealPrice, getDealDiscount } from "./dealMath";
+import { getDealDiscount } from "./dealMath";
 import { getDealConfidence, isDealTrusted, type DealConfidence } from "./dealScore";
 import { getConfidenceLabel as getWeightLabel } from "./dealConfidence";
 import { buildAffiliateUrl } from "./affiliateUrl";
@@ -57,7 +57,7 @@ export function buildDealViewModel(
     referenceTime?: number;
   }
 ): DealViewModel {
-  const totalUsd = getDealPrice(deal);
+  const totalUsd = deal.totalUsd ?? null;
   const historicUsd = deal.historicPriceCad ?? null;
   const discountPercent = getDealDiscount(deal);
   

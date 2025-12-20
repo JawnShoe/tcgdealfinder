@@ -1,6 +1,6 @@
 import Link from "next/link";
 import DealsTable from "@/components/DealsTable";
-import FeaturedDealsStrip from "@/components/FeaturedDealsStrip";
+import { FeaturedDeals, type FeaturedDealView } from "@/components/FeaturedDeals";
 import ListingLookup from "@/components/ListingLookup";
 import { query } from "@/lib/db";
 import { runDealsQuery } from "./api/deals/dealsQuery";
@@ -8,6 +8,7 @@ import type { DealsApiResponse } from "@/types/dealsApi";
 import { DEFAULT_MARKET } from "@/lib/markets";
 import { DEFAULT_MARKET_FILTER } from "@/lib/filters";
 import { ensureListingsMarketColumn } from "@/lib/schema";
+import { isDealTrusted } from "@/lib/dealScore";
 
 async function getHomePageDeals(): Promise<DealsApiResponse> {
   const PAGE_SIZE = 50;
@@ -60,6 +61,7 @@ export default async function HomePage() {
   console.log("USING APP ROUTER: /");
   const initial = await getHomePageDeals();
   const deals = initial.items;
+  const featuredDeals = buildFeaturedDeals(deals);
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -76,7 +78,7 @@ export default async function HomePage() {
 
         {/* Featured deals */}
         <section>
-          <FeaturedDealsStrip deals={deals} />
+          <FeaturedDeals deals={featuredDeals} />
         </section>
 
         {/* All live deals */}
@@ -95,4 +97,29 @@ export default async function HomePage() {
       </div>
     </main>
   );
+}
+
+function buildFeaturedDeals(deals: DealsApiResponse["items"]): FeaturedDealView[] {
+  return deals
+    .map<FeaturedDealView>((deal) => {
+      const discount = deal.discountPercent ?? null;
+      const price = deal.totalUsd ?? null;
+
+      return {
+        deal,
+        price,
+        discount,
+        score: null,
+        trustedSeller: isDealTrusted(
+          deal.sellerFeedbackCount ?? null,
+          deal.sellerPositivePercent ?? null,
+        ),
+      };
+    })
+    .sort((a, b) => {
+      const magA = a.discount != null ? Math.abs(a.discount) : Number.NEGATIVE_INFINITY;
+      const magB = b.discount != null ? Math.abs(b.discount) : Number.NEGATIVE_INFINITY;
+      return magB - magA;
+    })
+    .slice(0, 6);
 }

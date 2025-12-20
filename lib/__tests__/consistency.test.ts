@@ -5,7 +5,14 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatDiscount, formatCurrency, formatCondition, formatMarket, formatEndsAt } from "../dealFormatting";
+import {
+  formatDiscount,
+  formatCurrency,
+  formatUSD,
+  formatCondition,
+  formatMarket,
+  formatEndsAt,
+} from "../dealFormatting";
 import { buildDealViewModel, type DealViewModel } from "../dealViewModel";
 import { TABLE_TH_NOWRAP } from "../typography";
 import { HomepageColumns, NewestColumns, TopDealsColumns, EndingSoonColumns, CardDetailListingsColumns } from "../tableColumns";
@@ -79,6 +86,7 @@ test("buildDealViewModel computes discountPercent when prices exist", () => {
     id: 2,
     title: "Test Card 2",
     url: "https://example.com",
+    totalUsd: 95,
     totalPriceCad: 85,
     historicPriceCad: 100,
     discountPercent: null,
@@ -100,7 +108,11 @@ test("buildDealViewModel computes discountPercent when prices exist", () => {
 
   const vm = buildDealViewModel(dealWithBothPrices);
   
-  assert.strictEqual(vm.totalUsd, 85, "totalUsd should match totalPriceCad");
+  assert.strictEqual(
+    vm.totalUsd,
+    dealWithBothPrices.totalUsd,
+    "totalUsd should match deal.totalUsd",
+  );
   assert.strictEqual(vm.historicUsd, 100, "historicUsd should match historicPriceCad");
   assert.ok(vm.discountPercent !== null, "discountPercent should be computed");
   assert.ok(vm.discountPercent! < 0, "discountPercent should be negative (discount)");
@@ -251,6 +263,7 @@ test("buildDealViewModel includes all required fields for table rendering", () =
     id: 100,
     title: "Test Card for Field Check",
     url: "https://example.com",
+    totalUsd: 45,
     totalPriceCad: 50,
     historicPriceCad: 60,
     discountPercent: null,
@@ -329,8 +342,8 @@ test("formatters produce identical output for same vm across variants", () => {
   
   // Test that formatters return same value when called multiple times
   // This simulates what would happen on Homepage vs /newest
-  const totalFormatted1 = formatCurrency(vm.totalUsd);
-  const totalFormatted2 = formatCurrency(vm.totalUsd);
+  const totalFormatted1 = formatUSD(vm.totalUsd);
+  const totalFormatted2 = formatUSD(vm.totalUsd);
   assert.strictEqual(totalFormatted1, totalFormatted2, "formatCurrency should be deterministic");
   
   const historicFormatted1 = formatCurrency(vm.historicUsd);

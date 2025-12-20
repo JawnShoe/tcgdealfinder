@@ -541,7 +541,7 @@ function toMarketplaceId(market: string): string {
 
 export async function fetchEbayListings(
   searchQuery: string,
-  market: string,
+  market: MarketCode,
 ): Promise<NormalizedListing[]> {
   const marketplaceId = toMarketplaceId(market);
   const accessToken = await getAppAccessToken();

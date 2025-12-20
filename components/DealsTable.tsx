@@ -37,8 +37,9 @@ import { TrustedBadge } from "./TrustedBadge";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { MarketFlag } from "./MarketFlag";
-import { SellerNameWithTooltip } from "./SellerNameWithTooltip";
+import { SellerNameWithTooltip, formatSellerSalesCount } from "./SellerNameWithTooltip";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
+import { WatchlistStarButton } from "./WatchlistStarButton";
 import type { Deal } from "../types/deal";
 import type { DealsApiMeta, DealsApiResponse } from "@/types/dealsApi";
 import {
@@ -53,12 +54,14 @@ import {
 import {
   discountClass,
   formatCurrency,
+  formatUSD,
   formatDiscount,
-  formatEndsAt,
+  getEndsAtDisplay,
   formatScore,
   formatMarket,
   getConfidenceLabel,
   scoreClass,
+  formatFreshness,
 } from "../lib/dealFormatting";
 import type { DealConfidence } from "../lib/dealScore";
 import {
@@ -68,7 +71,7 @@ import {
 } from "../lib/dealConfidence";
 import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 
-import { DEFAULT_MARKET } from "../lib/markets";
+import { DEFAULT_MARKET, normalizeMarketCode } from "../lib/markets";
 import { compareStrictBestDiscountValues } from "../lib/dealSort";
 import {
   getColumnsByVariant,
@@ -79,6 +82,67 @@ import {
 const TOP_DEAL_DISCOUNT = 15;
 const TOP_DEAL_SAMPLE_SIZE = 20;
 const PAGE_SIZE = 50;
+const MARKET_PRIORITY: string[] = ["US", "CA", "GB", "AU"];
+
+function getMarketRank(market: string | null | undefined): number {
+  const normalized = normalizeMarketCode(market ?? null);
+  const effective =
+    normalized === "all"
+      ? normalizeMarketCode(DEFAULT_MARKET)
+      : normalized;
+  const idx = MARKET_PRIORITY.indexOf(effective);
+  return idx === -1 ? MARKET_PRIORITY.length : idx;
+}
+
+function dedupeDealsByListing(deals: Deal[]): Deal[] {
+  const map = new Map<string, Deal>();
+  for (const deal of deals) {
+    const key = (deal.listingId ?? String(deal.id)).toString();
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, deal);
+      continue;
+    }
+    const existingRank = getMarketRank(existing.market);
+    const nextRank = getMarketRank(deal.market);
+    if (nextRank < existingRank) {
+      map.set(key, deal);
+      continue;
+    }
+    if (nextRank === existingRank) {
+      const existingTotal = existing.totalPriceCad ?? Number.POSITIVE_INFINITY;
+      const nextTotal = deal.totalPriceCad ?? Number.POSITIVE_INFINITY;
+      if (nextTotal < existingTotal) {
+        map.set(key, deal);
+      }
+    }
+  }
+  return Array.from(map.values());
+}
+
+function renderEndsValue(value: string | null | undefined): JSX.Element {
+  const display = getEndsAtDisplay(value);
+  return (
+    <span title={display.tooltip}>
+      {display.label}
+    </span>
+  );
+}
+
+function renderSellerSalesBadge(
+  salesCount: number | null | undefined,
+): JSX.Element | null {
+  const formatted = formatSellerSalesCount(salesCount);
+  if (!formatted) {
+    return null;
+  }
+  return (
+    <span className="flex items-center gap-1 whitespace-nowrap text-[11px] text-slate-500">
+      <span aria-hidden="true">⭐</span>
+      <span>{formatted} sales</span>
+    </span>
+  );
+}
 
 const SORT_LABEL: Record<SortOption, string> = {
   "best-discount": "Best discount",
@@ -247,18 +311,35 @@ export default function DealsTable({
   }, [serverMode, remoteMeta, viewState.marketKey, fetchRemotePage]);
 
   const baseDeals = serverMode ? remoteDeals : deals;
-  const referenceTime = useMemo(() => Date.now(), [baseDeals]);
+  const referenceKey = useMemo(
+    () =>
+      baseDeals
+        .map((deal) => deal.listingId ?? String(deal.id))
+        .join("|"),
+    [baseDeals],
+  );
+  const dedupedDeals = useMemo(
+    () => dedupeDealsByListing(baseDeals),
+    [baseDeals],
+  );
+  const referenceTime = useMemo(
+    () => ({
+      stamp: Date.now(),
+      key: referenceKey,
+    }),
+    [referenceKey],
+  ).stamp;
 
   // Use buildDealViewModel() as the single source of truth for derived values
   // This ensures consistency with tableColumns.tsx and other table variants
   const viewModels = useMemo<DealViewModel[]>(() => {
-    return baseDeals.map((deal) =>
+    return dedupedDeals.map((deal) =>
       buildDealViewModel(deal, {
         computeScore: true,
         referenceTime,
       })
     );
-  }, [baseDeals, referenceTime]);
+  }, [dedupedDeals, referenceTime]);
 
   const filteredDeals = useMemo(() => {
     const normalizedSet = viewState.setFilter.trim().toLowerCase();
@@ -829,56 +910,85 @@ export default function DealsTable({
                       </tr>
                     ))
                   ) : (
-                    currentSlice.map((vm) => (
-                      <tr key={vm.deal.id} className="even:bg-slate-50/50 hover:bg-slate-100">
-                      <td className={`${colClass("card", variant)} px-3 py-4 align-middle`}>
-                        <div className="flex items-start gap-2.5">
-                          {vm.deal.thumbnailUrl ? (
-                            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
-                              <Image
-                                src={vm.deal.thumbnailUrl}
-                                alt={vm.deal.title}
-                                width={64}
-                                height={64}
-                                className="h-full w-full object-contain"
+                    currentSlice.map((vm) => {
+                      const cardId = vm.deal.card?.id ?? vm.deal.cardId ?? null;
+                      const cardName =
+                        vm.deal.card?.name ??
+                        vm.deal.cardName ??
+                        vm.deal.title ??
+                        null;
+                      const setName =
+                        vm.deal.card?.setName ?? vm.deal.setName ?? null;
+                      const sellerSalesBadge = renderSellerSalesBadge(
+                        vm.deal.sellerFeedbackCount,
+                      );
+                      return (
+                        <tr key={vm.deal.id} className="even:bg-slate-50/50 hover:bg-slate-100">
+                        <td className={`${colClass("card", variant)} px-3 py-4 align-middle`}>
+                          <div className="flex items-start gap-2.5">
+                            {vm.deal.thumbnailUrl ? (
+                              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
+                                <Image
+                                  src={vm.deal.thumbnailUrl}
+                                  alt={vm.deal.title}
+                                  width={64}
+                                  height={64}
+                                  className="h-full w-full object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
+                            )}
+                            <div className="flex min-w-0 flex-1 items-start gap-2">
+                              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                <CardIdentityBlock
+                                  identity={buildCardIdentityFromDeal(vm.deal)}
+                                  primaryHref={vm.affiliateUrl}
+                                  showListingTitle={isNewestVariant}
+                                  showViewCardLink
+                                />
+                                {variant === "newest" &&
+                                  vm.deal.integrityStatus === "REVIEW" && (
+                                    <span
+                                      className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
+                                      title={
+                                        vm.deal.integrityReason ?? "Flagged for review"
+                                      }
+                                    >
+                                      Review
+                                    </span>
+                                  )}
+                                {vm.deal.historicBaselineConfidence === "none" ? (
+                                  <p className="text-xs text-amber-600">
+                                    {baselineBadgeLabel(
+                                      vm.deal.historicBaselineBucketUsed,
+                                    )}
+                                  </p>
+                                ) : null}
+                              </div>
+                              <WatchlistStarButton
+                                cardId={cardId ?? undefined}
+                                cardName={cardName ?? undefined}
+                                setName={setName ?? null}
+                                className="flex-shrink-0"
                               />
                             </div>
-                          ) : (
-                            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
-                          )}
-                          <div className="flex min-w-0 flex-1 flex-col gap-1">
-                            <CardIdentityBlock
-                              identity={buildCardIdentityFromDeal(vm.deal)}
-                              primaryHref={vm.affiliateUrl}
-                              showListingTitle={isNewestVariant}
-                              showViewCardLink
-                            />
-                            {variant === "newest" &&
-                              vm.deal.integrityStatus === "REVIEW" && (
-                                <span
-                                  className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
-                                  title={
-                                    vm.deal.integrityReason ?? "Flagged for review"
-                                  }
-                                >
-                                  Review
-                                </span>
-                              )}
-                            {vm.deal.historicBaselineConfidence === "none" ? (
-                              <p className="text-xs text-amber-600">
-                                {baselineBadgeLabel(
-                                  vm.deal.historicBaselineBucketUsed,
-                                )}
-                              </p>
-                            ) : null}
                           </div>
+                        </td>
+                      <td className={`${colClass("total", variant)} px-3 py-4 align-middle text-right`}>
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="text-base font-semibold">
+                            {formatUSD(vm.totalUsd)}
+                          </span>
+                          {formatFreshness(vm.deal.updatedAt) && (
+                            <span className="text-xs text-slate-500">
+                              {formatFreshness(vm.deal.updatedAt)}
+                            </span>
+                          )}
                         </div>
                       </td>
-                      <td className={`${colClass("total", variant)} px-3 py-4 align-middle text-right text-base font-semibold`}>
-                        {formatCurrency(vm.totalUsd)}
-                      </td>
                       <td className={`${colClass("historic", variant)} px-3 py-4 align-middle text-right text-base text-slate-600`}>
-                        {formatCurrency(vm.historicUsd)}
+                        {formatUSD(vm.historicUsd)}
                       </td>
                       <td
                         className={`${colClass("discount", variant)} ${discountClass(
@@ -914,25 +1024,30 @@ export default function DealsTable({
                         </td>
                       ) : null}
                       <td className={`${colClass("seller", variant)} px-3 py-4 align-middle text-left text-sm text-slate-700`}>
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span
-                            className={`truncate ${
-                              isNewestVariant ? "max-w-[100px]" : ""
-                            }`}
-                          >
-                            <SellerNameWithTooltip
-                              seller={getSellerDisplayData({
-                                username: vm.deal.sellerUsername,
-                                storeName: vm.deal.sellerStoreName,
-                                feedbackCount: vm.deal.sellerFeedbackCount,
-                                feedbackPercent: vm.deal.sellerPositivePercent,
-                              })}
-                              className="text-slate-600"
-                            />
-                          </span>
-                          {vm.trustedSeller ? (
-                            <TrustedBadge className="flex-none" />
-                          ) : null}
+                        <div className="flex min-w-0 items-start gap-2">
+                          <div className="min-w-0">
+                            <span
+                              className={`flex min-w-0 items-center gap-1 ${
+                                isNewestVariant ? "max-w-[100px]" : ""
+                              }`}
+                            >
+                              <SellerNameWithTooltip
+                                seller={getSellerDisplayData({
+                                  username: vm.deal.sellerUsername,
+                                  storeName: vm.deal.sellerStoreName,
+                                  feedbackCount: vm.deal.sellerFeedbackCount,
+                                  feedbackPercent: vm.deal.sellerPositivePercent,
+                                })}
+                                className="truncate text-slate-600"
+                              />
+                              {vm.trustedSeller ? (
+                                <TrustedBadge className="flex-none" />
+                              ) : null}
+                            </span>
+                            {sellerSalesBadge ? (
+                              <div className="mt-0.5">{sellerSalesBadge}</div>
+                            ) : null}
+                          </div>
                         </div>
                       </td>
                       <td className={`${colClass("market", variant)} px-3 py-4 align-middle text-left text-sm text-slate-600${
@@ -947,15 +1062,24 @@ export default function DealsTable({
                         </span>
                       </td>
                       <td className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}>
-                        {formatEndsAt(vm.deal.endsAt)}
+                      {renderEndsValue(vm.deal.endsAt)}
                       </td>
                       {isAdmin && adminSecret ? (
                         <td className="px-3 py-4 align-middle text-sm">
-                          <AdminDealActions deal={vm.deal} />
+                          <AdminDealActions
+                            listingId={
+                              vm.deal.listingId
+                                ? Number(vm.deal.listingId)
+                                : vm.deal.id
+                            }
+                            sellerUsername={vm.deal.sellerUsername}
+                            adminSecret={adminSecret}
+                          />
                         </td>
                       ) : null}
                     </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -963,50 +1087,75 @@ export default function DealsTable({
           </div>
 
           <div className="space-y-3 sm:hidden">
-            {currentSlice.map((vm) => (
-              <div
-                key={vm.deal.id}
-                className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
-              >
-                <div className="flex gap-3">
-                  {vm.deal.thumbnailUrl ? (
-                    <Image
-                      src={vm.deal.thumbnailUrl}
-                      alt={vm.deal.title}
-                      width={80}
-                      height={80}
-                      className="h-20 w-20 rounded object-cover"
-                    />
-                  ) : (
-                    <div className="h-20 w-20 rounded border border-dashed border-slate-300" />
-                  )}
-                  <CardIdentityBlock
-                    identity={buildCardIdentityFromDeal(vm.deal)}
-                    primaryHref={vm.affiliateUrl}
-                    showListingTitle={isNewestVariant}
-                    showViewCardLink={false}
-                  />
-                  {variant === "newest" &&
-                    vm.deal.integrityStatus === "REVIEW" && (
-                      <span
-                        className="ml-auto inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
-                        title={vm.deal.integrityReason ?? "Flagged for review"}
-                      >
-                        Review
-                      </span>
+            {currentSlice.map((vm) => {
+              const cardId = vm.deal.card?.id ?? vm.deal.cardId ?? null;
+              const cardName =
+                vm.deal.card?.name ??
+                vm.deal.cardName ??
+                vm.deal.title ??
+                null;
+              const setName = vm.deal.card?.setName ?? vm.deal.setName ?? null;
+              const sellerSalesBadge = renderSellerSalesBadge(
+                vm.deal.sellerFeedbackCount,
+              );
+              return (
+                <div
+                  key={vm.deal.id}
+                  className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+                >
+                  <div className="flex gap-3">
+                    {vm.deal.thumbnailUrl ? (
+                      <Image
+                        src={vm.deal.thumbnailUrl}
+                        alt={vm.deal.title}
+                        width={80}
+                        height={80}
+                        className="h-20 w-20 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="h-20 w-20 rounded border border-dashed border-slate-300" />
                     )}
-                </div>
+                    <div className="flex flex-1 items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <CardIdentityBlock
+                          identity={buildCardIdentityFromDeal(vm.deal)}
+                          primaryHref={vm.affiliateUrl}
+                          showListingTitle={isNewestVariant}
+                          showViewCardLink={false}
+                        />
+                        {variant === "newest" &&
+                          vm.deal.integrityStatus === "REVIEW" && (
+                            <span
+                              className="mt-1 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
+                              title={vm.deal.integrityReason ?? "Flagged for review"}
+                            >
+                              Review
+                            </span>
+                          )}
+                      </div>
+                      <WatchlistStarButton
+                        cardId={cardId ?? undefined}
+                        cardName={cardName ?? undefined}
+                        setName={setName ?? null}
+                      />
+                    </div>
+                  </div>
 
                 <div className="mt-3 grid grid-cols-2 gap-3 text-base">
                   <div>
                     <p className="text-slate-500">{getHeaderLabel("total", "Total USD")}</p>
                     <p className="text-base font-semibold text-slate-900">
-                      {formatCurrency(vm.totalUsd)}
+                      {formatUSD(vm.totalUsd)}
                     </p>
+                    {formatFreshness(vm.deal.updatedAt) && (
+                      <p className="text-xs text-slate-500">
+                        {formatFreshness(vm.deal.updatedAt)}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p className="text-slate-500">{getHeaderLabel("historic", "Historic USD")}</p>
-                    <p className="text-base">{formatCurrency(vm.historicUsd)}</p>
+                    <p className="text-base">{formatUSD(vm.historicUsd)}</p>
                   </div>
                   <div>
                     <p className="text-slate-500">{getHeaderLabel("discount", "Discount")}</p>
@@ -1036,18 +1185,22 @@ export default function DealsTable({
                   <span>
                     Confidence: {getConfidenceLabel(vm.sampleSize)}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <span className="text-slate-500">Seller:</span>
-                    <SellerNameWithTooltip
-                      seller={getSellerDisplayData({
-                        username: vm.deal.sellerUsername,
-                        storeName: vm.deal.sellerStoreName,
-                        feedbackCount: vm.deal.sellerFeedbackCount,
-                        feedbackPercent: vm.deal.sellerPositivePercent,
-                      })}
-                      className="text-slate-600"
-                    />
-                  </span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="flex items-center gap-1">
+                      <span className="text-slate-500">Seller:</span>
+                      <SellerNameWithTooltip
+                        seller={getSellerDisplayData({
+                          username: vm.deal.sellerUsername,
+                          storeName: vm.deal.sellerStoreName,
+                          feedbackCount: vm.deal.sellerFeedbackCount,
+                          feedbackPercent: vm.deal.sellerPositivePercent,
+                        })}
+                        className="text-slate-600"
+                      />
+                      {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
+                    </span>
+                    {sellerSalesBadge}
+                  </div>
                   <span title={formatMarket(vm.deal.market).label}>
                     Market: {formatMarket(vm.deal.market).compactLabel}
                   </span>
@@ -1057,16 +1210,32 @@ export default function DealsTable({
                       Trusted
                     </span>
                   ) : null}
-                  <span>Ends {formatEndsAt(vm.deal.endsAt)}</span>
+                  {(() => {
+                    const endsDisplay = getEndsAtDisplay(vm.deal.endsAt);
+                    return (
+                      <span title={endsDisplay.tooltip}>
+                        Ends {endsDisplay.label}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 {isAdmin && adminSecret ? (
                   <div className="mt-3">
-                    <AdminDealActions deal={vm.deal} />
+                    <AdminDealActions
+                      listingId={
+                        vm.deal.listingId
+                          ? Number(vm.deal.listingId)
+                          : vm.deal.id
+                      }
+                      sellerUsername={vm.deal.sellerUsername}
+                      adminSecret={adminSecret}
+                    />
                   </div>
                 ) : null}
               </div>
-            ))}
+            );
+          })}
           </div>
         </>
       ) : (

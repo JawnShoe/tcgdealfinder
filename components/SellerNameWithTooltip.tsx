@@ -4,6 +4,30 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import type { SellerDisplayData } from "@/lib/sellerDisplay";
 
+const SALES_COUNT_FORMATTER = new Intl.NumberFormat("en-US");
+
+export function formatSellerSalesCount(
+  salesCount: number | null | undefined,
+): string | null {
+  if (salesCount == null || salesCount < 100) {
+    return null;
+  }
+
+  let rounded: number;
+  if (salesCount < 1000) {
+    rounded = Math.floor(salesCount / 100) * 100;
+    if (rounded < 100) {
+      rounded = 100;
+    }
+  } else if (salesCount < 10000) {
+    rounded = Math.floor(salesCount / 100) * 100;
+  } else {
+    rounded = Math.floor(salesCount / 1000) * 1000;
+  }
+
+  return `${SALES_COUNT_FORMATTER.format(rounded)}+`;
+}
+
 type SellerNameWithTooltipProps = {
   seller: SellerDisplayData;
   className?: string;
@@ -90,11 +114,31 @@ export function SellerNameWithTooltip({
   }
 
   // Only show tooltip if there's additional info beyond display name
-  const hasTooltipContent = seller.tooltip.rows.length > 0;
+  const baseRows = seller.tooltip.rows ?? [];
+  const storeRow = baseRows.find((row) => row.label === "Store");
+  const accountRow = baseRows.find((row) => row.label === "Account");
+
+  const primaryLabel =
+    typeof storeRow?.value === "string" && storeRow.value.trim().length > 0
+      ? storeRow.value
+      : typeof accountRow?.value === "string" && accountRow.value.trim().length > 0
+        ? accountRow.value
+        : seller.displayName;
+
+  const tooltipRows = [
+    ...(accountRow ? [accountRow] : []),
+    ...(storeRow && storeRow.value ? [storeRow] : []),
+    ...baseRows.filter(
+      (row) =>
+        row.label !== "Account" &&
+        row.label !== "Store",
+    ),
+  ];
+
+  const hasTooltipContent = tooltipRows.length > 0;
 
   if (!hasTooltipContent) {
-    // No tooltip needed - just show plain text
-    return <span className={className}>{seller.displayName}</span>;
+    return <span className={className}>{primaryLabel}</span>;
   }
 
   const tooltipElement = showTooltip && mounted ? createPortal(
@@ -110,7 +154,7 @@ export function SellerNameWithTooltip({
         {seller.tooltip.title}
       </div>
       <div className="space-y-1">
-        {seller.tooltip.rows.map((row, idx) => (
+        {tooltipRows.map((row, idx) => (
           <div key={idx} className="flex justify-between gap-3 text-xs">
             <span className="text-slate-500">{row.label}:</span>
             <span className="text-slate-900 font-medium break-all">
@@ -133,9 +177,9 @@ export function SellerNameWithTooltip({
         onMouseLeave={() => setShowTooltip(false)}
         onClick={() => setShowTooltip(!showTooltip)}
         onBlur={() => setShowTooltip(false)}
-        aria-label={`${seller.tooltip.title}: ${seller.tooltip.rows.map(r => `${r.label} ${r.value}`).join(", ")}`}
+        aria-label={`${seller.tooltip.title}: ${tooltipRows.map(r => `${r.label} ${r.value}`).join(", ")}`}
       >
-        {seller.displayName}
+        {primaryLabel}
       </button>
       {tooltipElement}
     </>

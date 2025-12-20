@@ -18,6 +18,7 @@ type AlertRow = {
   card_set_name: string;
   card_number: string | null;
   total_price_cad: string | null;
+  total_usd: string | null;
   median_price_cad: string | null;
   discount_percent: string | null;
   listing_id: number | null;
@@ -26,6 +27,7 @@ type AlertRow = {
   listing_market: string | null;
   listing_thumbnail_url: string | null;
   listing_ends_at: string | null;
+  listing_updated_at: string | null;
   seller_username: string | null;
   seller_store_name: string | null;
   seller_feedback_count: number | null;
@@ -44,6 +46,7 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
         c.set_name AS card_set_name,
         c.card_number,
         al.total_price_cad,
+        l.total_usd,
         al.median_price_cad,
         al.discount_percent,
         al.listing_id,
@@ -52,6 +55,7 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
         l.market AS listing_market,
         l.thumbnail_url AS listing_thumbnail_url,
         l.ends_at AS listing_ends_at,
+        l.updated_at AS listing_updated_at,
         l.seller_username,
         l.seller_store_name,
         l.seller_feedback_count,
@@ -71,6 +75,7 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
   const deals = res.rows.map((row) => {
     const totalPrice =
       row.total_price_cad != null ? Number(row.total_price_cad) : null;
+    const totalUsd = row.total_usd != null ? Number(row.total_usd) : null;
     const historicPrice =
       row.median_price_cad != null ? Number(row.median_price_cad) : null;
     const rawDiscount =
@@ -102,11 +107,13 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
       priceCad: totalPrice,
       shippingCad: null,
       totalPriceCad: totalPrice,
+      totalUsd,
       historicPriceCad: historicPrice,
       discountPercent: displayDiscount,
       sampleSize,
       market: row.listing_market ?? "UNKNOWN",
       endsAt: row.listing_ends_at,
+      updatedAt: row.listing_updated_at,
       thumbnailUrl: row.listing_thumbnail_url,
       sellerUsername: row.seller_username,
       sellerStoreName: normalizeSellerStoreName(row.seller_store_name),

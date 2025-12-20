@@ -43,7 +43,7 @@ async function getBlacklistedSellers(): Promise<BlacklistedSeller[]> {
       ORDER BY seller_username ASC;
     `,
   );
-  return res.rows.map((row) => ({
+  return res.rows.map((row: BlacklistedSeller) => ({
     seller_username: row.seller_username,
     created_at: row.created_at ?? null,
   }));
@@ -64,7 +64,7 @@ async function getRejectedListings(): Promise<RejectedListingRow[]> {
       LIMIT 200;
     `,
   );
-  return res.rows.map((row) => ({
+  return res.rows.map((row: RejectedListingRow) => ({
     ...row,
     created_at: new Date(row.created_at),
   }));

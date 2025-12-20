@@ -44,8 +44,10 @@ type ListingDbRow = {
   price_cad: string | null;
   shipping_cad: string | null;
   total_price_cad: string | null;
+  total_usd: string | null;
   market: string;
   ends_at: string | null;
+  updated_at: string | null;
   thumbnail_url: string | null;
   condition: string;
   median_price_cad: string | null;
@@ -82,11 +84,13 @@ type CardDetail = {
     title: string;
     url: string;
     totalPriceCad: number | null;
+    totalUsd: number | null;
     historicPriceCad: number | null;
     discountPercent: number | null;
     sampleSize: number | null;
     market: string;
     endsAt: string | null;
+    updatedAt: string | null;
     thumbnailUrl: string | null;
     sellerUsername: string | null;
     sellerStoreName: string | null;
@@ -97,6 +101,11 @@ type CardDetail = {
     integrityReason: string | null;
     integrityScore: number | null;
     overrideType: "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE" | null;
+  }>;
+  moreFromSet: Array<{
+    id: number;
+    name: string;
+    cardNumber: string | null;
   }>;
 };
 
@@ -156,6 +165,31 @@ async function getRelatedCards(
   return res.rows;
 }
 
+async function getCardsFromSameSet(
+  card: CardRecord,
+  limit: number,
+): Promise<Array<{ id: number; name: string; cardNumber: string | null }>> {
+  const res = await query<{ id: number; name: string; card_number: string | null }>(
+    `
+      SELECT DISTINCT ON (name, card_number)
+        id,
+        name,
+        card_number
+      FROM cards
+      WHERE set_name = $1
+        AND id != $2
+      ORDER BY name, card_number, id
+      LIMIT $3
+    `,
+    [card.set_name, card.id, limit],
+  );
+  return res.rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    cardNumber: row.card_number,
+  }));
+}
+
 async function getHistoricals(cardIds: number[]): Promise<HistoricalDbRow[]> {
   if (cardIds.length === 0) return [];
 
@@ -208,8 +242,10 @@ async function getListings(
         l.price_cad,
         l.shipping_cad,
         l.total_price_cad,
+        l.total_usd,
         ${marketSelect} AS market,
         l.ends_at,
+        l.updated_at,
         l.thumbnail_url,
         c.condition_bucket AS condition,
         hp.median_price_cad,
@@ -298,6 +334,11 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
         ? Number(row.total_price_cad)
         : fallbackPrice;
 
+    const totalUsd =
+      row.total_usd !== null && row.total_usd !== undefined
+        ? Number(row.total_usd)
+        : null;
+
     const sampleSize =
       row.sample_size !== null && row.sample_size !== undefined
         ? Number(row.sample_size)
@@ -351,11 +392,13 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       title: row.title,
       url: row.url,
       totalPriceCad,
+      totalUsd,
       historicPriceCad: medianPriceCad,
       discountPercent,
       sampleSize,
       market: row.market,
       endsAt: row.ends_at,
+      updatedAt: row.updated_at,
       thumbnailUrl: row.thumbnail_url,
       sellerUsername: row.seller_username ?? null,
       sellerStoreName: normalizeSellerStoreName(row.seller_store_name),
@@ -375,7 +418,7 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
   });
 
   // Safety net: filter out any blacklisted/excluded items that slipped through ingestion
-  const filteredListings: Listing[] = [];
+  const filteredListings: CardDetail["listings"] = [];
   for (const listing of listings) {
     const result = await shouldExcludeListingFromCardSurfaces(
       { title: listing.title ?? "", listingId: String(listing.id) }, // listingId must be stable for overrides/backfill (use DB listing id)
@@ -392,11 +435,13 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
   }
 
   // Fetch stock image for hero display
-  const stockImage = await getCardStockImageUrl(
-    cardRecord.set_name,
-    cardRecord.name,
-    cardRecord.card_number ?? undefined
-  );
+  const stockImage = await getCardStockImageUrl({
+    setName: cardRecord.set_name,
+    name: cardRecord.name,
+    cardNumber: cardRecord.card_number ?? undefined,
+  });
+
+  const moreFromSet = await getCardsFromSameSet(cardRecord, 6);
 
   const result = {
     card: {
@@ -410,6 +455,7 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
     },
     historicals,
     listings: filteredListings,
+    moreFromSet,
   };
   warnIfStoreNamesMissing(filteredListings, "cardDetail");
   return result;

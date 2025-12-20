@@ -72,7 +72,7 @@ export default async function AdminAlertsPage({
       ORDER BY w.created_at DESC;
     `,
   );
-  const watches = watchRes.rows.map((row) => ({
+  const watches = watchRes.rows.map((row: WatchRow) => ({
     id: row.id,
     cardId: row.card_id,
     cardName: row.card_name,
@@ -112,7 +112,7 @@ export default async function AdminAlertsPage({
     `,
   );
 
-  const alerts = alertsRes.rows.map((row) => ({
+  const alerts = alertsRes.rows.map((row: AlertRow) => ({
     id: row.id,
     watchId: row.watch_id,
     cardId: row.card_id,

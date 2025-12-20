@@ -36,6 +36,7 @@ type DealRow = {
   price_cad: string | null;
   shipping_cad: string | null;
   total_price_cad: string | null;
+  total_usd: string | null;
   historic_price_cad: string | null;
   discount_percent: string | null;
   calculated_discount: string | null;
@@ -65,6 +66,7 @@ const MAX_PAGE_SIZE = 100;
 type SortConfig = {
   requireHistoric: boolean;
   requireEndsAt?: boolean;
+  orderBy?: string;
 };
 
 const SORT_CONFIG: Record<DealsApiSort, SortConfig> = {
@@ -268,6 +270,7 @@ async function fetchListings(
         l.price_cad,
         l.shipping_cad,
         l.total_price_cad,
+        l.total_usd,
         l.historic_price_cad,
         l.discount_percent,
         CASE
@@ -346,6 +349,7 @@ function mapRowToDeal(row: DealRow): Deal {
     row.shipping_cad != null ? Number(row.shipping_cad) : null;
   const totalPriceCad =
     row.total_price_cad != null ? Number(row.total_price_cad) : null;
+  const totalUsd = row.total_usd != null ? Number(row.total_usd) : null;
   const sampleSize = row.sample_size != null ? Number(row.sample_size) : null;
   const storedConfidenceWeight =
     row.deal_confidence_weight != null
@@ -404,6 +408,7 @@ function mapRowToDeal(row: DealRow): Deal {
     priceCad,
     shippingCad,
     totalPriceCad,
+    totalUsd,
     historicPriceCad,
     listingId: row.listing_id ?? null,
     historicSampleCount: sampleSize,
@@ -424,7 +429,7 @@ function mapRowToDeal(row: DealRow): Deal {
     confidenceWeight,
     market: row.market,
     endsAt: row.ends_at,
-    confidenceWeight,
+    updatedAt: row.updated_at,
     card:
       row.card_id == null
         ? null

@@ -712,9 +712,6 @@ function ListingRow({
   const blacklistClass = listing.sellerBlacklisted
     ? "bg-rose-900/50 text-rose-300"
     : "bg-emerald-900/50 text-emerald-300";
-  const blacklistLink = sellerUsername
-    ? `/admin/blacklist?seller=${encodeURIComponent(sellerUsername)}`
-    : null;
   
   return (
     <>
@@ -749,17 +746,11 @@ function ListingRow({
             <span className={`rounded-full px-2 py-0.5 font-medium ${blacklistClass}`}>
               {blacklistLabel}
             </span>
-            {blacklistLink ? (
-              <a
-                href={blacklistLink}
-                className="text-amber-400 hover:text-amber-300"
-                onClick={(e) => e.stopPropagation()}
-              >
-                View in blacklist
-              </a>
-            ) : (
-              <span>Seller unavailable</span>
-            )}
+            <span>
+              Admin access required (404 if not authenticated). Open
+              {" "}
+              /admin/blacklist with your admin secret.
+            </span>
           </div>
         </td>
         <td className="overflow-hidden px-2 py-2 lg:px-3">
@@ -882,9 +873,6 @@ function MobileCard({
   const blacklistClass = listing.sellerBlacklisted
     ? "bg-rose-900/50 text-rose-300"
     : "bg-emerald-900/50 text-emerald-300";
-  const blacklistLink = sellerUsername
-    ? `/admin/blacklist?seller=${encodeURIComponent(sellerUsername)}`
-    : null;
   
   return (
     <div
@@ -927,17 +915,11 @@ function MobileCard({
         <span className={`rounded-full px-2 py-0.5 font-medium ${blacklistClass}`}>
           {blacklistLabel}
         </span>
-        {blacklistLink ? (
-          <a
-            href={blacklistLink}
-            className="text-amber-400 hover:text-amber-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            View in blacklist
-          </a>
-        ) : (
-          <span>Seller unavailable</span>
-        )}
+        <span>
+          Admin access required (404 if not authenticated). Open
+          {" "}
+          /admin/blacklist with your admin secret.
+        </span>
       </div>
       
       {listing.cardName && (

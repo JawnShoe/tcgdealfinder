@@ -460,7 +460,7 @@ ACTIVE WORK: NONE
 ### Build & Lint
 ```bash
 npm run lint      # Must show: ✔ No ESLint warnings or errors
-npm run build     # Must compile all 31 routes successfully
+npm run build     # Must compile all 35 routes successfully
 ```
 
 ### Visual Smoke Tests
@@ -538,7 +538,7 @@ Prevent "dead-end" searches by ensuring full set data is available.
 - API: 170 total sets from Pokémon TCG API v2
 - Match: 100% (all 170 sets match exactly, no gaps)
 - Rendering: /sets and /sets/[setId] pages render all sets successfully
-- Build: All 31 routes compile without errors
+- Build: All 35 routes compile without errors
 
 Set Browse UX Polish [PARTIAL]
 

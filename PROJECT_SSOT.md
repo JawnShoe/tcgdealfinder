@@ -210,6 +210,19 @@ ACTIVE WORK: NONE
 
 ---
 
+## COMPLETED (2025-12-21)
+
+### Audit loose ends cleanup
+- **Change**: Minor UI/copy cleanup to close remaining audit items.
+  - **Watchlist**: Standardized empty-state icon from ⭐ to ☆ for consistency with UI
+  - **DealsTable**: Renamed "Price conf." filter to "Data reliability" with tooltip explaining meaning
+  - **Admin Listings**: Fixed timezone label from "UTC" to "in your local timezone" (datetime-local uses browser time)
+  - **Admin Blacklist History**: Renamed "Restore" button to "Re-blacklist" with tooltip; updated toast messages
+- **Routes/components**: `/watchlist`, `/`, `/admin/blacklist`, `/admin/listings`; `app/watchlist/page.tsx`, `components/DealsTable.tsx`, `components/AdminListingsClient.tsx`, `components/AdminBlacklistClient.tsx`
+- **Classification**: UI/copy cleanup
+- **Status**: COMPLETE (2025-12-21)
+- **Commit**: 7e57411
+
 ## COMPLETED (2025-12-20)
 
 ### Public trust surface cleanup

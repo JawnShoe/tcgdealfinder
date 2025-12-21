@@ -677,9 +677,12 @@ export default function DealsTable({
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-600">
+          <label
+            className="flex flex-col gap-1 text-sm text-slate-600"
+            title="Indicates how reliable recent pricing data is based on sales volume and consistency"
+          >
             <span className="text-xs font-semibold uppercase text-slate-500">
-              Price conf.
+              Data reliability
             </span>
             <select
               className={inputClasses}

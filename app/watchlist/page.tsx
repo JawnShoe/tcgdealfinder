@@ -27,7 +27,7 @@ export default function WatchlistPage() {
         <div className="panel space-y-3 text-center">
           <p className="text-sm text-slate-600">You haven&apos;t starred any cards yet.</p>
           <p className="text-sm text-slate-500">
-            ⭐ Star cards to track deals
+            ☆ Star cards to track deals
           </p>
         </div>
       ) : (

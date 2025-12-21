@@ -93,7 +93,7 @@ export function AdminListingsClient({
             />
           </label>
           <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-            Expires at (optional, UTC)
+            Expires at (optional, in your local timezone)
             <input
               type="datetime-local"
               name="expires_at"

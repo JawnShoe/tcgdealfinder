@@ -87,9 +87,9 @@ export function AdminBlacklistClient({
   async function handleRestoreSeller(formData: FormData) {
     try {
       await restoreSellerAction(formData);
-      showToast("Seller restored to blacklist", "success");
+      showToast("Seller re-blacklisted", "success");
     } catch {
-      showToast("Failed to restore seller", "error");
+      showToast("Failed to re-blacklist seller", "error");
     }
   }
 
@@ -247,8 +247,9 @@ export function AdminBlacklistClient({
                       <button
                         type="submit"
                         className="text-xs text-emerald-700 transition hover:text-emerald-800"
+                        title="Add this seller back to the active blacklist"
                       >
-                        Restore
+                        Re-blacklist
                       </button>
                     </form>
                   </td>

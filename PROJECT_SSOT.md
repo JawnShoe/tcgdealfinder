@@ -245,6 +245,7 @@ ACTIVE WORK: NONE
 - **Status**: COMPLETE (2025-12-21)
 - **Commit**: 6b2581b
 - **No Tier-1 systems touched**: Yes (no ingestion, scoring, or query logic changes)
+- **Polish follow-ups**: 01e5f47 (inline helper row polish, Option A); c301f7f (micro-spacing + bullet separator polish)
 
 ## COMPLETED (2025-12-20)
 

@@ -941,7 +941,7 @@ export default function CardDetailClient({
                     colSpan={7}
                     className="px-3 py-6 text-center"
                   >
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <div>
                         <p className="text-sm font-medium text-slate-700">
                           {hasAnyListings
@@ -956,33 +956,31 @@ export default function CardDetailClient({
                       </div>
 
                       {noDealsIntelligence && (
-                        <div className="mx-auto max-w-sm rounded-lg border border-slate-200 bg-slate-50 p-4 text-left">
+                        <p className="text-xs text-slate-600">
                           {noDealsIntelligence.priceRangeLow !== null && (
-                            <div className="mb-3">
-                              <p className="text-xs font-semibold uppercase text-slate-500">
-                                Recent sold range
-                              </p>
-                              <p className="text-base font-semibold text-slate-900">
-                                {noDealsIntelligence.priceRangeLow === noDealsIntelligence.priceRangeHigh
+                            <span>
+                              Recent sold range:{" "}
+                              <span className="font-semibold text-slate-800">
+                                {noDealsIntelligence.priceRangeLow ===
+                                noDealsIntelligence.priceRangeHigh
                                   ? formatCurrency(noDealsIntelligence.priceRangeLow)
                                   : `${formatCurrency(noDealsIntelligence.priceRangeLow)} - ${formatCurrency(noDealsIntelligence.priceRangeHigh)}`}
-                              </p>
-                            </div>
+                              </span>
+                            </span>
                           )}
                           {noDealsIntelligence.frequencyHint && (
-                            <div>
-                              <p className="text-xs font-semibold uppercase text-slate-500">
-                                Deal frequency
-                              </p>
-                              <p className="text-sm text-slate-700">
+                            <span>
+                              {noDealsIntelligence.priceRangeLow !== null ? " | " : ""}
+                              Deal frequency:{" "}
+                              <span className="font-semibold text-slate-800">
                                 {noDealsIntelligence.frequencyHint}
-                              </p>
-                            </div>
+                              </span>
+                            </span>
                           )}
-                        </div>
+                        </p>
                       )}
 
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-2 pt-1">
                         <WatchlistStarButton
                           cardId={card.id}
                           cardName={card.name}

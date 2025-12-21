@@ -941,7 +941,7 @@ export default function CardDetailClient({
                     colSpan={7}
                     className="px-3 py-6 text-center"
                   >
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div>
                         <p className="text-sm font-medium text-slate-700">
                           {hasAnyListings
@@ -956,7 +956,7 @@ export default function CardDetailClient({
                       </div>
 
                       {noDealsIntelligence && (
-                        <p className="text-xs text-slate-600">
+                        <p className="pt-1 text-xs text-slate-600">
                           {noDealsIntelligence.priceRangeLow !== null && (
                             <span>
                               Recent sold range:{" "}
@@ -970,7 +970,7 @@ export default function CardDetailClient({
                           )}
                           {noDealsIntelligence.frequencyHint && (
                             <span>
-                              {noDealsIntelligence.priceRangeLow !== null ? " | " : ""}
+                              {noDealsIntelligence.priceRangeLow !== null ? " • " : ""}
                               Deal frequency:{" "}
                               <span className="font-semibold text-slate-800">
                                 {noDealsIntelligence.frequencyHint}
@@ -980,7 +980,7 @@ export default function CardDetailClient({
                         </p>
                       )}
 
-                      <div className="flex items-center justify-center gap-2 pt-1">
+                      <div className="flex items-center justify-center gap-2 pt-2">
                         <WatchlistStarButton
                           cardId={card.id}
                           cardName={card.name}

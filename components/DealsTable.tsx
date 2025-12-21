@@ -872,8 +872,11 @@ export default function DealsTable({
                       <th className={`${colClass("score", variant)} px-3 py-2 text-right`}>Score</th>
                     ) : null}
                     {variant !== "default" ? (
-                      <th className={`${colClass("confidence", variant)} whitespace-nowrap px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"}`}>
-                        {getHeaderLabel("priceConf", "Price conf.")}
+                      <th
+                        className={`${colClass("confidence", variant)} whitespace-nowrap px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"}`}
+                        title="Indicates how reliable recent pricing data is based on sales volume and consistency"
+                      >
+                        {getHeaderLabel("priceConf", "Data reliability")}
                       </th>
                     ) : null}
                     <th className={`${colClass("seller", variant)} px-3 py-2 text-left`}>

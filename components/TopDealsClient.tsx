@@ -149,9 +149,12 @@ export default function TopDealsClient({
   return (
     <div>
       <div className="mb-4 flex justify-end">
-        <label className="flex flex-col gap-1 text-sm text-slate-600">
+        <label
+          className="flex flex-col gap-1 text-sm text-slate-600"
+          title="Indicates how reliable recent pricing data is based on sales volume and consistency"
+        >
           <span className="text-xs font-semibold uppercase text-slate-500">
-            Price conf.
+            Data reliability
           </span>
           <select
             className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none"

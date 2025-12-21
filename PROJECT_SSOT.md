@@ -212,6 +212,18 @@ ACTIVE WORK: NONE
 
 ## COMPLETED (2025-12-21)
 
+### Data reliability label completion (follow-up fix)
+- **Change**: Extended "Price conf." → "Data reliability" rename to all remaining surfaces with tooltips.
+  - **CardDetailClient**: Filter label + table header (filter and listings table)
+  - **TopDealsClient**: Filter label
+  - **DealsTable**: Table header (was missed in prior commit)
+  - **FeaturedDealsStrip**: Row label
+  - **tableColumns.tsx**: Column header definition
+- **Routes/components**: `/cards/[cardId]`, `/top-deals`, `/`, `/newest`; `components/CardDetailClient.tsx`, `components/TopDealsClient.tsx`, `components/DealsTable.tsx`, `components/FeaturedDealsStrip.tsx`, `lib/tableColumns.tsx`
+- **Classification**: UI/copy cleanup (follow-up to audit loose ends)
+- **Status**: COMPLETE (2025-12-21)
+- **Commit**: 609baab
+
 ### Audit loose ends cleanup
 - **Change**: Minor UI/copy cleanup to close remaining audit items.
   - **Watchlist**: Standardized empty-state icon from ⭐ to ☆ for consistency with UI

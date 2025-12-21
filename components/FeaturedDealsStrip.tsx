@@ -108,8 +108,11 @@ export default function FeaturedDealsStrip({
                     )}
                   </div>
                 </div>
-                <div className="mt-2 flex items-center justify-between text-xs">
-                  <span className="text-slate-600">Price confidence</span>
+                <div
+                  className="mt-2 flex items-center justify-between text-xs"
+                  title="Indicates how reliable recent pricing data is based on sales volume and consistency"
+                >
+                  <span className="text-slate-600">Data reliability</span>
                   <ConfidenceChip
                     weightLabel={getWeightLabel(deal.confidenceWeight ?? null)}
                     sampleSize={deal.sampleSize}

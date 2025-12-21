@@ -742,9 +742,12 @@ export default function CardDetailClient({
                 ))}
               </select>
             </label>
-            <label className="flex flex-col gap-1">
+            <label
+              className="flex flex-col gap-1"
+              title="Indicates how reliable recent pricing data is based on sales volume and consistency"
+            >
               <span className="text-xs font-semibold uppercase text-slate-500">
-                Price conf.
+                Data reliability
               </span>
               <select
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
@@ -847,7 +850,12 @@ export default function CardDetailClient({
                     <SortArrow colKey="discount" />
                   </span>
                 </th>
-                <th className="whitespace-nowrap px-3 py-2 text-center">Price conf.</th>
+                <th
+                  className="whitespace-nowrap px-3 py-2 text-center"
+                  title="Indicates how reliable recent pricing data is based on sales volume and consistency"
+                >
+                  Data reliability
+                </th>
                 <th 
                   className="px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none"
                   onClick={() => handleHeaderSort("seller")}

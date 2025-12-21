@@ -206,11 +206,23 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
-ACTIVE WORK: Admin UX follow-ups — (1) Blacklist seller link-out to eBay, (2) /admin/exclusions redirect/wrapper to /admin Exclusions tab.
+ACTIVE WORK: NONE
 
 ---
 
 ## COMPLETED (2025-12-20)
+
+### Admin blacklist intake form
+- **Change**: Added "Add seller to blacklist" form at top of Blacklist tab. Operators can now blacklist sellers directly from the admin hub without context-switching. Uses same INSERT logic as inline "Blacklist seller" actions.
+- **Routes/components**: `/admin?tab=blacklist`, `/admin/blacklist`, `components/AdminBlacklistPanel.tsx`
+- **Status**: COMPLETE (2025-12-20)
+- **Commit**: 81eff09
+
+### Admin action feedback toasts
+- **Change**: Added success/error toast notifications for all admin actions. Blacklist add/remove/restore and listing exclude/restore now show feedback. Forms reset on success for easy repeat actions.
+- **Routes/components**: `/admin`, `/admin/blacklist`, `/admin/listings`, `components/AdminActionFeedback.tsx`, `components/AdminBlacklistClient.tsx`, `components/AdminListingsClient.tsx`
+- **Status**: COMPLETE (2025-12-20)
+- **Commit**: 91316cf
 
 ### Admin navigation toolbar
 - **Change**: Added shared Admin Tools toolbar on `/admin/exclusions`, `/admin/blacklist`, `/admin/listings`.

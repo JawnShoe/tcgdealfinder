@@ -389,6 +389,61 @@ export default function CardDetailClient({
     historyPointCount === 1 ? "" : "s"
   } recorded`;
 
+  const hasAnyListings = listings.length > 0;
+
+  // No-deals intelligence: compute price range and frequency hint from existing data
+  const noDealsIntelligence = useMemo(() => {
+    // Only compute when filtered listings are empty
+    if (filteredListings.length > 0) return null;
+
+    // Price range from historicals (recent sold data)
+    let priceRangeLow: number | null = null;
+    let priceRangeHigh: number | null = null;
+    const validPrices = historicals
+      .map((h) => h.medianPriceCad)
+      .filter((p): p is number => p != null && Number.isFinite(p) && p > 0);
+    if (validPrices.length > 0) {
+      priceRangeLow = Math.min(...validPrices);
+      priceRangeHigh = Math.max(...validPrices);
+    }
+
+    // Frequency hint from price history (sold listings over time)
+    let frequencyHint: string | null = null;
+    if (priceHistory.length >= 2) {
+      // Count total sales and date range
+      const totalSales = priceHistory.reduce((sum, p) => sum + p.sample, 0);
+      const dates = priceHistory.map((p) => new Date(p.date).getTime());
+      const minDate = Math.min(...dates);
+      const maxDate = Math.max(...dates);
+      const daySpan = Math.max(1, Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)));
+
+      // Calculate average sales per week (approximate, rounded)
+      const weeksSpan = Math.max(1, daySpan / 7);
+      const salesPerWeek = totalSales / weeksSpan;
+
+      if (salesPerWeek >= 5) {
+        frequencyHint = "Typically appears daily";
+      } else if (salesPerWeek >= 2) {
+        frequencyHint = "Typically appears 2-3x per week";
+      } else if (salesPerWeek >= 0.5) {
+        frequencyHint = "Typically appears weekly";
+      } else if (totalSales >= 2) {
+        frequencyHint = "Appears occasionally";
+      }
+    } else if (priceHistory.length === 1) {
+      frequencyHint = "Rarely listed";
+    }
+
+    // Only return if we have some intelligence to show
+    if (priceRangeLow === null && frequencyHint === null) return null;
+
+    return {
+      priceRangeLow,
+      priceRangeHigh,
+      frequencyHint,
+    };
+  }, [filteredListings.length, historicals, priceHistory]);
+
   const bestDealFreshness = bestTrustedDeal
     ? formatFreshness(bestTrustedDeal.deal.updatedAt)
     : null;
@@ -886,28 +941,58 @@ export default function CardDetailClient({
                     colSpan={7}
                     className="px-3 py-6 text-center"
                   >
-                    {listings.length === 0 ? (
-                      <>
-                        <p className="text-sm text-slate-600">
-                          No live deals right now
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm font-medium text-slate-700">
+                          {hasAnyListings
+                            ? "No listings match your current filters."
+                            : "No live deals right now"}
                         </p>
                         <p className="mt-1 text-xs text-slate-500">
-                          Deals appear periodically for this card.
+                          {hasAnyListings
+                            ? "Try adjusting condition or market selection."
+                            : "Deals appear periodically for this card."}
                         </p>
-                        <p className="mt-2 text-sm text-slate-500">
-                          ⭐ Watch this card
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm text-slate-600">
-                          No listings match your current filters.
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          Try adjusting condition or market selection.
-                        </p>
-                      </>
-                    )}
+                      </div>
+
+                      {noDealsIntelligence && (
+                        <div className="mx-auto max-w-sm rounded-lg border border-slate-200 bg-slate-50 p-4 text-left">
+                          {noDealsIntelligence.priceRangeLow !== null && (
+                            <div className="mb-3">
+                              <p className="text-xs font-semibold uppercase text-slate-500">
+                                Recent sold range
+                              </p>
+                              <p className="text-base font-semibold text-slate-900">
+                                {noDealsIntelligence.priceRangeLow === noDealsIntelligence.priceRangeHigh
+                                  ? formatCurrency(noDealsIntelligence.priceRangeLow)
+                                  : `${formatCurrency(noDealsIntelligence.priceRangeLow)} - ${formatCurrency(noDealsIntelligence.priceRangeHigh)}`}
+                              </p>
+                            </div>
+                          )}
+                          {noDealsIntelligence.frequencyHint && (
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-slate-500">
+                                Deal frequency
+                              </p>
+                              <p className="text-sm text-slate-700">
+                                {noDealsIntelligence.frequencyHint}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-center gap-2">
+                        <WatchlistStarButton
+                          cardId={card.id}
+                          cardName={card.name}
+                          setName={card.setName}
+                        />
+                        <span className="text-sm text-slate-600">
+                          Watch this card
+                        </span>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ) : (

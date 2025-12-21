@@ -696,7 +696,7 @@ export default async function SetDetailPage({
         </div>
         {hotCards.length === 0 ? (
           <p className="text-sm text-slate-500">
-            No under-historic deals detected right now. Check back soon.
+            No deals below recent median right now. Check back soon.
           </p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -778,7 +778,7 @@ export default async function SetDetailPage({
             <p className="text-sm text-slate-500">
               {catalogCardCount > 0
                 ? `${catalogCardCount} cards imported for this set`
-                : "Awaiting catalog sync"}
+                : "Card data for this set is loading. Check back shortly."}
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm">

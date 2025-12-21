@@ -9,20 +9,6 @@ export default function ListingLookup() {
   const [result, setResult] = useState<{
     url: string;
     matchEligible: boolean;
-    matchRejectReason: string | null;
-    rejectDetail: string | null;
-    rejectSource: string | null;
-    shippingKnown: boolean;
-    collectorNumber: {
-      raw: string | null;
-      norm: string | null;
-      confidence: string | null;
-      signals: string[];
-    };
-    cardCollectorNumber: {
-      norm: string | null;
-      confidence: string | null;
-    };
   } | null>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -41,46 +27,18 @@ export default function ListingLookup() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body?.message ?? body?.error ?? "Unable to find listing.");
+        throw new Error(body?.message ?? body?.error ?? "This listing isn't available right now.");
       }
       const json = (await res.json()) as {
         listing: {
           url: string;
           title: string;
           matchEligible: boolean;
-          matchRejectReason: string | null;
-          rejectSource: string | null;
-          rejectDetail: string | null;
-          shippingKnown: boolean;
-          collectorNumber: {
-            raw: string | null;
-            norm: string | null;
-            confidence: string | null;
-            signals: string[];
-          };
-          cardCollectorNumber: {
-            norm: string | null;
-            confidence: string | null;
-          };
         };
       };
       setResult({
         url: json.listing.url,
         matchEligible: json.listing.matchEligible ?? true,
-        matchRejectReason: json.listing.matchRejectReason ?? null,
-        rejectSource: json.listing.rejectSource ?? null,
-        rejectDetail: json.listing.rejectDetail ?? null,
-        shippingKnown: json.listing.shippingKnown ?? true,
-        collectorNumber: {
-          raw: json.listing.collectorNumber?.raw ?? null,
-          norm: json.listing.collectorNumber?.norm ?? null,
-          confidence: json.listing.collectorNumber?.confidence ?? null,
-          signals: json.listing.collectorNumber?.signals ?? [],
-        },
-        cardCollectorNumber: {
-          norm: json.listing.cardCollectorNumber?.norm ?? null,
-          confidence: json.listing.cardCollectorNumber?.confidence ?? null,
-        },
       });
       setMessage(json.listing.title ?? "Listing found.");
       setStatus("success");
@@ -89,7 +47,7 @@ export default function ListingLookup() {
       setMessage(
         error instanceof Error
           ? error.message
-          : "Not in our database yet. Try again after the next refresh cycle.",
+          : "This listing isn't available right now.",
       );
     }
   };
@@ -113,7 +71,7 @@ export default function ListingLookup() {
         </button>
       </form>
       {status !== "idle" && message ? (
-        <div className="mt-2 space-y-3 text-sm">
+        <div className="mt-2 text-sm">
           <p
             className={
               status === "error" ? "text-rose-600" : "text-emerald-600"
@@ -130,59 +88,20 @@ export default function ListingLookup() {
                   {message}
                 </a>
                 {!result.matchEligible && (
-                  <span
-                    className="ml-2 inline-flex items-center rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800"
-                    title={
-                      result.matchRejectReason === "collector_number_mismatch"
-                        ? `Card expects ${result.cardCollectorNumber.norm ?? "unknown"} · Listing ${result.collectorNumber.norm ?? "unknown"}`
-                        : result.rejectDetail ?? undefined
-                    }
-                  >
-                    {result.matchRejectReason === "collector_number_mismatch"
-                      ? "Excluded: Collector # mismatch"
-                      : `Excluded: ${result.matchRejectReason ?? "flagged"}`}
-                  </span>
-                )}
-                {!result.shippingKnown && (
-                  <span className="ml-2 inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800">
-                    Shipping unknown
+                  <span className="ml-2 inline-flex items-center rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                    Not currently available
                   </span>
                 )}
               </>
             ) : (
-              message
+              <>
+                {message}
+                <span className="mt-1 block text-xs text-slate-500">
+                  It may have been removed or failed verification.
+                </span>
+              </>
             )}
           </p>
-          {result && (
-            <div className="rounded border border-slate-200 bg-white p-2 text-xs text-slate-600">
-              <p>
-                Listing collector #:{" "}
-                <span className="font-semibold text-slate-900">
-                  {result.collectorNumber.norm ??
-                    result.collectorNumber.raw ??
-                    "Not detected"}
-                </span>{" "}
-                ({result.collectorNumber.confidence ?? "NONE"} confidence)
-              </p>
-              {result.collectorNumber.signals.length > 0 ? (
-                <p>
-                  Signals:{" "}
-                  <span className="font-mono text-[11px]">
-                    {result.collectorNumber.signals.join(", ")}
-                  </span>
-                </p>
-              ) : null}
-              {result.cardCollectorNumber.norm && (
-                <p>
-                  Card expects:{" "}
-                  <span className="font-semibold text-slate-900">
-                    {result.cardCollectorNumber.norm}
-                  </span>{" "}
-                  ({result.cardCollectorNumber.confidence ?? "UNKNOWN"})
-                </p>
-              )}
-            </div>
-          )}
         </div>
       ) : null}
     </div>

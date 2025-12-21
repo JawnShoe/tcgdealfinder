@@ -212,6 +212,17 @@ ACTIVE WORK: NONE
 
 ## COMPLETED (2025-12-20)
 
+### Public trust surface cleanup
+- **Change**: Removed internal/debug terminology from public-facing pages to improve visitor trust.
+  - **ListingLookup** (Home): Removed debug fields (rejectSource, rejectDetail, collectorNumber signals, confidence values); now shows only "This listing isn't available right now" + optional "It may have been removed or failed verification"
+  - **Sets page**: Replaced CLI command in empty state ("Run npm run ingest:pokemon-sets...") with "Catalog not yet loaded. Please check back soon."
+  - **Set Details page**: Replaced "Awaiting catalog sync" with "Card data for this set is loading. Check back shortly."; replaced "No under-historic deals" jargon with "No deals below recent median"
+  - **Newest Deals**: Hid "Integrity Review" badge entirely from public visitors (Option A - safest)
+- **Routes/components**: `/` (Home), `/sets`, `/sets/[setId]`, `/newest`; `components/ListingLookup.tsx`, `components/DealsTable.tsx`, `app/sets/page.tsx`, `app/sets/[setId]/page.tsx`
+- **Classification**: UI/copy cleanup (Tier-1 trust)
+- **Status**: COMPLETE (2025-12-20)
+- **Commit**: 621fbed
+
 ### Admin blacklist intake form
 - **Change**: Added "Add seller to blacklist" form at top of Blacklist tab. Operators can now blacklist sellers directly from the admin hub without context-switching. Uses same INSERT logic as inline "Blacklist seller" actions.
 - **Routes/components**: `/admin?tab=blacklist`, `/admin/blacklist`, `components/AdminBlacklistPanel.tsx`

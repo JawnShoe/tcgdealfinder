@@ -173,8 +173,7 @@ export default async function SetsPage() {
 
       {grouped.length === 0 ? (
         <div className="panel text-center text-sm text-slate-500">
-          No catalog sets found. Run <code className="font-mono">npm run ingest:pokemon-sets</code> to import the latest
-          Pokémon sets.
+          Catalog not yet loaded. Please check back soon.
         </div>
       ) : (
         <div className="space-y-6">

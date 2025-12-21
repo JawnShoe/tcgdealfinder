@@ -945,17 +945,6 @@ export default function DealsTable({
                                   showListingTitle={isNewestVariant}
                                   showViewCardLink
                                 />
-                                {variant === "newest" &&
-                                  vm.deal.integrityStatus === "REVIEW" && (
-                                    <span
-                                      className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
-                                      title={
-                                        vm.deal.integrityReason ?? "Flagged for review"
-                                      }
-                                    >
-                                      Review
-                                    </span>
-                                  )}
                                 {vm.deal.historicBaselineConfidence === "none" ? (
                                   <p className="text-xs text-amber-600">
                                     {baselineBadgeLabel(
@@ -1121,15 +1110,6 @@ export default function DealsTable({
                           showListingTitle={isNewestVariant}
                           showViewCardLink={false}
                         />
-                        {variant === "newest" &&
-                          vm.deal.integrityStatus === "REVIEW" && (
-                            <span
-                              className="mt-1 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
-                              title={vm.deal.integrityReason ?? "Flagged for review"}
-                            >
-                              Review
-                            </span>
-                          )}
                       </div>
                       <WatchlistStarButton
                         cardId={cardId ?? undefined}

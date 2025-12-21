@@ -102,6 +102,51 @@ async function restoreSeller(formData: FormData) {
   revalidatePath("/admin");
 }
 
+async function addSeller(formData: FormData) {
+  "use server";
+
+  const username = formData.get("seller_username");
+  if (typeof username !== "string" || !username.trim()) return;
+
+  const normalizedUsername = username.trim().toLowerCase();
+
+  await query(
+    `
+      INSERT INTO seller_blacklist (seller_username)
+      VALUES ($1)
+      ON CONFLICT (seller_username) DO NOTHING;
+    `,
+    [normalizedUsername],
+  );
+
+  // Also remove any active listings from this seller
+  await query(
+    `
+      WITH removed AS (
+        DELETE FROM listings
+        WHERE seller_username = $1
+        RETURNING listing_id, seller_username, title
+      )
+      INSERT INTO rejected_listings (
+        ebay_item_id,
+        seller_username,
+        title,
+        reason
+      )
+      SELECT
+        listing_id,
+        seller_username,
+        title,
+        'manual_seller_blacklist'
+      FROM removed;
+    `,
+    [normalizedUsername],
+  );
+
+  revalidatePath("/admin/blacklist");
+  revalidatePath("/admin");
+}
+
 async function getBlacklistedSellers(
   sellerFilter?: string | null,
 ): Promise<BlacklistedSeller[]> {
@@ -203,6 +248,30 @@ export async function AdminBlacklistPanel({
           </p>
         )}
       </div>
+
+      <section className="panel space-y-3">
+        <h2 className="text-lg font-semibold">Add seller to blacklist</h2>
+        <form action={addSeller} className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1 text-sm">
+            Seller username
+            <input
+              name="seller_username"
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+              placeholder="seller_name"
+              required
+            />
+          </label>
+          <button
+            type="submit"
+            className="rounded bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            Blacklist seller
+          </button>
+        </form>
+        <p className="text-xs text-slate-500">
+          Blacklisting a seller removes all their active listings.
+        </p>
+      </section>
 
       <section className="panel">
         <h2 className="text-lg font-semibold mb-2">Blacklisted Sellers</h2>

@@ -10,6 +10,7 @@
 **Ops / Maintenance**:
 - Removed experimental git worktree `tcg-pr1a` on 2025-12-18 (no code changes).
 - Applied Neon migration `004_add_seller_blacklist_history` on 2025-12-20; verified via `to_regclass()`; `/admin/blacklist` banner cleared; history rows confirmed on unblacklist.
+- Rotated `ADMIN_SECRET` + `DEBUG_ADMIN_TOKEN` on 2025-12-21; values are local-only and no longer present in tracked files. Commit: 3942e84.
 - Repo hygiene (2025-12-21): untracked `settings.local.json` (example added), ignored local/artifact patterns; removed tracked artifacts (`components/home/HomeContent.corrupted.bak`, `_content*.txt`, `temp`, `temp_pkg.txt`, `import-log.txt`, `tsconfig.tsbuildinfo`). Commits: 7878ea1, af98509.
 
 ### Security / Admin Access

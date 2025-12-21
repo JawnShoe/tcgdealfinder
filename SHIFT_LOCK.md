@@ -22,6 +22,10 @@
 - Shift change cannot proceed without a restore point (zip and/or bundle) and dirty-file classification.
 - Explicit bans: no stash-as-backup, no delete/clean commands.
 
+### Secret Hygiene (LOCKED)
+- No secrets in tracked files (configs, docs, samples).
+- Evidence Packet or CI must include a secret scan check.
+
 ### Tier-1 Evidence Gate (NEW)
 - Tier-1 issues (pricing totals, shipping, dedup integrity, seller trust UI, watchlist persistence, best/featured deal numbers) may not receive a “NO FIX REQUIRED” verdict unless an Evidence Packet is attached.
 - Missing or partial evidence must be called out as: `INSUFFICIENT EVIDENCE — NEED DB/UI TRACE`.

@@ -221,7 +221,7 @@ ACTIVE WORK: NONE
 - **Routes/components**: `/watchlist`, `/`, `/admin/blacklist`, `/admin/listings`; `app/watchlist/page.tsx`, `components/DealsTable.tsx`, `components/AdminListingsClient.tsx`, `components/AdminBlacklistClient.tsx`
 - **Classification**: UI/copy cleanup
 - **Status**: COMPLETE (2025-12-21)
-- **Commit**: 7e57411
+- **Commit**: 6cd11f8
 
 ## COMPLETED (2025-12-20)
 

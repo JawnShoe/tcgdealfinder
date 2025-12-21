@@ -222,7 +222,7 @@ ACTIVE WORK: NONE
 - **Routes/components**: `/cards/[cardId]`, `/top-deals`, `/`, `/newest`; `components/CardDetailClient.tsx`, `components/TopDealsClient.tsx`, `components/DealsTable.tsx`, `components/FeaturedDealsStrip.tsx`, `lib/tableColumns.tsx`
 - **Classification**: UI/copy cleanup (follow-up to audit loose ends)
 - **Status**: COMPLETE (2025-12-21)
-- **Commit**: 609baab
+- **Commit**: ab4ddb6
 
 ### Audit loose ends cleanup
 - **Change**: Minor UI/copy cleanup to close remaining audit items.

@@ -18,8 +18,8 @@ type AdminExclusionsPanelProps = {
 
 export async function AdminExclusionsPanel({
   searchParams,
-  basePath = "/admin/exclusions",
-  baseQuery,
+  basePath = "/admin",
+  baseQuery = "tab=exclusions",
 }: AdminExclusionsPanelProps) {
   const params = searchParams ?? {};
   const timeframe = parseTimeframe(params);

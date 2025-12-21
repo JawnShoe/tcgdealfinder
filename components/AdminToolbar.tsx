@@ -3,7 +3,7 @@ import Link from "next/link";
 type AdminSection = "exclusions" | "blacklist" | "listings";
 
 const links: Array<{ key: AdminSection; href: string; label: string }> = [
-  { key: "exclusions", href: "/admin/exclusions", label: "Exclusions" },
+  { key: "exclusions", href: "/admin?tab=exclusions", label: "Exclusions" },
   { key: "blacklist", href: "/admin/blacklist", label: "Blacklist" },
   { key: "listings", href: "/admin/listings", label: "Listings" },
 ];

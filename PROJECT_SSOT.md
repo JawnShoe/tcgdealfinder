@@ -101,6 +101,7 @@
 
 - `/admin/blacklist` shows active blacklist entries plus history; unblacklist writes history first and restore re-adds without deleting history.
 - `/admin` is the canonical operator workflow (hub + tabs); `/admin/exclusions` renders the exclusions panel in admin.
+- `/admin/exclusions` redirects to `/admin?tab=exclusions` for back-compat.
 - `/debug/exclusions` is debug-only and deprecated for operators; a banner points operators to `/admin`.
 - `/debug/exclusions` displays seller blacklist status pills and an admin tools chip (unlock modal; no URL secrets, no direct deep-link).
 - Blacklist mutations + history remain on `/admin/blacklist` only.
@@ -229,6 +230,11 @@ ACTIVE WORK: Admin UX follow-ups — (1) Blacklist seller link-out to eBay, (2) 
 ### Admin blacklist seller link-out
 - **Change**: Seller usernames on the admin blacklist tab link out to the seller's eBay profile in a new tab.
 - **Routes/components**: `/admin`, `/admin/blacklist`, `components/AdminBlacklistPanel.tsx`
+- **Status**: COMPLETE (2025-12-20)
+
+### Admin exclusions redirect to hub
+- **Change**: `/admin/exclusions` redirects to `/admin?tab=exclusions` (back-compat; canonical workflow remains `/admin`).
+- **Routes/components**: `/admin/exclusions`, `components/AdminToolbar.tsx`, `components/AdminExclusionsPanel.tsx`
 - **Status**: COMPLETE (2025-12-20)
 
 ### Admin blacklist history guard

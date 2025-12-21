@@ -23,6 +23,10 @@ type RejectedListingRow = {
   created_at: Date;
 };
 
+function getEbaySellerUrl(username: string): string {
+  return `https://www.ebay.com/usr/${encodeURIComponent(username)}`;
+}
+
 async function removeSeller(formData: FormData) {
   "use server";
 
@@ -221,7 +225,14 @@ export async function AdminBlacklistPanel({
               {sellers.map((row) => (
                 <tr key={row.seller_username}>
                   <td className="border px-2 py-1 font-mono">
-                    {row.seller_username}
+                    <a
+                      href={getEbaySellerUrl(row.seller_username)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sky-700 hover:text-sky-900"
+                    >
+                      {row.seller_username}
+                    </a>
                   </td>
                   <td className="border px-2 py-1 text-slate-500">
                     {formatDate(row.created_at)}
@@ -271,7 +282,14 @@ export async function AdminBlacklistPanel({
               {history.map((row) => (
                 <tr key={row.id}>
                   <td className="border px-2 py-1 font-mono">
-                    {row.seller_username}
+                    <a
+                      href={getEbaySellerUrl(row.seller_username)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sky-700 hover:text-sky-900"
+                    >
+                      {row.seller_username}
+                    </a>
                   </td>
                   <td className="border px-2 py-1 text-slate-500">
                     {formatDate(row.added_at)}

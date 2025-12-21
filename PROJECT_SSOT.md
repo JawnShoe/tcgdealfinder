@@ -205,8 +205,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
-**Status**: DONE - Admin hub + exclusions consolidation (2025-12-20)
-- Completed; see entry in Completed.
+ACTIVE WORK: Admin UX follow-ups — (1) Blacklist seller link-out to eBay, (2) /admin/exclusions redirect/wrapper to /admin Exclusions tab.
 
 ---
 
@@ -225,6 +224,11 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 ### Admin exclusions theme parity
 - **Change**: Admin hub Exclusions tab now matches admin theme (light surfaces, tables, badges).
 - **Routes/components**: `/admin`, `/admin/exclusions`, `components/AdminExclusionsPanel.tsx`, `app/debug/exclusions/ExclusionsClient.tsx`
+- **Status**: COMPLETE (2025-12-20)
+
+### Admin blacklist seller link-out
+- **Change**: Seller usernames on the admin blacklist tab link out to the seller's eBay profile in a new tab.
+- **Routes/components**: `/admin`, `/admin/blacklist`, `components/AdminBlacklistPanel.tsx`
 - **Status**: COMPLETE (2025-12-20)
 
 ### Admin blacklist history guard

@@ -20,4 +20,11 @@ pnpm-debug.log*
 
 # misc
 .vercel
-.claude/settings.local.json
+settings.local.json
+*.bak
+tsconfig.tsbuildinfo
+import-log.txt
+temp
+temp/
+temp_pkg.txt
+_content*.txt

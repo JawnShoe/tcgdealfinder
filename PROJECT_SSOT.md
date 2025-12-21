@@ -221,7 +221,7 @@ ACTIVE WORK: NONE
 - **Routes/components**: `/` (Home), `/sets`, `/sets/[setId]`, `/newest`; `components/ListingLookup.tsx`, `components/DealsTable.tsx`, `app/sets/page.tsx`, `app/sets/[setId]/page.tsx`
 - **Classification**: UI/copy cleanup (Tier-1 trust)
 - **Status**: COMPLETE (2025-12-20)
-- **Commit**: 621fbed
+- **Commit**: 49a02cd
 
 ### Admin blacklist intake form
 - **Change**: Added "Add seller to blacklist" form at top of Blacklist tab. Operators can now blacklist sellers directly from the admin hub without context-switching. Uses same INSERT logic as inline "Blacklist seller" actions.

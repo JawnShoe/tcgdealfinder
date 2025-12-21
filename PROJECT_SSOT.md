@@ -1,7 +1,7 @@
 # PROJECT SSOT — TCG Deal Finder
 
-**Last Updated**: 2025-12-20
-**Status**: Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete ✅); Empty States + Retention Nudges DONE ✅; Card Page Internal Navigation DONE ✅
+**Last Updated**: 2025-12-21
+**Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE.
 
 ---
 
@@ -234,6 +234,17 @@ ACTIVE WORK: NONE
 - **Classification**: UI/copy cleanup
 - **Status**: COMPLETE (2025-12-21)
 - **Commit**: 6cd11f8
+
+
+### "No Deals Right Now" Intelligence (Tier 1.5)
+- **Change**: Added intelligence block to card detail empty state when no visible listings remain (after filters). Shows recent sold range, deal frequency hint, and a watchlist CTA.
+- **Routes/components**: `/cards/[cardId]`; `components/CardDetailClient.tsx`
+- **Classification**: Feature addition (display-only, read-only aggregation)
+- **Blast radius**: Card detail page only
+- **Data sources**: Existing `historicals` prop + existing `/api/historicals/[cardId]` fetch (no new queries)
+- **Status**: COMPLETE (2025-12-21)
+- **Commit**: 6b2581b
+- **No Tier-1 systems touched**: Yes (no ingestion, scoring, or query logic changes)
 
 ## COMPLETED (2025-12-20)
 
@@ -574,13 +585,13 @@ Builds trust with users by providing real-time data cues.
 - Appears on tables + card detail pages; removed from homepage FeaturedDeals cards to reduce crowding
 - Styling matches seller sales badge (text-xs text-slate-500)
 
-"No Deals Right Now" Intelligence [NOT STARTED]
+"No Deals Right Now" Intelligence [DONE]
 
-When a card has no live deals:
+When no visible listings remain (including filters):
 
 Display recent sold price range.
 
-Show deal frequency (e.g., "appears 2–3× / week").
+Show deal frequency (e.g., "appears 2-3x per week").
 
 Provide CTA to watchlist the card for future tracking.
 

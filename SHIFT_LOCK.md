@@ -9,13 +9,18 @@
 - Global UI scale baseline already increased (~8–10%) via global CSS; treat this as the new reference.
 - Pokémon set ingestion flows through the Pokémon TCG API v2 with idempotent upserts keyed by canonical set id (series, release date, total cards, symbol/logo).
 
-### Open Task
-Unify the shared page-shell/container on `/sets`, `/sets/[setId]`, and `/watchlist` so they match homepage/top-deals/newest. This is layout-only parity work (no data/logic changes).
-
 ### Stop Rules
 - Do **not** touch ingestion, scoring, canonical IDs, overrides, or deal query logic.
 - Do **not** refactor table/deal components; wrap existing content with the existing shared layout/container.
 - Keep scope limited to layout/spacing parity; no new features, no redesigns.
+
+
+### DONE Gate (LOCKED)
+- SSOT cannot mark DONE unless: commit hash recorded, `git status` clean, changes pushed, `npm run lint` pass, `npm run build` pass, and regression checklist completed.
+
+### SHIFT Gate (LOCKED)
+- Shift change cannot proceed without a restore point (zip and/or bundle) and dirty-file classification.
+- Explicit bans: no stash-as-backup, no delete/clean commands.
 
 ### Tier-1 Evidence Gate (NEW)
 - Tier-1 issues (pricing totals, shipping, dedup integrity, seller trust UI, watchlist persistence, best/featured deal numbers) may not receive a “NO FIX REQUIRED” verdict unless an Evidence Packet is attached.

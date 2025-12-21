@@ -5,6 +5,7 @@
 - Manual smoke:
   - `/top-deals`
   - `/cards/5` Best Trusted Deal block + CTA
+  - `/cards/4` change Market to Canada -> 0 visible listings -> empty/intelligence state appears; clear filter -> listings return; watchlist toggle works in empty state
   - `/sets/lost-origin` (representative set view)
   - `/debug/exclusions` toggles for `3d`, `7d`, `30d`
   - `/ending-soon` deferral placeholder (no listings fetched)
@@ -83,7 +84,14 @@
   - `/` homepage content sits within the shared max-width container with consistent padding (no edge-flush hero/table)
   - `/top-deals` uses the same shell and shows the lean column set with the two-line seller layout
   - `/newest` shares the same shell and seller layout
-  - `/watchlist` must adopt the shared shell/header rhythm (currently failing)
-  - `/sets` must adopt the shared shell/header rhythm (currently failing)
-  - `/sets/[setId]` must show the hero/header plus padded catalog cards table (currently failing)
+  - `/watchlist` must adopt the shared shell/header rhythm
+  - `/sets` must adopt the shared shell/header rhythm
+  - `/sets/[setId]` must show the hero/header plus padded catalog cards table
 - Note: Fix is wrapper/container parity only, not a data/logic change.
+
+## Admin auth invariants
+
+- Manual smoke:
+  - Unauthenticated `/admin` returns 404 (notFound)
+  - Unauthenticated `/api/admin/*` returns 401
+  - `/admin` is the canonical workflow; `/admin/exclusions` redirects to `/admin?tab=exclusions`

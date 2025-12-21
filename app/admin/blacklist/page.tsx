@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { AdminToastContainer } from "@/components/AdminActionFeedback";
 import { AdminBlacklistPanel } from "@/components/AdminBlacklistPanel";
 import { AdminToolbar } from "@/components/AdminToolbar";
 import { isAdminAuthenticated } from "@/lib/adminAuth";
@@ -19,9 +20,11 @@ export default async function AdminBlacklistPage({
   const sellerFilter = sellerFilterRaw?.trim().toLowerCase() || null;
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
-      <AdminToolbar current="blacklist" />
-      <AdminBlacklistPanel sellerFilter={sellerFilter} />
-    </main>
+    <AdminToastContainer>
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+        <AdminToolbar current="blacklist" />
+        <AdminBlacklistPanel sellerFilter={sellerFilter} />
+      </main>
+    </AdminToastContainer>
   );
 }

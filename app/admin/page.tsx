@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AdminToastContainer } from "@/components/AdminActionFeedback";
 import { AdminBlacklistPanel } from "@/components/AdminBlacklistPanel";
 import { AdminExclusionsPanel } from "@/components/AdminExclusionsPanel";
 import { AdminListingsPanel } from "@/components/AdminListingsPanel";
@@ -41,49 +42,51 @@ export default async function AdminHubPage({
   const sellerFilter = sellerFilterRaw?.trim().toLowerCase() || null;
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
-      <div className="panel">
-        <h1 className="text-2xl font-semibold text-slate-900">Admin hub</h1>
-        <p className="text-sm text-slate-500">
-          Operator workflow for exclusions, blacklist, and listing overrides.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2 text-xs">
-          {tabs.map((tab) => {
-            const isActive = tab.key === current;
-            return (
-              <Link
-                key={tab.key}
-                href={`/admin?tab=${tab.key}`}
-                aria-current={isActive ? "page" : undefined}
-                className={`rounded-full border px-3 py-1 font-semibold transition ${
-                  isActive
-                    ? "border-slate-900 bg-slate-900 text-white"
-                    : "border-slate-300 text-slate-600 hover:border-slate-400"
-                }`}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
+    <AdminToastContainer>
+      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+        <div className="panel">
+          <h1 className="text-2xl font-semibold text-slate-900">Admin hub</h1>
+          <p className="text-sm text-slate-500">
+            Operator workflow for exclusions, blacklist, and listing overrides.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            {tabs.map((tab) => {
+              const isActive = tab.key === current;
+              return (
+                <Link
+                  key={tab.key}
+                  href={`/admin?tab=${tab.key}`}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`rounded-full border px-3 py-1 font-semibold transition ${
+                    isActive
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-300 text-slate-600 hover:border-slate-400"
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {current === "exclusions" ? (
-        <AdminExclusionsPanel
-          searchParams={searchParams}
-          basePath="/admin"
-          baseQuery="tab=exclusions"
-        />
-      ) : null}
+        {current === "exclusions" ? (
+          <AdminExclusionsPanel
+            searchParams={searchParams}
+            basePath="/admin"
+            baseQuery="tab=exclusions"
+          />
+        ) : null}
 
-      {current === "blacklist" ? (
-        <AdminBlacklistPanel
-          sellerFilter={sellerFilter}
-          clearFilterHref="/admin?tab=blacklist"
-        />
-      ) : null}
+        {current === "blacklist" ? (
+          <AdminBlacklistPanel
+            sellerFilter={sellerFilter}
+            clearFilterHref="/admin?tab=blacklist"
+          />
+        ) : null}
 
-      {current === "listings" ? <AdminListingsPanel /> : null}
-    </main>
+        {current === "listings" ? <AdminListingsPanel /> : null}
+      </main>
+    </AdminToastContainer>
   );
 }

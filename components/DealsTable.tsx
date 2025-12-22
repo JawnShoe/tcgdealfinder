@@ -1121,13 +1121,17 @@ export default function DealsTable({
                       <td className={`${colClass("market", variant)} px-3 py-4 align-middle text-left text-sm text-slate-600${
                         isNewestVariant ? " whitespace-normal break-words" : ""
                       }`}>
-                        <TooltipPopover
-                          content={formatMarket(vm.deal.market).label}
-                          triggerClassName="inline-flex items-center gap-1"
-                        >
-                          <MarketFlag market={vm.deal.market ?? DEFAULT_MARKET} />
-                          <span>{formatMarket(vm.deal.market).compactLabel}</span>
-                        </TooltipPopover>
+                        <span className="inline-flex items-center gap-1">
+                          <span aria-hidden="true">
+                            <MarketFlag market={vm.deal.market ?? DEFAULT_MARKET} />
+                          </span>
+                          <span aria-hidden="true">
+                            {formatMarket(vm.deal.market).compactLabel}
+                          </span>
+                          <span className="sr-only">
+                            {formatMarket(vm.deal.market).label}
+                          </span>
+                        </span>
                       </td>
                       <td className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}>
                       {renderEndsValue(vm.deal.endsAt)}
@@ -1277,9 +1281,14 @@ export default function DealsTable({
                       </div>
                     ) : null}
                   </div>
-                  <TooltipPopover content={formatMarket(vm.deal.market).label}>
-                    Market: {formatMarket(vm.deal.market).compactLabel}
-                  </TooltipPopover>
+                  <span>
+                    <span aria-hidden="true">
+                      Market: {formatMarket(vm.deal.market).compactLabel}
+                    </span>
+                    <span className="sr-only">
+                      Market: {formatMarket(vm.deal.market).label}
+                    </span>
+                  </span>
                   {vm.trustedSeller ? (
                     <span className="inline-flex items-center gap-1">
                       <TrustedBadge />

@@ -72,10 +72,10 @@ export function TooltipPopover({
   }, [isPinned]);
 
   const bubbleClasses = isHoverCapable
-    ? "opacity-0 pointer-events-none peer-hover:opacity-100 peer-hover:pointer-events-auto peer-focus-visible:opacity-100 peer-focus-visible:pointer-events-auto"
+    ? "max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none peer-hover:max-h-96 peer-hover:max-w-sm peer-hover:overflow-visible peer-hover:opacity-100 peer-focus-visible:max-h-96 peer-focus-visible:max-w-sm peer-focus-visible:overflow-visible peer-focus-visible:opacity-100"
     : isPinned
-      ? "opacity-100 pointer-events-auto"
-      : "opacity-0 pointer-events-none";
+      ? "max-h-96 max-w-sm overflow-visible opacity-100 pointer-events-auto"
+      : "max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none";
 
   return (
     <span
@@ -107,7 +107,7 @@ export function TooltipPopover({
       <span
         id={tooltipId}
         role="tooltip"
-        className={`absolute left-0 top-full z-50 mt-2 max-w-xs whitespace-normal break-words rounded-lg border border-slate-200 bg-white px-2 py-1 text-left text-xs text-slate-700 shadow-lg transition-opacity ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
+        className={`absolute left-0 top-full z-50 mt-2 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs leading-snug text-slate-700 shadow-lg transition-[opacity,max-height,max-width] ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
       >
         {content}
       </span>

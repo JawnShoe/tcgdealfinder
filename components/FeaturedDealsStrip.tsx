@@ -124,13 +124,15 @@ export default function FeaturedDealsStrip({
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs">
                   <span className="text-slate-600">Market</span>
-                  <TooltipPopover
-                    content={formatMarket(deal.market).label}
-                    triggerClassName="inline-flex items-center gap-1 text-slate-900"
-                  >
-                    <MarketFlag market={deal.market} />
-                    <span>{formatMarket(deal.market).compactLabel}</span>
-                  </TooltipPopover>
+                  <span className="inline-flex items-center gap-1 text-slate-900">
+                    <span aria-hidden="true">
+                      <MarketFlag market={deal.market} />
+                    </span>
+                    <span aria-hidden="true">
+                      {formatMarket(deal.market).compactLabel}
+                    </span>
+                    <span className="sr-only">{formatMarket(deal.market).label}</span>
+                  </span>
                 </div>
 
                 <div className="mt-4">

@@ -384,10 +384,13 @@ const MarketColumn: ColumnSpec = {
   renderCell: (vm) => {
     const { code, label } = formatMarket(vm.deal.market);
     return (
-      <TooltipPopover content={label} triggerClassName="inline-flex items-center gap-1">
-        <MarketFlag market={vm.deal.market} />
-        <span>{code}</span>
-      </TooltipPopover>
+      <span className="inline-flex items-center gap-1">
+        <span aria-hidden="true">
+          <MarketFlag market={vm.deal.market} />
+        </span>
+        <span aria-hidden="true">{code}</span>
+        <span className="sr-only">{label}</span>
+      </span>
     );
   },
 };

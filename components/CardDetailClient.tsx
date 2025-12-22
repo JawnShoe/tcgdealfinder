@@ -1329,15 +1329,17 @@ export default function CardDetailClient({
                         const marketCode =
                           normalized === "all" ? DEFAULT_MARKET : normalized;
                         return (
-                          <TooltipPopover
-                            content={getMarketLabel(marketCode)}
-                            triggerClassName="inline-flex items-center gap-1"
-                          >
-                            <MarketFlag market={marketCode} />
-                            <span className="text-xs text-slate-500">
+                          <span className="inline-flex items-center gap-1">
+                            <span aria-hidden="true">
+                              <MarketFlag market={marketCode} />
+                            </span>
+                            <span aria-hidden="true" className="text-xs text-slate-500">
                               {getMarketEmoji(marketCode)}
                             </span>
-                          </TooltipPopover>
+                            <span className="sr-only">
+                              {getMarketLabel(marketCode)}
+                            </span>
+                          </span>
                         );
                       })()}
                     </td>

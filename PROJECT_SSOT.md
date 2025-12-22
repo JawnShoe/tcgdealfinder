@@ -259,6 +259,15 @@ ACTIVE WORK: NONE
 - **Commit**: c7f0e50
 - **Restorepoint**: `T:\Projects\restorepoints\why-deal-c7f0e50.bundle`
 
+### Why deal copy simplification + tooltip
+- **Change**: Simplified on-card why text (no numbers) and moved detailed stats to hover/tap tooltip. Thresholds unchanged.
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/DealsTable.tsx`, `components/CardDetailClient.tsx`, `lib/whyDeal.ts`, `lib/dealViewModel.ts`, `lib/tableColumns.tsx`
+- **Classification**: UI parity / consistency
+- **Blast radius**: Deal card/listing rendering only
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: dd87f22
+- **Restorepoint**: `T:\Projects\restorepoints\why-deal-copy-dd87f22.bundle`
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

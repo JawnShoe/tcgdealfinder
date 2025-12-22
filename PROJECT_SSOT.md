@@ -714,6 +714,7 @@ Add a short explanation like "Seller priced below similar listings" or "Below re
 UI polish (2025-12-22): Tooltip now uses the label as the trigger (no icon) and allows full text wrapping in the popover. Commit: c0a2fa1. Restorepoint: whydeal-tooltip-c0a2fa1.bundle (T:\Projects\restorepoints).
 Interaction polish (2025-12-22): Desktop hover/focus is non-sticky; touch devices use tap-to-toggle with outside-tap close. Commit: fd09c34. Restorepoint: whydeal-hover-fd09c34.bundle (T:\Projects\restorepoints).
 Hover stateless (2025-12-22): Desktop tooltip uses CSS hover/focus only; click no longer persists. Commit: 528fdf0. Restorepoint: whydeal-hover-stateless-528fdf0.bundle (T:\Projects\restorepoints).
+Focus-visible (2025-12-22): Desktop tooltip shows on hover or keyboard focus-visible only (mouse click no longer persists). Commit: 5787bc6. Restorepoint: whydeal-focus-visible-5787bc6.bundle (T:\Projects\restorepoints).
 
 Market Comparison Hint (Links Only, No Merging)
 

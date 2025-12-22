@@ -908,6 +908,7 @@ export default function CardDetailClient({
               <TooltipPopover
                 content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                 triggerClassName="text-xs font-semibold uppercase text-slate-500"
+                side="top"
               >
                 Data reliability
               </TooltipPopover>

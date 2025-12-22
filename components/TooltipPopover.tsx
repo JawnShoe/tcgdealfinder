@@ -9,6 +9,8 @@ type TooltipPopoverProps = {
   triggerClassName?: string;
   tooltipClassName?: string;
   ariaLabel?: string;
+  size?: "default" | "compact" | "wide";
+  side?: "top" | "bottom";
 };
 
 export function TooltipPopover({
@@ -18,6 +20,8 @@ export function TooltipPopover({
   triggerClassName,
   tooltipClassName,
   ariaLabel,
+  size = "default",
+  side = "bottom",
 }: TooltipPopoverProps) {
   const [isPinned, setIsPinned] = useState(false);
   const [isHoverCapable, setIsHoverCapable] = useState(false);
@@ -71,11 +75,27 @@ export function TooltipPopover({
     };
   }, [isPinned]);
 
+  const sizeHoverClasses =
+    size === "wide"
+      ? "peer-hover:max-w-[340px] peer-hover:min-w-[240px] peer-focus-visible:max-w-[340px] peer-focus-visible:min-w-[240px]"
+      : size === "compact"
+        ? "peer-hover:max-w-[260px] peer-focus-visible:max-w-[260px] peer-hover:w-max peer-focus-visible:w-max"
+        : "peer-hover:max-w-sm peer-focus-visible:max-w-sm";
+
+  const sizePinnedClasses =
+    size === "wide"
+      ? "max-w-[340px] min-w-[240px]"
+      : size === "compact"
+        ? "max-w-[260px] w-max"
+        : "max-w-sm";
+
   const bubbleClasses = isHoverCapable
-    ? "max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none peer-hover:max-h-96 peer-hover:max-w-sm peer-hover:overflow-visible peer-hover:opacity-100 peer-focus-visible:max-h-96 peer-focus-visible:max-w-sm peer-focus-visible:overflow-visible peer-focus-visible:opacity-100"
+    ? `max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none peer-hover:max-h-96 peer-hover:overflow-visible peer-hover:opacity-100 peer-focus-visible:max-h-96 peer-focus-visible:overflow-visible peer-focus-visible:opacity-100 ${sizeHoverClasses}`
     : isPinned
-      ? "max-h-96 max-w-sm overflow-visible opacity-100 pointer-events-auto"
+      ? `max-h-96 overflow-visible opacity-100 pointer-events-auto ${sizePinnedClasses}`
       : "max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none";
+
+  const positionClass = side === "top" ? "bottom-full mb-2" : "top-full mt-2";
 
   return (
     <span
@@ -107,7 +127,7 @@ export function TooltipPopover({
       <span
         id={tooltipId}
         role="tooltip"
-        className={`absolute left-0 top-full z-50 mt-2 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs leading-snug text-slate-700 shadow-lg transition-[opacity,max-height,max-width] ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
+        className={`absolute left-0 ${positionClass} z-50 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs leading-snug text-slate-700 shadow-lg transition-[opacity,max-height,max-width] ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
       >
         {content}
       </span>

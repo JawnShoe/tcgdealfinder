@@ -241,6 +241,15 @@ ACTIVE WORK: NONE
 - **Commit**: ed2ee8b, 7672324
 - **Restorepoint**: `T:\Projects\restorepoints\admin-manual-allow-7672324.bundle`
 
+### Market preference + card other-markets toggle
+- **Change**: Geo/cookie-based market defaulting (no "all" default), cookie persistence on selectors, and card-page "Other markets available" toggle only when local market is empty.
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`, `/api/deals`, `/api/market`, `/api/cards/[cardId]/other-markets`; `components/DealsTable.tsx`, `components/CardDetailClient.tsx`, `lib/marketPreference.ts`
+- **Classification**: Feature addition (trust-first UX)
+- **Blast radius**: Public market selection + card listings UI
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: 35e338a
+- **Restorepoint**: `T:\Projects\restorepoints\market-pref-35e338a.bundle`
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

@@ -232,6 +232,15 @@ ACTIVE WORK: NONE
 - **Status**: COMPLETE (2025-12-22)
 - **Commit**: 8b6003c
 
+### Admin review queue + manual allow overrides (mismatch rejects)
+- **Change**: Added admin review queue for language/collector mismatches with allow/revoke, plus admin/debug "Manually approved" badge. Public queries now allow those listings only when an ALLOW override exists.
+- **Routes/components**: `/admin/blacklist`, `/api/admin/allow-listing`, `/api/admin/revoke-allow`, `/api/deals`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`, `/debug/exclusions`
+- **Classification**: Feature addition (admin-controlled, scoped)
+- **Blast radius**: Admin blacklist UI + public listing query filters
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: ed2ee8b, 7672324
+- **Restorepoint**: `T:\Projects\restorepoints\admin-manual-allow-7672324.bundle`
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

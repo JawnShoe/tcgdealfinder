@@ -25,6 +25,7 @@ import {
 import { MarketFlag } from "../components/MarketFlag";
 import { WhyDealHint } from "../components/WhyDealHint";
 import { SellerSeenBadge } from "../components/SellerSeenBadge";
+import { TooltipPopover } from "../components/TooltipPopover";
 import { TABLE_TH, TABLE_TH_RIGHT, TABLE_TH_NOWRAP, TABLE_TD, TABLE_TD_RIGHT, NUM_CELL, NUM_CELL_SECONDARY } from "./typography";
 import { getMarketLabel, normalizeMarketCode } from "./markets";
 
@@ -383,10 +384,10 @@ const MarketColumn: ColumnSpec = {
   renderCell: (vm) => {
     const { code, label } = formatMarket(vm.deal.market);
     return (
-      <span title={label} className="flex items-center gap-1">
+      <TooltipPopover content={label} triggerClassName="inline-flex items-center gap-1">
         <MarketFlag market={vm.deal.market} />
         <span>{code}</span>
-      </span>
+      </TooltipPopover>
     );
   },
 };
@@ -405,12 +406,12 @@ const EndsColumn: ColumnSpec = {
   renderCell: (vm) => {
     const endsDisplay = getEndsAtDisplay(vm.deal.endsAt);
     return (
-      <span
-        className="whitespace-normal text-sm text-slate-600"
-        title={endsDisplay.tooltip}
+      <TooltipPopover
+        content={endsDisplay.tooltip}
+        triggerClassName="whitespace-normal text-sm text-slate-600"
       >
         {endsDisplay.label}
-      </span>
+      </TooltipPopover>
     );
   },
 };

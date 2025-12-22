@@ -15,6 +15,7 @@ import { SellerNameWithTooltip, formatSellerSalesCount } from "./SellerNameWithT
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { WhyDealHint } from "./WhyDealHint";
 import { SellerSeenBadge } from "./SellerSeenBadge";
+import { TooltipPopover } from "./TooltipPopover";
 import {
   CONDITION_FILTERS,
   type ConditionFilterKey,
@@ -767,13 +768,14 @@ export default function CardDetailClient({
                       )}
                     </div>
                     {bestTrustedDeal.deal.endsAt && (
-                      <p
-                        className="text-xs text-slate-500"
-                        title={getEndsAtDisplay(bestTrustedDeal.deal.endsAt).tooltip}
+                      <TooltipPopover
+                        content={getEndsAtDisplay(bestTrustedDeal.deal.endsAt).tooltip}
+                        className="block text-xs text-slate-500"
+                        triggerClassName="text-xs text-slate-500"
                       >
                         {bestTrustedDeal.marketCode} /{" "}
                         {getEndsAtDisplay(bestTrustedDeal.deal.endsAt).label}
-                      </p>
+                      </TooltipPopover>
                     )}
                     <p className="mt-3 text-xs text-slate-500">
                       {bestDealFreshness
@@ -902,13 +904,13 @@ export default function CardDetailClient({
                 ))}
               </select>
             </label>
-            <label
-              className="flex flex-col gap-1"
-              title="Indicates how reliable recent pricing data is based on sales volume and consistency"
-            >
-              <span className="text-xs font-semibold uppercase text-slate-500">
+            <label className="flex flex-col gap-1">
+              <TooltipPopover
+                content="Indicates how reliable recent pricing data is based on sales volume and consistency"
+                triggerClassName="text-xs font-semibold uppercase text-slate-500"
+              >
                 Data reliability
-              </span>
+              </TooltipPopover>
               <select
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
                 value={priceConfFilter}
@@ -983,59 +985,83 @@ export default function CardDetailClient({
                 <th 
                   className="whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
                   onClick={() => handleHeaderSort("total")}
-                  title="Click to sort by Total USD"
                 >
-                  <span className="inline-flex items-center justify-end">
-                    <span>Total USD</span>
-                    <SortArrow colKey="total" />
-                  </span>
+                  <TooltipPopover
+                    content="Click to sort by Total USD"
+                    triggerClassName="inline-flex items-center justify-end gap-0"
+                  >
+                    <>
+                      <span>Total USD</span>
+                      <SortArrow colKey="total" />
+                    </>
+                  </TooltipPopover>
                 </th>
                 <th 
                   className="whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
                   onClick={() => handleHeaderSort("historic")}
-                  title="Click to sort by Historic USD"
                 >
-                  <span className="inline-flex items-center justify-end">
-                    <span>Historic USD</span>
-                    <SortArrow colKey="historic" />
-                  </span>
+                  <TooltipPopover
+                    content="Click to sort by Historic USD"
+                    triggerClassName="inline-flex items-center justify-end gap-0"
+                  >
+                    <>
+                      <span>Historic USD</span>
+                      <SortArrow colKey="historic" />
+                    </>
+                  </TooltipPopover>
                 </th>
                 <th 
                   className="px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
                   onClick={() => handleHeaderSort("discount")}
-                  title="Click to sort by Discount"
                 >
-                  <span className="inline-flex items-center justify-end">
-                    <span>Discount</span>
-                    <SortArrow colKey="discount" />
-                  </span>
+                  <TooltipPopover
+                    content="Click to sort by Discount"
+                    triggerClassName="inline-flex items-center justify-end gap-0"
+                  >
+                    <>
+                      <span>Discount</span>
+                      <SortArrow colKey="discount" />
+                    </>
+                  </TooltipPopover>
                 </th>
                 <th
                   className="whitespace-nowrap px-3 py-2 text-center"
-                  title="Indicates how reliable recent pricing data is based on sales volume and consistency"
                 >
-                  Data reliability
+                  <TooltipPopover
+                    content="Indicates how reliable recent pricing data is based on sales volume and consistency"
+                    triggerClassName="inline-flex items-center justify-center"
+                  >
+                    Data reliability
+                  </TooltipPopover>
                 </th>
                 <th 
                   className="px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none"
                   onClick={() => handleHeaderSort("seller")}
-                  title="Click to sort by Seller"
                 >
-                  <span className="inline-flex items-center">
-                    <span>Seller</span>
-                    <SortArrow colKey="seller" />
-                  </span>
+                  <TooltipPopover
+                    content="Click to sort by Seller"
+                    triggerClassName="inline-flex items-center gap-0"
+                  >
+                    <>
+                      <span>Seller</span>
+                      <SortArrow colKey="seller" />
+                    </>
+                  </TooltipPopover>
                 </th>
                 <th className="px-3 py-2 text-left">Market</th>
                 <th 
                   className="px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
                   onClick={() => handleHeaderSort("ends")}
-                  title="Click to sort by Ends"
                 >
-                  <span className="inline-flex items-center justify-end">
-                    <span>Ends</span>
-                    <SortArrow colKey="ends" />
-                  </span>
+                  <TooltipPopover
+                    content="Click to sort by Ends"
+                    triggerClassName="inline-flex items-center justify-end gap-0"
+                  >
+                    <>
+                      <span>Ends</span>
+                      <SortArrow colKey="ends" />
+                    </>
+                  </TooltipPopover>
                 </th>
               </tr>
             </thead>
@@ -1217,15 +1243,15 @@ export default function CardDetailClient({
                             showViewCardLink={false}
                           />
                           {vm.integrityStatus === "REVIEW" && (
-                            <span
-                              className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
-                              title={
+                            <TooltipPopover
+                              content={
                                 listing.integrityReason ??
                                 "Flagged automatically for manual review"
                               }
+                              triggerClassName="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
                             >
                               Review
-                            </span>
+                            </TooltipPopover>
                           )}
                         </div>
                       </td>
@@ -1303,22 +1329,22 @@ export default function CardDetailClient({
                         const marketCode =
                           normalized === "all" ? DEFAULT_MARKET : normalized;
                         return (
-                          <span
-                            title={getMarketLabel(marketCode)}
-                            className="flex items-center gap-1"
+                          <TooltipPopover
+                            content={getMarketLabel(marketCode)}
+                            triggerClassName="inline-flex items-center gap-1"
                           >
                             <MarketFlag market={marketCode} />
                             <span className="text-xs text-slate-500">
                               {getMarketEmoji(marketCode)}
                             </span>
-                          </span>
+                          </TooltipPopover>
                         );
                       })()}
                     </td>
                     <td className="px-3 py-4 align-middle text-right text-slate-600">
-                      <span title={getEndsAtDisplay(listing.endsAt).tooltip}>
+                      <TooltipPopover content={getEndsAtDisplay(listing.endsAt).tooltip}>
                         {getEndsAtDisplay(listing.endsAt).label}
-                      </span>
+                      </TooltipPopover>
                     </td>
                   </tr>
                   );

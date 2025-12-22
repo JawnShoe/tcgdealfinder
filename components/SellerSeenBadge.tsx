@@ -1,3 +1,7 @@
+"use client";
+
+import { TooltipPopover } from "./TooltipPopover";
+
 type SellerSeenBadgeProps = {
   count: number | null | undefined;
   windowDays?: number | null;
@@ -19,11 +23,11 @@ export function SellerSeenBadge({
   const marketSuffix = marketLabel ? ` (${marketLabel})` : "";
   const tooltip = `Seen on ${count} deals in the last ${days} days${marketSuffix}.`;
   return (
-    <span
-      className={`text-[11px] text-slate-500 ${className ?? ""}`.trim()}
-      title={tooltip}
+    <TooltipPopover
+      content={tooltip}
+      triggerClassName={`text-[11px] text-slate-500 ${className ?? ""}`.trim()}
     >
       {label}
-    </span>
+    </TooltipPopover>
   );
 }

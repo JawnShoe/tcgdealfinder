@@ -5,6 +5,7 @@ import type { Deal } from "@/types/deal";
 import { MarketFlag } from "./MarketFlag";
 import { TrustedBadge } from "./TrustedBadge";
 import { SellerNameWithTooltip } from "./SellerNameWithTooltip";
+import { TooltipPopover } from "./TooltipPopover";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { isDealTrusted } from "@/lib/dealScore";
 import {
@@ -108,11 +109,13 @@ export default function FeaturedDealsStrip({
                     )}
                   </div>
                 </div>
-                <div
-                  className="mt-2 flex items-center justify-between text-xs"
-                  title="Indicates how reliable recent pricing data is based on sales volume and consistency"
-                >
-                  <span className="text-slate-600">Data reliability</span>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <TooltipPopover
+                    content="Indicates how reliable recent pricing data is based on sales volume and consistency"
+                    triggerClassName="text-slate-600"
+                  >
+                    Data reliability
+                  </TooltipPopover>
                   <ConfidenceChip
                     weightLabel={getWeightLabel(deal.confidenceWeight ?? null)}
                     sampleSize={deal.sampleSize}
@@ -121,10 +124,13 @@ export default function FeaturedDealsStrip({
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs">
                   <span className="text-slate-600">Market</span>
-                  <span className="inline-flex items-center gap-1 text-slate-900" title={formatMarket(deal.market).label}>
+                  <TooltipPopover
+                    content={formatMarket(deal.market).label}
+                    triggerClassName="inline-flex items-center gap-1 text-slate-900"
+                  >
                     <MarketFlag market={deal.market} />
                     <span>{formatMarket(deal.market).compactLabel}</span>
-                  </span>
+                  </TooltipPopover>
                 </div>
 
                 <div className="mt-4">

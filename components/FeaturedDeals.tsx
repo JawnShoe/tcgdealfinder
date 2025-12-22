@@ -17,6 +17,7 @@ import {
   formatMarket,
 } from "../lib/dealFormatting";
 import { MarketFlag } from "./MarketFlag";
+import { TooltipPopover } from "./TooltipPopover";
 
 export type FeaturedDealView = {
   deal: Deal;
@@ -131,13 +132,13 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                   <span className="text-xs uppercase tracking-wide text-slate-500">
                     Market
                   </span>
-                  <span
-                    className="inline-flex items-center gap-1 text-slate-800"
-                    title={market.label}
+                  <TooltipPopover
+                    content={market.label}
+                    triggerClassName="inline-flex items-center gap-1 text-slate-800"
                   >
                     <MarketFlag market={deal.market} />
                     <span>{market.code}</span>
-                  </span>
+                  </TooltipPopover>
                 </div>
               </div>
 

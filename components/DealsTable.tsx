@@ -42,6 +42,7 @@ import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { WatchlistStarButton } from "./WatchlistStarButton";
 import { WhyDealHint } from "./WhyDealHint";
 import { SellerSeenBadge } from "./SellerSeenBadge";
+import { TooltipPopover } from "./TooltipPopover";
 import type { Deal } from "../types/deal";
 import type { DealsApiMeta, DealsApiResponse } from "@/types/dealsApi";
 import {
@@ -126,9 +127,9 @@ function dedupeDealsByListing(deals: Deal[]): Deal[] {
 function renderEndsValue(value: string | null | undefined): JSX.Element {
   const display = getEndsAtDisplay(value);
   return (
-    <span title={display.tooltip}>
+    <TooltipPopover content={display.tooltip}>
       {display.label}
-    </span>
+    </TooltipPopover>
   );
 }
 
@@ -712,13 +713,13 @@ export default function DealsTable({
             </select>
           </label>
 
-          <label
-            className="flex flex-col gap-1 text-sm text-slate-600"
-            title="Indicates how reliable recent pricing data is based on sales volume and consistency"
-          >
-            <span className="text-xs font-semibold uppercase text-slate-500">
+          <label className="flex flex-col gap-1 text-sm text-slate-600">
+            <TooltipPopover
+              content="Indicates how reliable recent pricing data is based on sales volume and consistency"
+              triggerClassName="text-xs font-semibold uppercase text-slate-500"
+            >
               Data reliability
-            </span>
+            </TooltipPopover>
             <select
               className={inputClasses}
               value={viewState.priceConfFilter}
@@ -878,26 +879,44 @@ export default function DealsTable({
                     <th 
                       className={`${colClass("total", variant)} whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
                       onClick={() => handleHeaderSort("total")}
-                      title="Click to sort by Total USD"
                     >
-                      {getHeaderLabel("total", "Total USD")}
-                      <SortArrow colKey="total" />
+                      <TooltipPopover
+                        content="Click to sort by Total USD"
+                        triggerClassName="inline-flex items-center gap-0"
+                      >
+                        <>
+                          <span>{getHeaderLabel("total", "Total USD")}</span>
+                          <SortArrow colKey="total" />
+                        </>
+                      </TooltipPopover>
                     </th>
                     <th 
                       className={`${colClass("historic", variant)} whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
                       onClick={() => handleHeaderSort("historic")}
-                      title="Click to sort by Historic USD"
                     >
-                      {getHeaderLabel("historic", "Historic USD")}
-                      <SortArrow colKey="historic" />
+                      <TooltipPopover
+                        content="Click to sort by Historic USD"
+                        triggerClassName="inline-flex items-center gap-0"
+                      >
+                        <>
+                          <span>{getHeaderLabel("historic", "Historic USD")}</span>
+                          <SortArrow colKey="historic" />
+                        </>
+                      </TooltipPopover>
                     </th>
                     <th 
                       className={`${colClass("discount", variant)} px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
                       onClick={() => handleHeaderSort("discount")}
-                      title="Click to sort by Discount"
                     >
-                      {getHeaderLabel("discount", "Discount")}
-                      <SortArrow colKey="discount" />
+                      <TooltipPopover
+                        content="Click to sort by Discount"
+                        triggerClassName="inline-flex items-center gap-0"
+                      >
+                        <>
+                          <span>{getHeaderLabel("discount", "Discount")}</span>
+                          <SortArrow colKey="discount" />
+                        </>
+                      </TooltipPopover>
                     </th>
                     {!isNewestVariant && variant !== "default" ? (
                       <th className={`${colClass("score", variant)} px-3 py-2 text-right`}>Score</th>
@@ -905,9 +924,13 @@ export default function DealsTable({
                     {variant !== "default" ? (
                       <th
                         className={`${colClass("confidence", variant)} whitespace-nowrap px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"}`}
-                        title="Indicates how reliable recent pricing data is based on sales volume and consistency"
                       >
-                        {getHeaderLabel("priceConf", "Data reliability")}
+                        <TooltipPopover
+                          content="Indicates how reliable recent pricing data is based on sales volume and consistency"
+                          triggerClassName="inline-flex items-center"
+                        >
+                          {getHeaderLabel("priceConf", "Data reliability")}
+                        </TooltipPopover>
                       </th>
                     ) : null}
                     <th className={`${colClass("seller", variant)} px-3 py-2 text-left`}>
@@ -919,10 +942,16 @@ export default function DealsTable({
                     <th 
                       className={`${colClass("ends", variant)} px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none`}
                       onClick={() => handleHeaderSort("ends")}
-                      title="Click to sort by Ends"
                     >
-                      {getHeaderLabel("ends", "Ends")}
-                      <SortArrow colKey="ends" />
+                      <TooltipPopover
+                        content="Click to sort by Ends"
+                        triggerClassName="inline-flex items-center gap-0"
+                      >
+                        <>
+                          <span>{getHeaderLabel("ends", "Ends")}</span>
+                          <SortArrow colKey="ends" />
+                        </>
+                      </TooltipPopover>
                     </th>
                     {isAdmin ? (
                       <th className="px-3 py-2 text-left">Admin</th>
@@ -1039,14 +1068,14 @@ export default function DealsTable({
                             <span className={`${scoreClass(vm.score)} font-semibold`}>
                               {formatScore(vm.score)}
                             </span>
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
+                            <TooltipPopover
+                              content={CONFIDENCE_TOOLTIP}
+                              triggerClassName={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
                                 vm.priceConfidenceLabel,
                               )}`}
-                              title={CONFIDENCE_TOOLTIP}
                             >
                               {getConfidenceDisplayText(vm.priceConfidenceLabel)}
-                            </span>
+                            </TooltipPopover>
                           </div>
                         </td>
                       ) : null}
@@ -1092,13 +1121,13 @@ export default function DealsTable({
                       <td className={`${colClass("market", variant)} px-3 py-4 align-middle text-left text-sm text-slate-600${
                         isNewestVariant ? " whitespace-normal break-words" : ""
                       }`}>
-                        <span
-                          title={formatMarket(vm.deal.market).label}
-                          className="flex items-center gap-1"
+                        <TooltipPopover
+                          content={formatMarket(vm.deal.market).label}
+                          triggerClassName="inline-flex items-center gap-1"
                         >
                           <MarketFlag market={vm.deal.market ?? DEFAULT_MARKET} />
                           <span>{formatMarket(vm.deal.market).compactLabel}</span>
-                        </span>
+                        </TooltipPopover>
                       </td>
                       <td className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}>
                       {renderEndsValue(vm.deal.endsAt)}
@@ -1211,14 +1240,14 @@ export default function DealsTable({
                       <p className={`${scoreClass(vm.score)} text-base`}>
                         {formatScore(vm.score)}
                       </p>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
+                      <TooltipPopover
+                        content={CONFIDENCE_TOOLTIP}
+                        triggerClassName={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
                           vm.priceConfidenceLabel,
                         )}`}
-                        title={CONFIDENCE_TOOLTIP}
                       >
                         {getConfidenceDisplayText(vm.priceConfidenceLabel)}
-                      </span>
+                      </TooltipPopover>
                     </div>
                   </div>
                 </div>
@@ -1248,9 +1277,9 @@ export default function DealsTable({
                       </div>
                     ) : null}
                   </div>
-                  <span title={formatMarket(vm.deal.market).label}>
+                  <TooltipPopover content={formatMarket(vm.deal.market).label}>
                     Market: {formatMarket(vm.deal.market).compactLabel}
-                  </span>
+                  </TooltipPopover>
                   {vm.trustedSeller ? (
                     <span className="inline-flex items-center gap-1">
                       <TrustedBadge />
@@ -1260,9 +1289,9 @@ export default function DealsTable({
                   {(() => {
                     const endsDisplay = getEndsAtDisplay(vm.deal.endsAt);
                     return (
-                      <span title={endsDisplay.tooltip}>
+                      <TooltipPopover content={endsDisplay.tooltip}>
                         Ends {endsDisplay.label}
-                      </span>
+                      </TooltipPopover>
                     );
                   })()}
                 </div>

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { AdminDealActions } from "./AdminDealActions";
 import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 import { TopDealsColumns } from "../lib/tableColumns";
+import { TooltipPopover } from "./TooltipPopover";
 import type { Deal } from "../types/deal";
 
 type ConfidenceFilterKey = "all" | "high" | "medium" | "low";
@@ -149,13 +150,13 @@ export default function TopDealsClient({
   return (
     <div>
       <div className="mb-4 flex justify-end">
-        <label
-          className="flex flex-col gap-1 text-sm text-slate-600"
-          title="Indicates how reliable recent pricing data is based on sales volume and consistency"
-        >
-          <span className="text-xs font-semibold uppercase text-slate-500">
+        <label className="flex flex-col gap-1 text-sm text-slate-600">
+          <TooltipPopover
+            content="Indicates how reliable recent pricing data is based on sales volume and consistency"
+            triggerClassName="text-xs font-semibold uppercase text-slate-500"
+          >
             Data reliability
-          </span>
+          </TooltipPopover>
           <select
             className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:outline-none"
             value={priceConfFilter}
@@ -203,13 +204,17 @@ export default function TopDealsClient({
                         isSortable ? "cursor-pointer hover:bg-slate-100 select-none" : ""
                       } ${col.key === "score" ? "hidden sm:table-cell" : ""}`}
                       onClick={isSortable && sortKey ? () => handleHeaderSort(sortKey) : undefined}
-                      title={isSortable ? `Click to sort by ${col.headerLabel}` : undefined}
                     >
                       {isSortable && sortKey ? (
-                        <span className="inline-flex items-center">
-                          <span>{col.headerLabel}</span>
-                          <SortArrow colKey={sortKey} />
-                        </span>
+                        <TooltipPopover
+                          content={`Click to sort by ${col.headerLabel}`}
+                          triggerClassName="inline-flex items-center gap-0"
+                        >
+                          <>
+                            <span>{col.headerLabel}</span>
+                            <SortArrow colKey={sortKey} />
+                          </>
+                        </TooltipPopover>
                       ) : (
                         col.headerLabel
                       )}

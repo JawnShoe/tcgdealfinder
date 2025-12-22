@@ -1,4 +1,7 @@
+"use client";
+
 import { CONFIDENCE_TOOLTIP } from "../lib/dealConfidence";
+import { TooltipPopover } from "./TooltipPopover";
 
 interface ConfidenceChipProps {
   weightLabel?: string | null;
@@ -49,12 +52,13 @@ export function ConfidenceChip({
     : `${fullText} data confidence. Based on recent sales volume and price consistency.`;
 
   const chip = (
-    <span
-      className={`inline-flex items-center justify-center text-center leading-none min-w-10 rounded-full px-2 py-0.5 text-xs font-semibold ${colorClass}`}
-      title={tooltip}
+    <TooltipPopover
+      content={tooltip}
+      ariaLabel={`${fullText} data confidence`}
+      triggerClassName={`inline-flex min-w-10 items-center justify-center rounded-full px-2 py-0.5 text-center text-xs font-semibold leading-none ${colorClass}`}
     >
       {displayText}
-    </span>
+    </TooltipPopover>
   );
 
   if (center) {

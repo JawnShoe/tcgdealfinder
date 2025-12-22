@@ -10,15 +10,30 @@ type ListingExclusionRow = {
   created_by: string | null;
   created_at: string;
   expires_at: string | null;
+  title: string | null;
+  seller_username: string | null;
+  price_cad: string | null;
+  total_price_cad: string | null;
 };
 
 async function getListingExclusions(): Promise<ListingExclusionRow[]> {
   const res = await query<ListingExclusionRow>(
     `
-      SELECT listing_id, override_type, reason, created_by, created_at, expires_at
-      FROM listing_overrides
-      WHERE override_type = 'HARD_BLOCK'
-      ORDER BY created_at DESC
+      SELECT
+        lo.listing_id,
+        lo.override_type,
+        lo.reason,
+        lo.created_by,
+        lo.created_at,
+        lo.expires_at,
+        l.title,
+        l.seller_username,
+        l.price_cad,
+        l.total_price_cad
+      FROM listing_overrides lo
+      LEFT JOIN listings l ON l.listing_id = lo.listing_id
+      WHERE lo.override_type = 'HARD_BLOCK'
+      ORDER BY lo.created_at DESC
       LIMIT 200;
     `,
   );

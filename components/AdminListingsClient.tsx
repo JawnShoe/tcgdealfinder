@@ -10,7 +10,16 @@ type ListingExclusionRow = {
   created_by: string | null;
   created_at: string;
   expires_at: string | null;
+  title: string | null;
+  seller_username: string | null;
+  price_cad: string | null;
+  total_price_cad: string | null;
 };
+
+const CAD_FORMATTER = new Intl.NumberFormat("en-CA", {
+  style: "currency",
+  currency: "CAD",
+});
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return "--";
@@ -23,6 +32,32 @@ function formatDate(value: string | null | undefined): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatCad(value: string | number | null | undefined): string {
+  if (value == null) return "--";
+  const num = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(num)) return "--";
+  return CAD_FORMATTER.format(num);
+}
+
+function extractEbayItemId(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (/^\d{8,}$/.test(trimmed)) return trimmed;
+  const numericParts = trimmed
+    .split("|")
+    .map((part) => part.trim())
+    .filter((part) => /^\d{8,}$/.test(part));
+  if (numericParts.length === 0) return null;
+  numericParts.sort((a, b) => b.length - a.length);
+  return numericParts[0] ?? null;
+}
+
+function getEbayItemUrl(raw: string | null | undefined): string | null {
+  const itemId = extractEbayItemId(raw);
+  return itemId ? `https://www.ebay.com/itm/${itemId}` : null;
 }
 
 export function AdminListingsClient({
@@ -120,6 +155,9 @@ export function AdminListingsClient({
             <thead className="bg-slate-100">
               <tr>
                 <th className="border px-2 py-1">Listing ID</th>
+                <th className="border px-2 py-1">Title</th>
+                <th className="border px-2 py-1">Seller</th>
+                <th className="border px-2 py-1">Price</th>
                 <th className="border px-2 py-1">Reason</th>
                 <th className="border px-2 py-1">Created</th>
                 <th className="border px-2 py-1">Expires</th>
@@ -127,40 +165,76 @@ export function AdminListingsClient({
               </tr>
             </thead>
             <tbody>
-              {exclusions.map((row) => (
-                <tr key={row.listing_id}>
-                  <td className="border px-2 py-1 font-mono">
-                    {row.listing_id}
-                  </td>
-                  <td className="border px-2 py-1 text-slate-600">
-                    {row.reason ?? "--"}
-                  </td>
-                  <td className="border px-2 py-1 text-slate-500">
-                    {formatDate(row.created_at)}
-                  </td>
-                  <td className="border px-2 py-1 text-slate-500">
-                    {row.expires_at ? formatDate(row.expires_at) : "--"}
-                  </td>
-                  <td className="border px-2 py-1">
-                    <form
-                      action={handleRestoreListing}
-                      className="inline-block"
-                    >
-                      <input
-                        type="hidden"
-                        name="listing_id"
-                        value={row.listing_id}
-                      />
-                      <button
-                        type="submit"
-                        className="text-xs text-amber-700 transition hover:text-amber-800"
+              {exclusions.map((row) => {
+                const ebayUrl = getEbayItemUrl(row.listing_id);
+                const titleText = row.title ?? "Details unavailable";
+                const priceValue = row.total_price_cad ?? row.price_cad;
+                return (
+                  <tr key={row.listing_id}>
+                    <td className="border px-2 py-1 font-mono">
+                      <div className="flex flex-col gap-1">
+                        <span>{row.listing_id}</span>
+                        {ebayUrl ? (
+                          <a
+                            href={ebayUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-sky-700 transition hover:text-sky-900"
+                          >
+                            View on eBay
+                          </a>
+                        ) : (
+                          <span className="text-xs text-slate-400">
+                            No eBay ID
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="border px-2 py-1 text-slate-700">
+                      {row.title ? (
+                        <span className="block max-w-[320px] truncate" title={row.title}>
+                          {row.title}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">{titleText}</span>
+                      )}
+                    </td>
+                    <td className="border px-2 py-1 text-slate-600">
+                      {row.seller_username ?? "--"}
+                    </td>
+                    <td className="border px-2 py-1 text-slate-600">
+                      {formatCad(priceValue)}
+                    </td>
+                    <td className="border px-2 py-1 text-slate-600">
+                      {row.reason ?? "--"}
+                    </td>
+                    <td className="border px-2 py-1 text-slate-500">
+                      {formatDate(row.created_at)}
+                    </td>
+                    <td className="border px-2 py-1 text-slate-500">
+                      {row.expires_at ? formatDate(row.expires_at) : "--"}
+                    </td>
+                    <td className="border px-2 py-1">
+                      <form
+                        action={handleRestoreListing}
+                        className="inline-block"
                       >
-                        Restore
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-              ))}
+                        <input
+                          type="hidden"
+                          name="listing_id"
+                          value={row.listing_id}
+                        />
+                        <button
+                          type="submit"
+                          className="text-xs text-amber-700 transition hover:text-amber-800"
+                        >
+                          Restore
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

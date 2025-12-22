@@ -28,6 +28,25 @@ function getEbaySellerUrl(username: string): string {
   return `https://www.ebay.com/usr/${encodeURIComponent(username)}`;
 }
 
+function extractEbayItemId(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (/^\d{8,}$/.test(trimmed)) return trimmed;
+  const numericParts = trimmed
+    .split("|")
+    .map((part) => part.trim())
+    .filter((part) => /^\d{8,}$/.test(part));
+  if (numericParts.length === 0) return null;
+  numericParts.sort((a, b) => b.length - a.length);
+  return numericParts[0] ?? null;
+}
+
+function getEbayItemUrl(raw: string | null | undefined): string | null {
+  const itemId = extractEbayItemId(raw);
+  return itemId ? `https://www.ebay.com/itm/${itemId}` : null;
+}
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return "--";
   const d = new Date(value);
@@ -278,36 +297,43 @@ export function AdminBlacklistClient({
               </tr>
             </thead>
             <tbody>
-              {rejected.map((row) => (
-                <tr key={row.id}>
-                  <td className="px-2 py-2 align-middle text-slate-500">
-                    {formatDate(row.created_at)}
-                  </td>
-                  <td className="px-2 py-2 align-middle text-slate-800">
-                    {row.title}
-                  </td>
-                  <td className="px-2 py-2 align-middle text-slate-600">
-                    {row.seller_username ?? "--"}
-                  </td>
-                  <td className="px-2 py-2 align-middle text-slate-600">
-                    {row.reason}
-                  </td>
-                  <td className="px-2 py-2 align-middle">
-                    {row.ebay_item_id ? (
-                      <a
-                        href={`https://www.ebay.com/itm/${row.ebay_item_id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sky-700 transition hover:text-sky-900"
-                      >
-                        View
-                      </a>
-                    ) : (
-                      "--"
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {rejected.map((row) => {
+                const ebayUrl = getEbayItemUrl(row.ebay_item_id);
+                return (
+                  <tr key={row.id}>
+                    <td className="px-2 py-2 align-middle text-slate-500">
+                      {formatDate(row.created_at)}
+                    </td>
+                    <td className="px-2 py-2 align-middle text-slate-800">
+                      {row.title}
+                    </td>
+                    <td className="px-2 py-2 align-middle text-slate-600">
+                      {row.seller_username ?? "--"}
+                    </td>
+                    <td className="px-2 py-2 align-middle text-slate-600">
+                      {row.reason}
+                    </td>
+                    <td className="px-2 py-2 align-middle">
+                      {ebayUrl ? (
+                        <a
+                          href={ebayUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sky-700 transition hover:text-sky-900"
+                        >
+                          View
+                        </a>
+                      ) : row.ebay_item_id ? (
+                        <span className="font-mono text-xs text-slate-500">
+                          {row.ebay_item_id}
+                        </span>
+                      ) : (
+                        "--"
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

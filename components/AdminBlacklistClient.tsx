@@ -24,6 +24,29 @@ type RejectedListingRow = {
   created_at: string;
 };
 
+type ReviewQueueRow = {
+  listing_id: string;
+  title: string;
+  seller_username: string | null;
+  total_price_cad: string | null;
+  total_usd: string | null;
+  market: string | null;
+  ends_at: string | null;
+  match_reject_reason: string | null;
+  override_type: string | null;
+  override_reason: string | null;
+  override_created_at: string | null;
+};
+
+const MANUAL_ALLOW_REASONS = new Set([
+  "language_mismatch",
+  "collector_number_mismatch",
+]);
+const MANUAL_ALLOW_OVERRIDE_REASONS = new Set([
+  "manual_allow:language_mismatch",
+  "manual_allow:collector_number_mismatch",
+]);
+
 function getEbaySellerUrl(username: string): string {
   return `https://www.ebay.com/usr/${encodeURIComponent(username)}`;
 }
@@ -71,10 +94,31 @@ function formatDate(value: string | null | undefined): string {
   });
 }
 
+function formatPrice(row: ReviewQueueRow): string {
+  const totalCad = row.total_price_cad ? Number(row.total_price_cad) : null;
+  if (totalCad != null && !Number.isNaN(totalCad)) {
+    return `$${totalCad.toFixed(2)} CAD`;
+  }
+  const totalUsd = row.total_usd ? Number(row.total_usd) : null;
+  if (totalUsd != null && !Number.isNaN(totalUsd)) {
+    return `$${totalUsd.toFixed(2)} USD`;
+  }
+  return "--";
+}
+
+function isManualAllowReason(reason: string | null | undefined): boolean {
+  return reason ? MANUAL_ALLOW_REASONS.has(reason) : false;
+}
+
+function isManualAllowOverride(reason: string | null | undefined): boolean {
+  return reason ? MANUAL_ALLOW_OVERRIDE_REASONS.has(reason) : false;
+}
+
 export function AdminBlacklistClient({
   sellers,
   history,
   rejected,
+  reviewQueue,
   missingTable,
   sellerFilter,
   clearFilterHref,
@@ -85,6 +129,7 @@ export function AdminBlacklistClient({
   sellers: BlacklistedSeller[];
   history: BlacklistHistoryRow[];
   rejected: RejectedListingRow[];
+  reviewQueue: ReviewQueueRow[];
   missingTable: boolean;
   sellerFilter?: string | null;
   clearFilterHref: string;
@@ -96,6 +141,8 @@ export function AdminBlacklistClient({
   const addFormRef = useRef<HTMLFormElement>(null);
   const [reasonFilter, setReasonFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [reviewQueueRows, setReviewQueueRows] =
+    useState<ReviewQueueRow[]>(reviewQueue);
 
   const reasonOptions = useMemo(() => {
     const reasons = new Set<string>();
@@ -118,6 +165,78 @@ export function AdminBlacklistClient({
       return true;
     });
   }, [rejected, reasonFilter, searchTerm]);
+
+  async function handleAllowListing(row: ReviewQueueRow) {
+    if (!isManualAllowReason(row.match_reject_reason)) {
+      showToast("Allow only supported for language/collector mismatches", "error");
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/allow-listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          listingId: row.listing_id,
+          rejectReason: row.match_reject_reason,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Request failed");
+      }
+      const overrideReason = `manual_allow:${row.match_reject_reason}`;
+      setReviewQueueRows((prev) =>
+        prev.map((item) =>
+          item.listing_id === row.listing_id
+            ? {
+                ...item,
+                override_type: "ALLOW",
+                override_reason: overrideReason,
+                override_created_at: new Date().toISOString(),
+              }
+            : item,
+        ),
+      );
+      showToast("Manually approved", "success");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to allow listing";
+      showToast(message, "error");
+    }
+  }
+
+  async function handleRevokeAllow(row: ReviewQueueRow) {
+    try {
+      const res = await fetch("/api/admin/revoke-allow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ listingId: row.listing_id }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Request failed");
+      }
+      setReviewQueueRows((prev) =>
+        prev.map((item) =>
+          item.listing_id === row.listing_id
+            ? {
+                ...item,
+                override_type: null,
+                override_reason: null,
+                override_created_at: null,
+              }
+            : item,
+        ),
+      );
+      showToast("Manual allow revoked", "success");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to revoke allow";
+      showToast(message, "error");
+    }
+  }
 
   async function handleAddSeller(formData: FormData) {
     try {
@@ -309,6 +428,110 @@ export function AdminBlacklistClient({
                   </td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section className="panel">
+        <h2 className="mb-2 text-lg font-semibold">
+          Review queue (language/collector mismatches)
+        </h2>
+        <p className="mb-3 text-xs text-slate-500">
+          Listings rejected for language/collector mismatches only. Allow creates
+          a manual override without changing global filters.
+        </p>
+        {reviewQueueRows.length === 0 ? (
+          <p className="text-sm text-slate-500">No listings awaiting review.</p>
+        ) : (
+          <table className="min-w-full border-collapse text-xs md:text-sm">
+            <thead>
+              <tr>
+                <th className="px-2 py-2 text-left">Status</th>
+                <th className="px-2 py-2 text-left">Title</th>
+                <th className="px-2 py-2 text-left">Seller</th>
+                <th className="px-2 py-2 text-left">Reason</th>
+                <th className="px-2 py-2 text-left">Price</th>
+                <th className="px-2 py-2 text-left">Ends</th>
+                <th className="px-2 py-2 text-left">eBay</th>
+                <th className="px-2 py-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reviewQueueRows.map((row) => {
+                const ebayUrl = getEbayItemUrl(row.listing_id);
+                const isAllowed =
+                  row.override_type === "ALLOW" &&
+                  isManualAllowOverride(row.override_reason);
+                const reasonLabel = row.match_reject_reason ?? "--";
+                return (
+                  <tr key={row.listing_id}>
+                    <td className="px-2 py-2 align-middle">
+                      {isAllowed ? (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                          Manually approved
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-500">Pending</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 align-middle text-slate-800">
+                      {row.title}
+                    </td>
+                    <td className="px-2 py-2 align-middle text-slate-600">
+                      {row.seller_username ?? "--"}
+                    </td>
+                    <td className="px-2 py-2 align-middle text-slate-600">
+                      {reasonLabel}
+                    </td>
+                    <td className="px-2 py-2 align-middle text-slate-600">
+                      {formatPrice(row)}
+                    </td>
+                    <td className="px-2 py-2 align-middle text-slate-500">
+                      {row.ends_at ? formatDate(row.ends_at) : "--"}
+                    </td>
+                    <td className="px-2 py-2 align-middle">
+                      {ebayUrl ? (
+                        <a
+                          href={ebayUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sky-700 transition hover:text-sky-900"
+                        >
+                          View
+                        </a>
+                      ) : (
+                        <span className="font-mono text-xs text-slate-500">
+                          {row.listing_id}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 align-middle">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                          disabled={
+                            isAllowed ||
+                            !isManualAllowReason(row.match_reject_reason)
+                          }
+                          onClick={() => handleAllowListing(row)}
+                        >
+                          Allow
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-300 disabled:cursor-not-allowed disabled:bg-slate-100"
+                          disabled={!isAllowed}
+                          onClick={() => handleRevokeAllow(row)}
+                        >
+                          Revoke
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

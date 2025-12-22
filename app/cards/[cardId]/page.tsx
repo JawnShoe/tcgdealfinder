@@ -271,7 +271,26 @@ async function getListings(
       WHERE l.card_id = ANY($1)
         ${marketFilterClause}
         AND l.seller_username IS NOT NULL
-        AND l.match_eligible = TRUE
+        AND (
+          l.match_eligible = TRUE
+          OR (
+            l.match_eligible = FALSE
+            AND l.match_reject_reason IN (
+              'language_mismatch',
+              'collector_number_mismatch'
+            )
+            AND EXISTS (
+              SELECT 1
+              FROM listing_overrides lo2
+              WHERE lo2.listing_id = l.listing_id
+                AND lo2.override_type = 'ALLOW'
+                AND lo2.reason IN (
+                  'manual_allow:language_mismatch',
+                  'manual_allow:collector_number_mismatch'
+                )
+            )
+          )
+        )
         AND l.shipping_known = TRUE
         AND NOT EXISTS (
           SELECT 1

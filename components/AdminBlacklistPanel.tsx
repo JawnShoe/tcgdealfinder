@@ -24,6 +24,20 @@ type RejectedListingRow = {
   created_at: Date;
 };
 
+type ReviewQueueRow = {
+  listing_id: string;
+  title: string;
+  seller_username: string | null;
+  total_price_cad: string | null;
+  total_usd: string | null;
+  market: string | null;
+  ends_at: Date | null;
+  match_reject_reason: string | null;
+  override_type: string | null;
+  override_reason: string | null;
+  override_created_at: Date | null;
+};
+
 async function removeSeller(formData: FormData) {
   "use server";
 
@@ -183,6 +197,47 @@ async function getRejectedListings(): Promise<RejectedListingRow[]> {
   }));
 }
 
+async function getReviewQueue(): Promise<ReviewQueueRow[]> {
+  const res = await query<ReviewQueueRow>(
+    `
+      SELECT
+        l.listing_id,
+        l.title,
+        l.seller_username,
+        l.total_price_cad,
+        l.total_usd,
+        l.market,
+        l.ends_at,
+        l.match_reject_reason,
+        lo.override_type,
+        lo.reason AS override_reason,
+        lo.created_at AS override_created_at
+      FROM listings l
+      LEFT JOIN listing_overrides lo
+        ON lo.listing_id = l.listing_id
+        AND lo.override_type = 'ALLOW'
+        AND lo.reason IN (
+          'manual_allow:language_mismatch',
+          'manual_allow:collector_number_mismatch'
+        )
+      WHERE l.match_eligible = FALSE
+        AND l.match_reject_reason IN (
+          'language_mismatch',
+          'collector_number_mismatch'
+        )
+      ORDER BY l.updated_at DESC NULLS LAST, l.ends_at ASC NULLS LAST
+      LIMIT 200;
+    `,
+  );
+  return res.rows.map((row: ReviewQueueRow) => ({
+    ...row,
+    ends_at: row.ends_at ? new Date(row.ends_at) : null,
+    override_created_at: row.override_created_at
+      ? new Date(row.override_created_at)
+      : null,
+  }));
+}
+
 async function getBlacklistHistory(
   sellerFilter?: string | null,
 ): Promise<{ rows: BlacklistHistoryRow[]; missingTable: boolean }> {
@@ -214,10 +269,11 @@ export async function AdminBlacklistPanel({
   sellerFilter?: string | null;
   clearFilterHref?: string;
 }) {
-  const [sellers, historyResult, rejected] = await Promise.all([
+  const [sellers, historyResult, rejected, reviewQueue] = await Promise.all([
     getBlacklistedSellers(sellerFilter),
     getBlacklistHistory(sellerFilter),
     getRejectedListings(),
+    getReviewQueue(),
   ]);
   const { rows: history, missingTable } = historyResult;
 
@@ -226,12 +282,20 @@ export async function AdminBlacklistPanel({
     ...row,
     created_at: row.created_at.toISOString(),
   }));
+  const serializedReviewQueue = reviewQueue.map((row) => ({
+    ...row,
+    ends_at: row.ends_at ? row.ends_at.toISOString() : null,
+    override_created_at: row.override_created_at
+      ? row.override_created_at.toISOString()
+      : null,
+  }));
 
   return (
     <AdminBlacklistClient
       sellers={sellers}
       history={history}
       rejected={serializedRejected}
+      reviewQueue={serializedReviewQueue}
       missingTable={missingTable}
       sellerFilter={sellerFilter}
       clearFilterHref={clearFilterHref}

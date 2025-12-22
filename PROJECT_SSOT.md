@@ -286,6 +286,15 @@ ACTIVE WORK: NONE
 - **Commit**: 4231799
 - **Restorepoint**: `T:\Projects\restorepoints\why-deal-icon-4231799.bundle`
 
+### Why deal single-line truncation
+- **Change**: Ensured why label + icon stay on one line with label truncation and fixed icon placement at the end.
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/WhyDealHint.tsx`
+- **Classification**: UI parity / consistency
+- **Blast radius**: Why line rendering only
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: c74b946
+- **Restorepoint**: `T:\Projects\restorepoints\why-deal-singleline-c74b946.bundle`
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

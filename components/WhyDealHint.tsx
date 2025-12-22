@@ -55,13 +55,12 @@ export function WhyDealHint({
   return (
     <span
       ref={wrapperRef}
-      className={`relative inline-flex min-w-0 items-center gap-1 whitespace-nowrap ${className ?? ""}`}
+      className="relative inline-flex min-w-0 max-w-full items-center whitespace-nowrap"
     >
-      <span className="min-w-0 truncate">{label}</span>
       <button
         type="button"
-        className="flex h-4 w-4 flex-none items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500 opacity-60 transition-opacity hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 align-middle leading-none"
-        aria-label="More info"
+        className={`min-w-0 truncate text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${className ?? ""}`.trim()}
+        aria-label={`${label} (more info)`}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-describedby={isOpen ? tooltipId : undefined}
@@ -70,20 +69,22 @@ export function WhyDealHint({
         onFocus={() => setIsFocus(true)}
         onBlur={() => {
           setIsFocus(false);
-          setIsPinned(false);
+          if (!isPinned) {
+            setIsPinned(false);
+          }
         }}
         onClick={(event) => {
           event.stopPropagation();
           setIsPinned((prev) => !prev);
         }}
       >
-        i
+        {label}
       </button>
       {isOpen ? (
         <span
           id={tooltipId}
           role="tooltip"
-          className="absolute left-0 top-full z-50 mt-2 w-max max-w-[220px] rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-lg"
+          className="absolute left-0 top-full z-50 mt-2 max-w-xs whitespace-normal break-words rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-lg"
         >
           {tooltip}
         </span>

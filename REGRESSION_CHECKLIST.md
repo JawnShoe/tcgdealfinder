@@ -8,6 +8,7 @@
   - `/cards/4` change Market to Canada -> 0 visible listings -> empty/intelligence state appears; clear filter -> listings return; watchlist toggle works in empty state
   - `/sets/lost-origin` (representative set view)
   - `/debug/exclusions` toggles for `3d`, `7d`, `30d`
+  - Dev-only: `/admin/login` loads in dev; returns 404 in production
   - `/ending-soon` deferral placeholder (no listings fetched)
 
 ## Watchlist v1

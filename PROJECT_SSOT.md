@@ -100,6 +100,7 @@
 | `/admin/alerts` | ⚠️ ADMIN | Alert management |
 | `/admin/blacklist` | ⚠️ ADMIN | Seller blacklist management |
 | `/admin/listings` | ⚠️ ADMIN | Single-listing exclusion tool |
+| `/admin/login` | DEV-ONLY | Dev-only helper (404 in production) |
 | `/debug/exclusions` | ⚠️ DEBUG | Debug-only exclusions + integrity review (deprecated for operators) |
 
 - `/admin/blacklist` shows active blacklist entries plus history; unblacklist writes history first and restore re-adds without deleting history.
@@ -464,7 +465,7 @@ ACTIVE WORK: NONE
 ### Build & Lint
 ```bash
 npm run lint      # Must show: ✔ No ESLint warnings or errors
-npm run build     # Must compile all 35 routes successfully
+npm run build     # Must compile all 36 routes successfully
 ```
 
 ### Visual Smoke Tests
@@ -542,7 +543,7 @@ Prevent "dead-end" searches by ensuring full set data is available.
 - API: 170 total sets from Pokémon TCG API v2
 - Match: 100% (all 170 sets match exactly, no gaps)
 - Rendering: /sets and /sets/[setId] pages render all sets successfully
-- Build: All 35 routes compile without errors
+- Build: All 36 routes compile without errors
 
 Set Browse UX Polish [PARTIAL]
 

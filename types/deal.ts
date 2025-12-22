@@ -22,6 +22,9 @@ export type Deal = {
   sellerStoreName?: string | null;
   sellerFeedbackCount?: number | null;
   sellerPositivePercent?: number | null;
+  sellerSeenDealCount?: number | null;
+  sellerSeenWindowDays?: number | null;
+  sellerSeenMarket?: string | null;
   card: {
     id: number;
     name: string | null;

@@ -31,6 +31,7 @@ import {
 const HOT_CARD_LIMIT = 8;
 const HOT_CARD_THRESHOLD = -5;
 const DEAL_LIMIT = 400;
+const SELLER_SEEN_WINDOW_DAYS = 30;
 
 type MarketContext = {
   market: MarketPreference;
@@ -114,6 +115,11 @@ type DealRow = {
   card_set_name: string | null;
   card_number: string | null;
   card_condition_bucket: string | null;
+};
+
+type SellerSeenCountRow = {
+  seller_username: string | null;
+  deal_count: string;
 };
 
 function decodeSetName(slug: string): string {
@@ -491,7 +497,7 @@ async function getSetDeals(
     params,
   );
 
-  return res.rows.map((row) => {
+  const deals: Deal[] = res.rows.map((row) => {
     const priceCad = row.price_cad != null ? Number(row.price_cad) : null;
     const shippingCad =
       row.shipping_cad != null ? Number(row.shipping_cad) : null;
@@ -564,6 +570,103 @@ async function getSetDeals(
       cardId: row.card_id,
     };
   });
+
+  const sellerUsernames = Array.from(
+    new Set(
+      deals
+        .map((deal) => deal.sellerUsername)
+        .filter((seller): seller is string => Boolean(seller)),
+    ),
+  );
+  const sellerSeenCounts = await fetchSellerSeenCountsForSet(
+    sellerUsernames,
+    setName,
+    context,
+  );
+  if (sellerSeenCounts.size > 0) {
+    for (const deal of deals) {
+      const seller = deal.sellerUsername ?? null;
+      if (!seller) continue;
+      const count = sellerSeenCounts.get(seller);
+      if (count == null) continue;
+      deal.sellerSeenDealCount = count;
+      deal.sellerSeenWindowDays = SELLER_SEEN_WINDOW_DAYS;
+      deal.sellerSeenMarket = context.market;
+    }
+  }
+
+  return deals;
+}
+
+async function fetchSellerSeenCountsForSet(
+  sellerUsernames: string[],
+  setName: string,
+  context: MarketContext,
+): Promise<Map<string, number>> {
+  if (sellerUsernames.length === 0) {
+    return new Map();
+  }
+  const params: (string | string[])[] = [sellerUsernames, setName];
+  const marketParamIndex = params.length + 1;
+  const marketFilterClause =
+    context.hasListingsMarketColumn && context.market !== "all"
+      ? `AND l.market = $${marketParamIndex}`
+      : "";
+  if (context.hasListingsMarketColumn && context.market !== "all") {
+    params.push(context.market);
+  }
+
+  const res = await query<SellerSeenCountRow>(
+    `
+      SELECT
+        l.seller_username,
+        COUNT(*)::bigint AS deal_count
+      FROM listings l
+      JOIN cards c ON c.id = l.card_id
+      WHERE
+        l.seller_username = ANY($1)
+        AND c.set_name = $2
+        AND l.updated_at >= NOW() - INTERVAL '${SELLER_SEEN_WINDOW_DAYS} days'
+        AND l.total_price_cad IS NOT NULL
+        AND l.historic_price_cad IS NOT NULL
+        AND l.seller_username IS NOT NULL
+        AND (
+          l.match_eligible = TRUE
+          OR (
+            l.match_eligible = FALSE
+            AND l.match_reject_reason IN (
+              'language_mismatch',
+              'collector_number_mismatch'
+            )
+            AND EXISTS (
+              SELECT 1
+              FROM listing_overrides lo
+              WHERE lo.listing_id = l.listing_id
+                AND lo.override_type = 'ALLOW'
+                AND lo.reason IN (
+                  'manual_allow:language_mismatch',
+                  'manual_allow:collector_number_mismatch'
+                )
+            )
+          )
+        )
+        ${marketFilterClause}
+        AND NOT EXISTS (
+          SELECT 1
+          FROM seller_blacklist sb
+          WHERE sb.seller_username = l.seller_username
+        )
+      GROUP BY l.seller_username;
+    `,
+    params,
+  );
+
+  const counts = new Map<string, number>();
+  for (const row of res.rows) {
+    if (!row.seller_username) continue;
+    counts.set(row.seller_username, Number(row.deal_count ?? 0));
+  }
+  return counts;
 }
 
 function formatDiscount(value: number | null): string {

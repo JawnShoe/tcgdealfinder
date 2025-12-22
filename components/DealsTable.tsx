@@ -41,6 +41,7 @@ import { SellerNameWithTooltip, formatSellerSalesCount } from "./SellerNameWithT
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { WatchlistStarButton } from "./WatchlistStarButton";
 import { WhyDealHint } from "./WhyDealHint";
+import { SellerSeenBadge } from "./SellerSeenBadge";
 import type { Deal } from "../types/deal";
 import type { DealsApiMeta, DealsApiResponse } from "@/types/dealsApi";
 import {
@@ -73,7 +74,7 @@ import {
 } from "../lib/dealConfidence";
 import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 
-import { DEFAULT_MARKET, normalizeMarketCode } from "../lib/markets";
+import { DEFAULT_MARKET, getMarketLabel, normalizeMarketCode } from "../lib/markets";
 import { compareStrictBestDiscountValues } from "../lib/dealSort";
 import {
   getColumnsByVariant,
@@ -143,6 +144,27 @@ function renderSellerSalesBadge(
       <span aria-hidden="true">⭐</span>
       <span>{formatted} sales</span>
     </span>
+  );
+}
+
+function getSeenMarketLabel(value: string | null | undefined): string {
+  if (!value) return "All markets";
+  const normalized = normalizeMarketCode(value);
+  if (normalized === "all") return "All markets";
+  return getMarketLabel(normalized);
+}
+
+function renderSellerSeenBadge(
+  count: number | null | undefined,
+  windowDays: number | null | undefined,
+  marketValue: string | null | undefined,
+): JSX.Element | null {
+  return (
+    <SellerSeenBadge
+      count={count}
+      windowDays={windowDays}
+      marketLabel={getSeenMarketLabel(marketValue)}
+    />
   );
 }
 
@@ -935,6 +957,11 @@ export default function DealsTable({
                       const sellerSalesBadge = renderSellerSalesBadge(
                         vm.deal.sellerFeedbackCount,
                       );
+                      const sellerSeenBadge = renderSellerSeenBadge(
+                        vm.deal.sellerSeenDealCount,
+                        vm.deal.sellerSeenWindowDays,
+                        vm.deal.sellerSeenMarket ?? viewState.marketKey,
+                      );
                       return (
                         <tr key={vm.deal.id} className="even:bg-slate-50/50 hover:bg-slate-100">
                         <td className={`${colClass("card", variant)} px-3 py-4 align-middle`}>
@@ -1053,8 +1080,11 @@ export default function DealsTable({
                                 <TrustedBadge className="flex-none" />
                               ) : null}
                             </span>
-                            {sellerSalesBadge ? (
-                              <div className="mt-0.5">{sellerSalesBadge}</div>
+                            {sellerSalesBadge || sellerSeenBadge ? (
+                              <div className="mt-0.5 space-y-0.5">
+                                {sellerSalesBadge}
+                                {sellerSeenBadge}
+                              </div>
                             ) : null}
                           </div>
                         </div>
@@ -1106,6 +1136,11 @@ export default function DealsTable({
               const setName = vm.deal.card?.setName ?? vm.deal.setName ?? null;
               const sellerSalesBadge = renderSellerSalesBadge(
                 vm.deal.sellerFeedbackCount,
+              );
+              const sellerSeenBadge = renderSellerSeenBadge(
+                vm.deal.sellerSeenDealCount,
+                vm.deal.sellerSeenWindowDays,
+                vm.deal.sellerSeenMarket ?? viewState.marketKey,
               );
               return (
                 <div
@@ -1206,7 +1241,12 @@ export default function DealsTable({
                       />
                       {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
                     </span>
-                    {sellerSalesBadge}
+                    {sellerSalesBadge || sellerSeenBadge ? (
+                      <div className="space-y-0.5">
+                        {sellerSalesBadge}
+                        {sellerSeenBadge}
+                      </div>
+                    ) : null}
                   </div>
                   <span title={formatMarket(vm.deal.market).label}>
                     Market: {formatMarket(vm.deal.market).compactLabel}

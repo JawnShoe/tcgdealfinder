@@ -60,8 +60,14 @@ type DealRow = {
   integrity_score: number | null;
 };
 
+type SellerSeenCountRow = {
+  seller_username: string | null;
+  deal_count: string;
+};
+
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 100;
+const SELLER_SEEN_WINDOW_DAYS = 30;
 
 type SortConfig = {
   requireHistoric: boolean;
@@ -166,6 +172,31 @@ export async function runDealsQuery(
       continue;
     }
     items.push(deal);
+  }
+
+  const sellerUsernames = Array.from(
+    new Set(
+      items
+        .map((deal) => deal.sellerUsername)
+        .filter((seller): seller is string => Boolean(seller)),
+    ),
+  );
+  const sellerSeenCounts = await fetchSellerSeenCounts(
+    sellerUsernames,
+    sortConfig,
+    market,
+    hasListingsMarketColumn,
+  );
+  if (sellerSeenCounts.size > 0) {
+    for (const deal of items) {
+      const seller = deal.sellerUsername ?? null;
+      if (!seller) continue;
+      const count = sellerSeenCounts.get(seller);
+      if (count == null) continue;
+      deal.sellerSeenDealCount = count;
+      deal.sellerSeenWindowDays = SELLER_SEEN_WINDOW_DAYS;
+      deal.sellerSeenMarket = market;
+    }
   }
 
   const meta: DealsApiMeta = {
@@ -318,6 +349,47 @@ async function fetchListings(
     [pageSize, offset],
   );
   return res.rows;
+}
+
+async function fetchSellerSeenCounts(
+  sellerUsernames: string[],
+  sortConfig: SortConfig,
+  market: MarketCode | "all",
+  hasListingsMarketColumn: boolean,
+): Promise<Map<string, number>> {
+  if (sellerUsernames.length === 0) {
+    return new Map();
+  }
+  const baseFilters = buildBaseFilters(
+    sortConfig.requireHistoric,
+    hasListingsMarketColumn,
+    market,
+  );
+  const endsAtFilter = sortConfig.requireEndsAt
+    ? "AND l.ends_at IS NOT NULL"
+    : "";
+  const res = await query<SellerSeenCountRow>(
+    `
+      SELECT
+        l.seller_username,
+        COUNT(*)::bigint AS deal_count
+      FROM listings l
+      WHERE
+        l.seller_username = ANY($1)
+        AND l.updated_at >= NOW() - INTERVAL '${SELLER_SEEN_WINDOW_DAYS} days'
+        AND ${baseFilters}
+        ${endsAtFilter}
+      GROUP BY l.seller_username;
+    `,
+    [sellerUsernames],
+  );
+
+  const counts = new Map<string, number>();
+  for (const row of res.rows) {
+    if (!row.seller_username) continue;
+    counts.set(row.seller_username, Number(row.deal_count ?? 0));
+  }
+  return counts;
 }
 
 function buildBaseFilters(

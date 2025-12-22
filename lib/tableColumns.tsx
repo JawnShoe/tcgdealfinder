@@ -24,7 +24,9 @@ import {
 } from "./dealFormatting";
 import { MarketFlag } from "../components/MarketFlag";
 import { WhyDealHint } from "../components/WhyDealHint";
+import { SellerSeenBadge } from "../components/SellerSeenBadge";
 import { TABLE_TH, TABLE_TH_RIGHT, TABLE_TH_NOWRAP, TABLE_TD, TABLE_TD_RIGHT, NUM_CELL, NUM_CELL_SECONDARY } from "./typography";
+import { getMarketLabel, normalizeMarketCode } from "./markets";
 
 function renderSellerSalesBadge(
   salesCount: number | null | undefined,
@@ -38,6 +40,27 @@ function renderSellerSalesBadge(
       <span aria-hidden="true">⭐</span>
       <span>{formatted} sales</span>
     </span>
+  );
+}
+
+function getSeenMarketLabel(value: string | null | undefined): string {
+  if (!value) return "All markets";
+  const normalized = normalizeMarketCode(value);
+  if (normalized === "all") return "All markets";
+  return getMarketLabel(normalized);
+}
+
+function renderSellerSeenBadge(
+  count: number | null | undefined,
+  windowDays: number | null | undefined,
+  marketValue: string | null | undefined,
+): JSX.Element | null {
+  return (
+    <SellerSeenBadge
+      count={count}
+      windowDays={windowDays}
+      marketLabel={getSeenMarketLabel(marketValue)}
+    />
   );
 }
 
@@ -283,6 +306,11 @@ const SellerColumn: ColumnSpec = {
   width: "w-[160px]",
   renderCell: (vm) => {
     const sales = renderSellerSalesBadge(vm.deal.sellerFeedbackCount);
+    const seen = renderSellerSeenBadge(
+      vm.deal.sellerSeenDealCount,
+      vm.deal.sellerSeenWindowDays,
+      vm.deal.sellerSeenMarket ?? vm.deal.market,
+    );
     return (
       <div className="flex min-w-0 items-start gap-2">
         <div className="min-w-0">
@@ -298,7 +326,12 @@ const SellerColumn: ColumnSpec = {
             />
             {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
           </div>
-          {sales ? <div className="mt-0.5">{sales}</div> : null}
+          {sales || seen ? (
+            <div className="mt-0.5 space-y-0.5">
+              {sales}
+              {seen}
+            </div>
+          ) : null}
         </div>
       </div>
     );
@@ -310,6 +343,11 @@ const SellerColumnNarrow: ColumnSpec = {
   width: "w-[140px]",
   renderCell: (vm) => {
     const sales = renderSellerSalesBadge(vm.deal.sellerFeedbackCount);
+    const seen = renderSellerSeenBadge(
+      vm.deal.sellerSeenDealCount,
+      vm.deal.sellerSeenWindowDays,
+      vm.deal.sellerSeenMarket ?? vm.deal.market,
+    );
     return (
       <div className="flex min-w-0 items-start gap-2">
         <div className="min-w-0">
@@ -325,7 +363,12 @@ const SellerColumnNarrow: ColumnSpec = {
             />
             {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
           </div>
-          {sales ? <div className="mt-0.5">{sales}</div> : null}
+          {sales || seen ? (
+            <div className="mt-0.5 space-y-0.5">
+              {sales}
+              {seen}
+            </div>
+          ) : null}
         </div>
       </div>
     );

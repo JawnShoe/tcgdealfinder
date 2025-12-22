@@ -71,10 +71,17 @@ type ListingDbRow = {
   override_type: string | null;
 };
 
+type SellerSeenCountRow = {
+  seller_username: string | null;
+  deal_count: string;
+};
+
 type OtherMarketCount = {
   market: MarketCode;
   count: number;
 };
+
+const SELLER_SEEN_WINDOW_DAYS = 30;
 
 type CardDetail = {
   card: {
@@ -110,6 +117,9 @@ type CardDetail = {
     sellerStoreName: string | null;
     sellerFeedbackCount: number | null;
     sellerPositivePercent: number | null;
+    sellerSeenDealCount?: number | null;
+    sellerSeenWindowDays?: number | null;
+    sellerSeenMarket?: string | null;
     confidenceWeight: number | null;
     integrityStatus: "OK" | "REVIEW";
     integrityReason: string | null;
@@ -542,6 +552,31 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
     }
   }
 
+  const sellerUsernames = Array.from(
+    new Set(
+      filteredListings
+        .map((listing) => listing.sellerUsername)
+        .filter((seller): seller is string => Boolean(seller)),
+    ),
+  );
+  const sellerSeenCounts = await fetchSellerSeenCountsForCard(
+    sellerUsernames,
+    cardIds,
+    selectedMarket,
+    hasListingsMarketColumn,
+  );
+  if (sellerSeenCounts.size > 0) {
+    for (const listing of filteredListings) {
+      const seller = listing.sellerUsername ?? null;
+      if (!seller) continue;
+      const count = sellerSeenCounts.get(seller);
+      if (count == null) continue;
+      listing.sellerSeenDealCount = count;
+      listing.sellerSeenWindowDays = SELLER_SEEN_WINDOW_DAYS;
+      listing.sellerSeenMarket = selectedMarket;
+    }
+  }
+
   // Fetch stock image for hero display
   const stockImage = await getCardStockImageUrl({
     setName: cardRecord.set_name,
@@ -569,6 +604,79 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
   };
   warnIfStoreNamesMissing(filteredListings, "cardDetail");
   return result;
+}
+
+async function fetchSellerSeenCountsForCard(
+  sellerUsernames: string[],
+  cardIds: number[],
+  market: MarketPreference,
+  hasListingsMarketColumn: boolean,
+): Promise<Map<string, number>> {
+  if (sellerUsernames.length === 0 || cardIds.length === 0) {
+    return new Map();
+  }
+  const params: Array<string[] | number[] | string> = [
+    sellerUsernames,
+    cardIds,
+  ];
+  const marketParamIndex = params.length + 1;
+  const marketFilterClause =
+    hasListingsMarketColumn && market !== "all"
+      ? `AND l.market = $${marketParamIndex}`
+      : "";
+  if (hasListingsMarketColumn && market !== "all") {
+    params.push(market);
+  }
+
+  const res = await query<SellerSeenCountRow>(
+    `
+      SELECT
+        l.seller_username,
+        COUNT(*)::bigint AS deal_count
+      FROM listings l
+      WHERE
+        l.seller_username = ANY($1)
+        AND l.card_id = ANY($2)
+        AND l.updated_at >= NOW() - INTERVAL '${SELLER_SEEN_WINDOW_DAYS} days'
+        ${marketFilterClause}
+        AND l.seller_username IS NOT NULL
+        AND (
+          l.match_eligible = TRUE
+          OR (
+            l.match_eligible = FALSE
+            AND l.match_reject_reason IN (
+              'language_mismatch',
+              'collector_number_mismatch'
+            )
+            AND EXISTS (
+              SELECT 1
+              FROM listing_overrides lo
+              WHERE lo.listing_id = l.listing_id
+                AND lo.override_type = 'ALLOW'
+                AND lo.reason IN (
+                  'manual_allow:language_mismatch',
+                  'manual_allow:collector_number_mismatch'
+                )
+            )
+          )
+        )
+        AND l.shipping_known = TRUE
+        AND NOT EXISTS (
+          SELECT 1
+          FROM seller_blacklist sb
+          WHERE sb.seller_username = l.seller_username
+        )
+      GROUP BY l.seller_username;
+    `,
+    params,
+  );
+
+  const counts = new Map<string, number>();
+  for (const row of res.rows) {
+    if (!row.seller_username) continue;
+    counts.set(row.seller_username, Number(row.deal_count ?? 0));
+  }
+  return counts;
 }
 
 type CardPageProps = {

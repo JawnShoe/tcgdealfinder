@@ -30,6 +30,7 @@ import { isAdminAuthenticated } from "../../lib/adminAuth";
 const MIN_SAMPLE_SIZE = 20;
 const TRUSTED_FEEDBACK = 20;
 const TRUSTED_POSITIVE_PERCENT = 98;
+const SELLER_SEEN_WINDOW_DAYS = 30;
 
 type EndingSoonRow = {
   listing_id: number;
@@ -53,6 +54,11 @@ type EndingSoonRow = {
   seller_username: string | null;
   seller_store_name: string | null;
   thumbnail_url: string | null;
+};
+
+type SellerSeenCountRow = {
+  seller_username: string | null;
+  deal_count: string;
 };
 
 async function getEndingSoonDeals(): Promise<Deal[]> {
@@ -243,8 +249,127 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
     }
   }
 
+  const sellerUsernames = Array.from(
+    new Set(
+      filtered
+        .map((deal) => deal.sellerUsername)
+        .filter((seller): seller is string => Boolean(seller)),
+    ),
+  );
+  const sellerSeenCounts = await fetchSellerSeenCounts(
+    sellerUsernames,
+    market,
+    hasListingsMarketColumn,
+    hasHistoricalMarketColumn,
+  );
+  if (sellerSeenCounts.size > 0) {
+    for (const deal of filtered) {
+      const seller = deal.sellerUsername ?? null;
+      if (!seller) continue;
+      const count = sellerSeenCounts.get(seller);
+      if (count == null) continue;
+      deal.sellerSeenDealCount = count;
+      deal.sellerSeenWindowDays = SELLER_SEEN_WINDOW_DAYS;
+      deal.sellerSeenMarket = market;
+    }
+  }
+
   warnIfStoreNamesMissing(filtered, "endingSoon");
   return filtered;
+}
+
+async function fetchSellerSeenCounts(
+  sellerUsernames: string[],
+  market: string,
+  hasListingsMarketColumn: boolean,
+  hasHistoricalMarketColumn: boolean,
+): Promise<Map<string, number>> {
+  if (sellerUsernames.length === 0) {
+    return new Map();
+  }
+  const historicalMarket = market === "all" ? DEFAULT_MARKET : market;
+  const marketLiteral = `'${historicalMarket}'::text`;
+  const historicalJoinClause =
+    hasHistoricalMarketColumn && hasListingsMarketColumn
+      ? "AND hp.market = l.market"
+      : hasHistoricalMarketColumn
+        ? `AND hp.market = ${marketLiteral}`
+        : "";
+  const params: (string | number | string[])[] = [
+    sellerUsernames,
+    MIN_SAMPLE_SIZE,
+    TRUSTED_FEEDBACK,
+    TRUSTED_POSITIVE_PERCENT,
+  ];
+  const marketParamIndex = params.length + 1;
+  const marketFilterClause =
+    hasListingsMarketColumn && market !== "all"
+      ? `AND l.market = $${marketParamIndex}`
+      : "";
+  if (hasListingsMarketColumn && market !== "all") {
+    params.push(market);
+  }
+
+  const res = await query<SellerSeenCountRow>(
+    `
+      SELECT
+        l.seller_username,
+        COUNT(*)::bigint AS deal_count
+      FROM listings l
+      LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
+        ${historicalJoinClause}
+      WHERE
+        l.seller_username = ANY($1)
+        AND l.updated_at >= NOW() - INTERVAL '${SELLER_SEEN_WINDOW_DAYS} days'
+        AND l.total_price_cad IS NOT NULL
+        AND l.historic_price_cad IS NOT NULL
+        AND l.seller_username IS NOT NULL
+        AND hp.sample_size IS NOT NULL
+        AND hp.sample_size >= $2
+        AND l.seller_feedback_count IS NOT NULL
+        AND l.seller_feedback_count >= $3
+        AND l.seller_positive_percent IS NOT NULL
+        AND l.seller_positive_percent >= $4
+        AND l.ends_at IS NOT NULL
+        AND l.ends_at BETWEEN NOW() AND NOW() + INTERVAL '24 hours'
+        AND l.shipping_known = TRUE
+        AND (
+          l.match_eligible = TRUE
+          OR (
+            l.match_eligible = FALSE
+            AND l.match_reject_reason IN (
+              'language_mismatch',
+              'collector_number_mismatch'
+            )
+            AND EXISTS (
+              SELECT 1
+              FROM listing_overrides lo
+              WHERE lo.listing_id = l.listing_id
+                AND lo.override_type = 'ALLOW'
+                AND lo.reason IN (
+                  'manual_allow:language_mismatch',
+                  'manual_allow:collector_number_mismatch'
+                )
+            )
+          )
+        )
+        ${marketFilterClause}
+        AND NOT EXISTS (
+          SELECT 1
+          FROM seller_blacklist sb
+          WHERE sb.seller_username = l.seller_username
+        )
+      GROUP BY l.seller_username;
+    `,
+    params,
+  );
+
+  const counts = new Map<string, number>();
+  for (const row of res.rows) {
+    if (!row.seller_username) continue;
+    counts.set(row.seller_username, Number(row.deal_count ?? 0));
+  }
+  return counts;
 }
 
 export default async function EndingSoonPage() {

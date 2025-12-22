@@ -14,6 +14,7 @@ import { MarketFlag } from "./MarketFlag";
 import { SellerNameWithTooltip, formatSellerSalesCount } from "./SellerNameWithTooltip";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { WhyDealHint } from "./WhyDealHint";
+import { SellerSeenBadge } from "./SellerSeenBadge";
 import {
   CONDITION_FILTERS,
   type ConditionFilterKey,
@@ -83,6 +84,9 @@ type ListingRow = {
   sellerStoreName: string | null;
   sellerFeedbackCount: number | null;
   sellerPositivePercent: number | null;
+  sellerSeenDealCount?: number | null;
+  sellerSeenWindowDays?: number | null;
+  sellerSeenMarket?: string | null;
   confidenceWeight: number | null;
   integrityStatus: "OK" | "REVIEW";
   integrityReason: string | null;
@@ -149,6 +153,13 @@ function formatConditionLabel(value: string | null | undefined): string | null {
   return CONDITION_LABELS[value] ?? value.replace(/_/g, " ").toUpperCase();
 }
 
+function getSeenMarketLabel(value: string | null | undefined): string {
+  if (!value) return "All markets";
+  const normalized = normalizeMarketCode(value);
+  if (normalized === "all") return "All markets";
+  return getMarketLabel(normalized);
+}
+
 
 
 // Convert ListingRow to Deal for buildDealViewModel
@@ -177,6 +188,9 @@ function listingRowToDeal(
     sellerStoreName: listing.sellerStoreName ?? undefined,
     sellerFeedbackCount: listing.sellerFeedbackCount ?? undefined,
     sellerPositivePercent: listing.sellerPositivePercent ?? undefined,
+    sellerSeenDealCount: listing.sellerSeenDealCount ?? undefined,
+    sellerSeenWindowDays: listing.sellerSeenWindowDays ?? undefined,
+    sellerSeenMarket: listing.sellerSeenMarket ?? undefined,
     card: {
       id: cardId,
       name: cardName,
@@ -1167,6 +1181,13 @@ export default function CardDetailClient({
                   const sellerSalesText = formatSellerSalesCount(
                     listing.sellerFeedbackCount ?? null,
                   );
+                  const sellerSeenBadge = (
+                    <SellerSeenBadge
+                      count={listing.sellerSeenDealCount}
+                      windowDays={listing.sellerSeenWindowDays}
+                      marketLabel={getSeenMarketLabel(listing.sellerSeenMarket)}
+                    />
+                  );
                   return (
                     <tr key={listing.id} className="even:bg-slate-50/50 hover:bg-slate-100">
                       <td className="px-3 py-4 align-middle">
@@ -1262,10 +1283,15 @@ export default function CardDetailClient({
                               listing.sellerPositivePercent,
                             ) && <TrustedBadge className="flex-none" />}
                           </div>
-                          {sellerSalesText ? (
-                            <div className="mt-0.5 text-[11px] text-slate-500">
-                              <span aria-hidden="true">⭐</span>{" "}
-                              <span>{sellerSalesText} sales</span>
+                          {sellerSalesText || sellerSeenBadge ? (
+                            <div className="mt-0.5 space-y-0.5">
+                              {sellerSalesText ? (
+                                <div className="text-[11px] text-slate-500">
+                                  <span aria-hidden="true">⭐</span>{" "}
+                                  <span>{sellerSalesText} sales</span>
+                                </div>
+                              ) : null}
+                              {sellerSeenBadge}
                             </div>
                           ) : null}
                         </div>

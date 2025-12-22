@@ -268,6 +268,15 @@ ACTIVE WORK: NONE
 - **Commit**: dd87f22
 - **Restorepoint**: `T:\Projects\restorepoints\why-deal-copy-dd87f22.bundle`
 
+### Why deal tap-friendly tooltip
+- **Change**: Replaced `title` tooltips with a small hover/tap popover for why details (keyboard + Escape support).
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/WhyDealHint.tsx`, `components/DealsTable.tsx`, `components/CardDetailClient.tsx`, `lib/tableColumns.tsx`
+- **Classification**: UI parity / consistency
+- **Blast radius**: Deal card/listing rendering only
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: f2ea029
+- **Restorepoint**: `T:\Projects\restorepoints\why-deal-popover-f2ea029.bundle`
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

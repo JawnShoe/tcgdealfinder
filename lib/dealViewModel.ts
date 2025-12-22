@@ -27,7 +27,10 @@ export type DealViewModel = {
   priceConfidenceLabel: "high" | "medium" | "low" | null;
   sampleSize: number | null;
   trustedSeller: boolean;
-  whyDeal: string | null;
+  whyDeal: {
+    label: string;
+    tooltip: string;
+  } | null;
   
   // Presentation fields
   conditionLabel: string | null;

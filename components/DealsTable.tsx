@@ -982,8 +982,11 @@ export default function DealsTable({
                             {formatUSD(vm.totalUsd)}
                           </span>
                           {vm.whyDeal ? (
-                            <span className="text-xs text-slate-500">
-                              {vm.whyDeal}
+                            <span
+                              className="text-xs text-slate-500"
+                              title={vm.whyDeal.tooltip}
+                            >
+                              {vm.whyDeal.label}
                             </span>
                           ) : null}
                           {formatFreshness(vm.deal.updatedAt) && (
@@ -1145,7 +1148,12 @@ export default function DealsTable({
                       {formatUSD(vm.totalUsd)}
                     </p>
                     {vm.whyDeal ? (
-                      <p className="text-xs text-slate-500">{vm.whyDeal}</p>
+                      <p
+                        className="text-xs text-slate-500"
+                        title={vm.whyDeal.tooltip}
+                      >
+                        {vm.whyDeal.label}
+                      </p>
                     ) : null}
                     {formatFreshness(vm.deal.updatedAt) && (
                       <p className="text-xs text-slate-500">

@@ -1213,8 +1213,11 @@ export default function CardDetailClient({
                           {formatUSD(vm.totalUsd)}
                         </span>
                         {vm.whyDeal ? (
-                          <span className="text-xs text-slate-500">
-                            {vm.whyDeal}
+                          <span
+                            className="text-xs text-slate-500"
+                            title={vm.whyDeal.tooltip}
+                          >
+                            {vm.whyDeal.label}
                           </span>
                         ) : null}
                         {formatFreshness(listing.updatedAt) && (

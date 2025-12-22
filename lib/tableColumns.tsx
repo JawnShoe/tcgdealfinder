@@ -198,7 +198,9 @@ const TotalColumn: ColumnSpec = {
     <div className="flex flex-col items-end gap-0.5 text-right">
       <span className={NUM_CELL}>{formatUSD(vm.totalUsd)}</span>
       {vm.whyDeal ? (
-        <span className="text-xs text-slate-500">{vm.whyDeal}</span>
+        <span className="text-xs text-slate-500" title={vm.whyDeal.tooltip}>
+          {vm.whyDeal.label}
+        </span>
       ) : null}
     </div>
   ),

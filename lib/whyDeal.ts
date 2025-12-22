@@ -1,4 +1,4 @@
-import { formatDiscount, formatFreshness } from "./dealFormatting";
+import { formatFreshness } from "./dealFormatting";
 import { formatMoneyFromCad } from "./money";
 
 export type WhyDealInput = {
@@ -7,6 +7,11 @@ export type WhyDealInput = {
   updatedAt?: string | null;
   shippingCad?: number | null;
   shippingKnown?: boolean | null;
+};
+
+export type WhyDealResult = {
+  label: string;
+  tooltip: string;
 };
 
 const BASELINE_SAMPLE_MIN = 10;
@@ -23,7 +28,7 @@ function getMinutesSince(updatedAt: string | null | undefined): number | null {
   return Math.floor(diffMs / 60000);
 }
 
-export function getWhyDeal(input: WhyDealInput): string | null {
+export function getWhyDeal(input: WhyDealInput): WhyDealResult | null {
   const discount = input.discountPercent ?? null;
   const sampleSize = input.sampleSize ?? null;
   if (
@@ -33,15 +38,27 @@ export function getWhyDeal(input: WhyDealInput): string | null {
     sampleSize >= BASELINE_SAMPLE_MIN &&
     discount <= -BASELINE_DISCOUNT_MIN
   ) {
-    const discountLabel = formatDiscount(discount).replace(/^\+/, "");
-    return `~${discountLabel} below recent median (n=${sampleSize})`;
+    const absDiscount = Math.abs(discount);
+    const discountLabel = absDiscount.toFixed(1);
+    const sampleCount = Math.round(sampleSize);
+    const label =
+      sampleSize >= 25
+        ? "Well below typical price"
+        : "Below typical price";
+    return {
+      label,
+      tooltip: `About ${discountLabel}% below recent median (${sampleCount} comps).`,
+    };
   }
 
   const minutesSince = getMinutesSince(input.updatedAt ?? null);
   if (minutesSince != null && minutesSince <= NEW_LISTING_WINDOW_MINUTES) {
     const freshness = formatFreshness(input.updatedAt, 2);
     if (freshness) {
-      return `New listing (~${freshness} ago)`;
+      return {
+        label: "Just listed",
+        tooltip: `Listed about ${freshness} ago.`,
+      };
     }
   }
 
@@ -55,7 +72,10 @@ export function getWhyDeal(input: WhyDealInput): string | null {
     Number.isFinite(input.shippingCad) &&
     input.shippingCad <= LOW_SHIPPING_MAX_CAD
   ) {
-    return `Low shipping (${formatMoneyFromCad(input.shippingCad, "CAD")})`;
+    return {
+      label: "Low shipping",
+      tooltip: `Shipping ${formatMoneyFromCad(input.shippingCad, "CAD")}.`,
+    };
   }
 
   return null;

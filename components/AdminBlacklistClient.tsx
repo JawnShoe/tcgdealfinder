@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useAdminToast } from "./AdminActionFeedback";
 
 type BlacklistedSeller = {
@@ -47,6 +47,17 @@ function getEbayItemUrl(raw: string | null | undefined): string | null {
   return itemId ? `https://www.ebay.com/itm/${itemId}` : null;
 }
 
+function formatDateOnly(value: string | null | undefined): string {
+  if (!value) return "--";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "--";
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
+}
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return "--";
   const d = new Date(value);
@@ -83,6 +94,30 @@ export function AdminBlacklistClient({
 }) {
   const { showToast } = useAdminToast();
   const addFormRef = useRef<HTMLFormElement>(null);
+  const [reasonFilter, setReasonFilter] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const reasonOptions = useMemo(() => {
+    const reasons = new Set<string>();
+    for (const row of rejected) {
+      if (row.reason) reasons.add(row.reason);
+    }
+    return ["All", ...Array.from(reasons).sort()];
+  }, [rejected]);
+
+  const filteredRejected = useMemo(() => {
+    const needle = searchTerm.trim().toLowerCase();
+    return rejected.filter((row) => {
+      if (reasonFilter !== "All" && row.reason !== reasonFilter) {
+        return false;
+      }
+      if (needle) {
+        const haystack = `${row.title} ${row.seller_username ?? ""}`.toLowerCase();
+        if (!haystack.includes(needle)) return false;
+      }
+      return true;
+    });
+  }, [rejected, reasonFilter, searchTerm]);
 
   async function handleAddSeller(formData: FormData) {
     try {
@@ -286,56 +321,97 @@ export function AdminBlacklistClient({
         {rejected.length === 0 ? (
           <p className="text-sm text-slate-500">No rejections yet.</p>
         ) : (
-          <table className="min-w-full border-collapse text-xs md:text-sm">
-            <thead>
-              <tr>
-                <th className="px-2 py-2 text-left">Time</th>
-                <th className="px-2 py-2 text-left">Title</th>
-                <th className="px-2 py-2 text-left">Seller</th>
-                <th className="px-2 py-2 text-left">Reason</th>
-                <th className="px-2 py-2 text-left">eBay</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rejected.map((row) => {
-                const ebayUrl = getEbayItemUrl(row.ebay_item_id);
-                return (
-                  <tr key={row.id}>
-                    <td className="px-2 py-2 align-middle text-slate-500">
-                      {formatDate(row.created_at)}
-                    </td>
-                    <td className="px-2 py-2 align-middle text-slate-800">
-                      {row.title}
-                    </td>
-                    <td className="px-2 py-2 align-middle text-slate-600">
-                      {row.seller_username ?? "--"}
-                    </td>
-                    <td className="px-2 py-2 align-middle text-slate-600">
-                      {row.reason}
-                    </td>
-                    <td className="px-2 py-2 align-middle">
-                      {ebayUrl ? (
-                        <a
-                          href={ebayUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sky-700 transition hover:text-sky-900"
-                        >
-                          View
-                        </a>
-                      ) : row.ebay_item_id ? (
-                        <span className="font-mono text-xs text-slate-500">
-                          {row.ebay_item_id}
-                        </span>
-                      ) : (
-                        "--"
-                      )}
-                    </td>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-end gap-3 text-xs text-slate-600">
+              <label className="flex flex-col gap-1">
+                Reason filter
+                <select
+                  className="rounded border border-slate-300 px-2 py-1 text-xs"
+                  value={reasonFilter}
+                  onChange={(event) => setReasonFilter(event.target.value)}
+                >
+                  {reasonOptions.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {reason}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                Search title / seller
+                <input
+                  className="rounded border border-slate-300 px-2 py-1 text-xs"
+                  placeholder="pikachu, seller123..."
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                />
+              </label>
+              <span className="text-xs text-slate-500">
+                Showing {filteredRejected.length} of {rejected.length}
+              </span>
+            </div>
+            {filteredRejected.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                No rows match the current filters.
+              </p>
+            ) : (
+              <table className="min-w-full border-collapse text-xs md:text-sm">
+                <thead>
+                  <tr>
+                    <th className="px-2 py-2 text-left">Date</th>
+                    <th className="px-2 py-2 text-left">Title</th>
+                    <th className="px-2 py-2 text-left">Seller</th>
+                    <th className="px-2 py-2 text-left">Reason</th>
+                    <th className="px-2 py-2 text-left">eBay</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {filteredRejected.map((row) => {
+                    const ebayUrl = getEbayItemUrl(row.ebay_item_id);
+                    const fullTime = formatDate(row.created_at);
+                    const dateOnly = formatDateOnly(row.created_at);
+                    return (
+                      <tr key={row.id}>
+                        <td
+                          className="px-2 py-2 align-middle text-slate-500"
+                          title={fullTime !== "--" ? fullTime : undefined}
+                        >
+                          {dateOnly}
+                        </td>
+                        <td className="px-2 py-2 align-middle text-slate-800">
+                          {row.title}
+                        </td>
+                        <td className="px-2 py-2 align-middle text-slate-600">
+                          {row.seller_username ?? "--"}
+                        </td>
+                        <td className="px-2 py-2 align-middle text-slate-600">
+                          {row.reason}
+                        </td>
+                        <td className="px-2 py-2 align-middle">
+                          {ebayUrl ? (
+                            <a
+                              href={ebayUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sky-700 transition hover:text-sky-900"
+                            >
+                              View
+                            </a>
+                          ) : row.ebay_item_id ? (
+                            <span className="font-mono text-xs text-slate-500">
+                              {row.ebay_item_id}
+                            </span>
+                          ) : (
+                            "--"
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         )}
       </div>
     </>

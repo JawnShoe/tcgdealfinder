@@ -16,11 +16,33 @@ export function WhyDealHint({
   const [isHover, setIsHover] = useState(false);
   const [isFocus, setIsFocus] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [isHoverCapable, setIsHoverCapable] = useState(false);
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
   const tooltipId = useId();
 
   const hasTooltip = Boolean(tooltip);
-  const isOpen = hasTooltip && (isHover || isFocus || isPinned);
+  const isTouch = !isHoverCapable;
+  const isOpen = hasTooltip &&
+    (isHoverCapable ? (isHover || isFocus) : (isPinned || isFocus));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setIsHoverCapable(mql.matches);
+    update();
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", update);
+      return () => mql.removeEventListener("change", update);
+    }
+    mql.addListener(update);
+    return () => mql.removeListener(update);
+  }, []);
+
+  useEffect(() => {
+    if (isHoverCapable && isPinned) {
+      setIsPinned(false);
+    }
+  }, [isHoverCapable, isPinned]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -32,6 +54,7 @@ export function WhyDealHint({
     };
 
     const handlePointerDown = (event: PointerEvent) => {
+      if (!isPinned) return;
       const target = event.target as Node | null;
       if (!wrapperRef.current || !target) return;
       if (!wrapperRef.current.contains(target)) {
@@ -46,7 +69,7 @@ export function WhyDealHint({
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [isOpen]);
+  }, [isOpen, isPinned]);
 
   if (!hasTooltip) {
     return <span className={className}>{label}</span>;
@@ -64,17 +87,23 @@ export function WhyDealHint({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-describedby={isOpen ? tooltipId : undefined}
-        onMouseEnter={() => setIsHover(true)}
-        onMouseLeave={() => setIsHover(false)}
+        onMouseEnter={() => {
+          if (isHoverCapable) setIsHover(true);
+        }}
+        onMouseLeave={() => {
+          if (isHoverCapable) setIsHover(false);
+        }}
         onFocus={() => setIsFocus(true)}
         onBlur={() => {
           setIsFocus(false);
-          if (!isPinned) {
-            setIsPinned(false);
-          }
+          setIsPinned(false);
         }}
         onClick={(event) => {
           event.stopPropagation();
+          if (isHoverCapable) {
+            setIsPinned(false);
+            return;
+          }
           setIsPinned((prev) => !prev);
         }}
       >

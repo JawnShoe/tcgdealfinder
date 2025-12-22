@@ -711,6 +711,7 @@ Implement email alerts based on watchlist items (price drop, new listings).
 "Why This is a Deal" Micro-Explanation [DONE]
 
 Add a short explanation like "Seller priced below similar listings" or "Below recent market average" to give users more context.
+UI polish (2025-12-22): Tooltip now uses the label as the trigger (no icon) and allows full text wrapping in the popover. Commit: c0a2fa1. Restorepoint: whydeal-tooltip-c0a2fa1.bundle (T:\Projects\restorepoints).
 
 Market Comparison Hint (Links Only, No Merging)
 

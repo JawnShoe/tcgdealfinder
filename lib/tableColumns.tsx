@@ -195,7 +195,12 @@ const TotalColumn: ColumnSpec = {
   cellClassName: `${TABLE_TD_RIGHT}`,
   width: "w-[120px]",
   renderCell: (vm) => (
-    <span className={NUM_CELL}>{formatUSD(vm.totalUsd)}</span>
+    <div className="flex flex-col items-end gap-0.5 text-right">
+      <span className={NUM_CELL}>{formatUSD(vm.totalUsd)}</span>
+      {vm.whyDeal ? (
+        <span className="text-xs text-slate-500">{vm.whyDeal}</span>
+      ) : null}
+    </div>
   ),
 };
 

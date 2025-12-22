@@ -96,6 +96,7 @@ type CardDetail = {
     condition: string;
     title: string;
     url: string;
+    shippingCad: number | null;
     totalPriceCad: number | null;
     totalUsd: number | null;
     historicPriceCad: number | null;
@@ -497,6 +498,7 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       condition: row.condition,
       title: row.title,
       url: row.url,
+      shippingCad,
       totalPriceCad,
       totalUsd,
       historicPriceCad: medianPriceCad,

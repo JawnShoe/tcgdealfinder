@@ -41,6 +41,7 @@ type EndingSoonRow = {
   total_price_cad: string | null;
   total_usd: string | null;
   historic_price_cad: string | null;
+  shipping_cad: string | null;
   sample_size: number | null;
   discount_percent: string | null;
   seller_feedback_count: number | null;
@@ -88,6 +89,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
         l.total_price_cad,
         l.total_usd,
         l.historic_price_cad,
+        l.shipping_cad,
         hp.sample_size,
         l.discount_percent,
         l.seller_feedback_count,
@@ -161,6 +163,8 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
     const totalUsd = row.total_usd !== null ? Number(row.total_usd) : null;
     const historic =
       row.historic_price_cad !== null ? Number(row.historic_price_cad) : null;
+    const shippingCad =
+      row.shipping_cad !== null ? Number(row.shipping_cad) : null;
     const sampleSize =
       row.sample_size !== null ? Number(row.sample_size) : null;
     const sellerFeedbackCount =
@@ -192,7 +196,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
       title: row.title ?? "Unknown listing",
       url: row.listing_url,
       priceCad: null,
-      shippingCad: null,
+      shippingCad,
       totalPriceCad: total,
       totalUsd,
       historicPriceCad: historic,

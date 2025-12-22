@@ -68,6 +68,7 @@ type ListingRow = {
   condition: string;
   title: string;
   url: string;
+  shippingCad?: number | null;
   totalPriceCad: number | null;
   totalUsd: number | null;
   historicPriceCad: number | null;
@@ -161,7 +162,7 @@ function listingRowToDeal(
     title: listing.title,
     url: listing.url,
     priceCad: listing.totalPriceCad,
-    shippingCad: null,
+    shippingCad: listing.shippingCad ?? null,
     totalPriceCad: listing.totalPriceCad,
     totalUsd: listing.totalUsd,
     historicPriceCad: listing.historicPriceCad,
@@ -1211,6 +1212,11 @@ export default function CardDetailClient({
                         <span className="text-base font-semibold">
                           {formatUSD(vm.totalUsd)}
                         </span>
+                        {vm.whyDeal ? (
+                          <span className="text-xs text-slate-500">
+                            {vm.whyDeal}
+                          </span>
+                        ) : null}
                         {formatFreshness(listing.updatedAt) && (
                           <span className="text-xs text-slate-500">
                             {formatFreshness(listing.updatedAt)}

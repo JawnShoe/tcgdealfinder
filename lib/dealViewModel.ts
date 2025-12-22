@@ -9,6 +9,7 @@ import { getDealConfidence, isDealTrusted, type DealConfidence } from "./dealSco
 import { getConfidenceLabel as getWeightLabel } from "./dealConfidence";
 import { buildAffiliateUrl } from "./affiliateUrl";
 import { normalizeMarketCode } from "./markets";
+import { getWhyDeal } from "./whyDeal";
 
 export type DealViewModel = {
   // Original deal data (with affiliate-tagged URL)
@@ -26,6 +27,7 @@ export type DealViewModel = {
   priceConfidenceLabel: "high" | "medium" | "low" | null;
   sampleSize: number | null;
   trustedSeller: boolean;
+  whyDeal: string | null;
   
   // Presentation fields
   conditionLabel: string | null;
@@ -101,6 +103,12 @@ export function buildDealViewModel(
     priceConfidenceLabel,
     sampleSize: deal.sampleSize ?? null,
     trustedSeller,
+    whyDeal: getWhyDeal({
+      discountPercent,
+      sampleSize: deal.sampleSize ?? null,
+      updatedAt: deal.updatedAt ?? null,
+      shippingCad: deal.shippingCad ?? null,
+    }),
     conditionLabel: deal.condition ?? deal.card?.conditionBucket ?? null,
     marketCode: normalizeMarketCode(deal.market),
     thumbnailUrl: deal.thumbnailUrl ?? null,

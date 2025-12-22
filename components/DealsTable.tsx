@@ -981,6 +981,11 @@ export default function DealsTable({
                           <span className="text-base font-semibold">
                             {formatUSD(vm.totalUsd)}
                           </span>
+                          {vm.whyDeal ? (
+                            <span className="text-xs text-slate-500">
+                              {vm.whyDeal}
+                            </span>
+                          ) : null}
                           {formatFreshness(vm.deal.updatedAt) && (
                             <span className="text-xs text-slate-500">
                               {formatFreshness(vm.deal.updatedAt)}
@@ -1139,6 +1144,9 @@ export default function DealsTable({
                     <p className="text-base font-semibold text-slate-900">
                       {formatUSD(vm.totalUsd)}
                     </p>
+                    {vm.whyDeal ? (
+                      <p className="text-xs text-slate-500">{vm.whyDeal}</p>
+                    ) : null}
                     {formatFreshness(vm.deal.updatedAt) && (
                       <p className="text-xs text-slate-500">
                         {formatFreshness(vm.deal.updatedAt)}

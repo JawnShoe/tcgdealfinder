@@ -5,16 +5,24 @@ import ListingLookup from "@/components/ListingLookup";
 import { query } from "@/lib/db";
 import { runDealsQuery } from "./api/deals/dealsQuery";
 import type { DealsApiResponse } from "@/types/dealsApi";
-import { DEFAULT_MARKET } from "@/lib/markets";
-import { DEFAULT_MARKET_FILTER } from "@/lib/filters";
+import { cookies, headers } from "next/headers";
+
 import { ensureListingsMarketColumn } from "@/lib/schema";
 import { isDealTrusted } from "@/lib/dealScore";
+import {
+  MARKET_COOKIE_NAME,
+  getGeoCountryFromHeaders,
+  resolveMarketPreference,
+} from "@/lib/marketPreference";
 
 async function getHomePageDeals(): Promise<DealsApiResponse> {
   const PAGE_SIZE = 50;
-  const market = DEFAULT_MARKET_FILTER;
+  const cookieMarket = cookies().get(MARKET_COOKIE_NAME)?.value ?? null;
+  const geoCountry = getGeoCountryFromHeaders(headers());
+  const market = resolveMarketPreference(cookieMarket, geoCountry);
   const hasMarketColumn = await ensureListingsMarketColumn();
-  const marketClause = hasMarketColumn ? "AND l.market = $1" : "";
+  const marketClause =
+    hasMarketColumn && market !== "all" ? "AND l.market = $1" : "";
 
   const statsRes = await query<{
     total: string;
@@ -38,7 +46,7 @@ async function getHomePageDeals(): Promise<DealsApiResponse> {
           WHERE sb.seller_username = l.seller_username
         );
     `,
-    hasMarketColumn ? [market] : [],
+    hasMarketColumn && market !== "all" ? [market] : [],
   );
   const totalCandidates = Number(statsRes.rows[0]?.total ?? 0);
   const excludedByMatch = Number(statsRes.rows[0]?.excluded ?? 0);

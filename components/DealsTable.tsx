@@ -51,6 +51,7 @@ import {
   matchesMarket,
   DEFAULT_MARKET_FILTER,
 } from "../lib/filters";
+import { persistMarketPreference } from "../lib/marketPreferenceClient";
 import {
   discountClass,
   formatCurrency,
@@ -248,6 +249,17 @@ export default function DealsTable({
       }
       return next;
     });
+  };
+
+  const handleMarketChange = (next: MarketFilterKey) => {
+    updateState(
+      (prev) => ({
+        ...prev,
+        marketKey: next,
+      }),
+      { resetPage: true },
+    );
+    void persistMarketPreference(next);
   };
 
   useEffect(() => {
@@ -712,12 +724,8 @@ export default function DealsTable({
               className={inputClasses}
               value={viewState.marketKey}
               onChange={(event) =>
-                updateState(
-                  (prev) => ({
-                    ...prev,
-                    marketKey: event.target.value as MarketFilterKey,
-                  }),
-                  { resetPage: true },
+                handleMarketChange(
+                  event.target.value as MarketFilterKey,
                 )
               }
             >

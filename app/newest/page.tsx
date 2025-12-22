@@ -1,13 +1,18 @@
 import DealsTable from "@/components/DealsTable";
 import { runDealsQuery } from "@/app/api/deals/dealsQuery";
-import { DEFAULT_MARKET_FILTER } from "@/lib/filters";
+import { cookies, headers } from "next/headers";
+
+import { MARKET_COOKIE_NAME, getGeoCountryFromHeaders, resolveMarketPreference } from "@/lib/marketPreference";
 import { PAGE_TITLE, PAGE_SUBTITLE, TABLE_CONTAINER } from "@/lib/typography";
 
 export default async function NewestListingsPage() {
+  const cookieMarket = cookies().get(MARKET_COOKIE_NAME)?.value ?? null;
+  const geoCountry = getGeoCountryFromHeaders(headers());
+  const market = resolveMarketPreference(cookieMarket, geoCountry);
   const initial = await runDealsQuery({
     sort: "newest",
     page: 1,
-    market: DEFAULT_MARKET_FILTER,
+    market,
   });
 
   return (

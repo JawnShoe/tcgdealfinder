@@ -6,7 +6,14 @@ import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../lib/pricing";
+import { cookies, headers } from "next/headers";
+
 import { DEFAULT_MARKET } from "../../lib/markets";
+import {
+  MARKET_COOKIE_NAME,
+  getGeoCountryFromHeaders,
+  resolveMarketPreference,
+} from "../../lib/marketPreference";
 import {
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
@@ -52,10 +59,13 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
   if (!hasIntegrityColumns) {
     throw new Error(LISTINGS_INTEGRITY_MISSING_MESSAGE);
   }
-  const market = DEFAULT_MARKET;
+  const cookieMarket = cookies().get(MARKET_COOKIE_NAME)?.value ?? null;
+  const geoCountry = getGeoCountryFromHeaders(headers());
+  const market = resolveMarketPreference(cookieMarket, geoCountry);
   const hasListingsMarketColumn = await ensureListingsMarketColumn();
   const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
-  const marketLiteral = `'${market}'::text`;
+  const historicalMarket = market === "all" ? DEFAULT_MARKET : market;
+  const marketLiteral = `'${historicalMarket}'::text`;
   const marketSelect = hasListingsMarketColumn ? "l.market" : marketLiteral;
   const historicalJoinClause =
     hasHistoricalMarketColumn && hasListingsMarketColumn
@@ -63,7 +73,8 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
       : hasHistoricalMarketColumn
         ? `AND hp.market = ${marketLiteral}`
         : "";
-  const marketFilterClause = hasListingsMarketColumn ? "AND l.market = $4" : "";
+  const marketFilterClause =
+    hasListingsMarketColumn && market !== "all" ? "AND l.market = $4" : "";
   
   const res = await query<EndingSoonRow>(
     `
@@ -140,7 +151,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
       MIN_SAMPLE_SIZE,
       TRUSTED_FEEDBACK,
       TRUSTED_POSITIVE_PERCENT,
-      ...(hasListingsMarketColumn ? [market] : []),
+      ...(hasListingsMarketColumn && market !== "all" ? [market] : []),
     ],
   );
 

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { TrustedBadge } from "./TrustedBadge";
 import { WatchlistStarButton } from "./WatchlistStarButton";
@@ -39,7 +40,9 @@ import {
   getMarketEmoji,
   normalizeMarketCode,
   DEFAULT_MARKET,
+  type MarketCode,
 } from "../lib/markets";
+import { persistMarketPreference } from "../lib/marketPreferenceClient";
 import {
   getConfidenceLabel as getWeightLabel,
   getConfidenceBadgeClass,
@@ -85,6 +88,11 @@ type ListingRow = {
   overrideType: "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE" | null;
 };
 
+type OtherMarketCount = {
+  market: MarketCode;
+  count: number;
+};
+
 export type CardDetailClientProps = {
   detail: {
     card: {
@@ -98,6 +106,8 @@ export type CardDetailClientProps = {
     };
     historicals: HistoricalPoint[];
     listings: ListingRow[];
+    selectedMarket: MarketFilterKey;
+    otherMarketCounts: OtherMarketCount[];
     moreFromSet: Array<{
       id: number;
       name: string;
@@ -188,15 +198,38 @@ function listingRowToDeal(
 export default function CardDetailClient({
   detail,
 }: CardDetailClientProps) {
-  const { card, historicals, listings, moreFromSet } = detail;
+  const {
+    card,
+    historicals,
+    listings,
+    moreFromSet,
+    selectedMarket,
+    otherMarketCounts,
+  } = detail;
+  const router = useRouter();
   const conditionLabel = formatConditionLabel(card.condition ?? null);
 
   const [conditionFilter, setConditionFilter] = useState<ConditionFilterKey>(
     CONDITION_FILTERS[0]?.key ?? "all",
   );
   const [marketFilter, setMarketFilter] = useState<MarketFilterKey>(
-    MARKET_FILTERS[0]?.key ?? "all",
+    selectedMarket ?? (MARKET_FILTERS[0]?.key ?? "all"),
   );
+  const [showOtherMarkets, setShowOtherMarkets] = useState(false);
+  const [otherMarketListings, setOtherMarketListings] = useState<
+    Record<string, ListingRow[]>
+  >({});
+  const [otherMarketsLoading, setOtherMarketsLoading] = useState(false);
+  const [otherMarketsError, setOtherMarketsError] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    setMarketFilter(selectedMarket);
+    setShowOtherMarkets(false);
+    setOtherMarketListings({});
+    setOtherMarketsError(null);
+  }, [selectedMarket]);
   const [priceConfFilter, setPriceConfFilter] = useState<ConfidenceFilterKey>("all");
   const [headerSort, setHeaderSort] = useState<HeaderSort>({
     key: "total", // Default: Total ASC
@@ -390,6 +423,15 @@ export default function CardDetailClient({
   } recorded`;
 
   const hasAnyListings = listings.length > 0;
+  const canShowOtherMarkets =
+    selectedMarket !== "all" && !hasAnyListings && otherMarketCounts.length > 0;
+  const selectedMarketLabel =
+    selectedMarket === "all"
+      ? "All markets"
+      : getMarketLabel(selectedMarket);
+  const otherMarketSummary = otherMarketCounts
+    .map((entry) => `${getMarketCompactLabel(entry.market)} (${entry.count})`)
+    .join(", ");
 
   // No-deals intelligence: compute price range and frequency hint from existing data
   const noDealsIntelligence = useMemo(() => {
@@ -513,6 +555,53 @@ export default function CardDetailClient({
       console.error(error);
       setAlertStatus("error");
       setAlertMessage("Could not save your alert. Try again later.");
+    }
+  };
+
+  const handleMarketChange = async (next: MarketFilterKey) => {
+    setMarketFilter(next);
+    setShowOtherMarkets(false);
+    setOtherMarketListings({});
+    setOtherMarketsError(null);
+    await persistMarketPreference(next);
+    router.refresh();
+  };
+
+  const handleToggleOtherMarkets = async () => {
+    if (showOtherMarkets) {
+      setShowOtherMarkets(false);
+      return;
+    }
+    setShowOtherMarkets(true);
+    if (Object.keys(otherMarketListings).length > 0 || !canShowOtherMarkets) {
+      return;
+    }
+    setOtherMarketsLoading(true);
+    setOtherMarketsError(null);
+    try {
+      const marketsParam = otherMarketCounts
+        .map((entry) => entry.market)
+        .join(",");
+      const res = await fetch(
+        `/api/cards/${card.id}/other-markets?markets=${encodeURIComponent(marketsParam)}`,
+      );
+      if (!res.ok) {
+        throw new Error(`Request failed (${res.status})`);
+      }
+      const payload = (await res.json()) as {
+        markets: Array<{ market: string; listings: ListingRow[] }>;
+      };
+      const grouped: Record<string, ListingRow[]> = {};
+      for (const entry of payload.markets ?? []) {
+        grouped[entry.market] = entry.listings ?? [];
+      }
+      setOtherMarketListings(grouped);
+    } catch (error) {
+      setOtherMarketsError(
+        error instanceof Error ? error.message : "Unable to load other markets",
+      );
+    } finally {
+      setOtherMarketsLoading(false);
     }
   };
 
@@ -825,7 +914,7 @@ export default function CardDetailClient({
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
                 value={marketFilter}
                 onChange={(event) =>
-                  setMarketFilter(event.target.value as MarketFilterKey)
+                  void handleMarketChange(event.target.value as MarketFilterKey)
                 }
               >
                 {MARKET_FILTERS.map((option) => (
@@ -990,6 +1079,82 @@ export default function CardDetailClient({
                           Watch this card
                         </span>
                       </div>
+
+                      {canShowOtherMarkets && (
+                        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-left">
+                          <p className="text-sm font-semibold text-slate-800">
+                            No {selectedMarketLabel} listings right now.
+                          </p>
+                          <p className="mt-1 text-xs text-slate-600">
+                            Other markets available: {otherMarketSummary}
+                          </p>
+                          <div className="mt-3 flex flex-wrap items-center gap-3">
+                            <button
+                              type="button"
+                              className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white"
+                              onClick={() => void handleToggleOtherMarkets()}
+                            >
+                              {showOtherMarkets ? "Hide other markets" : "Show other markets"}
+                            </button>
+                            {otherMarketsLoading && (
+                              <span className="text-xs text-slate-500">
+                                Loading other markets...
+                              </span>
+                            )}
+                            {otherMarketsError && (
+                              <span className="text-xs text-rose-600">
+                                {otherMarketsError}
+                              </span>
+                            )}
+                          </div>
+
+                          {showOtherMarkets && !otherMarketsLoading && (
+                            <div className="mt-4 space-y-4">
+                              {otherMarketCounts.map((entry) => {
+                                const listingsForMarket =
+                                  otherMarketListings[entry.market] ?? [];
+                                return (
+                                  <div key={entry.market} className="space-y-2">
+                                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                      {getMarketLabel(entry.market)} ({entry.count})
+                                    </div>
+                                    {listingsForMarket.length === 0 ? (
+                                      <p className="text-xs text-slate-500">
+                                        No listings loaded yet for this market.
+                                      </p>
+                                    ) : (
+                                      <ul className="space-y-2 text-sm text-slate-700">
+                                        {listingsForMarket.map((listing) => (
+                                          <li
+                                            key={listing.id}
+                                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"
+                                          >
+                                            <a
+                                              href={buildAffiliateUrl(listing.url ?? "")}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="min-w-0 flex-1 truncate text-slate-900 hover:text-amber-600"
+                                              title={listing.title}
+                                            >
+                                              {listing.title}
+                                            </a>
+                                            <span className="text-xs text-slate-500">
+                                              {formatUSD(listing.totalUsd)}
+                                            </span>
+                                            <span className="text-xs text-slate-500">
+                                              {listing.sellerUsername ?? "--"}
+                                            </span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>

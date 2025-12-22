@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { runDealsQuery } from "./dealsQuery";
 import type { DealsApiSort } from "@/types/dealsApi";
 import { normalizeMarketCode } from "@/lib/markets";
+import {
+  MARKET_COOKIE_NAME,
+  getGeoCountryFromRequest,
+  resolveMarketPreference,
+} from "@/lib/marketPreference";
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
@@ -15,7 +20,10 @@ export async function GET(req: NextRequest) {
   const pageParam = Number(searchParams.get("page"));
   const pageSizeParam = Number(searchParams.get("pageSize"));
   const marketParam = searchParams.get("market");
-  const market = normalizeMarketCode(marketParam);
+  const cookieMarket = req.cookies.get(MARKET_COOKIE_NAME)?.value ?? null;
+  const geoCountry = getGeoCountryFromRequest(req);
+  const resolvedMarket = resolveMarketPreference(cookieMarket, geoCountry);
+  const market = normalizeMarketCode(marketParam ?? resolvedMarket);
 
   const response = await runDealsQuery({
     sort,

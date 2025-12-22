@@ -7,7 +7,14 @@ import {
   getDisplayDiscountPercent,
 } from "../../lib/pricing";
 import { computeDealConfidenceWeight } from "../../lib/dealConfidence";
-import { DEFAULT_MARKET_FILTER } from "../../lib/filters";
+import { cookies, headers } from "next/headers";
+
+import {
+  MARKET_COOKIE_NAME,
+  getGeoCountryFromHeaders,
+  resolveMarketPreference,
+} from "../../lib/marketPreference";
+import { DEFAULT_MARKET } from "../../lib/markets";
 import {
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
@@ -65,13 +72,16 @@ async function getTopDeals(): Promise<Deal[]> {
   if (!hasIntegrityColumns) {
     throw new Error(LISTINGS_INTEGRITY_MISSING_MESSAGE);
   }
-  const market = DEFAULT_MARKET_FILTER;
+  const cookieMarket = cookies().get(MARKET_COOKIE_NAME)?.value ?? null;
+  const geoCountry = getGeoCountryFromHeaders(headers());
+  const market = resolveMarketPreference(cookieMarket, geoCountry);
   const hasListingsMarketColumn = await ensureListingsMarketColumn();
   const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
   const hasDealConfidenceColumn = await ensureDealConfidenceColumn();
   const hasStdDevColumn = await ensureHistoricalStdDevColumn();
   
-  const marketLiteral = market !== "all" ? `'${market}'::text` : "NULL::text";
+  const historicalMarket = market === "all" ? DEFAULT_MARKET : market;
+  const marketLiteral = `'${historicalMarket}'::text`;
   const marketSelect = hasListingsMarketColumn ? "l.market" : marketLiteral;
   const historicalJoinClause =
     hasHistoricalMarketColumn && hasListingsMarketColumn

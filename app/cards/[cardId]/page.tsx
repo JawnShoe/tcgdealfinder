@@ -1,3 +1,5 @@
+import { cookies, headers } from "next/headers";
+
 import CardDetailClient from "../../../components/CardDetailClient";
 import { query } from "../../../lib/db";
 import {
@@ -13,7 +15,13 @@ import {
   ensureListingsIntegrityColumns,
   LISTINGS_INTEGRITY_MISSING_MESSAGE,
 } from "../../../lib/schema";
-import { DEFAULT_MARKET, type MarketCode } from "../../../lib/markets";
+import { DEFAULT_MARKET, SUPPORTED_MARKETS, type MarketCode } from "../../../lib/markets";
+import {
+  MARKET_COOKIE_NAME,
+  getGeoCountryFromHeaders,
+  resolveMarketPreference,
+  type MarketPreference,
+} from "../../../lib/marketPreference";
 import { getCardStockImageUrl, TCGPLAYER_ATTRIBUTION } from "../../../lib/stockImages";
 import { shouldExcludeListingFromCardSurfaces } from "../../../lib/blacklist";
 import {
@@ -63,6 +71,11 @@ type ListingDbRow = {
   override_type: string | null;
 };
 
+type OtherMarketCount = {
+  market: MarketCode;
+  count: number;
+};
+
 type CardDetail = {
   card: {
     id: number;
@@ -102,6 +115,8 @@ type CardDetail = {
     integrityScore: number | null;
     overrideType: "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE" | null;
   }>;
+  selectedMarket: MarketPreference;
+  otherMarketCounts: OtherMarketCount[];
   moreFromSet: Array<{
     id: number;
     name: string;
@@ -212,7 +227,7 @@ async function getHistoricals(cardIds: number[]): Promise<HistoricalDbRow[]> {
 
 async function getListings(
   cardIds: number[],
-  market: MarketCode,
+  market: MarketPreference,
   hasListingsMarketColumn: boolean,
   hasHistoricalMarketColumn: boolean,
 ): Promise<ListingDbRow[]> {
@@ -220,11 +235,12 @@ async function getListings(
   const hasConfidenceColumn = await ensureDealConfidenceColumn();
   const params: unknown[] = [cardIds];
   let marketFilterClause = "";
-  if (hasListingsMarketColumn) {
+  if (hasListingsMarketColumn && market !== "all") {
     params.push(market);
     marketFilterClause = "AND l.market = $2";
   }
-  const marketLiteral = `'${market}'::text`;
+  const historicalMarket = market === "all" ? DEFAULT_MARKET : market;
+  const marketLiteral = `'${historicalMarket}'::text`;
   const marketSelect = hasListingsMarketColumn ? "l.market" : marketLiteral;
   const historicalJoinClause =
     hasHistoricalMarketColumn && hasListingsMarketColumn
@@ -305,6 +321,67 @@ async function getListings(
   return res.rows;
 }
 
+async function getOtherMarketCounts(
+  cardIds: number[],
+  selectedMarket: MarketCode,
+  hasListingsMarketColumn: boolean,
+): Promise<OtherMarketCount[]> {
+  if (!hasListingsMarketColumn || cardIds.length === 0) return [];
+  const res = await query<{ market: string | null; count: string }>(
+    `
+      SELECT l.market, COUNT(*)::bigint AS count
+      FROM listings l
+      WHERE l.card_id = ANY($1)
+        AND l.seller_username IS NOT NULL
+        AND (
+          l.match_eligible = TRUE
+          OR (
+            l.match_eligible = FALSE
+            AND l.match_reject_reason IN (
+              'language_mismatch',
+              'collector_number_mismatch'
+            )
+            AND EXISTS (
+              SELECT 1
+              FROM listing_overrides lo
+              WHERE lo.listing_id = l.listing_id
+                AND lo.override_type = 'ALLOW'
+                AND lo.reason IN (
+                  'manual_allow:language_mismatch',
+                  'manual_allow:collector_number_mismatch'
+                )
+            )
+          )
+        )
+        AND l.shipping_known = TRUE
+        AND NOT EXISTS (
+          SELECT 1
+          FROM seller_blacklist sb
+          WHERE sb.seller_username = l.seller_username
+        )
+      GROUP BY l.market;
+    `,
+    [cardIds],
+  );
+
+  return res.rows
+    .map((row) => ({
+      market: row.market,
+      count: Number(row.count ?? 0),
+    }))
+    .filter(
+      (row) =>
+        row.market &&
+        row.market !== selectedMarket &&
+        SUPPORTED_MARKETS.includes(row.market as MarketCode) &&
+        row.count > 0,
+    )
+    .map((row) => ({
+      market: row.market as MarketCode,
+      count: row.count,
+    }));
+}
+
 async function getCardDetail(cardId: number): Promise<CardDetail | null> {
   const hasIntegrityColumns = await ensureListingsIntegrityColumns();
   if (!hasIntegrityColumns) {
@@ -313,7 +390,9 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
   const hasLanguageColumn = await ensureCardLanguageColumn();
   const hasListingsMarketColumn = await ensureListingsMarketColumn();
   const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
-  const market: MarketCode = DEFAULT_MARKET;
+  const cookieMarket = cookies().get(MARKET_COOKIE_NAME)?.value ?? null;
+  const geoCountry = getGeoCountryFromHeaders(headers());
+  const selectedMarket = resolveMarketPreference(cookieMarket, geoCountry);
   const cardRecord = await getCard(cardId, hasLanguageColumn);
   if (!cardRecord) return null;
 
@@ -326,10 +405,18 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
   const historicalRows = await getHistoricals(cardIds);
   const listingsRows = await getListings(
     cardIds,
-    market,
+    selectedMarket,
     hasListingsMarketColumn,
     hasHistoricalMarketColumn,
   );
+  const otherMarketCounts =
+    selectedMarket !== "all" && listingsRows.length === 0
+      ? await getOtherMarketCounts(
+          cardIds,
+          selectedMarket as MarketCode,
+          hasListingsMarketColumn,
+        )
+      : [];
 
   const historicals = historicalRows.map((row) => ({
     condition: row.condition,
@@ -474,6 +561,8 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
     },
     historicals,
     listings: filteredListings,
+    selectedMarket,
+    otherMarketCounts,
     moreFromSet,
   };
   warnIfStoreNamesMissing(filteredListings, "cardDetail");

@@ -10,7 +10,15 @@ import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../../lib/pricing";
+import { cookies, headers } from "next/headers";
+
 import { DEFAULT_MARKET, type MarketCode } from "../../../lib/markets";
+import {
+  MARKET_COOKIE_NAME,
+  getGeoCountryFromHeaders,
+  resolveMarketPreference,
+  type MarketPreference,
+} from "../../../lib/marketPreference";
 import {
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
@@ -25,7 +33,7 @@ const HOT_CARD_THRESHOLD = -5;
 const DEAL_LIMIT = 400;
 
 type MarketContext = {
-  market: MarketCode;
+  market: MarketPreference;
   hasListingsMarketColumn: boolean;
   hasHistoricalMarketColumn: boolean;
 };
@@ -224,14 +232,16 @@ async function getSetOverview(
           )
         )
         AND l.shipping_known = TRUE
-        ${context.hasListingsMarketColumn ? "AND l.market = $2" : ""}
+        ${context.hasListingsMarketColumn && context.market !== "all" ? "AND l.market = $2" : ""}
         AND NOT EXISTS (
           SELECT 1
           FROM seller_blacklist sb
           WHERE sb.seller_username = l.seller_username
         );
     `,
-    context.hasListingsMarketColumn ? [setName, context.market] : [setName],
+    context.hasListingsMarketColumn && context.market !== "all"
+      ? [setName, context.market]
+      : [setName],
   );
 
   const listingRow = listingsRes.rows[0];
@@ -257,12 +267,16 @@ async function getHotCards(
     HOT_CARD_THRESHOLD,
     HOT_CARD_LIMIT,
   ];
-  const marketFilterClause = context.hasListingsMarketColumn
+  const marketFilterClause = context.hasListingsMarketColumn && context.market !== "all"
     ? "AND l.market = $4"
     : "";
-  if (context.hasListingsMarketColumn) {
+  if (context.hasListingsMarketColumn && context.market !== "all") {
     params.push(context.market);
   }
+  const historicalMarketClause =
+    context.hasHistoricalMarketColumn && context.market !== "all"
+      ? `AND hp.market = '${context.market}'`
+      : "";
   const res = await query<{
     id: number;
     name: string;
@@ -289,11 +303,7 @@ async function getHotCards(
         best.deal_seller_positive_percent
       FROM cards c
       LEFT JOIN historical_prices hp ON hp.card_id = c.id
-        ${
-          context.hasHistoricalMarketColumn
-            ? `AND hp.market = '${context.market}'`
-            : ""
-        }
+        ${historicalMarketClause}
       LEFT JOIN LATERAL (
         SELECT
           l.total_price_cad AS deal_total_price_cad,
@@ -393,11 +403,13 @@ async function getSetDeals(
   setName: string,
   context: MarketContext,
 ): Promise<Deal[]> {
-  const marketLiteral = `'${context.market}'::text`;
+  const historicalMarket =
+    context.market === "all" ? DEFAULT_MARKET : context.market;
+  const marketLiteral = `'${historicalMarket}'::text`;
   const marketSelect = context.hasListingsMarketColumn
     ? "l.market"
     : marketLiteral;
-  const marketFilterClause = context.hasListingsMarketColumn
+  const marketFilterClause = context.hasListingsMarketColumn && context.market !== "all"
     ? "AND l.market = $3"
     : "";
   const historicalJoinClause =
@@ -407,7 +419,7 @@ async function getSetDeals(
         ? `AND hp.market = ${marketLiteral}`
         : "";
   const params: (string | number)[] = [setName, DEAL_LIMIT];
-  if (context.hasListingsMarketColumn) {
+  if (context.hasListingsMarketColumn && context.market !== "all") {
     params.push(context.market);
   }
   const res = await query<DealRow>(
@@ -594,7 +606,9 @@ export default async function SetDetailPage({
     }
   }
 
-  const market = DEFAULT_MARKET;
+  const cookieMarket = cookies().get(MARKET_COOKIE_NAME)?.value ?? null;
+  const geoCountry = getGeoCountryFromHeaders(headers());
+  const market = resolveMarketPreference(cookieMarket, geoCountry);
   const hasListingsMarketColumn = await ensureListingsMarketColumn();
   const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
   const marketContext: MarketContext = {

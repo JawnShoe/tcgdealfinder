@@ -277,6 +277,15 @@ ACTIVE WORK: NONE
 - **Commit**: f2ea029
 - **Restorepoint**: `T:\Projects\restorepoints\why-deal-popover-f2ea029.bundle`
 
+### Why deal icon placement (start)
+- **Change**: Moved the info icon to the start of the why line for cleaner typography.
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/WhyDealHint.tsx`
+- **Classification**: UI parity / consistency
+- **Blast radius**: Why line rendering only
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: 4231799
+- **Restorepoint**: `T:\Projects\restorepoints\why-deal-icon-4231799.bundle`
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

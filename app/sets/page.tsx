@@ -36,6 +36,15 @@ type LegacySetRow = {
   active_count: string;
 };
 
+type SearchParams = Record<string, string | string[] | undefined>;
+
+function normalizeFilterValue(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) {
+    return value[0]?.trim() ?? "";
+  }
+  return value?.trim() ?? "";
+}
+
 function encodeSetSlug(name: string): string {
   return encodeURIComponent(name);
 }
@@ -156,9 +165,28 @@ async function getSets(): Promise<SetSummary[]> {
   }
 }
 
-export default async function SetsPage() {
+export default async function SetsPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams;
+}) {
   const sets = await getSets();
   const grouped = groupSetsBySeries(sets);
+  const searchQuery = normalizeFilterValue(searchParams?.q);
+  const normalizedSearch = searchQuery.toLowerCase();
+  const seriesParam = normalizeFilterValue(searchParams?.series);
+  const seriesOptions = grouped.map((group) => group.series);
+  const selectedSeries = seriesOptions.includes(seriesParam) ? seriesParam : "";
+  const hasFilters = Boolean(normalizedSearch || selectedSeries);
+  const visibleGroups = grouped
+    .filter((group) => (!selectedSeries ? true : group.series === selectedSeries))
+    .map((group) => ({
+      ...group,
+      sets: normalizedSearch
+        ? group.sets.filter((set) => set.name.toLowerCase().includes(normalizedSearch))
+        : group.sets,
+    }))
+    .filter((group) => (!hasFilters ? true : group.sets.length > 0));
 
   return (
     <main className="bg-slate-50 text-slate-900">
@@ -177,65 +205,111 @@ export default async function SetsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {grouped.map((group) => (
-            <section key={group.series} className="panel space-y-4">
-              <div className="flex flex-col gap-1">
-                <h2 className="text-xl font-semibold text-slate-900">{group.series}</h2>
-                <p className="text-xs uppercase tracking-wide text-slate-500">
-                  {pluralize(group.sets.length, "set")} • newest release {formatRelative(group.newestRelease)}
-                </p>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                {group.sets.map((set) => (
-                  <article
-                    key={`${group.series}-${set.name}`}
-                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        {renderSetIcon(set)}
-                        <div>
-                          <h3 className="text-lg font-semibold text-slate-900">{set.name}</h3>
-                          <p className="text-xs uppercase text-slate-500">
-                            {set.series ? `${set.series} • ` : ""}
-                            Released {formatDate(set.releaseDate) ?? "—"} • {set.code ?? "No code"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right text-xs text-slate-500">
-                        <p>
-                          Catalog cards: <span className="font-semibold text-slate-900">{set.catalogCardCount}</span>
-                        </p>
-                        <p>
-                          With deals: <span className="font-semibold text-slate-900">{set.cardsWithDeals}</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-                      {set.cardsWithDeals > 0 ? (
-                        <Link
-                          href={`/sets/${encodeSetSlug(set.name)}#deals`}
-                          className="inline-flex items-center rounded border border-slate-300 px-3 py-1.5 font-medium text-slate-700 transition hover:bg-slate-50"
-                        >
-                          View deals
-                        </Link>
-                      ) : (
-                        <span className="inline-flex items-center rounded border border-dashed border-slate-300 px-3 py-1.5 text-slate-400">
-                          No deals yet
-                        </span>
-                      )}
-                      <Link
-                        href={`/sets/${encodeSetSlug(set.name)}#catalog-cards`}
-                        className="inline-flex items-center rounded border border-slate-200 px-3 py-1.5 text-sm text-slate-500 transition hover:bg-slate-50"
-                      >
-                        View all cards
-                      </Link>
-                    </div>
-                  </article>
+          <form
+            method="GET"
+            action="/sets"
+            className="flex w-full flex-col gap-3 rounded border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end"
+          >
+            <label className="flex flex-1 flex-col gap-1 text-sm text-slate-600">
+              <span className="text-xs uppercase tracking-wide text-slate-500">Search sets</span>
+              <input
+                type="text"
+                name="q"
+                defaultValue={searchQuery}
+                placeholder="Search set names"
+                className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-500 focus:outline-none"
+              />
+            </label>
+            <label className="flex w-full flex-col gap-1 text-sm text-slate-600 sm:w-64">
+              <span className="text-xs uppercase tracking-wide text-slate-500">Series</span>
+              <select
+                name="series"
+                defaultValue={selectedSeries}
+                className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none"
+              >
+                <option value="">All series</option>
+                {seriesOptions.map((series) => (
+                  <option key={series} value={series}>
+                    {series}
+                  </option>
                 ))}
-              </div>
-            </section>
-          ))}
+              </select>
+            </label>
+            <button
+              type="submit"
+              className="rounded bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              Apply filters
+            </button>
+          </form>
+          {visibleGroups.length === 0 ? (
+            <div className="panel text-center text-sm text-slate-500">
+              No sets match your filters. Try clearing search or choosing a different series.
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {visibleGroups.map((group) => (
+                <section key={group.series} className="panel space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-xl font-semibold text-slate-900">{group.series}</h2>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">
+                      {pluralize(group.sets.length, "set")} • newest release {formatRelative(group.newestRelease)}
+                    </p>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {group.sets.map((set) => (
+                      <article
+                        key={`${group.series}-${set.name}`}
+                        className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-3">
+                            {renderSetIcon(set)}
+                            <div>
+                              <h3 className="text-lg font-semibold text-slate-900">{set.name}</h3>
+                              <p className="text-xs uppercase text-slate-500">
+                                {set.series ? `${set.series} • ` : ""}
+                                Released {formatDate(set.releaseDate) ?? "—"} • {set.code ?? "No code"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right text-xs text-slate-500">
+                            <p>
+                              Catalog cards:{" "}
+                              <span className="font-semibold text-slate-900">{set.catalogCardCount}</span>
+                            </p>
+                            <p>
+                              With deals: <span className="font-semibold text-slate-900">{set.cardsWithDeals}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                          {set.cardsWithDeals > 0 ? (
+                            <Link
+                              href={`/sets/${encodeSetSlug(set.name)}#deals`}
+                              className="inline-flex items-center rounded border border-slate-300 px-3 py-1.5 font-medium text-slate-700 transition hover:bg-slate-50"
+                            >
+                              View deals
+                            </Link>
+                          ) : (
+                            <span className="inline-flex items-center rounded border border-dashed border-slate-300 px-3 py-1.5 text-slate-400">
+                              No deals yet
+                            </span>
+                          )}
+                          <Link
+                            href={`/sets/${encodeSetSlug(set.name)}#catalog-cards`}
+                            className="inline-flex items-center rounded border border-slate-200 px-3 py-1.5 text-sm text-slate-500 transition hover:bg-slate-50"
+                          >
+                            View all cards
+                          </Link>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
         </div>
       )}
       </div>

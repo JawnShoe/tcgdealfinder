@@ -716,6 +716,7 @@ Interaction polish (2025-12-22): Desktop hover/focus is non-sticky; touch device
 Hover stateless (2025-12-22): Desktop tooltip uses CSS hover/focus only; click no longer persists. Commit: 528fdf0. Restorepoint: whydeal-hover-stateless-528fdf0.bundle (T:\Projects\restorepoints).
 Focus-visible (2025-12-22): Desktop tooltip shows on hover or keyboard focus-visible only (mouse click no longer persists). Commit: 5787bc6. Restorepoint: whydeal-focus-visible-5787bc6.bundle (T:\Projects\restorepoints).
 Public tooltip unification (2025-12-22): Replaced public `title` tooltips with the shared white TooltipPopover (TrustedBadge, SellerSeenBadge, ConfidenceChip, market/ends/sort headers, DealsTable/TopDeals/CardDetail/Featured) without logic changes. Commit: 65937e4. Restorepoint: public-tooltips-65937e4.bundle (T:\Projects\restorepoints).
+TooltipPopover polish (2025-12-22): Closed popovers now collapse to zero size to prevent scrollbars; hover tooltips are pointer-events-none; bubble sizing/leading tightened; market hover tooltips removed in favor of accessible labels. Commit: c2400be. Restorepoint: tooltip-polish-c2400be.bundle (T:\Projects\restorepoints).
 
 Market Comparison Hint (Links Only, No Merging)
 

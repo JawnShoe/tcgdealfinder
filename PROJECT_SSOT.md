@@ -295,6 +295,15 @@ ACTIVE WORK: NONE
 - **Commit**: c74b946
 - **Restorepoint**: `T:\Projects\restorepoints\why-deal-singleline-c74b946.bundle`
 
+### Why deal icon micro-polish
+- **Change**: Tightened icon spacing, lowered default icon opacity, and ensured baseline alignment.
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/WhyDealHint.tsx`
+- **Classification**: UI parity / consistency
+- **Blast radius**: Why line rendering only
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: 7ec14e0
+- **Restorepoint**: `T:\Projects\restorepoints\why-deal-icon-polish-7ec14e0.bundle`
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

@@ -545,13 +545,19 @@ Prevent "dead-end" searches by ensuring full set data is available.
 - Rendering: /sets and /sets/[setId] pages render all sets successfully
 - Build: All 36 routes compile without errors
 
-Set Browse UX Polish [PARTIAL]
+Set Browse UX Polish [DONE ✅ — 2025-12-21, f4400c5]
 
 Group sets by Series (e.g., SV / SWSH / SM / etc.).
 
 Sort by release date (newest first).
 
 Add light filters to improve discoverability.
+
+**Implementation** (2025-12-21, f4400c5):
+- Added GET-based q search + series filter on `/sets`.
+- Hides empty series groups.
+- Shows "No sets match your filters".
+- Checks: `npm run lint`, `npm run build`, regression checklist complete (manuals verified by user).
 
 Empty States + Retention Nudges [DONE ✅]
 

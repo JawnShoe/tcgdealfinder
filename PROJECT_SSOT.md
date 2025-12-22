@@ -19,6 +19,7 @@
 - `/admin/*` pages check `admin_auth` cookie and return `notFound()` (404) when missing/invalid.
 - `/api/admin/*` routes check `admin_auth` cookie; `x-admin-secret` header is a deprecated fallback for internal scripts.
 - `/debug/*` uses `DEBUG_ADMIN_TOKEN` via cookie/header/query (see `lib/debugAuth.ts`); separate from admin gate.
+- **Dev-only helper**: `/admin/login` sets `admin_auth` via `/api/admin/login` without secrets in URLs and returns 404 in production. Commit: 251cd07.
 
 **Admin-protected routes**:
 - Pages: `/admin/exclusions`, `/admin/blacklist`, `/admin/alerts`, `/admin/listings`

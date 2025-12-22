@@ -71,7 +71,7 @@ export function WhyDealHint({
   }
 
   const bubbleClasses = isHoverCapable
-    ? "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
+    ? "opacity-0 pointer-events-none peer-hover:opacity-100 peer-hover:pointer-events-auto peer-focus-visible:opacity-100 peer-focus-visible:pointer-events-auto"
     : isPinned
       ? "opacity-100 pointer-events-auto"
       : "opacity-0 pointer-events-none";
@@ -79,11 +79,11 @@ export function WhyDealHint({
   return (
     <span
       ref={wrapperRef}
-      className={`relative inline-flex min-w-0 max-w-full items-center whitespace-nowrap ${isHoverCapable ? "group" : ""}`.trim()}
+      className="relative inline-flex min-w-0 max-w-full items-center whitespace-nowrap"
     >
       <button
         type="button"
-        className={`min-w-0 truncate text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${className ?? ""}`.trim()}
+        className={`peer min-w-0 truncate text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${className ?? ""}`.trim()}
         aria-label={`${label} (more info)`}
         aria-haspopup="dialog"
         aria-expanded={isTouch ? isPinned : undefined}

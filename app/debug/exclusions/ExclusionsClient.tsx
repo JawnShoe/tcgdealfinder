@@ -1344,6 +1344,122 @@ function OverrideBadge({
 }
 
 // =============================================================================
+// HELPER COMPONENTS
+// =============================================================================
+
+function KindBadge({
+  kind,
+  theme,
+}: {
+  kind: "hard" | "soft";
+  theme: "debug" | "admin";
+}) {
+  if (kind === "hard") {
+    return (
+      <span
+        className={
+          theme === "admin"
+            ? "inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
+            : "inline-flex items-center rounded-full bg-red-900/50 px-2 py-0.5 text-xs font-medium text-red-300"
+        }
+      >
+        HARD
+      </span>
+    );
+  }
+  return (
+    <span
+      className={
+        theme === "admin"
+          ? "inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700"
+          : "inline-flex items-center rounded-full bg-blue-900/50 px-2 py-0.5 text-xs font-medium text-blue-300"
+      }
+    >
+      SOFT
+    </span>
+  );
+}
+
+function ExpandedDetails({
+  listing,
+  theme,
+}: {
+  listing: ExcludedListing;
+  theme: "debug" | "admin";
+}) {
+  const sellerInfo = getSellerDisplayData({
+    username: listing.sellerUsername ?? listing.seller ?? null,
+    storeName: listing.sellerStoreName ?? null,
+  });
+  return (
+    <div className="grid gap-2 text-xs sm:grid-cols-2">
+      <div>
+        <span className="text-slate-500">Listing ID:</span>{" "}
+        <span className={theme === "admin" ? "font-mono text-slate-700" : "font-mono text-slate-300"}>
+          {listing.listingId}
+        </span>
+      </div>
+      <div>
+        <span className="text-slate-500">DB ID:</span>{" "}
+        <span className={theme === "admin" ? "font-mono text-slate-700" : "font-mono text-slate-300"}>
+          {listing.id}
+        </span>
+      </div>
+      {listing.cardId && (
+        <div>
+          <span className="text-slate-500">Card ID:</span>{" "}
+          <span className={theme === "admin" ? "font-mono text-slate-700" : "font-mono text-slate-300"}>
+            {listing.cardId}
+          </span>
+        </div>
+      )}
+      <div>
+        <span className="text-slate-500">Seller:</span>{" "}
+        <span className={theme === "admin" ? "text-slate-700" : "text-slate-300"}>
+          {sellerInfo.displayName}
+        </span>
+        {listing.sellerUsername &&
+          listing.sellerUsername.toLowerCase() !==
+            sellerInfo.displayName.toLowerCase() && (
+            <span className="ml-1 text-slate-500">
+              ({listing.sellerUsername})
+            </span>
+          )}
+      </div>
+      <div className="sm:col-span-2">
+        <span className="text-slate-500">Reason:</span>{" "}
+        <span className={theme === "admin" ? "text-slate-700" : "text-slate-300"}>
+          {listing.exclusionReason}
+        </span>
+      </div>
+      {listing.exclusionHit && (
+        <div className="sm:col-span-2">
+          <span className="text-slate-500">Hit Keyword:</span>{" "}
+          <span className="font-mono text-amber-400">
+            &quot;{listing.exclusionHit}&quot;
+          </span>
+        </div>
+      )}
+      <div className="sm:col-span-2">
+        <span className="text-slate-500">Full URL:</span>{" "}
+        <a
+          href={listing.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={
+            theme === "admin"
+              ? "break-all text-amber-600 hover:text-amber-500"
+              : "break-all text-amber-400 hover:text-amber-300"
+          }
+        >
+          {listing.url}
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
 // UTILITY
 // =============================================================================
 

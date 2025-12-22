@@ -210,17 +210,33 @@ export default function TopDealsClient({
                         isSortable ? "cursor-pointer hover:bg-slate-100 select-none" : ""
                       } ${col.key === "score" ? "hidden sm:table-cell" : ""}`}
                       onClick={isSortable && sortKey ? () => handleHeaderSort(sortKey) : undefined}
+                      onKeyDown={
+                        isSortable && sortKey
+                          ? (event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                handleHeaderSort(sortKey);
+                              }
+                            }
+                          : undefined
+                      }
+                      tabIndex={isSortable ? 0 : undefined}
+                      aria-label={isSortable && sortKey ? `Sort by ${col.headerLabel}` : undefined}
+                      aria-sort={
+                        isSortable && sortKey
+                          ? headerSort.key === sortKey
+                            ? headerSort.dir === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                          : undefined
+                      }
                     >
                       {isSortable && sortKey ? (
-                        <TooltipPopover
-                          content={`Click to sort by ${col.headerLabel}`}
-                          triggerClassName="inline-flex items-center gap-0"
-                        >
-                          <>
-                            <span>{col.headerLabel}</span>
-                            <SortArrow colKey={sortKey} />
-                          </>
-                        </TooltipPopover>
+                        <span className="inline-flex items-center">
+                          <span>{col.headerLabel}</span>
+                          <SortArrow colKey={sortKey} />
+                        </span>
                       ) : (
                         col.headerLabel
                       )}

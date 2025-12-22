@@ -991,44 +991,56 @@ export default function CardDetailClient({
                 <th 
                   className="whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
                   onClick={() => handleHeaderSort("total")}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleHeaderSort("total");
+                    }
+                  }}
+                  tabIndex={0}
+                  aria-label="Sort by Total USD"
+                  aria-sort={headerSort.key === "total" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
                 >
-                  <TooltipPopover
-                    content="Click to sort by Total USD"
-                    triggerClassName="inline-flex items-center justify-end gap-0"
-                  >
-                    <>
-                      <span>Total USD</span>
-                      <SortArrow colKey="total" />
-                    </>
-                  </TooltipPopover>
+                  <span className="inline-flex items-center justify-end">
+                    <span>Total USD</span>
+                    <SortArrow colKey="total" />
+                  </span>
                 </th>
                 <th 
                   className="whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
                   onClick={() => handleHeaderSort("historic")}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleHeaderSort("historic");
+                    }
+                  }}
+                  tabIndex={0}
+                  aria-label="Sort by Historic USD"
+                  aria-sort={headerSort.key === "historic" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
                 >
-                  <TooltipPopover
-                    content="Click to sort by Historic USD"
-                    triggerClassName="inline-flex items-center justify-end gap-0"
-                  >
-                    <>
-                      <span>Historic USD</span>
-                      <SortArrow colKey="historic" />
-                    </>
-                  </TooltipPopover>
+                  <span className="inline-flex items-center justify-end">
+                    <span>Historic USD</span>
+                    <SortArrow colKey="historic" />
+                  </span>
                 </th>
                 <th 
                   className="px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
                   onClick={() => handleHeaderSort("discount")}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleHeaderSort("discount");
+                    }
+                  }}
+                  tabIndex={0}
+                  aria-label="Sort by Discount"
+                  aria-sort={headerSort.key === "discount" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
                 >
-                  <TooltipPopover
-                    content="Click to sort by Discount"
-                    triggerClassName="inline-flex items-center justify-end gap-0"
-                  >
-                    <>
-                      <span>Discount</span>
-                      <SortArrow colKey="discount" />
-                    </>
-                  </TooltipPopover>
+                  <span className="inline-flex items-center justify-end">
+                    <span>Discount</span>
+                    <SortArrow colKey="discount" />
+                  </span>
                 </th>
                 <th
                   className="whitespace-nowrap px-3 py-2 text-center"
@@ -1043,31 +1055,39 @@ export default function CardDetailClient({
                 <th 
                   className="px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none"
                   onClick={() => handleHeaderSort("seller")}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleHeaderSort("seller");
+                    }
+                  }}
+                  tabIndex={0}
+                  aria-label="Sort by Seller"
+                  aria-sort={headerSort.key === "seller" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
                 >
-                  <TooltipPopover
-                    content="Click to sort by Seller"
-                    triggerClassName="inline-flex items-center gap-0"
-                  >
-                    <>
-                      <span>Seller</span>
-                      <SortArrow colKey="seller" />
-                    </>
-                  </TooltipPopover>
+                  <span className="inline-flex items-center">
+                    <span>Seller</span>
+                    <SortArrow colKey="seller" />
+                  </span>
                 </th>
                 <th className="px-3 py-2 text-left">Market</th>
                 <th 
                   className="px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
                   onClick={() => handleHeaderSort("ends")}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleHeaderSort("ends");
+                    }
+                  }}
+                  tabIndex={0}
+                  aria-label="Sort by Ends"
+                  aria-sort={headerSort.key === "ends" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
                 >
-                  <TooltipPopover
-                    content="Click to sort by Ends"
-                    triggerClassName="inline-flex items-center justify-end gap-0"
-                  >
-                    <>
-                      <span>Ends</span>
-                      <SortArrow colKey="ends" />
-                    </>
-                  </TooltipPopover>
+                  <span className="inline-flex items-center justify-end">
+                    <span>Ends</span>
+                    <SortArrow colKey="ends" />
+                  </span>
                 </th>
               </tr>
             </thead>

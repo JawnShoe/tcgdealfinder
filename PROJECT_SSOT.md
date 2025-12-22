@@ -718,9 +718,11 @@ Provide links to active listings in other markets (e.g., UK/CA) without merging 
 
 Keep market distinctions for transparency.
 
-Seller Repetition Trust ("Seen Often on Deals")
+Seller Repetition Trust ("Seen Often on Deals") [DONE]
 
 If the same seller appears often, show a subtle badge like "Seen on X deals" to increase trust in that seller.
+Implementation (2025-12-22):
+- Added market-scoped "Seen on X deals" trust badge (>=3) with 30-day window using existing eligibility filters; no scoring changes. Commit: e2d65e8. Restorepoint: seller-repetition-e2d65e8.bundle (T:\Projects\restorepoints).
 
 Light Personalization (Based on Watchlist/Sets)
 

@@ -1,6 +1,6 @@
 # PROJECT SSOT — TCG Deal Finder
 
-**Last Updated**: 2025-12-21
+**Last Updated**: 2025-12-22
 **Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE.
 
 ---
@@ -12,6 +12,8 @@
 - Applied Neon migration `004_add_seller_blacklist_history` on 2025-12-20; verified via `to_regclass()`; `/admin/blacklist` banner cleared; history rows confirmed on unblacklist.
 - Rotated `ADMIN_SECRET` + `DEBUG_ADMIN_TOKEN` on 2025-12-21; values are local-only and no longer present in tracked files. Commit: 3942e84.
 - Repo hygiene (2025-12-21): untracked `settings.local.json` (example added), ignored local/artifact patterns; removed tracked artifacts (`components/home/HomeContent.corrupted.bak`, `_content*.txt`, `temp`, `temp_pkg.txt`, `import-log.txt`, `tsconfig.tsbuildinfo`). Commits: 7878ea1, af98509.
+- Restorepoint bundle for SSOT commit e7e0717: `T:\Projects\restorepoints\tcg-deal-finder_ssot-e7e0717_restorepoint.bundle`.
+- Restorepoint bundle for admin UI fixes (2025-12-22): `T:\Projects\restorepoints\admin-ui-8b6003c.bundle`.
 
 ### Security / Admin Access
 **Admin gate mechanism**:
@@ -213,6 +215,22 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 ACTIVE WORK: NONE
 
 ---
+
+## COMPLETED (2025-12-22)
+
+### Admin exclusions context + eBay link fix
+- **Change**: Active exclusions now show listing context (title/seller/price) and View-on-eBay uses parsed item ids in admin surfaces.
+- **Routes/components**: `/admin/blacklist`, `/admin/listings`; `components/AdminBlacklistClient.tsx`, `components/AdminListingsClient.tsx`, `components/AdminListingsPanel.tsx`
+- **Classification**: UI parity / consistency
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: 2e69aa3
+
+### Admin blacklist table polish
+- **Change**: Recently rejected listings now show date-only with tooltip timestamp, plus reason filter and title/seller search.
+- **Routes/components**: `/admin/blacklist`; `components/AdminBlacklistClient.tsx`
+- **Classification**: UI parity / consistency
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: 8b6003c
 
 ## COMPLETED (2025-12-21)
 

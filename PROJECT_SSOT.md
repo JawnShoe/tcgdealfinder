@@ -719,6 +719,7 @@ Public tooltip unification (2025-12-22): Replaced public `title` tooltips with t
 TooltipPopover polish (2025-12-22): Closed popovers now collapse to zero size to prevent scrollbars; hover tooltips are pointer-events-none; bubble sizing/leading tightened; market hover tooltips removed in favor of accessible labels. Commit: c2400be. Restorepoint: tooltip-polish-c2400be.bundle (T:\Projects\restorepoints).
 TooltipPopover v2 sizing (2025-12-22): Added compact/wide sizing for WhyDeal/SellerSeen tooltips, moved Data reliability tooltips to open above filters, and kept hover bubbles non-blocking. Commit: e1ce937. Restorepoint: tooltip-sizing-e1ce937.bundle (T:\Projects\restorepoints).
 TooltipPopover v3 (2025-12-22): Removed size-morph transitions (opacity-only), tightened WhyDeal + SellerSeen sizing, and moved Data reliability help to a label-side help trigger. Commit: b9d1005. Restorepoint: tooltip-v3-b9d1005.bundle (T:\Projects\restorepoints).
+Sort header tooltips removed (2025-12-22): Dropped “Click to sort by …” header tooltips and added aria-label/aria-sort for sortable headers; sorting behavior unchanged. Commit: 3fc6480. Restorepoint: sort-tooltips-3fc6480.bundle (T:\Projects\restorepoints).
 
 Market Comparison Hint (Links Only, No Merging)
 

@@ -250,6 +250,15 @@ ACTIVE WORK: NONE
 - **Commit**: 35e338a
 - **Restorepoint**: `T:\Projects\restorepoints\market-pref-35e338a.bundle`
 
+### "Why This is a Deal" micro-explanation (v1)
+- **Change**: Added a one-line, deterministic "why" explanation using existing discount, baseline sample size, freshness, and shipping fields. No scoring or query changes.
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/DealsTable.tsx`, `components/CardDetailClient.tsx`, `lib/dealViewModel.ts`, `lib/whyDeal.ts`, `lib/tableColumns.tsx`
+- **Classification**: Feature addition (explainability-only)
+- **Blast radius**: Deal card/listing rendering only
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: c7f0e50
+- **Restorepoint**: `T:\Projects\restorepoints\why-deal-c7f0e50.bundle`
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)
@@ -654,7 +663,7 @@ Alerts v1 (Watchlist-Based Email Alerts)
 
 Implement email alerts based on watchlist items (price drop, new listings).
 
-"Why This is a Deal" Micro-Explanation
+"Why This is a Deal" Micro-Explanation [DONE]
 
 Add a short explanation like "Seller priced below similar listings" or "Below recent market average" to give users more context.
 

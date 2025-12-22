@@ -55,12 +55,12 @@ export function WhyDealHint({
   return (
     <span
       ref={wrapperRef}
-      className={`relative inline-flex min-w-0 items-center gap-1.5 whitespace-nowrap ${className ?? ""}`}
+      className={`relative inline-flex min-w-0 items-center gap-1 whitespace-nowrap ${className ?? ""}`}
     >
       <span className="min-w-0 truncate">{label}</span>
       <button
         type="button"
-        className="flex h-4 w-4 flex-none items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500 transition hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+        className="flex h-4 w-4 flex-none items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500 opacity-60 transition-opacity hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 align-middle leading-none"
         aria-label="More info"
         aria-haspopup="dialog"
         aria-expanded={isOpen}

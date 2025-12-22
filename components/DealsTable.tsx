@@ -40,6 +40,7 @@ import { MarketFlag } from "./MarketFlag";
 import { SellerNameWithTooltip, formatSellerSalesCount } from "./SellerNameWithTooltip";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { WatchlistStarButton } from "./WatchlistStarButton";
+import { WhyDealHint } from "./WhyDealHint";
 import type { Deal } from "../types/deal";
 import type { DealsApiMeta, DealsApiResponse } from "@/types/dealsApi";
 import {
@@ -982,12 +983,11 @@ export default function DealsTable({
                             {formatUSD(vm.totalUsd)}
                           </span>
                           {vm.whyDeal ? (
-                            <span
+                            <WhyDealHint
+                              label={vm.whyDeal.label}
+                              tooltip={vm.whyDeal.tooltip}
                               className="text-xs text-slate-500"
-                              title={vm.whyDeal.tooltip}
-                            >
-                              {vm.whyDeal.label}
-                            </span>
+                            />
                           ) : null}
                           {formatFreshness(vm.deal.updatedAt) && (
                             <span className="text-xs text-slate-500">
@@ -1148,12 +1148,11 @@ export default function DealsTable({
                       {formatUSD(vm.totalUsd)}
                     </p>
                     {vm.whyDeal ? (
-                      <p
+                      <WhyDealHint
+                        label={vm.whyDeal.label}
+                        tooltip={vm.whyDeal.tooltip}
                         className="text-xs text-slate-500"
-                        title={vm.whyDeal.tooltip}
-                      >
-                        {vm.whyDeal.label}
-                      </p>
+                      />
                     ) : null}
                     {formatFreshness(vm.deal.updatedAt) && (
                       <p className="text-xs text-slate-500">

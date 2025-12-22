@@ -23,6 +23,7 @@ import {
   discountClass,
 } from "./dealFormatting";
 import { MarketFlag } from "../components/MarketFlag";
+import { WhyDealHint } from "../components/WhyDealHint";
 import { TABLE_TH, TABLE_TH_RIGHT, TABLE_TH_NOWRAP, TABLE_TD, TABLE_TD_RIGHT, NUM_CELL, NUM_CELL_SECONDARY } from "./typography";
 
 function renderSellerSalesBadge(
@@ -198,9 +199,11 @@ const TotalColumn: ColumnSpec = {
     <div className="flex flex-col items-end gap-0.5 text-right">
       <span className={NUM_CELL}>{formatUSD(vm.totalUsd)}</span>
       {vm.whyDeal ? (
-        <span className="text-xs text-slate-500" title={vm.whyDeal.tooltip}>
-          {vm.whyDeal.label}
-        </span>
+        <WhyDealHint
+          label={vm.whyDeal.label}
+          tooltip={vm.whyDeal.tooltip}
+          className="text-xs text-slate-500"
+        />
       ) : null}
     </div>
   ),

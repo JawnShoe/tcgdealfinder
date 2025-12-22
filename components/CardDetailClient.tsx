@@ -13,6 +13,7 @@ import { ConfidenceChip } from "./ConfidenceChip";
 import { MarketFlag } from "./MarketFlag";
 import { SellerNameWithTooltip, formatSellerSalesCount } from "./SellerNameWithTooltip";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
+import { WhyDealHint } from "./WhyDealHint";
 import {
   CONDITION_FILTERS,
   type ConditionFilterKey,
@@ -1213,12 +1214,11 @@ export default function CardDetailClient({
                           {formatUSD(vm.totalUsd)}
                         </span>
                         {vm.whyDeal ? (
-                          <span
+                          <WhyDealHint
+                            label={vm.whyDeal.label}
+                            tooltip={vm.whyDeal.tooltip}
                             className="text-xs text-slate-500"
-                            title={vm.whyDeal.tooltip}
-                          >
-                            {vm.whyDeal.label}
-                          </span>
+                          />
                         ) : null}
                         {formatFreshness(listing.updatedAt) && (
                           <span className="text-xs text-slate-500">

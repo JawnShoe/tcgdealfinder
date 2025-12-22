@@ -13,8 +13,6 @@ export function WhyDealHint({
   tooltip,
   className,
 }: WhyDealHintProps) {
-  const [isHover, setIsHover] = useState(false);
-  const [isFocus, setIsFocus] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [isHoverCapable, setIsHoverCapable] = useState(false);
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
@@ -22,8 +20,6 @@ export function WhyDealHint({
 
   const hasTooltip = Boolean(tooltip);
   const isTouch = !isHoverCapable;
-  const isOpen = hasTooltip &&
-    (isHoverCapable ? (isHover || isFocus) : (isPinned || isFocus));
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -45,7 +41,7 @@ export function WhyDealHint({
   }, [isHoverCapable, isPinned]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isPinned) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -54,7 +50,6 @@ export function WhyDealHint({
     };
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (!isPinned) return;
       const target = event.target as Node | null;
       if (!wrapperRef.current || !target) return;
       if (!wrapperRef.current.contains(target)) {
@@ -69,35 +64,31 @@ export function WhyDealHint({
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [isOpen, isPinned]);
+  }, [isPinned]);
 
   if (!hasTooltip) {
     return <span className={className}>{label}</span>;
   }
 
+  const bubbleClasses = isHoverCapable
+    ? "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
+    : isPinned
+      ? "opacity-100 pointer-events-auto"
+      : "opacity-0 pointer-events-none";
+
   return (
     <span
       ref={wrapperRef}
-      className="relative inline-flex min-w-0 max-w-full items-center whitespace-nowrap"
+      className={`relative inline-flex min-w-0 max-w-full items-center whitespace-nowrap ${isHoverCapable ? "group" : ""}`.trim()}
     >
       <button
         type="button"
         className={`min-w-0 truncate text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${className ?? ""}`.trim()}
         aria-label={`${label} (more info)`}
         aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        aria-describedby={isOpen ? tooltipId : undefined}
-        onMouseEnter={() => {
-          if (isHoverCapable) setIsHover(true);
-        }}
-        onMouseLeave={() => {
-          if (isHoverCapable) setIsHover(false);
-        }}
-        onFocus={() => setIsFocus(true)}
-        onBlur={() => {
-          setIsFocus(false);
-          setIsPinned(false);
-        }}
+        aria-expanded={isTouch ? isPinned : undefined}
+        aria-describedby={isTouch && isPinned ? tooltipId : undefined}
+        onBlur={() => setIsPinned(false)}
         onClick={(event) => {
           event.stopPropagation();
           if (isHoverCapable) {
@@ -106,18 +97,22 @@ export function WhyDealHint({
           }
           setIsPinned((prev) => !prev);
         }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setIsPinned(false);
+            (event.currentTarget as HTMLButtonElement).blur();
+          }
+        }}
       >
         {label}
       </button>
-      {isOpen ? (
-        <span
-          id={tooltipId}
-          role="tooltip"
-          className="absolute left-0 top-full z-50 mt-2 max-w-xs whitespace-normal break-words rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-lg"
-        >
-          {tooltip}
-        </span>
-      ) : null}
+      <span
+        id={tooltipId}
+        role="tooltip"
+        className={`absolute left-0 top-full z-50 mt-2 max-w-xs whitespace-normal break-words rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-lg transition-opacity ${bubbleClasses}`}
+      >
+        {tooltip}
+      </span>
     </span>
   );
 }

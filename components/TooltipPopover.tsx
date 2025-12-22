@@ -9,7 +9,7 @@ type TooltipPopoverProps = {
   triggerClassName?: string;
   tooltipClassName?: string;
   ariaLabel?: string;
-  size?: "default" | "compact" | "wide";
+  size?: "default" | "compact" | "medium" | "wide";
   side?: "top" | "bottom";
 };
 
@@ -77,17 +77,21 @@ export function TooltipPopover({
 
   const sizeHoverClasses =
     size === "wide"
-      ? "peer-hover:max-w-[340px] peer-hover:min-w-[240px] peer-focus-visible:max-w-[340px] peer-focus-visible:min-w-[240px]"
-      : size === "compact"
-        ? "peer-hover:max-w-[260px] peer-focus-visible:max-w-[260px] peer-hover:w-max peer-focus-visible:w-max"
-        : "peer-hover:max-w-sm peer-focus-visible:max-w-sm";
+      ? "peer-hover:max-w-[320px] peer-focus-visible:max-w-[320px] peer-hover:w-fit peer-focus-visible:w-fit"
+      : size === "medium"
+        ? "peer-hover:max-w-[280px] peer-focus-visible:max-w-[280px] peer-hover:w-fit peer-focus-visible:w-fit"
+        : size === "compact"
+          ? "peer-hover:max-w-[240px] peer-focus-visible:max-w-[240px] peer-hover:w-fit peer-focus-visible:w-fit"
+          : "peer-hover:max-w-sm peer-focus-visible:max-w-sm";
 
   const sizePinnedClasses =
     size === "wide"
-      ? "max-w-[340px] min-w-[240px]"
-      : size === "compact"
-        ? "max-w-[260px] w-max"
-        : "max-w-sm";
+      ? "max-w-[320px] w-fit"
+      : size === "medium"
+        ? "max-w-[280px] w-fit"
+        : size === "compact"
+          ? "max-w-[240px] w-fit"
+          : "max-w-sm";
 
   const bubbleClasses = isHoverCapable
     ? `max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none peer-hover:max-h-96 peer-hover:overflow-visible peer-hover:opacity-100 peer-focus-visible:max-h-96 peer-focus-visible:overflow-visible peer-focus-visible:opacity-100 ${sizeHoverClasses}`
@@ -127,7 +131,7 @@ export function TooltipPopover({
       <span
         id={tooltipId}
         role="tooltip"
-        className={`absolute left-0 ${positionClass} z-50 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs leading-snug text-slate-700 shadow-lg transition-[opacity,max-height,max-width] ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
+        className={`absolute left-0 ${positionClass} z-50 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs leading-snug text-slate-700 shadow-lg transition-opacity ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
       >
         {content}
       </span>

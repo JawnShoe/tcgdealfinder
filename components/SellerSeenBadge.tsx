@@ -26,7 +26,7 @@ export function SellerSeenBadge({
     <TooltipPopover
       content={tooltip}
       triggerClassName={`text-[11px] text-slate-500 ${className ?? ""}`.trim()}
-      size="wide"
+      size="medium"
     >
       {label}
     </TooltipPopover>

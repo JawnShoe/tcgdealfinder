@@ -905,13 +905,18 @@ export default function CardDetailClient({
               </select>
             </label>
             <label className="flex flex-col gap-1">
-              <TooltipPopover
-                content="Indicates how reliable recent pricing data is based on sales volume and consistency"
-                triggerClassName="text-xs font-semibold uppercase text-slate-500"
-                side="top"
-              >
-                Data reliability
-              </TooltipPopover>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase text-slate-500">
+                <span>Data reliability</span>
+                <TooltipPopover
+                  content="Indicates how reliable recent pricing data is based on sales volume and consistency"
+                  ariaLabel="Data reliability help"
+                  triggerClassName="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500"
+                  side="top"
+                  size="compact"
+                >
+                  <span aria-hidden="true">?</span>
+                </TooltipPopover>
+              </span>
               <select
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
                 value={priceConfFilter}

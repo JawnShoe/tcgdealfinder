@@ -23,7 +23,6 @@ export function WhyDealHint({
       ariaLabel={`${label} (more info)`}
       className="inline-flex min-w-0 max-w-full items-center whitespace-nowrap"
       triggerClassName={`min-w-0 truncate text-left ${className ?? ""}`.trim()}
-      tooltipClassName="whitespace-nowrap"
       size="compact"
     >
       {label}

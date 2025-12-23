@@ -11,6 +11,7 @@ export function TrustedBadge({ className }: { className?: string }) {
       content={TRUSTED_TOOLTIP}
       ariaLabel="Trusted seller"
       triggerClassName={`inline-flex items-center justify-center text-emerald-500 ${className ?? ""}`.trim()}
+      size="medium"
     >
       <svg
         className="h-5 w-5"

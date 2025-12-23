@@ -32,6 +32,7 @@ export function TooltipPopover({
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const tooltipRef = useRef<HTMLSpanElement | null>(null);
   const tooltipId = useId();
 
   const isTouch = !isHoverCapable;
@@ -90,15 +91,24 @@ export function TooltipPopover({
       const rect = buttonRef.current.getBoundingClientRect();
       const top = side === "top" ? rect.top - 8 : rect.bottom + 8;
 
-      // Constrain left position to viewport bounds
-      // Assume max tooltip width of 384px (max-w-sm) for bounds check
-      const maxTooltipWidth = 384;
+      // Constrain left position to viewport bounds using measured tooltip width
       const viewportWidth = window.innerWidth;
       let left = rect.left;
 
+      // Measure actual tooltip width if available, otherwise use fallback based on size
+      const tooltipWidth = tooltipRef.current
+        ? tooltipRef.current.getBoundingClientRect().width
+        : size === "wide"
+          ? 320
+          : size === "medium"
+            ? 280
+            : size === "compact"
+              ? 240
+              : 384; // default max-w-sm
+
       // Prevent tooltip from extending beyond right edge
-      if (left + maxTooltipWidth > viewportWidth) {
-        left = Math.max(0, viewportWidth - maxTooltipWidth);
+      if (left + tooltipWidth > viewportWidth) {
+        left = Math.max(0, viewportWidth - tooltipWidth);
       }
 
       // Prevent tooltip from extending beyond left edge
@@ -128,7 +138,7 @@ export function TooltipPopover({
       window.removeEventListener("scroll", handleScroll, true);
       window.removeEventListener("resize", updatePosition);
     };
-  }, [usePortal, side, isOpen]);
+  }, [usePortal, side, isOpen, size]);
 
   const sizeHoverClasses =
     size === "wide"
@@ -162,6 +172,7 @@ export function TooltipPopover({
 
   const tooltipBubble = (
     <span
+      ref={tooltipRef}
       id={tooltipId}
       role="tooltip"
       className={`${usePortal ? "fixed" : "absolute left-0"} ${usePortal ? "" : positionClass} z-50 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-normal normal-case leading-snug text-slate-700 shadow-lg transition-opacity ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}

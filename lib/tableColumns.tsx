@@ -412,7 +412,7 @@ const EndsColumn: ColumnSpec = {
       <TooltipPopover
         content={endsDisplay.tooltip}
         triggerClassName="whitespace-normal text-sm text-slate-600"
-        tooltipClassName="min-w-[220px]"
+        tooltipClassName="whitespace-nowrap"
         usePortal={true}
       >
         {endsDisplay.label}

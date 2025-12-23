@@ -352,6 +352,17 @@ ACTIVE WORK: NONE
 - **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_gb_uk_fix.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_gb_uk_fix.bundle`
 - **Verification**: Lint ✓, Build ✓ (39 routes)
 
+### Tooltip copy cleanup: remove (n=...) + expand comps abbreviation
+- **Change**: Data Reliability pill tooltip cleanup + WhyDeal tooltip clarity improvement.
+  - `a747e20`: ConfidenceChip removed conditional (n=${n}) display from tooltip (simplified to single consistent string); whyDeal replaced "comps" abbreviation with "comparable sales" for clarity
+- **Routes/components**: `components/ConfidenceChip.tsx`, `lib/whyDeal.ts`
+- **Classification**: UI copy/tooltip polish (no logic changes)
+- **Blast radius**: Data Reliability pill tooltips + "Why this is a deal" tooltips
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: a747e20
+- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_tooltip_copy_cleanup.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_tooltip_copy_cleanup.bundle`
+- **Verification**: Lint ✓, Build ✓ (39 routes)
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

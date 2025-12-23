@@ -374,6 +374,34 @@ ACTIVE WORK: NONE
 - **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_ends_stats_cleanup.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_ends_stats_cleanup.bundle`
 - **Verification**: Lint ✓, Build ✓ (39 routes)
 
+### ENDS tooltip clipping fix + Data Reliability pill tooltip removal
+- **Change**: Fixed ENDS tooltips clipped by table overflow-y control + removed redundant Data Reliability pill tooltip.
+  - `b96af1c`: Replaced single overflow wrapper with nested wrappers (outer: `overflow-visible`, inner: `overflow-x-auto`) to allow tooltips to escape clipping; removed TooltipPopover wrapper from ConfidenceChip entirely (pill no longer has tooltip; explanation provided via filter help text instead)
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/DealsTable.tsx` (lines 882-885), `components/ConfidenceChip.tsx`
+- **Classification**: UI bug fix (tooltip clipping) + UX simplification (remove redundant tooltip)
+- **Blast radius**: DealsTable overflow wrappers + ConfidenceChip component
+- **Status**: COMPLETE (2025-12-23)
+- **Commit**: b96af1c
+- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_tooltip_clipping_fix.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_tooltip_clipping_fix.bundle`
+- **Verification**: Lint ✓, Build ✓ (39 routes)
+- **Known issue**: Introduced vertical scrollbar regression (fixed in fa56778)
+
+### Portal tooltips + scrollbar fix + ConfidenceChip a11y cleanup
+- **Change**: Fixed vertical scrollbar regression from b96af1c by restoring overflow-y-clip; added portal mode to TooltipPopover to escape overflow clipping entirely; removed misleading aria-label from ConfidenceChip.
+  - `fa56778`: Added `usePortal` prop to TooltipPopover (opt-in, default false); portaled tooltips render to document.body via `createPortal` with fixed positioning; enabled portal for all 5 Ends tooltip locations; restored `overflow-y-clip` to DealsTable inner wrapper (line 884); removed `aria-label` from ConfidenceChip span (non-focusable element, provides no a11y benefit)
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/TooltipPopover.tsx` (portal mode implementation), `components/DealsTable.tsx` (lines 130, 884, 1336), `components/CardDetailClient.tsx` (lines 776, 1372), `lib/tableColumns.tsx` (line 415), `components/ConfidenceChip.tsx`
+- **Classification**: UI bug fix (scrollbar + clipping) + a11y accuracy
+- **Blast radius**: TooltipPopover component + all Ends tooltip callsites + ConfidenceChip component
+- **Status**: COMPLETE (2025-12-23)
+- **Commit**: fa56778
+- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_tooltip_portal_fix.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_tooltip_portal_fix.bundle`
+- **Verification**: Lint ✓, Build ✓ (39 routes)
+- **Technical evidence**:
+  - **SSR guard**: Line 39 (`typeof window === "undefined"`), line 174 (`typeof document !== "undefined"`) in TooltipPopover.tsx prevent server-side access to browser APIs
+  - **Cleanup**: Lines 103-106 remove scroll/resize listeners in useEffect cleanup function
+  - **Scroll drift**: Line 100 uses `addEventListener("scroll", updatePosition, true)` with capture phase (`true`) to catch scroll events from all child elements including table container
+  - **Z-index**: Line 139 applies `z-50` class to tooltip bubble; fixed positioning when portaled escapes all overflow clipping and stacking contexts
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

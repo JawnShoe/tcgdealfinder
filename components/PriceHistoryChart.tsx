@@ -79,15 +79,10 @@ export default function PriceHistoryChart({
             <Tooltip
               contentStyle={{ fontSize: 12 }}
               labelFormatter={formatDateLabel}
-              formatter={(value: number, _name, payload) => {
-                const sample = payload?.payload?.sample;
-                return [
-                  `${formatCurrency(value)}${
-                    typeof sample === "number" ? ` (n=${sample})` : ""
-                  }`,
-                  "Median",
-                ];
-              }}
+              formatter={(value: number) => [
+                formatCurrency(value),
+                "Median",
+              ]}
             />
             <Line
               type="monotone"

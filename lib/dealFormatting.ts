@@ -118,10 +118,10 @@ export function getConfidenceLabel(
   if (sampleSize == null || Number.isNaN(sampleSize)) {
     return "";
   }
-  if (sampleSize >= 50) return `High n=${sampleSize}`;
-  if (sampleSize >= 20) return `Med n=${sampleSize}`;
-  if (sampleSize >= 5) return `Low n=${sampleSize}`;
-  return `Very low n=${sampleSize}`;
+  if (sampleSize >= 50) return `High`;
+  if (sampleSize >= 20) return `Medium`;
+  if (sampleSize >= 5) return `Low`;
+  return `Very low`;
 }
 
 export function formatScore(
@@ -226,8 +226,8 @@ export function formatPriceConfidence(
   };
 
   return {
-    chipText: `${labelMap[confidenceLabel]} n=${sampleSize}`,
-    tooltipText: `Price confidence: ${confidenceLabel} (n=${sampleSize} sales)`,
+    chipText: labelMap[confidenceLabel],
+    tooltipText: "Based on recent sales volume and price consistency",
     isEmpty: false,
   };
 }

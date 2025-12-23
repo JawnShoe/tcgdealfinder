@@ -773,6 +773,7 @@ export default function CardDetailClient({
                         content={getEndsAtDisplay(bestTrustedDeal.deal.endsAt).tooltip}
                         className="block text-xs text-slate-500"
                         triggerClassName="text-xs text-slate-500"
+                        tooltipClassName="min-w-[220px]"
                       >
                         {bestTrustedDeal.marketCode} /{" "}
                         {getEndsAtDisplay(bestTrustedDeal.deal.endsAt).label}
@@ -1368,7 +1369,7 @@ export default function CardDetailClient({
                       })()}
                     </td>
                     <td className="px-3 py-4 align-middle text-right text-slate-600">
-                      <TooltipPopover content={getEndsAtDisplay(listing.endsAt).tooltip}>
+                      <TooltipPopover content={getEndsAtDisplay(listing.endsAt).tooltip} tooltipClassName="min-w-[220px]">
                         {getEndsAtDisplay(listing.endsAt).label}
                       </TooltipPopover>
                     </td>

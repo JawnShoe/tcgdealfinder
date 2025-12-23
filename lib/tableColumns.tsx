@@ -274,7 +274,7 @@ const ScoreColumn: ColumnSpec = {
 
 const PriceConfColumn: ColumnSpec = {
   key: "priceConf",
-  headerLabel: "Data reliability",
+  headerLabel: "DATA RELIABILITY",
   headerClassName: `${TABLE_TH} ${TABLE_TH_NOWRAP}`,
   cellClassName: `${TABLE_TD}`,
   renderCell: (vm) => (

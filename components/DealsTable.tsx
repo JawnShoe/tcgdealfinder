@@ -713,9 +713,9 @@ export default function DealsTable({
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-slate-600">
+          <div className="flex flex-col gap-1 text-sm text-slate-600">
             <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase text-slate-500">
-              <span>Data reliability</span>
+              <label htmlFor="priceConfFilter">DATA RELIABILITY</label>
               <TooltipPopover
                 content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                 ariaLabel="Data reliability help"
@@ -727,6 +727,7 @@ export default function DealsTable({
               </TooltipPopover>
             </span>
             <select
+              id="priceConfFilter"
               className={inputClasses}
               value={viewState.priceConfFilter}
               onChange={(event) =>
@@ -744,7 +745,7 @@ export default function DealsTable({
               <option value="medium">Med</option>
               <option value="low">Low</option>
             </select>
-          </label>
+          </div>
 
           <label className="flex flex-col gap-1 text-sm text-slate-600">
             <span className="text-xs font-semibold uppercase text-slate-500">
@@ -947,7 +948,7 @@ export default function DealsTable({
                           content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                           triggerClassName="inline-flex items-center"
                         >
-                          {getHeaderLabel("priceConf", "Data reliability")}
+                          {getHeaderLabel("priceConf", "DATA RELIABILITY")}
                         </TooltipPopover>
                       </th>
                     ) : null}

@@ -1,6 +1,8 @@
 ## SHIFT LOCK — 2025-12-18
 
-**SSOT Docs:** `DECISIONS.md` + `REGRESSION_CHECKLIST.md`
+**SSOT:** [PROJECT_SSOT.md](PROJECT_SSOT.md) (authoritative project state)
+**Verification:** [REGRESSION_CHECKLIST.md](REGRESSION_CHECKLIST.md)
+**Doc Index:** [docs/INDEX.md](docs/INDEX.md)
 
 ### Current Locks
 - Watchlist v1 is client-only/localStorage; ⭐ renders on homepage table, `/newest`, `/top-deals`, featured deals, and card detail listings. No backend/ingestion/scoring work exists for watchlist.

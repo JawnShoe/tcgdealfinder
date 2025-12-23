@@ -47,7 +47,7 @@ export function getWhyDeal(input: WhyDealInput): WhyDealResult | null {
         : "Below typical price";
     return {
       label,
-      tooltip: `About ${discountLabel}% below recent median (${sampleCount} comps).`,
+      tooltip: `About ${discountLabel}% below recent median (${sampleCount} comparable sales).`,
     };
   }
 

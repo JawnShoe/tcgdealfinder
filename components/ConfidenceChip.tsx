@@ -46,10 +46,7 @@ export function ConfidenceChip({
     "bg-red-100 text-red-700";
 
   // Build tooltip with clear data quality emphasis
-  const n = sampleSize ?? null;
-  const tooltip = typeof n === "number"
-    ? `${fullText} data confidence. Based on recent sales volume and price consistency (n=${n}).`
-    : `${fullText} data confidence. Based on recent sales volume and price consistency.`;
+  const tooltip = `${fullText} data confidence. Based on recent sales volume and price consistency.`;
 
   const chip = (
     <TooltipPopover

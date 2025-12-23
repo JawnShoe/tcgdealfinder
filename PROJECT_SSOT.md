@@ -363,7 +363,17 @@ ACTIVE WORK: NONE
 - **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_tooltip_copy_cleanup.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_tooltip_copy_cleanup.bundle`
 - **Verification**: Lint ✓, Build ✓ (39 routes)
 
-### Ends tooltip uniformity + remove UI-facing statistical text- **Change**: Made all Ends tooltips consistent across surfaces + removed all remaining "n=..." statistical shorthand from UI-facing text.  - `56ec0e8`: Added `tooltipClassName="min-w-[220px]"` to 4 Ends tooltip locations to match standard (lib/tableColumns.tsx EndsColumn); removed "n=..." from lib/dealFormatting.ts (getConfidenceLabel, formatPriceConfidence) and components/PriceHistoryChart.tsx chart tooltip formatter; changed "Med" → "Medium" in confidence labels- **Routes/components**: Homepage, Top Deals, Newest, Card Details page, DealsTable mobile/desktop, PriceHistoryChart; `components/CardDetailClient.tsx`, `components/DealsTable.tsx`, `lib/dealFormatting.ts`, `components/PriceHistoryChart.tsx`- **Classification**: UI parity / consistency (tooltip uniformity + copy polish)- **Blast radius**: Ends tooltip rendering + confidence label text + chart tooltip formatting- **Status**: COMPLETE (2025-12-22)- **Commit**: 56ec0e8- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_ends_stats_cleanup.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_ends_stats_cleanup.bundle`- **Verification**: Lint ✓, Build ✓ (39 routes)
+### Ends tooltip uniformity + remove UI-facing statistical text
+- **Change**: Made all Ends tooltips consistent across surfaces + removed all remaining "n=..." statistical shorthand from UI-facing text.
+  - `56ec0e8`: Added `tooltipClassName="min-w-[220px]"` to 4 Ends tooltip locations to match standard (lib/tableColumns.tsx EndsColumn); removed "n=..." from lib/dealFormatting.ts (getConfidenceLabel, formatPriceConfidence) and components/PriceHistoryChart.tsx chart tooltip formatter; changed "Med" → "Medium" in confidence labels
+- **Routes/components**: Homepage, Top Deals, Newest, Card Details page, DealsTable mobile/desktop, PriceHistoryChart; `components/CardDetailClient.tsx`, `components/DealsTable.tsx`, `lib/dealFormatting.ts`, `components/PriceHistoryChart.tsx`
+- **Classification**: UI parity / consistency (tooltip uniformity + copy polish)
+- **Blast radius**: Ends tooltip rendering + confidence label text + chart tooltip formatting
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: 56ec0e8
+- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_ends_stats_cleanup.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_ends_stats_cleanup.bundle`
+- **Verification**: Lint ✓, Build ✓ (39 routes)
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

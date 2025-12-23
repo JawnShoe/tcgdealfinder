@@ -401,6 +401,42 @@ ACTIVE WORK: NONE
   - **Cleanup**: Lines 103-106 remove scroll/resize listeners in useEffect cleanup function
   - **Scroll drift**: Line 100 uses `addEventListener("scroll", updatePosition, true)` with capture phase (`true`) to catch scroll events from all child elements including table container
   - **Z-index**: Line 139 applies `z-50` class to tooltip bubble; fixed positioning when portaled escapes all overflow clipping and stacking contexts
+- **Known issues**: Introduced portal tooltip persistence on scroll (fixed in 8e372be), blank-right space in Ends tooltips (fixed in 0ceee7f), horizontal scrollbar on /newest and /cards/[cardId] (fixed in 1ffec42)
+
+### Portal tooltip visibility fix (post-fa56778 regression)
+- **Change**: Fixed portal tooltips invisible on hover due to broken `peer-hover:*` selectors when tooltip portaled to document.body.
+  - `8e372be`: Added `isOpen` state to TooltipPopover for portal-safe visibility tracking; added mouseenter/leave and focus/blur handlers to toggle `isOpen`; modified `bubbleClasses` logic to use `isOpen` instead of `peer-hover:*` when `usePortal={true}`; added missing `usePortal={true}` to CardDetailClient listings table Ends tooltip (line 1373) for consistency
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/TooltipPopover.tsx` (lines 32, 118-136, 159-183), `components/CardDetailClient.tsx` (line 1373)
+- **Classification**: UI bug fix (tooltip visibility regression)
+- **Blast radius**: TooltipPopover component portal visibility mechanism + CardDetailClient Ends tooltip
+- **Status**: COMPLETE (2025-12-23)
+- **Commit**: 8e372be
+- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_tooltip_visibility_fix.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_tooltip_visibility_fix.bundle`
+- **Verification**: Lint ✓, Build ✓ (39 routes)
+- **Known issues**: Introduced tooltip persistence on scroll + blank-right space (fixed in 0ceee7f and 1ffec42)
+
+### Ends tooltip spacing + horizontal scrollbar fix (post-8e372be regression)
+- **Change**: Removed Ends tooltip blank-right space caused by `min-w-[220px]` + prevented horizontal scrollbar on /newest and /cards/[cardId].
+  - `0ceee7f`: Replaced `tooltipClassName="min-w-[220px]"` with `tooltipClassName="whitespace-nowrap"` at all 5 Ends tooltip locations (lib/tableColumns.tsx line 415, components/DealsTable.tsx lines 130 + 1336, components/CardDetailClient.tsx lines 776 + 1373); changed DealsTable outer wrapper from `overflow-visible` to `overflow-x-clip` (line 883)
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `lib/tableColumns.tsx`, `components/DealsTable.tsx`, `components/CardDetailClient.tsx`
+- **Classification**: UI bug fix (tooltip spacing + scrollbar regression)
+- **Blast radius**: All 5 Ends tooltip callsites + DealsTable overflow wrapper
+- **Status**: COMPLETE (2025-12-23)
+- **Commit**: 0ceee7f
+- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_tooltip_spacing_scrollbar_fix.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_tooltip_spacing_scrollbar_fix.bundle`
+- **Verification**: Lint ✓, Build ✓ (39 routes)
+- **Known issues**: Tooltip persistence on scroll + horizontal scrollbar remained on /newest and /cards/[cardId] (fixed in 1ffec42)
+
+### Portal tooltip regression fixes (post-0ceee7f)
+- **Change**: Fixed portal tooltip persistence on scroll + removed tooltip blank-right space from non-Ends tooltips + constrained portal tooltip positioning to viewport bounds + added overflow wrapper to CardDetailClient listings table.
+  - `1ffec42`: Changed scroll listener from repositioning to dismissing tooltip (preserves escape-key behavior, keeps resize repositioning); removed `min-w-[220px]` from TrustedBadge (line 14); removed `min-w-[180px]` from SellerSeenBadge (line 29); added `whitespace-nowrap` to WhyDealHint to prevent wrapping (line 26); added viewport bounds check to portal tooltip positioning (384px max assumed, lines 93-112 in TooltipPopover); added `overflow-x-clip` wrapper to CardDetailClient listings table (lines 990-991, 1384-1385) to align with DealsTable overflow pattern
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/TooltipPopover.tsx` (scroll dismiss + viewport bounds), `components/TrustedBadge.tsx`, `components/SellerSeenBadge.tsx`, `components/WhyDealHint.tsx`, `components/CardDetailClient.tsx` (overflow wrapper)
+- **Classification**: UI bug fix (tooltip persistence + blank-right space + horizontal scrollbar)
+- **Blast radius**: TooltipPopover scroll/positioning behavior + TrustedBadge/SellerSeenBadge/WhyDealHint tooltip sizing + CardDetailClient overflow wrapper
+- **Status**: COMPLETE (2025-12-23)
+- **Commit**: 1ffec42
+- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_tooltip_regression_fixes.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_tooltip_regression_fixes.bundle`
+- **Verification**: Lint ✓, Build ✓ (39 routes)
 
 ## COMPLETED (2025-12-21)
 

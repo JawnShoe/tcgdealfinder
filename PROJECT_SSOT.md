@@ -437,6 +437,18 @@ ACTIVE WORK: NONE
 - **Commit**: 1ffec42
 - **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_tooltip_regression_fixes.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_tooltip_regression_fixes.bundle`
 - **Verification**: Lint ✓, Build ✓ (39 routes)
+- **Known issues**: WhyDealHint tooltip overflow + TrustedBadge tall/skinny wrapping + assumed 384px portal width (fixed in 1460e88)
+
+### Visual regression fixes (post-1ffec42)
+- **Change**: Fixed WhyDealHint tooltip overflow + TrustedBadge tall/skinny wrapping + replaced assumed portal tooltip width with measured width.
+  - `1460e88`: Removed `tooltipClassName="whitespace-nowrap"` from WhyDealHint (line 26) to allow clean wrapping within 240px max-width; added `size="medium"` to TrustedBadge (line 14) for readable proportions with `w-max` behavior (prevents aggressive wrapping without reintroducing blank-right space); added `tooltipRef` to TooltipPopover (line 35) to measure actual tooltip width; updated `updatePosition` to use measured width instead of assumed 384px (lines 99-107), with size-based fallbacks (320/280/240/384px); added `size` to useEffect dependency array (line 141)
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/WhyDealHint.tsx`, `components/TrustedBadge.tsx`, `components/TooltipPopover.tsx` (measured positioning)
+- **Classification**: UI bug fix (tooltip overflow + tall/skinny wrapping + fragile positioning)
+- **Blast radius**: WhyDealHint tooltip wrapping behavior + TrustedBadge tooltip sizing + TooltipPopover portal positioning accuracy
+- **Status**: COMPLETE (2025-12-23)
+- **Commit**: 1460e88
+- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_tooltip_visual_regression_fixes.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_tooltip_visual_regression_fixes.bundle`
+- **Verification**: Lint ✓, Build ✓ (39 routes)
 
 ## COMPLETED (2025-12-21)
 

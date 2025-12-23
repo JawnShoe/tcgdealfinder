@@ -880,8 +880,9 @@ export default function DealsTable({
       {hasDeals ? (
         <>
           <div className="hidden sm:block">
-            <div className="w-full overflow-x-auto" style={{ overflowY: 'clip' }}>
-              <table className="min-w-full table-fixed text-sm text-slate-900">
+            <div className="w-full overflow-visible">
+              <div className="w-full overflow-x-auto">
+                <table className="min-w-full table-fixed text-sm text-slate-900">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className={`px-3 py-2 text-left ${colClass("card", variant)}`}>
@@ -1188,6 +1189,7 @@ export default function DealsTable({
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
 

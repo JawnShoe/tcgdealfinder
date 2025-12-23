@@ -1,7 +1,5 @@
 "use client";
 
-import { CONFIDENCE_TOOLTIP } from "../lib/dealConfidence";
-import { TooltipPopover } from "./TooltipPopover";
 
 interface ConfidenceChipProps {
   weightLabel?: string | null;
@@ -14,7 +12,7 @@ type NormalizedLevel = "high" | "medium" | "low";
 /**
  * Compact confidence chip component for /newest and /cards tables.
  * Displays "High", "Med", or "Low" with color-coded background.
- * Tooltip shows full confidence explanation with sample size.
+ * No tooltip on hover (explanation provided via filter help).
  * 
  * Accepts various formats: "high", "High", "High confidence", etc.
  */
@@ -36,7 +34,7 @@ export function ConfidenceChip({
   // Get display text
   const displayText = level === "high" ? "High" : level === "medium" ? "Med" : "Low";
   
-  // Get full text for tooltip title
+  // Get full text for aria-label
   const fullText = level === "high" ? "High" : level === "medium" ? "Medium" : "Low";
   
   // Get color classes
@@ -45,17 +43,14 @@ export function ConfidenceChip({
     level === "medium" ? "bg-yellow-100 text-yellow-700" :
     "bg-red-100 text-red-700";
 
-  // Build tooltip with clear data quality emphasis
-  const tooltip = `${fullText} data confidence. Based on recent sales volume and price consistency.`;
 
   const chip = (
-    <TooltipPopover
-      content={tooltip}
-      ariaLabel={`${fullText} data confidence`}
-      triggerClassName={`inline-flex min-w-10 items-center justify-center rounded-full px-2 py-0.5 text-center text-xs font-semibold leading-none ${colorClass}`}
+    <span
+      aria-label={`${fullText} data confidence`}
+      className={`inline-flex min-w-10 items-center justify-center rounded-full px-2 py-0.5 text-center text-xs font-semibold leading-none ${colorClass}`}
     >
       {displayText}
-    </TooltipPopover>
+    </span>
   );
 
   if (center) {

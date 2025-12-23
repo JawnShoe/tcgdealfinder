@@ -89,20 +89,43 @@ export function TooltipPopover({
       if (!buttonRef.current) return;
       const rect = buttonRef.current.getBoundingClientRect();
       const top = side === "top" ? rect.top - 8 : rect.bottom + 8;
+
+      // Constrain left position to viewport bounds
+      // Assume max tooltip width of 384px (max-w-sm) for bounds check
+      const maxTooltipWidth = 384;
+      const viewportWidth = window.innerWidth;
+      let left = rect.left;
+
+      // Prevent tooltip from extending beyond right edge
+      if (left + maxTooltipWidth > viewportWidth) {
+        left = Math.max(0, viewportWidth - maxTooltipWidth);
+      }
+
+      // Prevent tooltip from extending beyond left edge
+      if (left < 0) {
+        left = 0;
+      }
+
       setTooltipPosition({
         top,
-        left: rect.left,
+        left,
       });
+    };
+
+    const handleScroll = () => {
+      // Dismiss tooltip on scroll instead of repositioning
+      setIsOpen(false);
     };
 
     updatePosition();
 
-    // Update on scroll/resize
-    window.addEventListener("scroll", updatePosition, true);
+    // Dismiss on scroll (capture phase to catch all scroll containers)
+    window.addEventListener("scroll", handleScroll, true);
+    // Reposition (not dismiss) on window resize
     window.addEventListener("resize", updatePosition);
 
     return () => {
-      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("scroll", handleScroll, true);
       window.removeEventListener("resize", updatePosition);
     };
   }, [usePortal, side, isOpen]);

@@ -1355,7 +1355,7 @@ export default function CardDetailClient({
                             <span aria-hidden="true">
                               <MarketFlag market={marketCode} />
                             </span>
-                            <span aria-hidden="true" className="text-xs text-slate-500">
+                            <span aria-hidden="true" className="text-sm text-slate-700">
                               {getMarketEmoji(marketCode)}
                             </span>
                             <span className="sr-only">

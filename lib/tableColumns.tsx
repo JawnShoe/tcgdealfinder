@@ -382,13 +382,13 @@ const MarketColumn: ColumnSpec = {
   headerClassName: `${TABLE_TH}`,
   cellClassName: `${TABLE_TD}`,
   renderCell: (vm) => {
-    const { code, label } = formatMarket(vm.deal.market);
+    const { code, label, compactLabel } = formatMarket(vm.deal.market);
     return (
       <span className="inline-flex items-center gap-1">
         <span aria-hidden="true">
           <MarketFlag market={vm.deal.market} />
         </span>
-        <span aria-hidden="true">{code}</span>
+        <span aria-hidden="true">{compactLabel}</span>
         <span className="sr-only">{label}</span>
       </span>
     );
@@ -412,6 +412,7 @@ const EndsColumn: ColumnSpec = {
       <TooltipPopover
         content={endsDisplay.tooltip}
         triggerClassName="whitespace-normal text-sm text-slate-600"
+        tooltipClassName="min-w-[220px]"
       >
         {endsDisplay.label}
       </TooltipPopover>

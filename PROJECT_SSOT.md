@@ -449,6 +449,34 @@ ACTIVE WORK: NONE
 - **Commit**: 1460e88
 - **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_tooltip_visual_regression_fixes.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_tooltip_visual_regression_fixes.bundle`
 - **Verification**: Lint ✓, Build ✓ (39 routes)
+- **Known issues**: TrustedBadge tooltip clipped by table overflow-x-clip wrapper (fixed in 28b8080)
+
+### TrustedBadge tooltip clipping fix (post-1460e88)
+- **Change**: Fixed TrustedBadge tooltip clipped by DealsTable overflow-x-clip wrapper by enabling portal mode.
+  - `28b8080`: Added `usePortal={true}` to TrustedBadge (line 15) to render tooltip via `createPortal` to `document.body`, escaping table overflow clipping context (same pattern as Ends tooltips)
+- **Routes/components**: `/`, `/newest`, `/top-deals`, `/ending-soon`, `/sets/[setId]`, `/cards/[cardId]`; `components/TrustedBadge.tsx`
+- **Classification**: UI bug fix (tooltip clipping by table overflow)
+- **Blast radius**: TrustedBadge tooltip rendering (portaled instead of absolute positioning)
+- **Status**: COMPLETE (2025-12-23)
+- **Commit**: 28b8080
+- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_trusted_badge_portal_fix.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_trusted_badge_portal_fix.bundle`
+- **Verification**: Lint ✓, Build ✓ (39 routes)
+- **Note**: "Blank-right space" reported on multi-line tooltips is normal whitespace from short last lines after text wrapping (expected behavior, not a forced min-width regression)
+
+### UI Consistency Contract documentation
+- **Change**: Created formal documentation to prevent tooltip regression loops by defining consistent portal, sizing, and overflow policies.
+  - Added `docs/ui/UI_CONSISTENCY_CONTRACT.md` with:
+    - Portal policy: Tooltips in overflow containers must use `usePortal={true}`
+    - Size policy: 3 standardized sizes (compact/medium/wide) with exact max-widths
+    - Acceptable whitespace definition: Forced min-width (bug) vs normal multi-line whitespace (acceptable)
+    - Table overflow pattern: Nested `overflow-x-clip` (outer) + `overflow-x-auto` (inner)
+    - Verification checklist for new tooltips/tables
+    - Historical context documenting regression loop (fa56778 → 28b8080)
+- **Routes/components**: Documentation only (no code changes)
+- **Classification**: Documentation / consistency lock
+- **Blast radius**: N/A (reference document)
+- **Status**: COMPLETE (2025-12-23)
+- **Commit**: (pending)
 
 ## COMPLETED (2025-12-21)
 

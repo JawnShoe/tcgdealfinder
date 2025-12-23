@@ -304,6 +304,20 @@ ACTIVE WORK: NONE
 - **Commit**: 7ec14e0
 - **Restorepoint**: `T:\Projects\restorepoints\why-deal-icon-polish-7ec14e0.bundle`
 
+### TooltipPopover follow-up polish (5 commits)
+- **Change**: Post-tooltip-unification polish to fix layout artifacts and sizing issues. UI-only CSS/style changes; no API/db/query/scoring changes; no file deletions.
+  - `3fc6480`: Removed sort header tooltips (added aria-label/aria-sort for accessibility)
+  - `4e1ff04`: Documented 3fc6480 in SSOT
+  - `7bcb528`: Added min-width to TooltipPopover medium size to prevent skinny SellerSeen tooltips
+  - `5e8bc95`: Removed min-width whitespace regression + added normal-case to tooltip bubble
+  - `8c1a972`: Added tooltip min-width + DealsTable overflow-y clip to fix skinny tooltips and vertical scrollbar
+  - `1179cf1`: Removed global min-width + added invisible/visible for ghost artifact + per-site min-width for SellerSeen
+- **Routes/components**: `components/TooltipPopover.tsx`, `components/SellerSeenBadge.tsx`, `components/DealsTable.tsx` (overflow-y style + whitespace normalization)
+- **Classification**: UI parity / consistency (bug fix for tooltip sizing/layout artifacts)
+- **Blast radius**: Tooltip rendering + table scroll behavior only
+- **Status**: COMPLETE (2025-12-22)
+- **Commits**: 3fc6480, 4e1ff04, 7bcb528, 5e8bc95, 8c1a972, 1179cf1
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

@@ -478,7 +478,43 @@ ACTIVE WORK: NONE
 - **Classification**: Documentation / consistency lock
 - **Blast radius**: N/A (reference document)
 - **Status**: COMPLETE (2025-12-23)
-- **Commit**: (pending)
+- **Commit**: 0282ade
+
+---
+
+### 🔒 Tooltip Regression Sequence — LOCKED COMPLETE
+
+**Status**: LOCKED COMPLETE (fa56778 → 28b8080)
+**STOP Rule**: No further tooltip changes unless new workstream explicitly opened
+**Lock Date**: 2025-12-23
+
+**Sequence Summary**:
+Tooltip work is complete and locked. All regressions addressed across 6 commits:
+
+1. **fa56778**: Portal mode introduced (Ends tooltips escape overflow clipping)
+2. **8e372be**: Fixed portal visibility (`peer-hover:*` broken when portaled)
+3. **0ceee7f**: Fixed Ends tooltip spacing (`min-w-[220px]` → `whitespace-nowrap`)
+4. **1ffec42**: Fixed scroll persistence + removed non-Ends `min-w` constraints + viewport bounds
+5. **1460e88**: Fixed WhyDealHint overflow + TrustedBadge tall/skinny + measured portal positioning
+6. **28b8080**: Fixed TrustedBadge clipping (added `usePortal={true}`)
+
+**Verified Fixes**:
+- ✅ Portal tooltips visible on hover
+- ✅ Tooltips dismiss on scroll (not persist)
+- ✅ No horizontal scrollbar on any page
+- ✅ No tooltip clipping by table overflow wrappers
+- ✅ Tooltip sizing standardized (compact/medium/wide)
+- ✅ Acceptable multi-line whitespace (short last line is normal, not a bug)
+- ✅ Viewport bounds constrained using measured tooltip width
+
+**Governing Document**: [docs/ui/UI_CONSISTENCY_CONTRACT.md](docs/ui/UI_CONSISTENCY_CONTRACT.md)
+
+**STOP Rule**: No tooltip sizing churn or visual changes unless the separate "Tooltip Layout v2" workstream (see Backlog) is explicitly opened with:
+- Separate ticket/spec
+- Updated verification matrix
+- UI Consistency Contract compliance checks
+
+**Smoke Test**: Confirmed by operator on 2025-12-23 (all pages verified: `/`, `/newest`, `/top-deals`, `/cards/[cardId]`)
 
 ## COMPLETED (2025-12-21)
 
@@ -960,6 +996,31 @@ Status Check:
 ⏳ Tier 2: Later stage ideas; will be revisited for further enhancement.
 
 ⏳ Tier 3: Deferred for now, to avoid riskier and more resource-heavy features.
+
+### UX Polish / Optional (Backlog)
+
+**Tooltip Layout v2 (fixed-width + deliberate line breaks)**
+
+**Status**: Optional / Not scheduled
+
+**Description**: Explore alternative tooltip layout with fixed-width bubbles and deliberate line breaks to minimize natural multi-line whitespace (short last lines). This is cosmetic polish only - current tooltips are functional and compliant with UI Consistency Contract.
+
+**Gating Requirements** (No work without ALL of these):
+- Separate ticket/spec required before opening workstream
+- Updated verification matrix required for new layout patterns
+- UI Consistency Contract compliance checks (docs/ui/UI_CONSISTENCY_CONTRACT.md)
+- Explicit user approval to proceed
+
+**Hard Constraints** (MUST preserve):
+- Portal policy: `usePortal={true}` for tooltips inside overflow containers (no exceptions)
+- Dismiss-on-scroll behavior: Tooltips must close on any scroll event
+- No horizontal scrollbar: Must not reintroduce page-level horizontal scrolling
+- Measured tooltip width: Portal positioning must use measured width (not assumed)
+- Table overflow pattern: Nested `overflow-x-clip` (outer) + `overflow-x-auto` (inner)
+
+**STOP Rule**: No tooltip sizing churn or visual changes unless this workstream is explicitly opened. Current tooltip implementation (fa56778 → 28b8080) is LOCKED COMPLETE. Normal multi-line whitespace (short last line after text wrapping) is acceptable and expected behavior - not a bug.
+
+**Reference**: See "🔒 Tooltip Regression Sequence — LOCKED COMPLETE" section above for historical context.
 
 ---
 

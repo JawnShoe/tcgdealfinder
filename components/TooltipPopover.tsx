@@ -77,20 +77,20 @@ export function TooltipPopover({
 
   const sizeHoverClasses =
     size === "wide"
-      ? "peer-hover:max-w-[320px] peer-focus-visible:max-w-[320px] peer-hover:w-fit peer-focus-visible:w-fit"
+      ? "peer-hover:max-w-[320px] peer-focus-visible:max-w-[320px] peer-hover:w-max peer-focus-visible:w-max"
       : size === "medium"
-        ? "peer-hover:max-w-[280px] peer-focus-visible:max-w-[280px] peer-hover:w-fit peer-focus-visible:w-fit"
+        ? "peer-hover:max-w-[280px] peer-focus-visible:max-w-[280px] peer-hover:w-max peer-focus-visible:w-max"
         : size === "compact"
-          ? "peer-hover:max-w-[240px] peer-focus-visible:max-w-[240px] peer-hover:w-fit peer-focus-visible:w-fit"
+          ? "peer-hover:max-w-[240px] peer-focus-visible:max-w-[240px] peer-hover:w-max peer-focus-visible:w-max"
           : "peer-hover:max-w-sm peer-focus-visible:max-w-sm";
 
   const sizePinnedClasses =
     size === "wide"
-      ? "max-w-[320px] w-fit"
+      ? "max-w-[320px] w-max"
       : size === "medium"
-        ? "max-w-[280px] w-fit"
+        ? "max-w-[280px] w-max"
         : size === "compact"
-          ? "max-w-[240px] w-fit"
+          ? "max-w-[240px] w-max"
           : "max-w-sm";
 
   const bubbleClasses = isHoverCapable

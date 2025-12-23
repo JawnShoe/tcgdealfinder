@@ -1,7 +1,9 @@
 # PROJECT SSOT — TCG Deal Finder
 
-**Last Updated**: 2025-12-22
-**Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE.
+**Last Updated**: 2025-12-23
+**Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
+
+**ACTIVE WORK**: NONE
 
 ---
 

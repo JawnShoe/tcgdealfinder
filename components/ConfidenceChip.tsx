@@ -34,8 +34,6 @@ export function ConfidenceChip({
   // Get display text
   const displayText = level === "high" ? "High" : level === "medium" ? "Med" : "Low";
   
-  // Get full text for aria-label
-  const fullText = level === "high" ? "High" : level === "medium" ? "Medium" : "Low";
   
   // Get color classes
   const colorClass = 
@@ -46,7 +44,6 @@ export function ConfidenceChip({
 
   const chip = (
     <span
-      aria-label={`${fullText} data confidence`}
       className={`inline-flex min-w-10 items-center justify-center rounded-full px-2 py-0.5 text-center text-xs font-semibold leading-none ${colorClass}`}
     >
       {displayText}

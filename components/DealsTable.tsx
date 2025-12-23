@@ -127,7 +127,7 @@ function dedupeDealsByListing(deals: Deal[]): Deal[] {
 function renderEndsValue(value: string | null | undefined): JSX.Element {
   const display = getEndsAtDisplay(value);
   return (
-    <TooltipPopover content={display.tooltip} tooltipClassName="min-w-[220px]">
+    <TooltipPopover content={display.tooltip} tooltipClassName="min-w-[220px]" usePortal={true}>
       {display.label}
     </TooltipPopover>
   );
@@ -881,7 +881,7 @@ export default function DealsTable({
         <>
           <div className="hidden sm:block">
             <div className="w-full overflow-visible">
-              <div className="w-full overflow-x-auto">
+              <div className="w-full overflow-x-auto overflow-y-clip">
                 <table className="min-w-full table-fixed text-sm text-slate-900">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
@@ -1333,7 +1333,7 @@ export default function DealsTable({
                     {(() => {
                       const endsDisplay = getEndsAtDisplay(vm.deal.endsAt);
                       return (
-                        <TooltipPopover content={endsDisplay.tooltip} tooltipClassName="min-w-[220px]">
+                        <TooltipPopover content={endsDisplay.tooltip} tooltipClassName="min-w-[220px]" usePortal={true}>
                           Ends {endsDisplay.label}
                         </TooltipPopover>
                       );

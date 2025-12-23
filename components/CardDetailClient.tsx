@@ -774,6 +774,7 @@ export default function CardDetailClient({
                         className="block text-xs text-slate-500"
                         triggerClassName="text-xs text-slate-500"
                         tooltipClassName="min-w-[220px]"
+                        usePortal={true}
                       >
                         {bestTrustedDeal.marketCode} /{" "}
                         {getEndsAtDisplay(bestTrustedDeal.deal.endsAt).label}

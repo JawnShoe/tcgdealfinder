@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type TooltipPopoverProps = {
   content: React.ReactNode;
@@ -11,6 +12,7 @@ type TooltipPopoverProps = {
   ariaLabel?: string;
   size?: "default" | "compact" | "medium" | "wide";
   side?: "top" | "bottom";
+  usePortal?: boolean;
 };
 
 export function TooltipPopover({
@@ -22,10 +24,13 @@ export function TooltipPopover({
   ariaLabel,
   size = "default",
   side = "bottom",
+  usePortal = false,
 }: TooltipPopoverProps) {
   const [isPinned, setIsPinned] = useState(false);
   const [isHoverCapable, setIsHoverCapable] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
   const tooltipId = useId();
 
   const isTouch = !isHoverCapable;
@@ -75,6 +80,32 @@ export function TooltipPopover({
     };
   }, [isPinned]);
 
+  // Update tooltip position for portal mode
+  useEffect(() => {
+    if (!usePortal || !buttonRef.current) return;
+
+    const updatePosition = () => {
+      if (!buttonRef.current) return;
+      const rect = buttonRef.current.getBoundingClientRect();
+      const top = side === "top" ? rect.top - 8 : rect.bottom + 8;
+      setTooltipPosition({
+        top,
+        left: rect.left,
+      });
+    };
+
+    updatePosition();
+
+    // Update on scroll/resize
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [usePortal, side, isPinned]);
+
   const sizeHoverClasses =
     size === "wide"
       ? "peer-hover:max-w-[320px] peer-focus-visible:max-w-[320px] peer-hover:w-max peer-focus-visible:w-max"
@@ -101,12 +132,24 @@ export function TooltipPopover({
 
   const positionClass = side === "top" ? "bottom-full mb-2" : "top-full mt-2";
 
+  const tooltipBubble = (
+    <span
+      id={tooltipId}
+      role="tooltip"
+      className={`${usePortal ? "fixed" : "absolute left-0"} ${usePortal ? "" : positionClass} z-50 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-normal normal-case leading-snug text-slate-700 shadow-lg transition-opacity ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
+      style={usePortal ? { top: `${tooltipPosition.top}px`, left: `${tooltipPosition.left}px` } : undefined}
+    >
+      {content}
+    </span>
+  );
+
   return (
     <span
       ref={wrapperRef}
       className={`relative inline-flex min-w-0 max-w-full items-center ${className ?? ""}`.trim()}
     >
       <button
+        ref={buttonRef}
         type="button"
         className={`peer inline-flex min-w-0 items-center gap-1.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${triggerClassName ?? ""}`.trim()}
         aria-label={ariaLabel}
@@ -128,13 +171,9 @@ export function TooltipPopover({
       >
         {children}
       </button>
-      <span
-        id={tooltipId}
-        role="tooltip"
-        className={`absolute left-0 ${positionClass} z-50 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-normal normal-case leading-snug text-slate-700 shadow-lg transition-opacity ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
-      >
-        {content}
-      </span>
+      {usePortal && typeof document !== "undefined"
+        ? createPortal(tooltipBubble, document.body)
+        : tooltipBubble}
     </span>
   );
 }

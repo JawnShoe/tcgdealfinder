@@ -195,7 +195,7 @@ type SortOption =
 
 type ConfidenceFilterKey = "all" | "high" | "medium" | "low";
 
-type HeaderSortKey = "total" | "historic" | "discount" | "ends" | "card";
+type HeaderSortKey = "total" | "historic" | "discount" | "ends" | "card" | "confidence";
 
 type HeaderSort = {
   key: HeaderSortKey | null;
@@ -475,6 +475,10 @@ export default function DealsTable({
             aVal = a.cardSortKey;
             bVal = b.cardSortKey;
             break;
+          case "confidence":
+            aVal = a.priceConfidenceLabel === "high" ? 3 : a.priceConfidenceLabel === "medium" ? 2 : a.priceConfidenceLabel === "low" ? 1 : 0;
+            bVal = b.priceConfidenceLabel === "high" ? 3 : b.priceConfidenceLabel === "medium" ? 2 : b.priceConfidenceLabel === "low" ? 1 : 0;
+            break;
           default:
             aVal = 0;
             bVal = 0;
@@ -721,7 +725,7 @@ export default function DealsTable({
                 ariaLabel="Data reliability help"
                 triggerClassName="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500"
                 side="top"
-                size="compact"
+                size="wide"
               >
                 <span aria-hidden="true">?</span>
               </TooltipPopover>
@@ -942,14 +946,22 @@ export default function DealsTable({
                     ) : null}
                     {variant !== "default" ? (
                       <th
-                        className={`${colClass("confidence", variant)} whitespace-nowrap px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"}`}
+                        className={`${colClass("confidence", variant)} whitespace-nowrap px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"} cursor-pointer hover:bg-slate-100 select-none`}
+                        onClick={() => handleHeaderSort("confidence")}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleHeaderSort("confidence");
+                          }
+                        }}
+                        tabIndex={0}
+                        aria-label="Sort by Data Reliability"
+                        aria-sort={headerSort.key === "confidence" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
                       >
-                        <TooltipPopover
-                          content="Indicates how reliable recent pricing data is based on sales volume and consistency"
-                          triggerClassName="inline-flex items-center"
-                        >
+                        <span className="inline-flex items-center">
                           {getHeaderLabel("priceConf", "DATA RELIABILITY")}
-                        </TooltipPopover>
+                          <SortArrow colKey="confidence" />
+                        </span>
                       </th>
                     ) : null}
                     <th className={`${colClass("seller", variant)} px-3 py-2 text-left`}>

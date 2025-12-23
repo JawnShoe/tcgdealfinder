@@ -904,20 +904,21 @@ export default function CardDetailClient({
                 ))}
               </select>
             </label>
-            <label className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1">
               <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase text-slate-500">
-                <span>Data reliability</span>
+                <label htmlFor="cardDetailConfFilter">DATA RELIABILITY</label>
                 <TooltipPopover
                   content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                   ariaLabel="Data reliability help"
                   triggerClassName="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500"
                   side="top"
-                  size="compact"
+                  size="wide"
                 >
                   <span aria-hidden="true">?</span>
                 </TooltipPopover>
               </span>
               <select
+                id="cardDetailConfFilter"
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
                 value={priceConfFilter}
                 onChange={(event) =>
@@ -929,7 +930,7 @@ export default function CardDetailClient({
                 <option value="medium">Med</option>
                 <option value="low">Low</option>
               </select>
-            </label>
+            </div>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase text-slate-500">
                 Market
@@ -1045,12 +1046,7 @@ export default function CardDetailClient({
                 <th
                   className="whitespace-nowrap px-3 py-2 text-center"
                 >
-                  <TooltipPopover
-                    content="Indicates how reliable recent pricing data is based on sales volume and consistency"
-                    triggerClassName="inline-flex items-center justify-center"
-                  >
-                    Data reliability
-                  </TooltipPopover>
+                  DATA RELIABILITY
                 </th>
                 <th 
                   className="px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none"

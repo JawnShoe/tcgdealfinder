@@ -79,7 +79,7 @@ export function TooltipPopover({
     size === "wide"
       ? "peer-hover:max-w-[320px] peer-focus-visible:max-w-[320px] peer-hover:w-fit peer-focus-visible:w-fit"
       : size === "medium"
-        ? "peer-hover:max-w-[280px] peer-focus-visible:max-w-[280px] peer-hover:w-fit peer-focus-visible:w-fit"
+        ? "peer-hover:min-w-[200px] peer-hover:max-w-[280px] peer-focus-visible:min-w-[200px] peer-focus-visible:max-w-[280px] peer-hover:w-fit peer-focus-visible:w-fit"
         : size === "compact"
           ? "peer-hover:max-w-[240px] peer-focus-visible:max-w-[240px] peer-hover:w-fit peer-focus-visible:w-fit"
           : "peer-hover:max-w-sm peer-focus-visible:max-w-sm";
@@ -88,7 +88,7 @@ export function TooltipPopover({
     size === "wide"
       ? "max-w-[320px] w-fit"
       : size === "medium"
-        ? "max-w-[280px] w-fit"
+        ? "min-w-[200px] max-w-[280px] w-fit"
         : size === "compact"
           ? "max-w-[240px] w-fit"
           : "max-w-sm";

@@ -444,7 +444,7 @@ export default function DealsTable({
 
   const { sortedDeals, showNoDiscountNotice } = useMemo(() => {
     const list = [...filteredDeals];
-    
+
     // Header sort overrides dropdown sort
     if (headerSort.key) {
       const key = headerSort.key;
@@ -452,7 +452,7 @@ export default function DealsTable({
       list.sort((a, b) => {
         let aVal: number | string;
         let bVal: number | string;
-        
+
         // Get values based on sort key
         switch (key) {
           case "total":
@@ -479,7 +479,7 @@ export default function DealsTable({
             aVal = 0;
             bVal = 0;
         }
-        
+
         // Compare
         let cmp = 0;
         if (typeof aVal === "number" && typeof bVal === "number") {
@@ -487,10 +487,10 @@ export default function DealsTable({
         } else {
           cmp = String(aVal).localeCompare(String(bVal));
         }
-        
+
         // Apply direction
         if (dir === "desc") cmp = -cmp;
-        
+
         // Stable sort: tie-break by cardSortKey then listing ID
         if (cmp === 0) {
           cmp = a.cardSortKey.localeCompare(b.cardSortKey);
@@ -498,12 +498,12 @@ export default function DealsTable({
             cmp = a.deal.id - b.deal.id;
           }
         }
-        
+
         return cmp;
       });
       return { sortedDeals: list, showNoDiscountNotice: false };
     }
-    
+
     // Use dropdown sort
     const sortKey = viewState.sortBy || "best-discount";
     if (isNewestVariant && sortKey === "best-discount") {
@@ -874,15 +874,15 @@ export default function DealsTable({
 
       {hasDeals ? (
         <>
-      <div className="hidden sm:block">
-        <div className="w-full overflow-x-auto">
-          <table className="min-w-full table-fixed text-sm text-slate-900">
+          <div className="hidden sm:block">
+            <div className="w-full overflow-x-auto" style={{ overflowY: 'clip' }}>
+              <table className="min-w-full table-fixed text-sm text-slate-900">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
                     <th className={`px-3 py-2 text-left ${colClass("card", variant)}`}>
                       {getHeaderLabel("card", "Card")}
                     </th>
-                    <th 
+                    <th
                       className={`${colClass("total", variant)} whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
                       onClick={() => handleHeaderSort("total")}
                       onKeyDown={(event) => {
@@ -900,7 +900,7 @@ export default function DealsTable({
                         <SortArrow colKey="total" />
                       </span>
                     </th>
-                    <th 
+                    <th
                       className={`${colClass("historic", variant)} whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
                       onClick={() => handleHeaderSort("historic")}
                       onKeyDown={(event) => {
@@ -918,7 +918,7 @@ export default function DealsTable({
                         <SortArrow colKey="historic" />
                       </span>
                     </th>
-                    <th 
+                    <th
                       className={`${colClass("discount", variant)} px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
                       onClick={() => handleHeaderSort("discount")}
                       onKeyDown={(event) => {
@@ -957,7 +957,7 @@ export default function DealsTable({
                     <th className={`${colClass("market", variant)} px-3 py-2 text-left`}>
                       {getHeaderLabel("market", "Market")}
                     </th>
-                    <th 
+                    <th
                       className={`${colClass("ends", variant)} px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none`}
                       onClick={() => handleHeaderSort("ends")}
                       onKeyDown={(event) => {
@@ -1015,163 +1015,161 @@ export default function DealsTable({
                       );
                       return (
                         <tr key={vm.deal.id} className="even:bg-slate-50/50 hover:bg-slate-100">
-                        <td className={`${colClass("card", variant)} px-3 py-4 align-middle`}>
-                          <div className="flex items-start gap-2.5">
-                            {vm.deal.thumbnailUrl ? (
-                              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
-                                <Image
-                                  src={vm.deal.thumbnailUrl}
-                                  alt={vm.deal.title}
-                                  width={64}
-                                  height={64}
-                                  className="h-full w-full object-contain"
+                          <td className={`${colClass("card", variant)} px-3 py-4 align-middle`}>
+                            <div className="flex items-start gap-2.5">
+                              {vm.deal.thumbnailUrl ? (
+                                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
+                                  <Image
+                                    src={vm.deal.thumbnailUrl}
+                                    alt={vm.deal.title}
+                                    width={64}
+                                    height={64}
+                                    className="h-full w-full object-contain"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
+                              )}
+                              <div className="flex min-w-0 flex-1 items-start gap-2">
+                                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                  <CardIdentityBlock
+                                    identity={buildCardIdentityFromDeal(vm.deal)}
+                                    primaryHref={vm.affiliateUrl}
+                                    showListingTitle={isNewestVariant}
+                                    showViewCardLink
+                                  />
+                                  {vm.deal.historicBaselineConfidence === "none" ? (
+                                    <p className="text-xs text-amber-600">
+                                      {baselineBadgeLabel(
+                                        vm.deal.historicBaselineBucketUsed,
+                                      )}
+                                    </p>
+                                  ) : null}
+                                </div>
+                                <WatchlistStarButton
+                                  cardId={cardId ?? undefined}
+                                  cardName={cardName ?? undefined}
+                                  setName={setName ?? null}
+                                  className="flex-shrink-0"
                                 />
                               </div>
-                            ) : (
-                              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
-                            )}
-                            <div className="flex min-w-0 flex-1 items-start gap-2">
-                              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                <CardIdentityBlock
-                                  identity={buildCardIdentityFromDeal(vm.deal)}
-                                  primaryHref={vm.affiliateUrl}
-                                  showListingTitle={isNewestVariant}
-                                  showViewCardLink
+                            </div>
+                          </td>
+                          <td className={`${colClass("total", variant)} px-3 py-4 align-middle text-right`}>
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="text-base font-semibold">
+                                {formatUSD(vm.totalUsd)}
+                              </span>
+                              {vm.whyDeal ? (
+                                <WhyDealHint
+                                  label={vm.whyDeal.label}
+                                  tooltip={vm.whyDeal.tooltip}
+                                  className="text-xs text-slate-500"
                                 />
-                                {vm.deal.historicBaselineConfidence === "none" ? (
-                                  <p className="text-xs text-amber-600">
-                                    {baselineBadgeLabel(
-                                      vm.deal.historicBaselineBucketUsed,
-                                    )}
-                                  </p>
+                              ) : null}
+                              {formatFreshness(vm.deal.updatedAt) && (
+                                <span className="text-xs text-slate-500">
+                                  {formatFreshness(vm.deal.updatedAt)}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className={`${colClass("historic", variant)} px-3 py-4 align-middle text-right text-base text-slate-600`}>
+                            {formatUSD(vm.historicUsd)}
+                          </td>
+                          <td
+                            className={`${colClass("discount", variant)} ${discountClass(
+                              vm.discountPercent,
+                            )} whitespace-nowrap px-3 py-4 align-middle text-right text-base font-semibold`}
+                          >
+                            {formatDiscount(vm.discountPercent)}
+                          </td>
+                          {!isNewestVariant && variant !== "default" ? (
+                            <td className={`${colClass("score", variant)} px-3 py-4 align-middle text-right text-base`}>
+                              <div className="flex flex-col items-end gap-1">
+                                <span className={`${scoreClass(vm.score)} font-semibold`}>
+                                  {formatScore(vm.score)}
+                                </span>
+                                <TooltipPopover
+                                  content={CONFIDENCE_TOOLTIP}
+                                  triggerClassName={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
+                                    vm.priceConfidenceLabel,
+                                  )}`}
+                                >
+                                  {getConfidenceDisplayText(vm.priceConfidenceLabel)}
+                                </TooltipPopover>
+                              </div>
+                            </td>
+                          ) : null}
+                          {variant !== "default" ? (
+                            <td className={`${colClass("confidence", variant)} px-3 py-4 align-middle`}>
+                              <ConfidenceChip
+                                weightLabel={vm.priceConfidenceLabel}
+                                sampleSize={vm.sampleSize}
+                                center={isNewestVariant}
+                              />
+                            </td>
+                          ) : null}
+                          <td className={`${colClass("seller", variant)} px-3 py-4 align-middle text-left text-sm text-slate-700`}>
+                            <div className="flex min-w-0 items-start gap-2">
+                              <div className="min-w-0">
+                                <span
+                                  className={`flex min-w-0 items-center gap-1 ${isNewestVariant ? "max-w-[100px]" : ""
+                                    }`}
+                                >
+                                  <SellerNameWithTooltip
+                                    seller={getSellerDisplayData({
+                                      username: vm.deal.sellerUsername,
+                                      storeName: vm.deal.sellerStoreName,
+                                      feedbackCount: vm.deal.sellerFeedbackCount,
+                                      feedbackPercent: vm.deal.sellerPositivePercent,
+                                    })}
+                                    className="truncate text-slate-600"
+                                  />
+                                  {vm.trustedSeller ? (
+                                    <TrustedBadge className="flex-none" />
+                                  ) : null}
+                                </span>
+                                {sellerSalesBadge || sellerSeenBadge ? (
+                                  <div className="mt-0.5 space-y-0.5">
+                                    {sellerSalesBadge}
+                                    {sellerSeenBadge}
+                                  </div>
                                 ) : null}
                               </div>
-                              <WatchlistStarButton
-                                cardId={cardId ?? undefined}
-                                cardName={cardName ?? undefined}
-                                setName={setName ?? null}
-                                className="flex-shrink-0"
-                              />
                             </div>
-                          </div>
-                        </td>
-                      <td className={`${colClass("total", variant)} px-3 py-4 align-middle text-right`}>
-                        <div className="flex flex-col items-end gap-0.5">
-                          <span className="text-base font-semibold">
-                            {formatUSD(vm.totalUsd)}
-                          </span>
-                          {vm.whyDeal ? (
-                            <WhyDealHint
-                              label={vm.whyDeal.label}
-                              tooltip={vm.whyDeal.tooltip}
-                              className="text-xs text-slate-500"
-                            />
-                          ) : null}
-                          {formatFreshness(vm.deal.updatedAt) && (
-                            <span className="text-xs text-slate-500">
-                              {formatFreshness(vm.deal.updatedAt)}
+                          </td>
+                          <td className={`${colClass("market", variant)} px-3 py-4 align-middle text-left text-sm text-slate-600${isNewestVariant ? " whitespace-normal break-words" : ""
+                            }`}>
+                            <span className="inline-flex items-center gap-1">
+                              <span aria-hidden="true">
+                                <MarketFlag market={vm.deal.market ?? DEFAULT_MARKET} />
+                              </span>
+                              <span aria-hidden="true">
+                                {formatMarket(vm.deal.market).compactLabel}
+                              </span>
+                              <span className="sr-only">
+                                {formatMarket(vm.deal.market).label}
+                              </span>
                             </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className={`${colClass("historic", variant)} px-3 py-4 align-middle text-right text-base text-slate-600`}>
-                        {formatUSD(vm.historicUsd)}
-                      </td>
-                      <td
-                        className={`${colClass("discount", variant)} ${discountClass(
-                          vm.discountPercent,
-                        )} whitespace-nowrap px-3 py-4 align-middle text-right text-base font-semibold`}
-                      >
-                        {formatDiscount(vm.discountPercent)}
-                      </td>
-                      {!isNewestVariant && variant !== "default" ? (
-                        <td className={`${colClass("score", variant)} px-3 py-4 align-middle text-right text-base`}>
-                          <div className="flex flex-col items-end gap-1">
-                            <span className={`${scoreClass(vm.score)} font-semibold`}>
-                              {formatScore(vm.score)}
-                            </span>
-                            <TooltipPopover
-                              content={CONFIDENCE_TOOLTIP}
-                              triggerClassName={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
-                                vm.priceConfidenceLabel,
-                              )}`}
-                            >
-                              {getConfidenceDisplayText(vm.priceConfidenceLabel)}
-                            </TooltipPopover>
-                          </div>
-                        </td>
-                      ) : null}
-                      {variant !== "default" ? (
-                        <td className={`${colClass("confidence", variant)} px-3 py-4 align-middle`}>
-                          <ConfidenceChip
-                            weightLabel={vm.priceConfidenceLabel}
-                            sampleSize={vm.sampleSize}
-                            center={isNewestVariant}
-                          />
-                        </td>
-                      ) : null}
-                      <td className={`${colClass("seller", variant)} px-3 py-4 align-middle text-left text-sm text-slate-700`}>
-                        <div className="flex min-w-0 items-start gap-2">
-                          <div className="min-w-0">
-                            <span
-                              className={`flex min-w-0 items-center gap-1 ${
-                                isNewestVariant ? "max-w-[100px]" : ""
-                              }`}
-                            >
-                              <SellerNameWithTooltip
-                                seller={getSellerDisplayData({
-                                  username: vm.deal.sellerUsername,
-                                  storeName: vm.deal.sellerStoreName,
-                                  feedbackCount: vm.deal.sellerFeedbackCount,
-                                  feedbackPercent: vm.deal.sellerPositivePercent,
-                                })}
-                                className="truncate text-slate-600"
+                          </td>
+                          <td className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}>
+                            {renderEndsValue(vm.deal.endsAt)}
+                          </td>
+                          {isAdmin ? (
+                            <td className="px-3 py-4 align-middle text-sm">
+                              <AdminDealActions
+                                listingId={
+                                  vm.deal.listingId
+                                    ? Number(vm.deal.listingId)
+                                    : vm.deal.id
+                                }
+                                sellerUsername={vm.deal.sellerUsername}
+                                isAdmin={isAdmin}
                               />
-                              {vm.trustedSeller ? (
-                                <TrustedBadge className="flex-none" />
-                              ) : null}
-                            </span>
-                            {sellerSalesBadge || sellerSeenBadge ? (
-                              <div className="mt-0.5 space-y-0.5">
-                                {sellerSalesBadge}
-                                {sellerSeenBadge}
-                              </div>
-                            ) : null}
-                          </div>
-                        </div>
-                      </td>
-                      <td className={`${colClass("market", variant)} px-3 py-4 align-middle text-left text-sm text-slate-600${
-                        isNewestVariant ? " whitespace-normal break-words" : ""
-                      }`}>
-                        <span className="inline-flex items-center gap-1">
-                          <span aria-hidden="true">
-                            <MarketFlag market={vm.deal.market ?? DEFAULT_MARKET} />
-                          </span>
-                          <span aria-hidden="true">
-                            {formatMarket(vm.deal.market).compactLabel}
-                          </span>
-                          <span className="sr-only">
-                            {formatMarket(vm.deal.market).label}
-                          </span>
-                        </span>
-                      </td>
-                      <td className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}>
-                      {renderEndsValue(vm.deal.endsAt)}
-                      </td>
-                      {isAdmin ? (
-                        <td className="px-3 py-4 align-middle text-sm">
-                          <AdminDealActions
-                            listingId={
-                              vm.deal.listingId
-                                ? Number(vm.deal.listingId)
-                                : vm.deal.id
-                            }
-                            sellerUsername={vm.deal.sellerUsername}
-                            isAdmin={isAdmin}
-                          />
-                        </td>
-                      ) : null}
-                    </tr>
+                            </td>
+                          ) : null}
+                        </tr>
                       );
                     })
                   )}
@@ -1231,118 +1229,118 @@ export default function DealsTable({
                     </div>
                   </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-3 text-base">
-                  <div>
-                    <p className="text-slate-500">{getHeaderLabel("total", "Total USD")}</p>
-                    <p className="text-base font-semibold text-slate-900">
-                      {formatUSD(vm.totalUsd)}
-                    </p>
-                    {vm.whyDeal ? (
-                      <WhyDealHint
-                        label={vm.whyDeal.label}
-                        tooltip={vm.whyDeal.tooltip}
-                        className="text-xs text-slate-500"
-                      />
-                    ) : null}
-                    {formatFreshness(vm.deal.updatedAt) && (
-                      <p className="text-xs text-slate-500">
-                        {formatFreshness(vm.deal.updatedAt)}
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-base">
+                    <div>
+                      <p className="text-slate-500">{getHeaderLabel("total", "Total USD")}</p>
+                      <p className="text-base font-semibold text-slate-900">
+                        {formatUSD(vm.totalUsd)}
                       </p>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-slate-500">{getHeaderLabel("historic", "Historic USD")}</p>
-                    <p className="text-base">{formatUSD(vm.historicUsd)}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500">{getHeaderLabel("discount", "Discount")}</p>
-                    <p className={`${discountClass(vm.discountPercent)} text-base`}>
-                      {formatDiscount(vm.discountPercent)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500">Score</p>
-                    <div className="flex flex-col gap-1">
-                      <p className={`${scoreClass(vm.score)} text-base`}>
-                        {formatScore(vm.score)}
+                      {vm.whyDeal ? (
+                        <WhyDealHint
+                          label={vm.whyDeal.label}
+                          tooltip={vm.whyDeal.tooltip}
+                          className="text-xs text-slate-500"
+                        />
+                      ) : null}
+                      {formatFreshness(vm.deal.updatedAt) && (
+                        <p className="text-xs text-slate-500">
+                          {formatFreshness(vm.deal.updatedAt)}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-slate-500">{getHeaderLabel("historic", "Historic USD")}</p>
+                      <p className="text-base">{formatUSD(vm.historicUsd)}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">{getHeaderLabel("discount", "Discount")}</p>
+                      <p className={`${discountClass(vm.discountPercent)} text-base`}>
+                        {formatDiscount(vm.discountPercent)}
                       </p>
-                      <TooltipPopover
-                        content={CONFIDENCE_TOOLTIP}
-                        triggerClassName={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
-                          vm.priceConfidenceLabel,
-                        )}`}
-                      >
-                        {getConfidenceDisplayText(vm.priceConfidenceLabel)}
-                      </TooltipPopover>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Score</p>
+                      <div className="flex flex-col gap-1">
+                        <p className={`${scoreClass(vm.score)} text-base`}>
+                          {formatScore(vm.score)}
+                        </p>
+                        <TooltipPopover
+                          content={CONFIDENCE_TOOLTIP}
+                          triggerClassName={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
+                            vm.priceConfidenceLabel,
+                          )}`}
+                        >
+                          {getConfidenceDisplayText(vm.priceConfidenceLabel)}
+                        </TooltipPopover>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-                  <span>
-                    Confidence: {getConfidenceLabel(vm.sampleSize)}
-                  </span>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="flex items-center gap-1">
-                      <span className="text-slate-500">Seller:</span>
-                      <SellerNameWithTooltip
-                        seller={getSellerDisplayData({
-                          username: vm.deal.sellerUsername,
-                          storeName: vm.deal.sellerStoreName,
-                          feedbackCount: vm.deal.sellerFeedbackCount,
-                          feedbackPercent: vm.deal.sellerPositivePercent,
-                        })}
-                        className="text-slate-600"
-                      />
-                      {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                    <span>
+                      Confidence: {getConfidenceLabel(vm.sampleSize)}
                     </span>
-                    {sellerSalesBadge || sellerSeenBadge ? (
-                      <div className="space-y-0.5">
-                        {sellerSalesBadge}
-                        {sellerSeenBadge}
-                      </div>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="flex items-center gap-1">
+                        <span className="text-slate-500">Seller:</span>
+                        <SellerNameWithTooltip
+                          seller={getSellerDisplayData({
+                            username: vm.deal.sellerUsername,
+                            storeName: vm.deal.sellerStoreName,
+                            feedbackCount: vm.deal.sellerFeedbackCount,
+                            feedbackPercent: vm.deal.sellerPositivePercent,
+                          })}
+                          className="text-slate-600"
+                        />
+                        {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
+                      </span>
+                      {sellerSalesBadge || sellerSeenBadge ? (
+                        <div className="space-y-0.5">
+                          {sellerSalesBadge}
+                          {sellerSeenBadge}
+                        </div>
+                      ) : null}
+                    </div>
+                    <span>
+                      <span aria-hidden="true">
+                        Market: {formatMarket(vm.deal.market).compactLabel}
+                      </span>
+                      <span className="sr-only">
+                        Market: {formatMarket(vm.deal.market).label}
+                      </span>
+                    </span>
+                    {vm.trustedSeller ? (
+                      <span className="inline-flex items-center gap-1">
+                        <TrustedBadge />
+                        Trusted
+                      </span>
                     ) : null}
+                    {(() => {
+                      const endsDisplay = getEndsAtDisplay(vm.deal.endsAt);
+                      return (
+                        <TooltipPopover content={endsDisplay.tooltip}>
+                          Ends {endsDisplay.label}
+                        </TooltipPopover>
+                      );
+                    })()}
                   </div>
-                  <span>
-                    <span aria-hidden="true">
-                      Market: {formatMarket(vm.deal.market).compactLabel}
-                    </span>
-                    <span className="sr-only">
-                      Market: {formatMarket(vm.deal.market).label}
-                    </span>
-                  </span>
-                  {vm.trustedSeller ? (
-                    <span className="inline-flex items-center gap-1">
-                      <TrustedBadge />
-                      Trusted
-                    </span>
-                  ) : null}
-                  {(() => {
-                    const endsDisplay = getEndsAtDisplay(vm.deal.endsAt);
-                    return (
-                      <TooltipPopover content={endsDisplay.tooltip}>
-                        Ends {endsDisplay.label}
-                      </TooltipPopover>
-                    );
-                  })()}
-                </div>
 
-                {isAdmin ? (
-                  <div className="mt-3">
-                    <AdminDealActions
-                      listingId={
-                        vm.deal.listingId
-                          ? Number(vm.deal.listingId)
-                          : vm.deal.id
-                      }
-                      sellerUsername={vm.deal.sellerUsername}
-                      isAdmin={isAdmin}
-                    />
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
+                  {isAdmin ? (
+                    <div className="mt-3">
+                      <AdminDealActions
+                        listingId={
+                          vm.deal.listingId
+                            ? Number(vm.deal.listingId)
+                            : vm.deal.id
+                        }
+                        sellerUsername={vm.deal.sellerUsername}
+                        isAdmin={isAdmin}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </>
       ) : (
@@ -1387,9 +1385,9 @@ export default function DealsTable({
           disabled={
             serverMode
               ? !remoteMeta ||
-                remoteLoading ||
-                (remoteMeta.totalPages != null &&
-                  remoteMeta.page >= remoteMeta.totalPages)
+              remoteLoading ||
+              (remoteMeta.totalPages != null &&
+                remoteMeta.page >= remoteMeta.totalPages)
               : currentPage >= totalPages
           }
         >

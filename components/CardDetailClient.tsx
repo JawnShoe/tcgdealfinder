@@ -1370,7 +1370,7 @@ export default function CardDetailClient({
                       })()}
                     </td>
                     <td className="px-3 py-4 align-middle text-right text-slate-600">
-                      <TooltipPopover content={getEndsAtDisplay(listing.endsAt).tooltip} tooltipClassName="min-w-[220px]">
+                      <TooltipPopover content={getEndsAtDisplay(listing.endsAt).tooltip} tooltipClassName="min-w-[220px]" usePortal={true}>
                         {getEndsAtDisplay(listing.endsAt).label}
                       </TooltipPopover>
                     </td>

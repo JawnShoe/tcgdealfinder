@@ -29,6 +29,7 @@ export function TooltipPopover({
   const [isPinned, setIsPinned] = useState(false);
   const [isHoverCapable, setIsHoverCapable] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const tooltipId = useId();
@@ -104,7 +105,7 @@ export function TooltipPopover({
       window.removeEventListener("scroll", updatePosition, true);
       window.removeEventListener("resize", updatePosition);
     };
-  }, [usePortal, side, isPinned]);
+  }, [usePortal, side, isOpen]);
 
   const sizeHoverClasses =
     size === "wide"
@@ -115,7 +116,7 @@ export function TooltipPopover({
           ? "peer-hover:max-w-[240px] peer-focus-visible:max-w-[240px] peer-hover:w-max peer-focus-visible:w-max"
           : "peer-hover:max-w-sm peer-focus-visible:max-w-sm";
 
-  const sizePinnedClasses =
+  const sizeOpenClasses =
     size === "wide"
       ? "max-w-[320px] w-max"
       : size === "medium"
@@ -124,11 +125,15 @@ export function TooltipPopover({
           ? "max-w-[240px] w-max"
           : "max-w-sm";
 
-  const bubbleClasses = isHoverCapable
-    ? `invisible max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none peer-hover:visible peer-hover:max-h-96 peer-hover:overflow-visible peer-hover:opacity-100 peer-focus-visible:visible peer-focus-visible:max-h-96 peer-focus-visible:overflow-visible peer-focus-visible:opacity-100 ${sizeHoverClasses}`
-    : isPinned
-      ? `visible max-h-96 overflow-visible opacity-100 pointer-events-auto ${sizePinnedClasses}`
-      : "invisible max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none";
+  const bubbleClasses = usePortal
+    ? isOpen
+      ? `visible max-h-96 overflow-visible opacity-100 pointer-events-auto ${sizeOpenClasses}`
+      : "invisible max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none"
+    : isHoverCapable
+      ? `invisible max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none peer-hover:visible peer-hover:max-h-96 peer-hover:overflow-visible peer-hover:opacity-100 peer-focus-visible:visible peer-focus-visible:max-h-96 peer-focus-visible:overflow-visible peer-focus-visible:opacity-100 ${sizeHoverClasses}`
+      : isPinned
+        ? `visible max-h-96 overflow-visible opacity-100 pointer-events-auto ${sizeOpenClasses}`
+        : "invisible max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none";
 
   const positionClass = side === "top" ? "bottom-full mb-2" : "top-full mt-2";
 
@@ -156,6 +161,26 @@ export function TooltipPopover({
         aria-haspopup="dialog"
         aria-expanded={isTouch ? isPinned : undefined}
         aria-describedby={tooltipId}
+        onMouseEnter={() => {
+          if (usePortal && isHoverCapable) {
+            setIsOpen(true);
+          }
+        }}
+        onMouseLeave={() => {
+          if (usePortal && isHoverCapable) {
+            setIsOpen(false);
+          }
+        }}
+        onFocus={() => {
+          if (usePortal && isHoverCapable) {
+            setIsOpen(true);
+          }
+        }}
+        onBlur={() => {
+          if (usePortal && isHoverCapable) {
+            setIsOpen(false);
+          }
+        }}
         onClick={() => {
           if (isHoverCapable) {
             return;

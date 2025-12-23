@@ -135,7 +135,7 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                     <span aria-hidden="true">
                       <MarketFlag market={deal.market} />
                     </span>
-                    <span aria-hidden="true">{market.code}</span>
+                    <span aria-hidden="true">{market.compactLabel}</span>
                     <span className="sr-only">{market.label}</span>
                   </span>
                 </div>

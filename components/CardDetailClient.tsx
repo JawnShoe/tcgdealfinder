@@ -27,6 +27,7 @@ import {
 import {
   discountClass,
   formatCurrency,
+  formatMarket,
   formatUSD,
   formatDiscount,
   getEndsAtDisplay,
@@ -1350,16 +1351,17 @@ export default function CardDetailClient({
                         const normalized = normalizeMarketCode(listing.market);
                         const marketCode =
                           normalized === "all" ? DEFAULT_MARKET : normalized;
+                        const { label, compactLabel } = formatMarket(marketCode);
                         return (
                           <span className="inline-flex items-center gap-1">
                             <span aria-hidden="true">
                               <MarketFlag market={marketCode} />
                             </span>
-                            <span aria-hidden="true" className="text-sm text-slate-700">
-                              {getMarketEmoji(marketCode)}
+                            <span aria-hidden="true" >
+                              {compactLabel}
                             </span>
                             <span className="sr-only">
-                              {getMarketLabel(marketCode)}
+                              {label}
                             </span>
                           </span>
                         );

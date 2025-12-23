@@ -79,7 +79,7 @@ export function TooltipPopover({
     size === "wide"
       ? "peer-hover:max-w-[320px] peer-focus-visible:max-w-[320px] peer-hover:w-fit peer-focus-visible:w-fit"
       : size === "medium"
-        ? "peer-hover:min-w-[200px] peer-hover:max-w-[280px] peer-focus-visible:min-w-[200px] peer-focus-visible:max-w-[280px] peer-hover:w-fit peer-focus-visible:w-fit"
+        ? "peer-hover:max-w-[280px] peer-focus-visible:max-w-[280px] peer-hover:w-fit peer-focus-visible:w-fit"
         : size === "compact"
           ? "peer-hover:max-w-[240px] peer-focus-visible:max-w-[240px] peer-hover:w-fit peer-focus-visible:w-fit"
           : "peer-hover:max-w-sm peer-focus-visible:max-w-sm";
@@ -88,7 +88,7 @@ export function TooltipPopover({
     size === "wide"
       ? "max-w-[320px] w-fit"
       : size === "medium"
-        ? "min-w-[200px] max-w-[280px] w-fit"
+        ? "max-w-[280px] w-fit"
         : size === "compact"
           ? "max-w-[240px] w-fit"
           : "max-w-sm";
@@ -131,7 +131,7 @@ export function TooltipPopover({
       <span
         id={tooltipId}
         role="tooltip"
-        className={`absolute left-0 ${positionClass} z-50 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs leading-snug text-slate-700 shadow-lg transition-opacity ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
+        className={`absolute left-0 ${positionClass} z-50 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-normal normal-case leading-snug text-slate-700 shadow-lg transition-opacity ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
       >
         {content}
       </span>

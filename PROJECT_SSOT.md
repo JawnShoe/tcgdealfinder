@@ -318,6 +318,18 @@ ACTIVE WORK: NONE
 - **Status**: COMPLETE (2025-12-22)
 - **Commits**: 3fc6480, 4e1ff04, 7bcb528, 5e8bc95, 8c1a972, 1179cf1
 
+### TooltipPopover phase 2 polish (3 commits)
+- **Change**: Additional tooltip sizing fixes for Data Reliability header casing, filter tooltip isolation, WhyDeal sizing, sortability, and w-max systemic fix.
+  - `15940b8`: DATA RELIABILITY casing + filter tooltip isolation (label/select separation) + WhyDeal tooltipClassName override attempt
+  - `778dd8c`: WhyDeal state-specific w-auto override + Data Reliability wide tooltip + sortable header (confidence sort logic + interactive attrs) + CardDetail uniformity (caps + wide tooltip)
+  - `45843ff`: Replaced w-fit with w-max in TooltipPopover size classes (compact/medium/wide) to eliminate blank-right + tall/skinny variance; cleaned up WhyDealHint redundant override
+- **Routes/components**: `components/TooltipPopover.tsx`, `components/WhyDealHint.tsx`, `components/DealsTable.tsx`, `components/CardDetailClient.tsx`, `lib/tableColumns.tsx`
+- **Classification**: UI parity / consistency (bug fix for tooltip sizing/layout + sortability feature)
+- **Blast radius**: Tooltip rendering + table headers + filter labels
+- **Status**: COMPLETE (2025-12-22)
+- **Commits**: 15940b8, 778dd8c, 45843ff
+- **Restorepoints**: `T:\Projects\restorepoints\tooltip-phase2-15940b8.bundle`, `T:\Projects\restorepoints\tooltip-phase3-778dd8c.bundle`, `T:\Projects\restorepoints\tooltip-wmax-45843ff.bundle`
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

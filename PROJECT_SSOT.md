@@ -330,6 +330,28 @@ ACTIVE WORK: NONE
 - **Commits**: 15940b8, 778dd8c, 45843ff
 - **Restorepoints**: `T:\Projects\restorepoints\tooltip-phase2-15940b8.bundle`, `T:\Projects\restorepoints\tooltip-phase3-778dd8c.bundle`, `T:\Projects\restorepoints\tooltip-wmax-45843ff.bundle`
 
+### Tooltip readability + UK/GB label consistency + CardDetail market sizing parity
+- **Change**: Additional tooltip min-width fixes + UK/GB display consistency + CardDetail MARKET column sizing alignment.
+  - `8309670`: TrustedBadge + Ends column tooltip min-width (220px) to prevent tall/skinny wrapping; MarketColumn changed from {code} to {compactLabel} to display "UK" instead of "GB"; CardDetail MARKET cell sizing changed from text-xs text-slate-500 to text-sm text-slate-700 to match TABLE_TD standard
+- **Routes/components**: `components/TrustedBadge.tsx`, `lib/tableColumns.tsx`, `components/CardDetailClient.tsx`
+- **Classification**: UI parity / consistency (bug fix for tooltip readability + label consistency + sizing parity)
+- **Blast radius**: Tooltip rendering + market label display + card detail table styling
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: 8309670
+- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_phase2_tooltip_polish.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_phase2_tooltip_polish.bundle`
+- **Verification**: Lint ✓, Build ✓ (39 routes)
+
+### Eliminate remaining "GB" labels + CardDetail MARKET sizing parity
+- **Change**: Final GB → UK display fixes + CardDetail MARKET pattern alignment with standard tables.
+  - `5e95d4b`: FeaturedDeals changed market.code to market.compactLabel to display "UK" instead of "GB"; CardDetailClient added formatMarket import, replaced getMarketEmoji() (double flag) with compactLabel (UK text), removed custom text-sm text-slate-700 class to inherit table cell typography, now matches MarketColumn pattern (flag + "UK" + sr-only label)
+- **Routes/components**: `components/FeaturedDeals.tsx`, `components/CardDetailClient.tsx`
+- **Classification**: UI parity / consistency (bug fix for label consistency + eliminate double-flag rendering + sizing parity)
+- **Blast radius**: Homepage featured deals + card detail deals table MARKET column
+- **Status**: COMPLETE (2025-12-22)
+- **Commit**: 5e95d4b
+- **Restorepoints**: `t:/Projects/tcg-deal-finder/restorepoint_pre_gb_uk_fix.bundle`, `t:/Projects/tcg-deal-finder/restorepoint_post_gb_uk_fix.bundle`
+- **Verification**: Lint ✓, Build ✓ (39 routes)
+
 ## COMPLETED (2025-12-21)
 
 ### Data reliability label completion (follow-up fix)

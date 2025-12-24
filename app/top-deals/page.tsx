@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import TopDealsClient from "../../components/TopDealsClient";
 import { query } from "../../lib/db";
 import type { Deal } from "../../types/deal";

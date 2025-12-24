@@ -1,4 +1,6 @@
-﻿import Link from "next/link";
+export const dynamic = 'force-dynamic';
+
+import Link from "next/link";
 
 import { query } from "../../lib/db";
 import { PAGE_TITLE, PAGE_SUBTITLE } from "../../lib/typography";

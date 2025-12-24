@@ -34,7 +34,10 @@ type IntegrityRow = {
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const hasIntegrityColumns = await ensureListingsIntegrityColumns();
   if (!hasIntegrityColumns) {
-    throw new Error(LISTINGS_INTEGRITY_MISSING_MESSAGE);
+    return NextResponse.json(
+      { error: LISTINGS_INTEGRITY_MISSING_MESSAGE },
+      { status: 500 },
+    );
   }
   const params: Record<string, string | string[] | undefined> = {};
   request.nextUrl.searchParams.forEach((value, key) => {

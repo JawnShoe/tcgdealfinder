@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import DealsTable from "../../components/DealsTable";
 import type { Deal } from "../../types/deal";
 import { query } from "../../lib/db";

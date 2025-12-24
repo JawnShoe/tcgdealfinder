@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import EndingSoonClient from "../../components/EndingSoonClient";
 import { query } from "../../lib/db";
 import type { Deal } from "../../types/deal";

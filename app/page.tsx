@@ -17,6 +17,8 @@ import {
 
 async function getHomePageDeals(): Promise<DealsApiResponse> {
   const PAGE_SIZE = 50;
+  // Intentional TypeScript error for CI drill
+  const shouldFailBuild: string = thisVariableDoesNotExist;
   const cookieMarket = cookies().get(MARKET_COOKIE_NAME)?.value ?? null;
   const geoCountry = getGeoCountryFromHeaders(headers());
   const market = resolveMarketPreference(cookieMarket, geoCountry);

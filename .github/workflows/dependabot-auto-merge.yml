@@ -1,0 +1,73 @@
+name: Dependabot Auto-Merge
+
+# Auto-merge safe Dependabot PRs after required checks pass
+# - Only patch/minor semver updates (not major)
+# - Only for PRs targeting main
+# - Only after 'Lint & Build' required check passes
+# - Major updates receive comment + require manual review
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Auto-merge safe Dependabot PRs
+    runs-on: ubuntu-latest
+
+    # Only run for Dependabot PRs
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Check if update is safe for auto-merge
+        id: check-safe
+        run: |
+          echo "Update type: ${{ steps.metadata.outputs.update-type }}"
+          echo "Package ecosystem: ${{ steps.metadata.outputs.package-ecosystem }}"
+
+          # Only allow patch and minor updates (not major)
+          if [[ "${{ steps.metadata.outputs.update-type }}" == "version-update:semver-patch" ]] || \
+             [[ "${{ steps.metadata.outputs.update-type }}" == "version-update:semver-minor" ]]; then
+            echo "safe=true" >> $GITHUB_OUTPUT
+            echo "✅ Safe for auto-merge: ${{ steps.metadata.outputs.update-type }}"
+          else
+            echo "safe=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Not safe for auto-merge: ${{ steps.metadata.outputs.update-type }}"
+            echo "Major updates require manual review and migration PR."
+          fi
+
+      - name: Enable auto-merge for safe updates
+        if: steps.check-safe.outputs.safe == 'true'
+        run: |
+          echo "Enabling auto-merge for PR #${{ github.event.pull_request.number }}"
+          echo "Auto-merge will complete only after required 'Lint & Build' check passes"
+          gh pr merge --auto --squash "${{ github.event.pull_request.number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Comment on major updates
+        if: steps.check-safe.outputs.safe == 'false'
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" --body \
+            "⚠️ **Major version update detected** - not auto-merging.
+
+            Major updates require:
+            - Manual review
+            - Migration PR with testing
+            - Explicit approval before merge
+
+            This PR will remain open for manual review or can be closed if a separate migration PR is preferred."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}

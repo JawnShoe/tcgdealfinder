@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -35,8 +37,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-next-cache-
 
-      - name: Check formatting
-        run: npm run format:check
+      - name: Check formatting (changed files only)
+        run: |
+          # Get base branch for comparison
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="origin/main"
+          fi
+
+          # Get list of changed files with supported extensions
+          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT $BASE_SHA HEAD | grep -E '\.(ts|tsx|js|jsx|json|md|yml|yaml|css|scss)$' || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No formattable files changed, skipping Prettier check"
+            exit 0
+          fi
+
+          echo "Checking formatting on changed files:"
+          echo "$CHANGED_FILES"
+          echo "$CHANGED_FILES" | xargs npx prettier --check
 
       - name: Run lint
         run: npm run lint

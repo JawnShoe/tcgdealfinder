@@ -32,6 +32,7 @@
 - Repo Hardening Pack A — Operational Runbooks (2025-12-24): Added 5 operational docs: BACKUP_POLICY.md (remote source of truth + restorepoint strategy), ENV_RUNBOOK.md (required env vars + .env.example alignment policy), DB_MIGRATIONS_RUNBOOK.md (apply/rollback/verify workflow), RELEASES.md (tagging + changelog conventions), DEFINITION_OF_READY.md (feature planning checklist). Updated docs/INDEX.md with "Operational Runbooks" section. Classification: Docs-only. Commit: 36911f8. PR: #19 (merged).
 - Repo Hardening Pack B — Prettier Formatting Gate (2025-12-24): Added Prettier config (.prettierrc.json, .prettierignore) + format/format:check scripts + CI enforcement via "Check formatting (changed files only)" step. Gate applies to changed files only (baseline not yet formatted) to allow incremental adoption. No mass reformatting. Prettier 3.4.2 added to devDependencies. Classification: Config + CI tooling. Commits: e0e4fa6, ce1e5b4, f19aea6, 1459e21. PR: #20 (merged).
 - Repo Hardening Pack C — Minimal Observability (2025-12-24): Enhanced /api/health endpoint to return JSON with `ok: true` + metadata (timestamp, service, version, node). No secrets exposed, no DB requirement. Explicit runtime exception (touched app/api/health/route.ts). Classification: Feature enhancement (minimal observability baseline). Commit: 8ab24b0. PR: #21 (merged).
+- Repo Hardening Pack D — Dependency Hygiene Automation (2025-12-24): Added GitHub Action to auto-merge safe Dependabot PRs (patch/minor updates only; major updates require manual review). Workflow enables auto-merge only when CI passes and semver indicates patch/minor. Major updates receive comment explaining manual review requirement. Monthly dependency sweep reminder added to SSOT. Classification: CI automation (dependency safety gate). Commit: [pending]. PR: [pending].
 - Restorepoint bundle for SSOT commit e7e0717: `T:\Projects\restorepoints\tcg-deal-finder_ssot-e7e0717_restorepoint.bundle`.
 - Restorepoint bundle for admin UI fixes (2025-12-22): `T:\Projects\restorepoints\admin-ui-8b6003c.bundle`.
 - Restorepoint bundle for pre-Tailwind v4 migration (2025-12-24): `t:\Projects\tcg-deal-finder-pre-tailwind-v4-migration.bundle` (HEAD: 1861b7f).
@@ -87,6 +88,22 @@
 
 **Performance Notes**:
 - **"More from this set" query** (2025-12-18): The `getCardsFromSameSet()` query filters by `set_name` with LIMIT 6. Current schema has a UNIQUE constraint index on (name, set_name, card_number, condition_bucket), but set_name is not the leading column. Query performance is acceptable for current dataset size, but may benefit from a dedicated index on `cards(set_name)` if card count grows significantly. Recommendation: Monitor query performance; add `CREATE INDEX cards_set_name_idx ON cards(set_name)` if needed.
+
+### Dependency Hygiene Policy (Pack D)
+
+**Automation Rules**:
+- **Patch/minor updates**: Auto-merged by GitHub Action after CI passes (Lint & Build green)
+- **Major updates**: Require manual review + migration PR + explicit approval
+- **Stale PRs**: Close if superseded by manual migration (e.g., Tailwind v4, Next.js major bumps)
+
+**Monthly Dependency Sweep Checklist** (first Monday of each month):
+1. Review all open Dependabot PRs (check for majors blocking minors)
+2. Close stale/obsolete PRs (already manually migrated)
+3. Verify auto-merge is working (check workflow runs)
+4. Audit `npm outdated` for major updates requiring planning
+5. Document any deferred major updates with rationale
+
+**Policy Rationale**: Automated patch/minor updates reduce maintenance burden while major updates receive proper testing and migration planning to prevent breaking changes.
 
 ---
 

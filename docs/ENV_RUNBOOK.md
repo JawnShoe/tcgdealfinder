@@ -41,8 +41,7 @@
 
 | Variable | Required | Purpose | Example |
 |----------|----------|---------|---------|
-| `SENTRY_DSN` | No | Sentry error tracking DSN (server-side) | `https://...@sentry.io/...` |
-| `NEXT_PUBLIC_SENTRY_DSN` | No | Sentry error tracking DSN (client-side) | `https://...@sentry.io/...` |
+| `SENTRY_DSN` | No | Sentry error tracking DSN (server-side only) | `https://...@sentry.io/...` |
 
 ---
 

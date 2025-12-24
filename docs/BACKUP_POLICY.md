@@ -35,6 +35,7 @@
 **Responsibility**: User discretion
 
 **Purpose**:
+
 - Quick rollback to known-good states
 - Recovery if remote history is accidentally damaged
 - Pre/post snapshots for risky operations

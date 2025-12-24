@@ -106,11 +106,13 @@
 ### Dependency Hygiene Policy (Pack D)
 
 **Automation Rules**:
+
 - **Patch/minor updates**: Auto-merged by GitHub Action after CI passes (Lint & Build green)
 - **Major updates**: Require manual review + migration PR + explicit approval
 - **Stale PRs**: Close if superseded by manual migration (e.g., Tailwind v4, Next.js major bumps)
 
 **Monthly Dependency Sweep Checklist** (first Monday of each month):
+
 1. Review all open Dependabot PRs (check for majors blocking minors)
 2. Close stale/obsolete PRs (already manually migrated)
 3. Verify auto-merge is working (check workflow runs)

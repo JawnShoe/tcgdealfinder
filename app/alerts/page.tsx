@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import Link from "next/link";
 import DealsTable from "../../components/DealsTable";
 import type { Deal } from "../../types/deal";
 import { query } from "../../lib/db";
@@ -153,9 +154,9 @@ export default async function AlertsPage() {
       {deals.length === 0 ? (
         <div className="panel space-y-3 text-center text-sm text-slate-600">
           <p>No alerts found in the last {WINDOW_HOURS} hours.</p>
-          <a href="/" className="inline-link">
+          <Link href="/" className="inline-link">
             Browse current deals
-          </a>
+          </Link>
         </div>
       ) : (
         <DealsTable deals={deals} page={1} totalPages={1} />

@@ -35,6 +35,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-next-cache-
 
+      - name: Check formatting
+        run: npm run format:check
+
       - name: Run lint
         run: npm run lint
 

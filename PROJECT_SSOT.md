@@ -22,7 +22,7 @@
 - Added GitHub Actions CI (2025-12-23): Workflow runs lint + build on push/PR to main. Package manager detected as npm (via package-lock.json). Node 20 LTS used (package.json engines: >=18.17.0). Minimal permissions (contents: read) + npm caching enabled. CI requires DATABASE_URL secret for build. Commits: 6b68fde, 9021756.
 - CI build fix (2025-12-23): Removed build-time DB dependency. DB-backed pages (top-deals, ending-soon, sets, alerts, catalog) forced dynamic rendering (`export const dynamic = 'force-dynamic'`). Debug integrity API route returns 500 error instead of throwing. Build no longer requires live DB connection. Commit: 2eec8f8.
 - Removed temporary CI hostname debug step (2025-12-23). Commit: 8e0ed98.
-- Added pre-commit hook (2025-12-23): Runs `npm run lint` before commits to catch ESLint errors locally. Lightweight gate (lint only, no build). Can bypass with `--no-verify`. Hook file: `.git/hooks/pre-commit` (not tracked in repo).
+- Standardized pre-commit via Husky (2025-12-23): Tracked hook runs `npm run lint`; replaces local `.git/hooks` approach. Husky installed as dev dependency, `prepare` script added to package.json, `.husky/pre-commit` tracked in repo. Reproducible across machines. Commit: c22b3a6.
 - Restorepoint bundle for SSOT commit e7e0717: `T:\Projects\restorepoints\tcg-deal-finder_ssot-e7e0717_restorepoint.bundle`.
 - Restorepoint bundle for admin UI fixes (2025-12-22): `T:\Projects\restorepoints\admin-ui-8b6003c.bundle`.
 

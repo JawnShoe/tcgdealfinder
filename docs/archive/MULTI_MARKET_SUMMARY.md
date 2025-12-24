@@ -82,7 +82,7 @@ CREATE TABLE fx_rates (
 
 ### 1. Run Migration
 ```powershell
-npx tsx run-migration.ts
+npx tsx scripts/one-off/run-migration.ts
 ```
 
 ### 2. View Current FX Rates

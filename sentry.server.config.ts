@@ -11,14 +11,20 @@ if (dsn) {
       // Scrub sensitive data from error messages
       if (event.message) {
         event.message = event.message
-          .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, "[EMAIL]")
+          .replace(
+            /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+            "[EMAIL]"
+          )
           .replace(/\b[A-Za-z0-9]{32,}\b/g, "[TOKEN]");
       }
       if (event.exception?.values) {
         event.exception.values.forEach((exception) => {
           if (exception.value) {
             exception.value = exception.value
-              .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, "[EMAIL]")
+              .replace(
+                /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+                "[EMAIL]"
+              )
               .replace(/\b[A-Za-z0-9]{32,}\b/g, "[TOKEN]");
           }
         });

@@ -10,38 +10,38 @@
 
 ### Core Application
 
-| Variable | Required | Purpose | Example |
-|----------|----------|---------|---------|
-| `DATABASE_URL` | Yes | Neon Postgres connection string | `postgresql://user:pass@host/db` |
+| Variable       | Required | Purpose                         | Example                          |
+| -------------- | -------- | ------------------------------- | -------------------------------- |
+| `DATABASE_URL` | Yes      | Neon Postgres connection string | `postgresql://user:pass@host/db` |
 
 ### eBay Integration
 
-| Variable | Required | Purpose | Example |
-|----------|----------|---------|---------|
-| `EBAY_APP_ID` | Yes | eBay Browse API app identifier | `YourAppI-YourApp-PRD-...` |
-| `EBAY_PARTNER_CAMPAIGN_ID` | No | eBay Partner Network campaign ID | `5338...` |
-| `EBAY_PARTNER_CUSTOM_ID` | No | eBay Partner Network custom tracking ID | `...` |
+| Variable                   | Required | Purpose                                 | Example                    |
+| -------------------------- | -------- | --------------------------------------- | -------------------------- |
+| `EBAY_APP_ID`              | Yes      | eBay Browse API app identifier          | `YourAppI-YourApp-PRD-...` |
+| `EBAY_PARTNER_CAMPAIGN_ID` | No       | eBay Partner Network campaign ID        | `5338...`                  |
+| `EBAY_PARTNER_CUSTOM_ID`   | No       | eBay Partner Network custom tracking ID | `...`                      |
 
 ### External APIs
 
-| Variable | Required | Purpose | Example |
-|----------|----------|---------|---------|
-| `POKEMONTCG_IO_API_KEY` | No* | PokémonTCG.io API key for catalog import | `abc123...` |
+| Variable                | Required | Purpose                                  | Example     |
+| ----------------------- | -------- | ---------------------------------------- | ----------- |
+| `POKEMONTCG_IO_API_KEY` | No\*     | PokémonTCG.io API key for catalog import | `abc123...` |
 
-*Required only when running `npm run import:tcg-catalog` script.
+\*Required only when running `npm run import:tcg-catalog` script.
 
 ### Admin Access
 
-| Variable | Required | Purpose | Example |
-|----------|----------|---------|---------|
-| `ADMIN_SECRET` | Yes | Admin panel unlock secret (`/api/admin/login`) | Random secure token |
-| `DEBUG_ADMIN_TOKEN` | Yes | Debug panel unlock token (`/debug/*`) | Random secure token |
+| Variable            | Required | Purpose                                        | Example             |
+| ------------------- | -------- | ---------------------------------------------- | ------------------- |
+| `ADMIN_SECRET`      | Yes      | Admin panel unlock secret (`/api/admin/login`) | Random secure token |
+| `DEBUG_ADMIN_TOKEN` | Yes      | Debug panel unlock token (`/debug/*`)          | Random secure token |
 
 ### Observability
 
-| Variable | Required | Purpose | Example |
-|----------|----------|---------|---------|
-| `SENTRY_DSN` | No | Sentry error tracking DSN (server-side only) | `https://...@sentry.io/...` |
+| Variable     | Required | Purpose                                      | Example                     |
+| ------------ | -------- | -------------------------------------------- | --------------------------- |
+| `SENTRY_DSN` | No       | Sentry error tracking DSN (server-side only) | `https://...@sentry.io/...` |
 
 ---
 
@@ -73,6 +73,7 @@ When adding a new environment variable:
 Every quarter (or before major releases):
 
 1. Compare `.env.example` against actual code usage:
+
    ```bash
    # Search for process.env usage
    grep -r "process\.env\." app/ lib/ scripts/ --include="*.ts" --include="*.tsx" --include="*.js"
@@ -89,12 +90,14 @@ Every quarter (or before major releases):
 ### First-Time Setup
 
 1. Clone repository:
+
    ```bash
    git clone https://github.com/JawnShoe/tcgdealfinder.git
    cd tcg-deal-finder
    ```
 
 2. Copy `.env.example` to `.env.local`:
+
    ```bash
    cp .env.example .env.local
    ```

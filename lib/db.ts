@@ -6,7 +6,6 @@ import { Pool, QueryResultRow } from "pg";
 dotenv.config({ path: ".env.local" });
 
 declare global {
-  // eslint-disable-next-line no-var
   var pgPool: Pool | undefined;
 }
 

@@ -26,6 +26,7 @@
 - Standardized pre-commit via Husky (2025-12-23): Tracked hook runs `npm run lint`; replaces local `.git/hooks` approach. Husky installed as dev dependency, `prepare` script added to package.json, `.husky/pre-commit` tracked in repo. Reproducible across machines. Commit: c22b3a6.
 - Added Dependabot + Next.js build cache (2025-12-23): Created `.github/dependabot.yml` (npm weekly, github-actions weekly, 5 PR limit). Added `.next/cache` caching to CI workflow (cache key: OS + package-lock.json hash). No typecheck job added (script not present in package.json). Commit: 9efc3ec.
 - Fixed CI build dependency (2025-12-23): Converted `lib/db.ts` to lazy-initialize DB pool via `getPool()` function instead of module-level instantiation. Build no longer requires DATABASE_URL at compile time; env validation deferred to runtime (first query call). CI workflow no longer needs DATABASE_URL secret. Commits: 245bd56, 7b2718f.
+- ESLint 9 migration (2025-12-24): Upgraded eslint from 8.57.0 to 9.18.0, eslint-config-next from 14.2.10 to 15.1.6. Migrated from .eslintrc.json to eslint.config.mjs (flat config). Changed lint script from `next lint` to `eslint .` (Next.js 14 incompatible with ESLint 9 CLI). No runtime code changes except mechanical lint fix in app/alerts/page.tsx (<a> → <Link>). Commits: 66b769d, 59f2fbe, c3f6faf. PR: [pending].
 - Restorepoint bundle for SSOT commit e7e0717: `T:\Projects\restorepoints\tcg-deal-finder_ssot-e7e0717_restorepoint.bundle`.
 - Restorepoint bundle for admin UI fixes (2025-12-22): `T:\Projects\restorepoints\admin-ui-8b6003c.bundle`.
 

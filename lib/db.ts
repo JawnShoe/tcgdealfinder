@@ -10,21 +10,29 @@ declare global {
   var pgPool: Pool | undefined;
 }
 
-const connectionString = process.env.DATABASE_URL;
+function getPool(): Pool {
+  const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not set. Check your environment configuration.");
-}
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is not set. Check your environment configuration.");
+  }
 
-const pool = global.pgPool ?? new Pool({ connectionString });
+  if (global.pgPool) {
+    return global.pgPool;
+  }
 
-if (process.env.NODE_ENV !== "production") {
-  global.pgPool = pool;
+  const pool = new Pool({ connectionString });
+
+  if (process.env.NODE_ENV !== "production") {
+    global.pgPool = pool;
+  }
+
+  return pool;
 }
 
 export function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
   params?: any[],
 ) {
-  return pool.query<T>(text, params);
+  return getPool().query<T>(text, params);
 }

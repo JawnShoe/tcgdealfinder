@@ -128,6 +128,44 @@
 
 ---
 
+## Engineering Baseline Snapshot (as of 2025-12-24)
+
+### 1) Automated Testing & CI/CD
+
+**Maturity**: Medium — CI lint+build + formatting gate; Gap: real automated tests (unit/integration/e2e) and/or CI "test" job.
+
+### 2) Observability & Monitoring
+
+**Maturity**: Low→Medium — /api/health + server-only Sentry; Gap: alerts/dashboards/perf metrics/structured logs.
+
+### 3) Documentation & Knowledge Sharing
+
+**Maturity**: High — SSOT + runbooks.
+
+### 4) Security & Compliance Baseline
+
+**Maturity**: Medium→High — patching tracked + admin cookie auth + secret hygiene; Gap: stronger CI security scanning + audit logging.
+
+### 5) Code Quality & Consistency
+
+**Maturity**: High — ESLint/Tailwind v4 + CI + STOP rules + Prettier gate.
+
+### 6) Data Management & Integrity
+
+**Maturity**: Medium — migrations/runbooks + idempotent ingest + locked data systems; Gap: integrity checks + restore drills + data quality monitoring.
+
+### 7) Dev Environment & DevOps
+
+**Maturity**: Medium→High — runbooks/restorepoints/release workflow; Gap: more standardized local env + automation where needed.
+
+### 8) Process & Collaboration
+
+**Maturity**: Very High — one active work item + blast radius + regression owner + evidence packs + DONE/SHIFT gates.
+
+**Primary maturity lift before scaling features**: automated test coverage + deeper observability (alerts/dashboards/perf/structured logs).
+
+---
+
 ## CURRENT REALITY: Page Inventory
 
 ### Public Pages (Production)

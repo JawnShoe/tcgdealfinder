@@ -37,6 +37,13 @@
 | `ADMIN_SECRET` | Yes | Admin panel unlock secret (`/api/admin/login`) | Random secure token |
 | `DEBUG_ADMIN_TOKEN` | Yes | Debug panel unlock token (`/debug/*`) | Random secure token |
 
+### Observability
+
+| Variable | Required | Purpose | Example |
+|----------|----------|---------|---------|
+| `SENTRY_DSN` | No | Sentry error tracking DSN (server-side) | `https://...@sentry.io/...` |
+| `NEXT_PUBLIC_SENTRY_DSN` | No | Sentry error tracking DSN (client-side) | `https://...@sentry.io/...` |
+
 ---
 
 ## `.env.example` Alignment Policy

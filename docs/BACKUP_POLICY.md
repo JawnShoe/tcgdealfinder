@@ -94,6 +94,37 @@ git branch -D restore-temp
 
 ---
 
+## Operator Checklist
+
+**Rule**: Every merge to `main` MUST be pushed to `origin` immediately.
+
+### After PR Merge
+
+Run these commands to verify remote sync:
+
+```bash
+# 1. Verify you're on main
+git branch --show-current
+
+# 2. Confirm local and remote main are in sync (both should show no output)
+git log main..origin/main --oneline    # Local behind remote? (should be empty)
+git log origin/main..main --oneline    # Local ahead of remote? (should be empty)
+
+# 3. If local is ahead, push immediately
+git push origin main
+
+# 4. Verify remote push succeeded
+git log -1 origin/main --oneline
+```
+
+**Expected output when in sync**: Both `git log` commands return nothing (empty output).
+
+**If local is ahead**: The second command will show commits. Push immediately with `git push origin main`.
+
+**Testable invariant**: At end of every pack, `git log origin/main..main` MUST return empty output.
+
+---
+
 ## Verification Checklist
 
 After any restore operation:

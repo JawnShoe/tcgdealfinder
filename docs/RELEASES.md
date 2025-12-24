@@ -6,6 +6,76 @@
 
 ---
 
+## How We Cut a Release
+
+**Release Checklist** (follow in order):
+
+1. ✅ All planned PRs merged to `main`
+2. ✅ Local checkout on latest `main` (`git pull origin main`)
+3. ✅ `git status` shows clean working tree (no uncommitted changes)
+4. ✅ **Required check**: `npm run lint && npm run build` passes (CI gate must be green)
+5. ✅ `PROJECT_SSOT.md` updated with all changes since last release
+6. ✅ Extract release notes from SSOT (see "Extracting Release Notes from SSOT" below)
+7. ✅ Create annotated git tag: `git tag -a v0.x.y -m "Release: Brief description"`
+8. ✅ Push tag to remote: `git push origin v0.x.y`
+9. ✅ (Optional) Create GitHub Release with notes and assets
+10. ✅ (Optional) Create restorepoint bundle for rollback safety
+11. ✅ Update SSOT with release tag commit hash
+
+**What to Write in SSOT**:
+
+- Tag name (e.g., `v0.1.0`)
+- Tag commit hash
+- What PRs/features were included
+- What checks passed (always: "Lint & Build")
+- Date released
+
+---
+
+## Tag Naming Convention
+
+**Format**: `v0.x.y` (simple semantic versioning for pre-1.0 project)
+
+**Rules**:
+
+- All tags start with `v` prefix
+- Pre-1.0 releases use `0.x.y` format
+- Increment `x` (minor) for feature releases or milestone completions
+- Increment `y` (patch) for bug fixes or security patches
+- Examples:
+  - `v0.1.0` - First minor release with Watchlist v1 + Seller Trust Signals
+  - `v0.1.1` - Patch release for bug fix
+  - `v0.2.0` - Second minor release with new feature set
+
+**When 1.0 arrives** (future):
+
+- `v1.0.0` - First production-ready release
+- `v1.1.0` - New feature after 1.0
+- `v1.0.1` - Patch release
+
+---
+
+## Minimum Release Gate
+
+**Required status check** (enforced by branch protection on `main`):
+
+- ✅ **"Lint & Build"** - GitHub Actions CI workflow must pass
+
+**What this checks**:
+
+- `npm run lint` - ESLint 9 passes with zero errors/warnings
+- `npm run build` - Next.js build compiles all routes successfully (no build-time failures)
+
+**Before tagging a release**:
+
+1. Verify CI is green on latest `main` commit (check GitHub Actions)
+2. Run `npm run lint && npm run build` locally to confirm
+3. If either fails, fix the issue before creating the tag
+
+**Rationale**: Ensures every tagged release is deployable and free of lint/build errors.
+
+---
+
 ## Release Strategy
 
 ### Versioning Scheme
@@ -13,6 +83,7 @@
 **Current approach**: No formal semver versioning yet (pre-1.0 project)
 
 **Future approach** (when needed):
+
 - Semantic Versioning (semver): `MAJOR.MINOR.PATCH`
 - Example: `v1.2.3`
 - MAJOR: Breaking changes
@@ -22,12 +93,14 @@
 ### When to Create a Release
 
 Create a release tag for:
+
 - Major feature completions (e.g., "Watchlist v1", "Seller Trust Signals")
 - Security patches (e.g., "Next.js 14.2.35 security patch")
 - Production deployments
 - Milestones requiring rollback points
 
 **Do not** create releases for:
+
 - Individual commits or small bug fixes
 - Work-in-progress branches
 - Internal refactors
@@ -39,12 +112,14 @@ Create a release tag for:
 ### Creating a Release Tag
 
 1. **Ensure clean state**:
+
    ```bash
    git status  # Should show "working tree clean"
    git log --oneline -5  # Verify commit is ready for release
    ```
 
 2. **Create annotated tag**:
+
    ```bash
    # For feature releases
    git tag -a v0.1.0 -m "Release: Watchlist v1 + Seller Trust Signals"
@@ -54,6 +129,7 @@ Create a release tag for:
    ```
 
 3. **Push tag to remote**:
+
    ```bash
    git push origin v0.1.0
    ```
@@ -69,12 +145,14 @@ Create a release tag for:
 **Format**: `vMAJOR.MINOR.PATCH`
 
 **Examples**:
+
 - `v0.1.0` - First minor release (pre-1.0)
 - `v0.1.1` - Patch release
 - `v1.0.0` - First production-ready release
 - `v1.1.0` - New feature after 1.0
 
 **Pre-release tags** (optional):
+
 - `v0.1.0-alpha.1` - Alpha release
 - `v0.1.0-beta.1` - Beta release
 - `v0.1.0-rc.1` - Release candidate
@@ -88,6 +166,7 @@ Create a release tag for:
 **Primary source**: `PROJECT_SSOT.md`
 
 **Reason**: SSOT already contains complete history of all changes with:
+
 - Commit hashes
 - Dates
 - Classification (bug fix, feature, refactor)
@@ -101,30 +180,38 @@ Create a release tag for:
 When creating a release, extract relevant sections from PROJECT_SSOT.md:
 
 **Template**:
+
 ```markdown
 ## Release vX.Y.Z (YYYY-MM-DD)
 
 ### Features
+
 - Feature description (commit: abc1234)
 
 ### Bug Fixes
+
 - Bug fix description (commit: def5678)
 
 ### Security
+
 - Security patch description (commit: ghi9012)
 
 ### Infrastructure
+
 - CI/tooling changes (commit: jkl3456)
 ```
 
 **Example** (from current SSOT):
+
 ```markdown
 ## Release v0.1.0 (2025-12-24)
 
 ### Security
+
 - Pinned Next.js to 14.2.35 for RSC/Server Action CVE fixes (commits: 17ccf32, 41fed68)
 
 ### Infrastructure
+
 - Migrated to ESLint 9 + flat config (commits: 66b769d, c3f6faf) [PR #15]
 - Upgraded Tailwind CSS to v4.1.18 (commit: 2edf5b0) [PR #16]
 - Added Dependabot + CI build cache (commit: 9efc3ec)

@@ -28,3 +28,7 @@ temp
 temp/
 temp_pkg.txt
 _content*.txt
+
+# local restorepoints
+.restorepoints/
+/*.bundle

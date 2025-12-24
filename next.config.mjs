@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs";
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -13,4 +15,8 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  hideSourceMaps: false,
+  disableLogger: true,
+});

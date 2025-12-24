@@ -19,6 +19,7 @@
 - Repo hygiene Pack B1 (2025-12-23): Moved 35 root-level one-off scripts to `scripts/one-off/` (check-*.ts, test-*.ts, verify-db.ts, run-migration.ts, etc.); created one-off README with usage notes; updated archived doc reference. No production code references. Commit: 52fbf6f.
 - Repo hygiene Pack B2 (2025-12-23): Consolidated DECISIONS.md into PROJECT_SSOT.md LOCKED SYSTEMS section (enhanced Watchlist v1, Seller Trust Display, Deal Systems, Top Deals Columns, Global UI Scale, Pokémon Set Ingestion with detailed policy); archived DECISIONS.md to `docs/archive/`; updated FILE REFERENCE section. No code references to DECISIONS.md found. Commit: 97aa07b.
 - Repo hygiene Pack B3 (2025-12-23): Archived duplicate migration `scripts/migrations/add_listing_integrity_fields.sql` to `scripts/migrations/archive/` (canonical version `migrations/002_add_listing_integrity_fields.sql` kept, referenced by lib/schema.ts). Created archive README. Diff: functionally identical SQL, only comment differences. Commit: 5d991a2.
+- Added GitHub Actions CI (2025-12-23): Workflow runs lint + build on push/PR to main. Package manager detected as npm (via package-lock.json). Node 20 LTS used (package.json engines: >=18.17.0). Minimal permissions (contents: read) + npm caching enabled. Commit: 6b68fde.
 - Restorepoint bundle for SSOT commit e7e0717: `T:\Projects\restorepoints\tcg-deal-finder_ssot-e7e0717_restorepoint.bundle`.
 - Restorepoint bundle for admin UI fixes (2025-12-22): `T:\Projects\restorepoints\admin-ui-8b6003c.bundle`.
 

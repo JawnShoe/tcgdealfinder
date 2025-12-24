@@ -47,7 +47,7 @@
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.10",
     "husky": "^9.1.7",
-    "postcss": "^8.4.35",
+    "postcss": "^8.5.6",
     "tailwindcss": "^3.4.13",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",

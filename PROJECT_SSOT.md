@@ -16,6 +16,7 @@
 - Repo hygiene (2025-12-21): untracked `settings.local.json` (example added), ignored local/artifact patterns; removed tracked artifacts (`components/home/HomeContent.corrupted.bak`, `_content*.txt`, `temp`, `temp_pkg.txt`, `import-log.txt`, `tsconfig.tsbuildinfo`). Commits: 7878ea1, af98509.
 - Repo hygiene Pack A (2025-12-23): Created `docs/INDEX.md` (doc map); moved 12 historical docs to `docs/archive/` with archive README; deleted 5 stale utility files (`test.txt`, `fix_config.py`, `remove_fn.py`, `write_config.py`, `write-config.js`); updated SHIFT_LOCK.md to reference PROJECT_SSOT.md as authoritative. Commit: c437616.
 - Repo hygiene Pack A.5 (2025-12-23): Moved 22 untracked restorepoint bundles from root to `.restorepoints/`; added `.restorepoints/` + `/*.bundle` to .gitignore to prevent future root clutter. Commit: e7b2a0a.
+- Repo hygiene Pack B1 (2025-12-23): Moved 35 root-level one-off scripts to `scripts/one-off/` (check-*.ts, test-*.ts, verify-db.ts, run-migration.ts, etc.); created one-off README with usage notes; updated archived doc reference. No production code references. Commit: 52fbf6f.
 - Restorepoint bundle for SSOT commit e7e0717: `T:\Projects\restorepoints\tcg-deal-finder_ssot-e7e0717_restorepoint.bundle`.
 - Restorepoint bundle for admin UI fixes (2025-12-22): `T:\Projects\restorepoints\admin-ui-8b6003c.bundle`.
 

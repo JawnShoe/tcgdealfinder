@@ -1,11 +1,3 @@
-import * as Sentry from "@sentry/nextjs";
-
-// Optional Sentry DSN - gracefully degrades if not set
-const dsn = process.env.SENTRY_DSN;
-
-if (dsn) {
-  Sentry.init({
-    dsn,
-    tracesSampleRate: 0.1,
-  });
-}
+// Edge runtime Sentry initialization moved to instrumentation.ts
+// This file is kept for backward compatibility but is no longer used
+// See: instrumentation.ts register() function

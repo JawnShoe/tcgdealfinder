@@ -125,17 +125,18 @@
 
 ### Watchlist v1 (LOCKED ✅)
 - **Storage**: Client-only `localStorage` under `tcgdf_watchlist_v1`
-- **Schema**: `{ version: 1, entries: [{ id, cardName, setName }] }`
+- **Schema**: `{ version: 1, entries: [{ id, cardName, setName }] }` - entries store id/cardName/setName so `/watchlist` renders purely from local data (no API calls or DB lookups)
 - **UI**: `WatchlistStarButton` component on all deal surfaces
 - **Surfaces**: Homepage featured + table, `/newest`, `/top-deals`, set detail hot cards, card detail
-- **Page**: `/watchlist` renders from localStorage only, no API calls
+- **Page**: `/watchlist` is client-only, simply links back to `/cards/[cardId]`; removing entry never touches server
 - **Backend**: NONE - no server-side watchlist logic exists
+- **Allowlist note**: `components/FeaturedDeals.tsx` explicitly approved for Watchlist V1 so homepage "featured deals" module can host shared ⭐ control
 
 ### Seller Trust Display (LOCKED ✅)
 - **Line 1**: Seller name + shield (🛡)
-- **Line 2**: `⭐ X+ sales` only when `sellerFeedbackCount ≥ 100`
-- **Formatting**: Rounded down (100+, 2,300+, 45,000+)
-- **Helper**: `formatSellerSalesCount()` in `components/SellerNameWithTooltip.tsx`
+- **Line 2**: `⭐ X+ sales` only when `sellerFeedbackCount ≥ 100` (our proxy for "completed sales")
+- **Formatting**: Badge appears when seller ≥100 sales; counts rounded down to nearest hundred below 10k, nearest thousand at 10k+ (e.g. `100+`, `2,300+`, `45,000+`)
+- **Helper**: `formatSellerSalesCount()` in `components/SellerNameWithTooltip.tsx` - consuming surfaces wrap in `⭐ … sales` text to keep styling context-specific
 - **Displayed label**: Prefer the eBay store name when available; fall back to the seller username when store data is missing.
 - **Tooltip contents**: Shows both identities (Store + Account) when present, along with feedback percentage and rounded sales count.
 - **Identity contract**: "Seller (eBay)" references the seller provided by eBay; showing the store name in UI is a readability choice over the same account.
@@ -148,24 +149,24 @@
 ### Top Deals Columns (LOCKED ✅)
 - **Visible**: Card, Total, Historic, Discount, Seller, Market, Ends (7 columns)
 - **Hidden**: Condition, Score, Price Confidence (exist in data, not shown)
-- **Reason**: Keep hero surface scannable
+- **Reason**: Public `/top-deals` table intentionally limits to 7 columns so hero surface stays scannable. Same underlying data (condition, score, price confidence) exists for filtering/sorting, but columns remain hidden unless we design richer analytical view.
 
 ### Global UI Scale (LOCKED ✅)
-- **Body font**: `1.05rem` with increased line-height
-- **Controls**: +10% padding/height across panels, tables, forms, buttons
-- **Baseline**: Treat 100% zoom as the reference (feels like old 110%)
+- **Body font**: `1.05rem` with increased line-height so default 100% zoom feels like previous ~110% view (improves legibility without browser zoom hacks)
+- **Controls**: +10% padding/height across panels, tables, forms, buttons via global CSS (keeps components in sync with typography scale)
+- **Baseline**: Treat 100% zoom as the reference
 
 ### Pokémon Set Ingestion (LOCKED ✅)
-- **Source**: Pokémon TCG API v2 `/sets` endpoint
+- **Source**: Pokémon TCG API v2 `/sets` endpoint - canonical identifier is API's `id`
 - **Identifier**: `catalog_sets.pokemontcg_io_set_id` (canonical)
-- **Script**: `npx tsx scripts/ingest_pokemon_sets.ts`
-- **Operation**: Idempotent upserts (safe to rerun)
-- **Data**: Series, release date, total cards, symbol/logo URLs (when available)
+- **Script**: `npx tsx scripts/ingest_pokemon_sets.ts` - fetches every set, normalizes dates/series/total card counts
+- **Operation**: Idempotent upserts keyed by canonical set id (safe to rerun)
+- **Data**: Series, release date, total cards, symbol/logo URLs (when available - we never delete sets, only insert or update)
 
 ### Deal Systems (LOCKED ✅)
-- **Best Trusted Deal**: `item price + shipping` (or "+ shipping at checkout")
-- **Cross-market dedup**: Priority US → CA → GB → AU, by `listing_id`
-- **ENDS display**: Relative time ("Ends in 2h 15m") with UTC tooltip via `getEndsAtDisplay()`
+- **Best Trusted Deal**: `item price + shipping`; if shipping unknown shows "+ shipping at checkout". CTA block shows "Last updated … • Price may have changed on eBay" for pricing latency awareness.
+- **Cross-market dedup**: Canonical listing identity is `listing_id` (fallback to numeric DB id). When duplicate listing IDs appear across markets, keep single row using priority **US → CA → GB → AU → others**. Ties fall back to lowest total price. Listings with different IDs are never fuzzy-merged; market badge communicates regional context.
+- **ENDS display**: Public surfaces show relative time ("Ends in 2h 15m", "Ended") with UTC tooltip, powered by `getEndsAtDisplay()` in `lib/dealFormatting.ts`. Debug/Admin views keep absolute UTC formatting for investigative clarity.
 - **Canonical ID**: `listing_id` (fallback to numeric DB id)
 
 - **Pricing fields**: Each listing stores its native total plus a USD total (`total_usd`) computed at ingestion.
@@ -745,10 +746,10 @@ Tooltip work is complete and locked. All regressions addressed across 6 commits:
 ## FILE REFERENCE
 
 ### Key Configuration Files
-- `SHIFT_LOCK.md` - Current locks and open tasks
-- `DECISIONS.md` - Detailed system decisions and rationale
+- `SHIFT_LOCK.md` - Process locks and gates
 - `REGRESSION_CHECKLIST.md` - Testing checklist for each feature area
-- `PROJECT_SSOT.md` - This file (authoritative current state)
+- `PROJECT_SSOT.md` - This file (authoritative current state, includes system decisions)
+- `docs/INDEX.md` - Documentation index
 
 ### Key Code Files
 - `lib/typography.ts` - Shared typography constants (`PAGE_TITLE`, `PAGE_SUBTITLE`, `TABLE_CONTAINER`)

@@ -22,6 +22,7 @@
 | `storefront_enrichment_audit.md` | 2025-12-23 | Storefront enrichment audit (Phase 0) |
 | `ui-baseline.md` | 2025-12-23 | UI baseline verification (superseded by REGRESSION_CHECKLIST.md) |
 | `baseline-README.md` | 2025-12-23 | Baseline screenshots placeholder (empty directory) |
+| `DECISIONS.md` | 2025-12-23 | System decisions and rationale (consolidated into PROJECT_SSOT.md) |
 
 ---
 

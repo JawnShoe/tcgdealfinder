@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  return NextResponse.json({ ok: true });
+  const healthData = {
+    ok: true,
+    timestamp: new Date().toISOString(),
+    service: "tcg-deal-finder",
+    version: process.env.npm_package_version || "unknown",
+    node: process.version,
+  };
+
+  return NextResponse.json(healthData);
 }

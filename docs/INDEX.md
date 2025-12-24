@@ -2,7 +2,7 @@
 
 **Purpose**: Map of all documentation files and their authoritative status.
 
-**Last Updated**: 2025-12-23
+**Last Updated**: 2025-12-24
 
 ---
 
@@ -16,6 +16,20 @@ These are the active, maintained source-of-truth files.
 | [SHIFT_LOCK.md](../SHIFT_LOCK.md) | Process gates and rules (DONE gate, SHIFT gate, Evidence gate, Secret hygiene) | All contributors |
 | [REGRESSION_CHECKLIST.md](../REGRESSION_CHECKLIST.md) | Manual testing checklist for each release | QA / Contributors |
 | [docs/ui/UI_CONSISTENCY_CONTRACT.md](ui/UI_CONSISTENCY_CONTRACT.md) | UI tooltip/sizing governance (LOCKED) | Frontend contributors |
+
+---
+
+## Operational Runbooks
+
+These document operational procedures and policies (Repo Hardening Pack).
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [docs/BACKUP_POLICY.md](BACKUP_POLICY.md) | Backup strategy and restore procedures | All contributors |
+| [docs/ENV_RUNBOOK.md](ENV_RUNBOOK.md) | Environment variables and `.env.example` alignment policy | All contributors |
+| [docs/DB_MIGRATIONS_RUNBOOK.md](DB_MIGRATIONS_RUNBOOK.md) | Database migration workflow and rollback procedures | Backend / Ops |
+| [docs/RELEASES.md](RELEASES.md) | Release tagging conventions and changelog maintenance | All contributors |
+| [docs/DEFINITION_OF_READY.md](DEFINITION_OF_READY.md) | Feature planning checklist template | Product / Contributors |
 
 ---
 

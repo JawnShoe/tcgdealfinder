@@ -22,6 +22,7 @@
 - Added GitHub Actions CI (2025-12-23): Workflow runs lint + build on push/PR to main. Package manager detected as npm (via package-lock.json). Node 20 LTS used (package.json engines: >=18.17.0). Minimal permissions (contents: read) + npm caching enabled. CI requires DATABASE_URL secret for build. Commits: 6b68fde, 9021756.
 - CI build fix (2025-12-23): Removed build-time DB dependency. DB-backed pages (top-deals, ending-soon, sets, alerts, catalog) forced dynamic rendering (`export const dynamic = 'force-dynamic'`). Debug integrity API route returns 500 error instead of throwing. Build no longer requires live DB connection. Commit: 2eec8f8.
 - Removed temporary CI hostname debug step (2025-12-23). Commit: 8e0ed98.
+- Branch protection is now enforced on main (2025-12-23): Post-Personal Pro upgrade. Required status check: "Lint & Build". CI verified green.
 - Restorepoint bundle for SSOT commit e7e0717: `T:\Projects\restorepoints\tcg-deal-finder_ssot-e7e0717_restorepoint.bundle`.
 - Restorepoint bundle for admin UI fixes (2025-12-22): `T:\Projects\restorepoints\admin-ui-8b6003c.bundle`.
 

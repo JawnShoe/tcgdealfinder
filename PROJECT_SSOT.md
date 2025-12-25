@@ -1105,6 +1105,20 @@ The `show-fx-rates` workflow job only displays current rates for monitoring.
 - `lib/rateLimitRetry.ts` (new)
 - `lib/ebay.ts` (rate limit retry applied)
 
+**First-Run Validation Evidence** (2025-12-25):
+
+- GitHub Secrets confirmed present: `DATABASE_URL`, `EBAY_APP_ID`, `EBAY_CLIENT_SECRET`
+- Workflow run `update-listings`: Success (run ID in PR #40 merge commit a550891)
+- Workflow run `check-alerts`: Success (run ID 12686979498, commit a550891)
+- `/api/health` freshness block (2025-12-25T09:41:29Z):
+  - `listings.lastUpdated`: 2025-12-25T17:41:29.390Z ✅ (fresh)
+  - `listings.totalActive`: 938
+  - `listings.staleCount1h`: 212
+  - `historicalPrices.lastUpdated`: 2025-12-10 (stale - daily job pending)
+  - `fxRates.lastUpdated`: 2025-12-16 (manual update required)
+- Fix applied: PR #40 resolved Postgres param typing error in `check-alerts.ts`
+- Gate applied: `check-alerts` scheduled runs disabled until `SENDGRID_API_KEY` configured
+
 Full Pokémon Set Coverage (SSOT Catalog) [DONE ✅ — API-complete, audited 2025-12-18]
 
 Add all Pokémon TCG sets (historical + modern).

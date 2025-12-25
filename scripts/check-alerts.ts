@@ -50,15 +50,19 @@ async function fetchActiveWatches(): Promise<WatchRow[]> {
       FROM alerts_watchlist
       WHERE active = TRUE
       ORDER BY id ASC;
-    `,
+    `
   );
   return res.rows;
 }
 
 async function fetchBestListing(
   cardId: number,
-  condition: string | null,
+  condition: string | null
 ): Promise<ListingRow | null> {
+  // Normalize condition: null/undefined/empty -> null for consistent SQL handling
+  const normalizedCondition =
+    condition == null || condition === "" ? null : condition;
+
   const res = await query<ListingRow>(
     `
       SELECT
@@ -75,7 +79,7 @@ async function fetchBestListing(
       FROM listings l
       WHERE
         l.card_id = $1
-        AND ($2 IS NULL OR $2 = '' OR l.condition_raw = $2)
+        AND ($2::TEXT IS NULL OR l.condition_raw = $2::TEXT)
         AND l.total_price_cad IS NOT NULL
         AND l.historic_price_cad IS NOT NULL
         AND l.seller_username IS NOT NULL
@@ -89,7 +93,12 @@ async function fetchBestListing(
       ORDER BY l.total_price_cad ASC
       LIMIT 1;
     `,
-    [cardId, condition, SELLER_MIN_FEEDBACK, SELLER_MIN_POSITIVE_PERCENT],
+    [
+      cardId,
+      normalizedCondition,
+      SELLER_MIN_FEEDBACK,
+      SELLER_MIN_POSITIVE_PERCENT,
+    ]
   );
 
   return res.rows[0] ?? null;
@@ -106,7 +115,7 @@ async function fetchCardInfo(cardId: number): Promise<CardInfo | null> {
       WHERE id = $1
       LIMIT 1;
     `,
-    [cardId],
+    [cardId]
   );
   const info = res.rows[0] ?? null;
   cardInfoCache.set(cardId, info);
@@ -118,7 +127,7 @@ async function insertAlert(
   listing: ListingRow,
   totalPrice: number | null,
   historicPrice: number | null,
-  discountPercent: number | null,
+  discountPercent: number | null
 ) {
   await query(
     `
@@ -141,7 +150,7 @@ async function insertAlert(
       totalPrice,
       historicPrice,
       discountPercent,
-    ],
+    ]
   );
 }
 
@@ -153,7 +162,7 @@ async function updateWatchChecked(watchId: number, fired: boolean) {
         SET last_checked_at = NOW(), last_triggered_at = NOW()
         WHERE id = $1;
       `,
-      [watchId],
+      [watchId]
     );
   } else {
     await query(
@@ -162,7 +171,7 @@ async function updateWatchChecked(watchId: number, fired: boolean) {
         SET last_checked_at = NOW()
         WHERE id = $1;
       `,
-      [watchId],
+      [watchId]
     );
   }
 }
@@ -210,14 +219,14 @@ async function notifyEmailSubscribers(args: {
 
   const subscriptions = await getActiveSubscriptionsForCard(
     args.cardId,
-    absoluteDiscount,
+    absoluteDiscount
   );
   if (subscriptions.length === 0) {
     return;
   }
 
-  const card =
-    args.cardInfo ?? (await fetchCardInfo(args.cardId)) ?? {
+  const card = args.cardInfo ??
+    (await fetchCardInfo(args.cardId)) ?? {
       id: args.cardId,
       name: "This card",
       set_name: "Unknown set",
@@ -249,7 +258,7 @@ Unsubscribe: ${unsubscribeLink}`;
         <li>Market: ${args.listing.market}</li>
       </ul>
       <p>
-        <a href="${listingLink}" target="_blank">View listing</a> ·
+        <a href="${listingLink}" target="_blank">View listing</a> ï¿½
         <a href="${cardLink}" target="_blank">Card page</a>
       </p>
       <p style="font-size:12px;color:#475569;">
@@ -281,13 +290,13 @@ async function main() {
     if (!Number.isFinite(threshold)) {
       console.warn(
         `[ALERTS] Skipping watch #${watch.id} due to invalid threshold_value:`,
-        watch.threshold_value,
+        watch.threshold_value
       );
       continue;
     }
 
     console.log(
-      `Checking watch #${watch.id} -> card ${watch.card_id} (${watch.condition || "any"})`,
+      `Checking watch #${watch.id} -> card ${watch.card_id} (${watch.condition || "any"})`
     );
 
     const listing = await fetchBestListing(watch.card_id, watch.condition);
@@ -338,12 +347,12 @@ async function main() {
       if (displayDiscount != null && displayDiscount <= -absThreshold) {
         shouldFire = true;
         reason = `discount ${Math.abs(displayDiscount).toFixed(
-          1,
+          1
         )}% off >= ${absThreshold.toFixed(1)}%`;
       }
     } else {
       console.warn(
-        `  Unknown threshold_type "${watch.threshold_type}", skipping.`,
+        `  Unknown threshold_type "${watch.threshold_type}", skipping.`
       );
       await updateWatchChecked(watch.id, false);
       continue;
@@ -359,7 +368,7 @@ async function main() {
         historicPrice,
         watch.threshold_type === "discount_at_least"
           ? displayDiscount
-          : rawDiscount,
+          : rawDiscount
       );
       await updateWatchChecked(watch.id, true);
       await notifyEmailSubscribers({
@@ -371,13 +380,13 @@ async function main() {
         discountPercent: discountForSubscribers,
       });
       console.log(
-        `  [ALERT] Watch #${watch.id} fired -> ${reason} -> listing ${listing.listing_id}`,
+        `  [ALERT] Watch #${watch.id} fired -> ${reason} -> listing ${listing.listing_id}`
       );
     } else {
       console.log(
         shouldFire
           ? "  Condition met but still in cooldown window."
-          : "  Condition not met.",
+          : "  Condition not met."
       );
       await updateWatchChecked(watch.id, false);
     }

@@ -109,11 +109,12 @@ jobs:
   check-alerts:
     name: Check Alerts
     runs-on: ubuntu-latest
-    # Run on */15 schedule OR manual dispatch
+    # Manual dispatch only until SENDGRID_API_KEY is configured.
+    # Once email alerts are ready, restore scheduled runs by adding:
+    #   github.event.schedule == '*/15 * * * *' ||
     if: >-
-      github.event.schedule == '*/15 * * * *' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (github.event.inputs.job == 'check-alerts' || github.event.inputs.job == 'all'))
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.job == 'check-alerts' || github.event.inputs.job == 'all')
     timeout-minutes: 10
     steps:
       - name: Checkout code

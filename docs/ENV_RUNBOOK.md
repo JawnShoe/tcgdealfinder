@@ -100,19 +100,37 @@ In GitHub repo settings → Secrets and variables → Actions, add:
 3. Click **Run workflow**
 4. Wait for job to complete (green checkmark)
 
-### Step 3: Run Smoke Test
+### Step 3: Run E2E Email Test
+
+This step sends a REAL test email to verify the complete alerts pipeline.
 
 1. Go to **Actions → Ops Enablement - Alerts MVP → Run workflow**
 2. Set inputs:
-   - `confirm`: (any value, not checked for smoke_test)
-   - `mode`: `smoke_test`
-   - `test_email`: (optional) Comma-separated email allowlist for test emails
+   - `confirm`: `SEND_REAL_TEST_EMAIL`
+   - `mode`: `e2e_test_email`
+   - `test_email`: Your email address (required)
 3. Click **Run workflow**
-4. Verify job completes successfully
+4. Wait for job to complete (green checkmark)
+5. **Check your inbox** for the test alert email
+6. **Verify unsubscribe link** works (click it to test)
+
+**What the E2E test does:**
+
+- Finds a card with active deals in the database
+- Creates temporary test data (watch + subscription)
+- Runs the full `check-alerts` flow
+- Sends a real email to your test address
+- Cleans up all test data automatically
+
+**If no email received:**
+
+- Check spam/junk folder
+- Verify `ALERTS_EMAIL_FROM` is a verified sender in SendGrid
+- Check SendGrid Activity for delivery status
 
 ### Step 4: Enable Scheduled Alerts (Optional)
 
-After smoke test passes, to enable scheduled alert checks:
+After E2E test passes (you received the email), to enable scheduled alert checks:
 
 1. Edit `.github/workflows/data-pipelines.yml`
 2. In the `check-alerts` job `if:` condition, add the schedule trigger:

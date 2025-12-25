@@ -1126,12 +1126,13 @@ Added `ops-enable-alerts.yml` workflow to automate Alerts MVP enablement:
 - **Workflow**: `.github/workflows/ops-enable-alerts.yml`
 - **Purpose**: Single workflow to apply migration 005 + run smoke test
 - **Inputs**:
-  - `confirm`: Must equal `APPLY_MIGRATION_005` for migrate mode
-  - `mode`: `migrate` | `smoke_test`
-  - `test_email`: (optional) Comma-separated allowlist for test emails
+  - `confirm`: Must equal `APPLY_MIGRATION_005` for migrate, `SEND_REAL_TEST_EMAIL` for e2e_test_email
+  - `mode`: `migrate` | `smoke_test` | `e2e_test_email`
+  - `test_email`: (required for e2e_test_email) Comma-separated allowlist for test emails
 - **Jobs**:
   - `migrate`: Applies `migrations/005_add_subscription_last_emailed.sql`, verifies column + index exist
   - `smoke_test`: Runs `check-alerts` in safe mode (no emails sent unless SENDGRID_API_KEY is set)
+  - `e2e_test_email`: Full E2E test - creates test data, runs check-alerts, sends real email, cleans up
 - **Security**: No secrets printed, idempotent migration (IF NOT EXISTS), minimal permissions
 - **Documentation**: `docs/ENV_RUNBOOK.md` "Operator Enablement" section
 
@@ -1140,16 +1141,38 @@ Added `ops-enable-alerts.yml` workflow to automate Alerts MVP enablement:
 - `.github/workflows/ops-enable-alerts.yml` (new)
 - `scripts/run-migration.ts` (new - generic migration runner)
 - `scripts/verify-migration-005.ts` (new - migration verification)
+- `scripts/e2e-test-alerts.ts` (new - E2E email alert test)
 - `docs/ENV_RUNBOOK.md` (updated with operator enablement section)
 
-**Ops Enablement Evidence** (to be recorded after operator runs workflow):
+**Ops Enablement Evidence** (2025-12-25):
 
-- [ ] Migration run ID: `______________`
-- [ ] Migration timestamp: `______________`
-- [ ] Migration result: `PASS / FAIL`
-- [ ] Smoke test run ID: `______________`
-- [ ] Smoke test timestamp: `______________`
-- [ ] Smoke test result: `PASS / FAIL`
+- [x] Migration run ID: `20503721505`
+- [x] Migration timestamp: 2025-12-25 02:37 PST (27s duration)
+- [x] Migration result: **PASS** — `last_emailed_at` column + index created
+- [x] Smoke test run ID: `20503630722`
+- [x] Smoke test timestamp: 2025-12-25 02:29 PST (39s duration)
+- [x] Smoke test result: **PASS** — `check-alerts` ran successfully (dry-run, no emails sent)
+
+**Verification**: Migration applied to production DATABASE_URL via GitHub Actions. Column `last_emailed_at` and index `email_subscriptions_last_emailed_idx` now exist in `email_subscriptions` table.
+
+**E2E Gate** (2025-12-25):
+
+Added `e2e_test_email` mode for no-SQL one-click email validation:
+
+- **Purpose**: Operator runs single workflow, receives real test email, verifies unsubscribe link
+- **Operator steps reduced to**: Run workflow with `mode=e2e_test_email`, `confirm=SEND_REAL_TEST_EMAIL`, `test_email=<your-email>`
+- **Script**: `scripts/e2e-test-alerts.ts`
+- **Behavior**:
+  1. Finds a card with active deals in the database
+  2. Creates temporary watchlist entry (`threshold_value=0` guarantees trigger)
+  3. Creates/updates subscription using `ON CONFLICT DO UPDATE` (handles unique constraint)
+  4. Runs full `check-alerts` flow
+  5. Sends real email to operator's test address
+  6. Cleans up all test data (watchlist entry + subscription if created)
+- **Safety**: Requires explicit `SEND_REAL_TEST_EMAIL` confirmation + all email secrets (SENDGRID_API_KEY, ALERTS_EMAIL_FROM, SITE_BASE_URL)
+- **Evidence**: Pending operator E2E run
+
+**Next step**: Scheduled `check-alerts` remains workflow_dispatch-only until E2E test completed (email received + unsubscribe verified).
 
 Full Pokémon Set Coverage (SSOT Catalog) [DONE ✅ — API-complete, audited 2025-12-18]
 

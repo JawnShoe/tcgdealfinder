@@ -3,7 +3,54 @@
 **Last Updated**: 2025-12-24
 **Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
 
-**ACTIVE WORK**: NONE
+**ACTIVE WORK**: Automated Data Pipeline + Freshness Observability
+
+---
+
+## Guest Expert Audit (2025-12-24) — Score 7.5/10
+
+**Auditor**: External expert audit conducted via deep codebase analysis.
+
+### What's Working Well
+
+- **Confidence scoring system** — Multi-factor composite (sample size + price dispersion + shipping realism) is genuinely differentiated
+- **Conservative seller trust thresholds** — 98%+ positive AND 20+ feedback is stricter than most aggregators
+- **Extensive keyword blacklist** — 150+ banned terms prevent fakes/proxies/jumbos
+- **Integrity flagging** — Catches "too good to be true" listings (price < 35% of median)
+- **Multi-market + FX handling** — Cross-market comparison (US/CA/GB/AU) with proper currency conversion
+- **Data-first philosophy** — No marketing hype, "show the data" approach builds credibility
+
+### Critical Gap (Existential Risk)
+
+**No automated data refresh** — All update scripts are manual execution only:
+
+- `scripts/update-listings.ts` — No scheduler
+- `scripts/update-historical-prices.ts` — No scheduler
+- `scripts/update-sold-listings.ts` — No scheduler
+- `scripts/update-fx-rates.ts` — No scheduler
+- `scripts/check-alerts.ts` — No scheduler
+
+**Impact**: Listings become stale, discounts calculated against outdated historical prices, FX rates drift, alerts never fire. Users lose trust when deals are already sold.
+
+### Must-Check Features Missing (for "must-check" status)
+
+1. **Real email alerts** — Current watchlist is localStorage only; no push/email for new deals
+2. **Data freshness indicator** — No visible "last updated" timestamp on UI
+3. **BIN vs. Auction distinction** — Users can't tell if a deal is fixed-price or auction about to spike
+4. **Seller feedback trend** — No velocity signal (recent feedback changes)
+5. **Confidence explained inline** — Users see "High/Med/Low" but don't know why
+
+### Recommended Differentiator: Seller Trust Graph
+
+**Phased approach** (passive collection first):
+
+- Track seller behavior over time: deal completion rate, price accuracy, feedback velocity
+- No competitor has this cross-deal seller intelligence
+- Start with Phase 1: Passive data collection (no UI change)
+
+### Audit Files Reference
+
+Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 
 ---
 
@@ -998,6 +1045,30 @@ Tier 1.5 — Inventory & Retention Multipliers (NEXT FOCUS)
 
 High ROI, low product risk, mostly additive.
 
+### Automated Data Pipeline + Freshness Observability [IN PROGRESS]
+
+**Priority**: Critical (addresses existential risk from Guest Expert Audit)
+
+**Scope**:
+
+- Add GitHub Actions scheduled workflows for all update scripts
+- Extend /api/health with freshness observability fields
+- Add basic rate-limit resilience (exponential backoff on 429)
+
+**Scripts to automate**:
+
+- `update-listings.ts` — Every 15-30 minutes
+- `check-alerts.ts` — Every 15 minutes (lightweight)
+- `update-fx-rates.ts` — Daily or 12h
+- `update-historical-prices.ts` — Daily
+- `update-sold-listings.ts` — Daily
+
+**Observability additions** (/api/health):
+
+- Listings: last updated timestamp + stale count
+- Historical prices: last run timestamp
+- FX rates: last updated timestamp + current rates
+
 Full Pokémon Set Coverage (SSOT Catalog) [DONE ✅ — API-complete, audited 2025-12-18]
 
 Add all Pokémon TCG sets (historical + modern).
@@ -1083,6 +1154,36 @@ Tier 2 — Engagement & Explainability
 
 Good ROI, moderate scope.
 
+### Alerts + DB-backed Watchlist (Post-Audit Priority)
+
+**From Guest Expert Audit**: Email alerts are the killer retention feature. Current localStorage watchlist blocks cross-device sync and server-side alerting.
+
+**Scope**:
+
+- Migrate watchlist from localStorage to database (with optional email magic link auth)
+- Build robust email alert system (not just per-card, but "any PSA 10 Charizard under $X")
+- Add frequency throttling (don't spam users)
+- Ensure one-click unsubscribe header (Gmail requirement)
+
+### BIN vs. Auction Indicator
+
+**From Guest Expert Audit**: Users can't tell if a deal is fixed-price (safe) or auction about to spike.
+
+**Scope**:
+
+- Add BIN/Auction badge to deal rows
+- Filter "Ending Soon" by auction-only option
+- Consider score reduction for auctions (uncertain final price)
+
+### Confidence Explanation Tooltip
+
+**From Guest Expert Audit**: Users see "High/Med/Low" but don't know why.
+
+**Scope**:
+
+- Add hover tooltip explaining confidence factors (sample size, price variance, shipping ratio)
+- Show actual numbers: "Based on 47 recent sales with 12% variance"
+
 Watchlist v2 (Sorting, Filtering)
 
 Allow users to sort and filter items in their watchlist (e.g., by price, condition, seller rating).
@@ -1132,6 +1233,25 @@ On /sets/[setId], show "Most watched cards in this set" and "Cards with recent d
 Tier 3 — Power / Risk Features (Deferred)
 
 Explicitly not doing now.
+
+### Seller Trust Graph (Phase 1: Passive Collection)
+
+**From Guest Expert Audit**: Recommended differentiator. No competitor has cross-deal seller intelligence.
+
+**Phase 1 Scope** (passive, no UI change):
+
+- Add `seller_history` table tracking seller metrics over time
+- Snapshot seller stats daily (feedback count, positive %, deal count)
+- Track listing-to-sold mapping when possible
+- No UI changes until Phase 2
+
+**Future Phases** (not authorized):
+
+- Phase 2: Surface basic insights ("Seen on X deals this month")
+- Phase 3: Predictive scoring ("Deals from this seller typically close at 95% of listed price")
+- Phase 4: Community validation (buyer ratings)
+
+**Gating**: Requires explicit planning approval before any Phase 1 work begins.
 
 Ending Soon (Auctions)
 

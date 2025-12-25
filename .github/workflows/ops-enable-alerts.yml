@@ -6,13 +6,14 @@ name: Ops Enablement - Alerts MVP
 # Steps for operator:
 # 1. Set required secrets: DATABASE_URL, SENDGRID_API_KEY, ALERTS_EMAIL_FROM, SITE_BASE_URL
 # 2. Run this workflow with mode="migrate" and confirm="APPLY_MIGRATION_005"
-# 3. Run this workflow with mode="smoke_test" (optionally with TEST_EMAIL allowlist)
-# 4. If smoke_test passes, enable scheduled check-alerts in data-pipelines.yml
+# 3. Run this workflow with mode="e2e_test_email" and test_email=<your-email>
+# 4. If e2e test passes (email received), enable scheduled check-alerts in data-pipelines.yml
 #
 # Security notes:
 # - No secrets are printed to logs
 # - Migration is idempotent (IF NOT EXISTS)
-# - Smoke test does NOT send emails unless SENDGRID_API_KEY is set
+# - e2e_test_email REQUIRES SENDGRID_API_KEY (hard fail if missing)
+# - Test data is cleaned up automatically after the test
 
 on:
   workflow_dispatch:
@@ -28,6 +29,7 @@ on:
         options:
           - migrate
           - smoke_test
+          - e2e_test_email
       test_email:
         description: "TEST_EMAIL allowlist (comma-separated, only these addresses receive test emails)"
         required: false
@@ -145,3 +147,52 @@ jobs:
         env:
           NODE_ENV: production
           TEST_EMAIL_ALLOWLIST: ${{ github.event.inputs.test_email }}
+
+  e2e-test-email:
+    name: E2E Test Email Alerts
+    runs-on: ubuntu-latest
+    if: github.event.inputs.mode == 'e2e_test_email'
+    timeout-minutes: 10
+    steps:
+      - name: Validate test_email input
+        run: |
+          if [ -z "${{ github.event.inputs.test_email }}" ]; then
+            echo "::error::test_email input is required for e2e_test_email mode."
+            exit 1
+          fi
+          echo "Test email: ${{ github.event.inputs.test_email }}"
+
+      - name: Verify DATABASE_URL is set
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret is not set. Configure it in repo settings."
+            exit 1
+          fi
+          echo "DATABASE_URL is configured (value redacted)."
+
+      - name: Verify SENDGRID_API_KEY is set
+        run: |
+          if [ -z "$SENDGRID_API_KEY" ]; then
+            echo "::error::SENDGRID_API_KEY secret is not set. E2E test requires email sending capability."
+            exit 1
+          fi
+          echo "SENDGRID_API_KEY is configured (value redacted)."
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run E2E alert test
+        run: |
+          echo "Running E2E alert test..."
+          npx tsx scripts/e2e-test-alerts.ts "${{ github.event.inputs.test_email }}"
+        env:
+          NODE_ENV: production

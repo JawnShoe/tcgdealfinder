@@ -1,0 +1,188 @@
+name: Data Pipelines
+
+# Automated data refresh pipelines
+# These jobs run on schedule to keep deal data fresh.
+# All jobs are idempotent and safe to rerun.
+#
+# Required secrets (set in GitHub repo settings):
+# - DATABASE_URL: Postgres connection string
+# - EBAY_APP_ID: eBay API app ID (also used as client ID)
+# - EBAY_CLIENT_SECRET: eBay API client secret (for OAuth2)
+# - SENDGRID_API_KEY: SendGrid API key (for alert emails, optional)
+
+on:
+  schedule:
+    # Update listings every 30 minutes
+    - cron: "*/30 * * * *"
+    # Check alerts every 15 minutes
+    - cron: "*/15 * * * *"
+    # Update FX rates twice daily (6 AM and 6 PM UTC)
+    - cron: "0 6,18 * * *"
+    # Update historical prices daily at 3 AM UTC
+    - cron: "0 3 * * *"
+    # Update sold listings daily at 4 AM UTC
+    - cron: "0 4 * * *"
+
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Which job to run"
+        required: true
+        type: choice
+        options:
+          - update-listings
+          - check-alerts
+          - update-fx-rates
+          - update-historical-prices
+          - update-sold-listings
+          - all
+
+permissions:
+  contents: read
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
+  EBAY_CLIENT_ID: ${{ secrets.EBAY_APP_ID }}
+  EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+  SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+
+jobs:
+  update-listings:
+    name: Update Listings
+    runs-on: ubuntu-latest
+    # Run on */30 schedule OR manual dispatch with 'update-listings' or 'all'
+    if: >-
+      github.event.schedule == '*/30 * * * *' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.job == 'update-listings' || github.event.inputs.job == 'all'))
+    timeout-minutes: 25
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run update-listings
+        run: npm run listings:update
+        env:
+          NODE_ENV: production
+
+  check-alerts:
+    name: Check Alerts
+    runs-on: ubuntu-latest
+    # Run on */15 schedule OR manual dispatch
+    if: >-
+      github.event.schedule == '*/15 * * * *' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.job == 'check-alerts' || github.event.inputs.job == 'all'))
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run check-alerts
+        run: npm run alerts:check
+        env:
+          NODE_ENV: production
+
+  update-fx-rates:
+    name: Update FX Rates
+    runs-on: ubuntu-latest
+    # Run on 0 6,18 schedule OR manual dispatch
+    if: >-
+      github.event.schedule == '0 6,18 * * *' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.job == 'update-fx-rates' || github.event.inputs.job == 'all'))
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Note: FX rate updates require manual rate input.
+      # This job logs current rates for monitoring; actual updates
+      # should be done via workflow_dispatch with rate parameters
+      # or by updating the script to fetch from an FX API.
+      - name: Show current FX rates
+        run: npx tsx scripts/update-fx-rates.ts
+        env:
+          NODE_ENV: production
+
+  update-historical-prices:
+    name: Update Historical Prices
+    runs-on: ubuntu-latest
+    # Run on 0 3 schedule OR manual dispatch
+    if: >-
+      github.event.schedule == '0 3 * * *' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.job == 'update-historical-prices' || github.event.inputs.job == 'all'))
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run update-historical-prices
+        run: npm run historicals:update
+        env:
+          NODE_ENV: production
+
+  update-sold-listings:
+    name: Update Sold Listings
+    runs-on: ubuntu-latest
+    # Run on 0 4 schedule OR manual dispatch
+    if: >-
+      github.event.schedule == '0 4 * * *' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.job == 'update-sold-listings' || github.event.inputs.job == 'all'))
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run update-sold-listings
+        run: npm run sold:update
+        env:
+          NODE_ENV: production

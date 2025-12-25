@@ -1,6 +1,6 @@
 import type { MarketCode } from "./markets";
+import { fetchWithRateLimitRetry } from "./rateLimitRetry"; // lib/ebay.ts
 
-﻿// lib/ebay.ts
 //
 // eBay integration using the modern Buy/Browse API.
 // - Search: /buy/browse/v1/item_summary/search
@@ -66,7 +66,7 @@ export const BANNED_TITLE_KEYWORDS = [
   "oversize",
   "oversized",
   "giant card",
-  
+
   // ===== PROXY/REPLICA =====
   "proxy",
   "proxi",
@@ -95,7 +95,7 @@ export const BANNED_TITLE_KEYWORDS = [
   "falso",
   "contrefacon",
   "faux",
-  
+
   // ===== CUSTOM/FAN MADE =====
   // NOTE: "art card" alone removed - too many false positives with "Alt Art Card" which is legitimate
   "fan art",
@@ -121,7 +121,7 @@ export const BANNED_TITLE_KEYWORDS = [
   "extended art custom",
   "altered art",
   "proxy art",
-  
+
   // ===== NON-CARD MATERIALS =====
   "custom metal",
   "custom metal card",
@@ -163,7 +163,7 @@ export const BANNED_TITLE_KEYWORDS = [
   "silver foil",
   "rainbow foil",
   "foil art",
-  
+
   // ===== DISPLAY/ACCESSORIES =====
   "display only",
   "for display",
@@ -201,7 +201,7 @@ export const BANNED_TITLE_KEYWORDS = [
   "includes case",
   "includes stand",
   "includes holder",
-  
+
   // ===== NOT ACTUAL CARDS =====
   "for collection only",
   "print only",
@@ -226,7 +226,7 @@ export const BANNED_TITLE_KEYWORDS = [
   "illustration",
   "wall art",
   "canvas",
-  
+
   // ===== LOTS/BUNDLES/SEALED =====
   "lot",
   "bulk",
@@ -254,15 +254,15 @@ export const BANNED_TITLE_KEYWORDS = [
   "blister pack",
   "tin sealed",
   "sealed tin",
-  
+
   // ===== CODES/DIGITAL =====
   "online code",
   "ptcgo",
   "digital code",
-  
+
   // ===== LANGUAGE EXCLUSIONS =====
   "korean",
-  
+
   // ===== MISC BANNED =====
   "330hp",
   "hp330",
@@ -270,14 +270,7 @@ export const BANNED_TITLE_KEYWORDS = [
   "playmat",
 ];
 
-const CONDITION_BUCKETS = new Set([
-  "raw_nm",
-  "nm",
-  "lp",
-  "mp",
-  "hp",
-  "dmg",
-]);
+const CONDITION_BUCKETS = new Set(["raw_nm", "nm", "lp", "mp", "hp", "dmg"]);
 
 const CONDITION_MAP: Record<string, string> = {
   valutata: "raw_nm",
@@ -296,14 +289,11 @@ const CONDITION_MAP: Record<string, string> = {
 };
 
 export function cleanTitle(raw: string): string {
-  return raw
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
+  return raw.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
 export function normalizeCondition(
-  raw: string | null | undefined,
+  raw: string | null | undefined
 ): string | null {
   if (!raw) return null;
   const c = raw.toLowerCase().trim();
@@ -453,7 +443,7 @@ function getEbayEnv(): EbayEnv {
   }
   if (!clientId || !clientSecret) {
     throw new Error(
-      "EBAY_CLIENT_ID and EBAY_CLIENT_SECRET must be set in .env.local",
+      "EBAY_CLIENT_ID and EBAY_CLIENT_SECRET must be set in .env.local"
     );
   }
 
@@ -461,12 +451,10 @@ function getEbayEnv(): EbayEnv {
 }
 
 // Simple in-memory token cache so we don't request a new token on every call.
-let cachedToken:
-  | {
-      accessToken: string;
-      expiresAt: number; // epoch seconds
-    }
-  | null = null;
+let cachedToken: {
+  accessToken: string;
+  expiresAt: number; // epoch seconds
+} | null = null;
 
 // ---- OAuth: get application access token for Browse API ----
 
@@ -480,7 +468,7 @@ export async function getAppAccessToken(): Promise<string> {
 
   const tokenUrl = "https://api.ebay.com/identity/v1/oauth2/token";
   const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString(
-    "base64",
+    "base64"
   );
 
   const body = new URLSearchParams({
@@ -500,7 +488,7 @@ export async function getAppAccessToken(): Promise<string> {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
-      `Failed to get eBay app access token (${res.status} ${res.statusText}): ${text}`,
+      `Failed to get eBay app access token (${res.status} ${res.statusText}): ${text}`
     );
   }
 
@@ -541,7 +529,7 @@ function toMarketplaceId(market: string): string {
 
 export async function fetchEbayListings(
   searchQuery: string,
-  market: MarketCode,
+  market: MarketCode
 ): Promise<NormalizedListing[]> {
   const marketplaceId = toMarketplaceId(market);
   const accessToken = await getAppAccessToken();
@@ -555,23 +543,26 @@ export async function fetchEbayListings(
   url.searchParams.set("sort", "price"); // we'll do deal logic later
 
   console.log(
-    `fetchEbayListings: calling Browse API for "${searchQuery}" on ${marketplaceId}`,
+    `fetchEbayListings: calling Browse API for "${searchQuery}" on ${marketplaceId}`
   );
 
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-      "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
-    },
-  });
+  // Use rate limit retry wrapper for 429 responses
+  const res = await fetchWithRateLimitRetry(() =>
+    fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
+      },
+    })
+  );
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     console.error(
       `fetchEbayListings: HTTP ${res.status} ${res.statusText}. Body (truncated):`,
-      text.slice(0, 400),
+      text.slice(0, 400)
     );
     return [];
   }
@@ -601,7 +592,7 @@ export async function fetchEbayListings(
 
   const items = data.itemSummaries ?? [];
   console.log(
-    `fetchEbayListings: received ${items.length} items from Browse API for "${searchQuery}".`,
+    `fetchEbayListings: received ${items.length} items from Browse API for "${searchQuery}".`
   );
 
   const listings: NormalizedListing[] = [];
@@ -685,7 +676,7 @@ export async function fetchEbayListings(
     const sellerUsername = item.seller?.username
       ? item.seller.username.toLowerCase()
       : null;
-    
+
     // Store name if available (eBay Browse API doesn't return this in itemSummaries)
     // This field is prepared for future API enhancements or alternative endpoints
     const sellerStoreName: string | null = null;
@@ -732,7 +723,7 @@ export async function fetchEbayListings(
   }
 
   console.log(
-    `fetchEbayListings: normalized ${listings.length} listings for "${searchQuery}".`,
+    `fetchEbayListings: normalized ${listings.length} listings for "${searchQuery}".`
   );
 
   const filtered = listings.filter((item) => {
@@ -758,27 +749,30 @@ export async function fetchEbayListings(
 
 export async function fetchEbayItemDetail(
   listingId: string,
-  market: string,
+  market: string
 ): Promise<EbayItemDetail | null> {
   const marketplaceId = toMarketplaceId(market);
   const accessToken = await getAppAccessToken();
   const endpoint = `https://api.ebay.com/buy/browse/v1/item/${listingId}`;
 
   try {
-    const res = await fetch(endpoint, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
-      },
-    });
+    // Use rate limit retry wrapper for 429 responses
+    const res = await fetchWithRateLimitRetry(() =>
+      fetch(endpoint, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
+        },
+      })
+    );
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       console.error(
         `fetchEbayItemDetail: HTTP ${res.status} ${res.statusText} for ${listingId}. Body (truncated):`,
-        text.slice(0, 200),
+        text.slice(0, 200)
       );
       return null;
     }
@@ -806,7 +800,7 @@ function selfTestTitleFilter() {
     const result = isValidListingTitle(test.title);
     if (result !== test.expected) {
       console.warn(
-        `[lib/ebay] title filter self-test failed for "${test.title}" – expected ${test.expected}, got ${result}`,
+        `[lib/ebay] title filter self-test failed for "${test.title}" – expected ${test.expected}, got ${result}`
       );
     }
   }
@@ -817,7 +811,7 @@ selfTestTitleFilter();
 export async function fetchEbaySoldListings(
   searchQuery: string,
   market: string,
-  limit = 50,
+  limit = 50
 ): Promise<SoldListing[]> {
   const marketplaceId = toMarketplaceId(market);
   const accessToken = await getAppAccessToken();
@@ -831,23 +825,26 @@ export async function fetchEbaySoldListings(
   url.searchParams.set("filter", "salesStatus:{SOLD}");
 
   console.log(
-    `fetchEbaySoldListings: calling Browse API for "${searchQuery}" on ${marketplaceId}`,
+    `fetchEbaySoldListings: calling Browse API for "${searchQuery}" on ${marketplaceId}`
   );
 
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-      "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
-    },
-  });
+  // Use rate limit retry wrapper for 429 responses
+  const res = await fetchWithRateLimitRetry(() =>
+    fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
+      },
+    })
+  );
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     console.error(
       `fetchEbaySoldListings: HTTP ${res.status} ${res.statusText}. Body (truncated):`,
-      text.slice(0, 400),
+      text.slice(0, 400)
     );
     return [];
   }
@@ -863,7 +860,7 @@ export async function fetchEbaySoldListings(
 
   const items = data.itemSummaries ?? [];
   console.log(
-    `fetchEbaySoldListings: received ${items.length} sold items for "${searchQuery}".`,
+    `fetchEbaySoldListings: received ${items.length} sold items for "${searchQuery}".`
   );
 
   const soldListings: SoldListing[] = [];
@@ -894,7 +891,7 @@ export async function getEbayRateLimits(): Promise<void> {
 
   const tokenUrl = "https://api.ebay.com/identity/v1/oauth2/token";
   const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString(
-    "base64",
+    "base64"
   );
 
   const body = new URLSearchParams({
@@ -914,7 +911,7 @@ export async function getEbayRateLimits(): Promise<void> {
   if (!tokenRes.ok) {
     const text = await tokenRes.text().catch(() => "");
     throw new Error(
-      `getEbayRateLimits: failed to get token (${tokenRes.status} ${tokenRes.statusText}): ${text}`,
+      `getEbayRateLimits: failed to get token (${tokenRes.status} ${tokenRes.statusText}): ${text}`
     );
   }
 
@@ -932,19 +929,19 @@ export async function getEbayRateLimits(): Promise<void> {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-    },
+    }
   );
 
   if (!limitsRes.ok) {
     const text = await limitsRes.text().catch(() => "");
     throw new Error(
-      `getEbayRateLimits: failed to retrieve limits (${limitsRes.status} ${limitsRes.statusText}): ${text}`,
+      `getEbayRateLimits: failed to retrieve limits (${limitsRes.status} ${limitsRes.statusText}): ${text}`
     );
   }
 
   const limitsJson = await limitsRes.json();
   console.log(
     "getEbayRateLimits: raw response:",
-    JSON.stringify(limitsJson, null, 2),
+    JSON.stringify(limitsJson, null, 2)
   );
 }

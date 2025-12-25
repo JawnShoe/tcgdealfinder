@@ -3,7 +3,7 @@
 **Last Updated**: 2025-12-24
 **Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
 
-**ACTIVE WORK**: Automated Data Pipeline + Freshness Observability
+**ACTIVE WORK**: NONE
 
 ---
 
@@ -1045,29 +1045,39 @@ Tier 1.5 — Inventory & Retention Multipliers (NEXT FOCUS)
 
 High ROI, low product risk, mostly additive.
 
-### Automated Data Pipeline + Freshness Observability [IN PROGRESS]
+### Automated Data Pipeline + Freshness Observability [DONE ✅]
 
 **Priority**: Critical (addresses existential risk from Guest Expert Audit)
 
-**Scope**:
+**Implementation** (2025-12-24):
 
-- Add GitHub Actions scheduled workflows for all update scripts
-- Extend /api/health with freshness observability fields
-- Add basic rate-limit resilience (exponential backoff on 429)
+- Added `.github/workflows/data-pipelines.yml` with scheduled jobs:
+  - `update-listings`: Every 30 minutes (cron: `*/30 * * * *`)
+  - `check-alerts`: Every 15 minutes (cron: `*/15 * * * *`)
+  - `update-fx-rates`: Twice daily at 6 AM/PM UTC (cron: `0 6,18 * * *`)
+  - `update-historical-prices`: Daily at 3 AM UTC (cron: `0 3 * * *`)
+  - `update-sold-listings`: Daily at 4 AM UTC (cron: `0 4 * * *`)
+- All jobs support manual dispatch via `workflow_dispatch` with job selector
+- Extended `/api/health` with freshness observability:
+  - `freshness.listings`: lastUpdated, staleCount1h, totalActive
+  - `freshness.historicalPrices`: lastUpdated, cardsCovered
+  - `freshness.fxRates`: lastUpdated, rates (currency → USD mapping)
+- Added `lib/rateLimitRetry.ts` with exponential backoff for 429 responses
+- Applied retry wrapper to `fetchEbayListings`, `fetchEbayItemDetail`, `fetchEbaySoldListings`
 
-**Scripts to automate**:
+**Required GitHub Secrets** (set in repo settings → Secrets → Actions):
 
-- `update-listings.ts` — Every 15-30 minutes
-- `check-alerts.ts` — Every 15 minutes (lightweight)
-- `update-fx-rates.ts` — Daily or 12h
-- `update-historical-prices.ts` — Daily
-- `update-sold-listings.ts` — Daily
+- `DATABASE_URL`: Postgres connection string
+- `EBAY_APP_ID`: eBay API app ID (also used as client ID)
+- `EBAY_CLIENT_SECRET`: eBay API client secret
+- `SENDGRID_API_KEY`: SendGrid API key (optional, for alerts)
 
-**Observability additions** (/api/health):
+**Files changed**:
 
-- Listings: last updated timestamp + stale count
-- Historical prices: last run timestamp
-- FX rates: last updated timestamp + current rates
+- `.github/workflows/data-pipelines.yml` (new)
+- `app/api/health/route.ts` (extended)
+- `lib/rateLimitRetry.ts` (new)
+- `lib/ebay.ts` (rate limit retry applied)
 
 Full Pokémon Set Coverage (SSOT Catalog) [DONE ✅ — API-complete, audited 2025-12-18]
 

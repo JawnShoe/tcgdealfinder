@@ -1119,6 +1119,38 @@ The `show-fx-rates` workflow job only displays current rates for monitoring.
 - Fix applied: PR #40 resolved Postgres param typing error in `check-alerts.ts`
 - Gate applied: `check-alerts` scheduled runs disabled until `SENDGRID_API_KEY` configured
 
+**Ops Enablement Workflow** (2025-12-25):
+
+Added `ops-enable-alerts.yml` workflow to automate Alerts MVP enablement:
+
+- **Workflow**: `.github/workflows/ops-enable-alerts.yml`
+- **Purpose**: Single workflow to apply migration 005 + run smoke test
+- **Inputs**:
+  - `confirm`: Must equal `APPLY_MIGRATION_005` for migrate mode
+  - `mode`: `migrate` | `smoke_test`
+  - `test_email`: (optional) Comma-separated allowlist for test emails
+- **Jobs**:
+  - `migrate`: Applies `migrations/005_add_subscription_last_emailed.sql`, verifies column + index exist
+  - `smoke_test`: Runs `check-alerts` in safe mode (no emails sent unless SENDGRID_API_KEY is set)
+- **Security**: No secrets printed, idempotent migration (IF NOT EXISTS), minimal permissions
+- **Documentation**: `docs/ENV_RUNBOOK.md` "Operator Enablement" section
+
+**Files changed**:
+
+- `.github/workflows/ops-enable-alerts.yml` (new)
+- `scripts/run-migration.ts` (new - generic migration runner)
+- `scripts/verify-migration-005.ts` (new - migration verification)
+- `docs/ENV_RUNBOOK.md` (updated with operator enablement section)
+
+**Ops Enablement Evidence** (to be recorded after operator runs workflow):
+
+- [ ] Migration run ID: `______________`
+- [ ] Migration timestamp: `______________`
+- [ ] Migration result: `PASS / FAIL`
+- [ ] Smoke test run ID: `______________`
+- [ ] Smoke test timestamp: `______________`
+- [ ] Smoke test result: `PASS / FAIL`
+
 Full Pokémon Set Coverage (SSOT Catalog) [DONE ✅ — API-complete, audited 2025-12-18]
 
 Add all Pokémon TCG sets (historical + modern).

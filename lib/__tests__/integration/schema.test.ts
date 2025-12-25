@@ -10,7 +10,7 @@ import {
   ensureListingsMarketColumn,
   ensureHistoricalMarketColumn,
   ensureHistoricalStdDevColumn,
-} from "../schema";
+} from "../../schema";
 
 /**
  * Test that all schema introspection helpers return boolean values.

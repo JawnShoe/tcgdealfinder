@@ -5,7 +5,7 @@ import {
   getVariantContradictionReason,
   getBlacklistReason,
   type CardContext,
-} from "../blacklist";
+} from "../../blacklist";
 
 // =============================================================================
 // getVariantContradictionReason tests

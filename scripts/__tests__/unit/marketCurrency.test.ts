@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { detectMarketCurrencyMismatch } from "../update-listings";
+import { detectMarketCurrencyMismatch } from "../../update-listings";
 
 test("currency guard allows matching currency", () => {
   const detail = detectMarketCurrencyMismatch("usd", "EBAY_US");

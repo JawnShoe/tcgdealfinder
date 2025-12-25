@@ -13,11 +13,11 @@ import {
   formatMarket,
   formatEndsAt,
   formatFreshness,
-} from "../dealFormatting";
-import { buildDealViewModel, type DealViewModel } from "../dealViewModel";
-import { TABLE_TH_NOWRAP } from "../typography";
-import { HomepageColumns, NewestColumns, TopDealsColumns, EndingSoonColumns, CardDetailListingsColumns } from "../tableColumns";
-import type { Deal } from "../../types/deal";
+} from "../../dealFormatting";
+import { buildDealViewModel, type DealViewModel } from "../../dealViewModel";
+import { TABLE_TH_NOWRAP } from "../../typography";
+import { HomepageColumns, NewestColumns, TopDealsColumns, EndingSoonColumns, CardDetailListingsColumns } from "../../tableColumns";
+import type { Deal } from "../../../types/deal";
 
 /**
  * Test 1: formatDiscount(null) must return "--", never "Unscored"

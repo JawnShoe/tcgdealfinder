@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   getSoftExclusionReason,
   shouldExcludeListingFromCardSurfaces,
-} from "../blacklist";
+} from "../../blacklist";
 
 // =============================================================================
 // SOFT EXCLUSION TESTS

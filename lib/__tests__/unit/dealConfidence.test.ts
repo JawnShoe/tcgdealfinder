@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   applyConfidenceToScore,
   computeDealConfidenceWeight,
-} from "../dealConfidence";
+} from "../../dealConfidence";
 
 test("high sample and low dispersion yields high weight", () => {
   const weight = computeDealConfidenceWeight({

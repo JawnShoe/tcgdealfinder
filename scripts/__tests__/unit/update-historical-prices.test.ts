@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildRecentSoldQuery } from "../update-historical-prices";
+import { buildRecentSoldQuery } from "../../update-historical-prices";
 
 test("recent sold query partitions by card language and market", () => {
   const sql = buildRecentSoldQuery();

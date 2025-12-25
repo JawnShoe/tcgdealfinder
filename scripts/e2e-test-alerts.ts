@@ -126,6 +126,8 @@ async function createTestSubscription(
 ): Promise<{ id: number; wasCreated: boolean }> {
   // Use INSERT ... ON CONFLICT DO UPDATE to handle unique constraint
   // min_discount_percent = 0 to guarantee trigger (any discount >= 0%)
+  // NOTE: Must match email_subscriptions_active_idx exactly: (card_id, lower(email)) WHERE unsubscribed_at IS NULL
+  const emailLower = email.toLowerCase();
   const res = await query<{ id: number; was_created: boolean }>(
     `
     INSERT INTO email_subscriptions (
@@ -136,14 +138,14 @@ async function createTestSubscription(
       confirmed_at
     )
     VALUES ($1, $2, 0, $3, NOW())
-    ON CONFLICT (card_id, email) WHERE unsubscribed_at IS NULL
+    ON CONFLICT (card_id, lower(email)) WHERE unsubscribed_at IS NULL
     DO UPDATE SET
       min_discount_percent = 0,
       confirmed_at = NOW(),
       last_emailed_at = NULL
     RETURNING id, (xmax = 0) as was_created;
     `,
-    [cardId, email.toLowerCase(), randomUUID()]
+    [cardId, emailLower, randomUUID()]
   );
   return {
     id: res.rows[0].id,

@@ -43,6 +43,29 @@ async function verify(): Promise<void> {
   }
 
   console.log("✅ Verified: email_subscriptions_last_emailed_idx index exists");
+
+  // Also verify the unique index required for ON CONFLICT upsert exists
+  // This is a product invariant needed by e2e-test-alerts.ts
+  const uniqueIdxRes = await query<{ indexname: string }>(`
+    SELECT indexname
+    FROM pg_indexes
+    WHERE tablename = 'email_subscriptions'
+      AND indexname = 'email_subscriptions_active_idx';
+  `);
+
+  if (uniqueIdxRes.rows.length === 0) {
+    console.error(
+      "❌ ERROR: email_subscriptions_active_idx unique index not found"
+    );
+    console.error(
+      "   This index is required for ON CONFLICT upsert in E2E tests"
+    );
+    process.exit(1);
+  }
+
+  console.log(
+    "✅ Verified: email_subscriptions_active_idx unique index exists"
+  );
 }
 
 verify().then(() => process.exit(0));

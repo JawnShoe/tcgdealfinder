@@ -1142,14 +1142,18 @@ Added `ops-enable-alerts.yml` workflow to automate Alerts MVP enablement:
 - `scripts/verify-migration-005.ts` (new - migration verification)
 - `docs/ENV_RUNBOOK.md` (updated with operator enablement section)
 
-**Ops Enablement Evidence** (to be recorded after operator runs workflow):
+**Ops Enablement Evidence** (2025-12-25):
 
-- [ ] Migration run ID: `______________`
-- [ ] Migration timestamp: `______________`
-- [ ] Migration result: `PASS / FAIL`
-- [ ] Smoke test run ID: `______________`
-- [ ] Smoke test timestamp: `______________`
-- [ ] Smoke test result: `PASS / FAIL`
+- [x] Migration run ID: `20503721505`
+- [x] Migration timestamp: 2025-12-25 02:37 PST (27s duration)
+- [x] Migration result: **PASS** — `last_emailed_at` column + index created
+- [x] Smoke test run ID: `20503630722`
+- [x] Smoke test timestamp: 2025-12-25 02:29 PST (39s duration)
+- [x] Smoke test result: **PASS** — `check-alerts` ran successfully (dry-run, no emails sent)
+
+**Verification**: Migration applied to production DATABASE_URL via GitHub Actions. Column `last_emailed_at` and index `email_subscriptions_last_emailed_idx` now exist in `email_subscriptions` table.
+
+**Next step**: Scheduled `check-alerts` remains workflow_dispatch-only until controlled real-email test completed.
 
 Full Pokémon Set Coverage (SSOT Catalog) [DONE ✅ — API-complete, audited 2025-12-18]
 

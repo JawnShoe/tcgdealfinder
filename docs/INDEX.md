@@ -23,13 +23,14 @@ These are the active, maintained source-of-truth files.
 
 These document operational procedures and policies (Repo Hardening Pack).
 
-| Document                                                  | Purpose                                                   | Audience               |
-| --------------------------------------------------------- | --------------------------------------------------------- | ---------------------- |
-| [docs/BACKUP_POLICY.md](BACKUP_POLICY.md)                 | Backup strategy and restore procedures                    | All contributors       |
-| [docs/ENV_RUNBOOK.md](ENV_RUNBOOK.md)                     | Environment variables and `.env.example` alignment policy | All contributors       |
-| [docs/DB_MIGRATIONS_RUNBOOK.md](DB_MIGRATIONS_RUNBOOK.md) | Database migration workflow and rollback procedures       | Backend / Ops          |
-| [docs/RELEASES.md](RELEASES.md)                           | Release tagging conventions and changelog maintenance     | All contributors       |
-| [docs/DEFINITION_OF_READY.md](DEFINITION_OF_READY.md)     | Feature planning checklist template                       | Product / Contributors |
+| Document                                                        | Purpose                                                   | Audience               |
+| --------------------------------------------------------------- | --------------------------------------------------------- | ---------------------- |
+| [docs/BACKUP_POLICY.md](BACKUP_POLICY.md)                       | Backup strategy and restore procedures                    | All contributors       |
+| [docs/ENV_RUNBOOK.md](ENV_RUNBOOK.md)                           | Environment variables and `.env.example` alignment policy | All contributors       |
+| [docs/DB_MIGRATIONS_RUNBOOK.md](DB_MIGRATIONS_RUNBOOK.md)       | Database migration workflow and rollback procedures       | Backend / Ops          |
+| [docs/RELEASES.md](RELEASES.md)                                 | Release tagging conventions and changelog maintenance     | All contributors       |
+| [docs/DEFINITION_OF_READY.md](DEFINITION_OF_READY.md)           | Feature planning checklist template                       | Product / Contributors |
+| [docs/EVIDENCE_PACKET_TEMPLATE.md](EVIDENCE_PACKET_TEMPLATE.md) | Tier-1 Evidence Gate documentation template               | All contributors       |
 
 ---
 

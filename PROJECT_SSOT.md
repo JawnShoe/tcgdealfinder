@@ -41,6 +41,7 @@
 - Repo Hardening Pack G — Sentry Observability (2025-12-24): Added minimal server-side error tracking via @sentry/nextjs (Plan A: server-only, no sourcemaps). Server/edge runtime configs with optional SENTRY_DSN (graceful degradation if unset). beforeSend scrubs emails/tokens from error messages. Client-side capture disabled (sentry.client.config.ts is stub). Zero workflow changes, zero UI changes, zero runtime behavior changes (silent error reporting only). Bundle size: 88.4 kB shared JS (vs 151 kB if client-side enabled). Env var added: SENTRY_DSN (name only in .env.example, documented in ENV_RUNBOOK.md Observability section). Classification: Observability infrastructure (minimal). Commits: 46f6c0f (initial), 09315f9 (scope correction: removed NEXT_PUBLIC_SENTRY_DSN), 117e54c (prettier formatting). PR: #28 (merged). Merge commit: 1e14293.
 - Repo Hardening Pack G.1 — Sentry Canonical Next.js 14 Setup (2025-12-24): Moved Sentry init to Next.js 14 instrumentation.ts pattern; added app/global-error.tsx for App Router render error capture; Plan A server-only maintained. Resolves Next.js 14 warnings about deprecated config entrypoints. Files: instrumentation.ts (new), app/global-error.tsx (new), sentry.server.config.ts (stub), sentry.edge.config.ts (stub). Bundle size unchanged (88.4 kB). Classification: Infrastructure modernization (canonical pattern migration). Commit: 57a878b. PR: #30 (merged). Merge commit: 334de3a.
 - Lint-Staged Pre-commit Hook (2025-12-24): Extended Husky pre-commit hook to automatically format staged files before linting. Added lint-staged (^16.2.7) with configuration for common file types (js,jsx,ts,tsx,md,json,yml,yaml,css,scss). Added `format:staged` script to package.json. Pre-commit hook now runs: `npm run format:staged` (lint-staged → prettier --write on staged files) then `npm run lint`. Prevents formatting violations from reaching CI by catching and fixing them locally during commit. CI still enforces "Check formatting (changed files only)" as final gate. Baseline codebase remains unformatted; enforcement is incremental on changed files only. Classification: Developer workflow automation (pre-commit formatting gate). Commit: 632eb31. PR: #35 (merged). Merge commit: b14da04.
+- Foundational Engineering Practices Audit Closure (2025-12-24): Completed 3-task audit focused on security, backup validation, and process documentation. Task 1 (GitHub Advanced Security): NOT AVAILABLE — CodeQL/secret scanning require GitHub plan upgrade; documented limitation. Task 2 (Database Restore Drill): NOT AVAILABLE — Neon point-in-time restore beyond minimal window requires paid plan; limitation documented in docs/BACKUP_POLICY.md. Task 3 (Evidence Packet Template): COMPLETE — created docs/EVIDENCE_PACKET_TEMPLATE.md formalizing Tier-1 Evidence Gate with 5-section template (DB query, UI samples, field path, verdict, fix verification); added to docs/INDEX.md. Classification: Ops/security/docs audit (no Tier-1 changes). No code changes. Files: docs/EVIDENCE_PACKET_TEMPLATE.md (new), docs/BACKUP_POLICY.md (plan limitation note), docs/INDEX.md (updated). Audit result: 1/3 tasks actionable under current plan constraints; remaining tasks require paid service upgrades (deferred).
 - Restorepoint bundle for SSOT commit e7e0717: `T:\Projects\restorepoints\tcg-deal-finder_ssot-e7e0717_restorepoint.bundle`.
 - Restorepoint bundle for admin UI fixes (2025-12-22): `T:\Projects\restorepoints\admin-ui-8b6003c.bundle`.
 - Restorepoint bundle for pre-Tailwind v4 migration (2025-12-24): `t:\Projects\tcg-deal-finder-pre-tailwind-v4-migration.bundle` (HEAD: 1861b7f).
@@ -146,7 +147,7 @@
 
 ### 4) Security & Compliance Baseline
 
-**Maturity**: Medium→High — patching tracked + admin cookie auth + secret hygiene; Gap: stronger CI security scanning + audit logging.
+**Maturity**: Medium→High — patching tracked + admin cookie auth + secret hygiene; Gap: stronger CI security scanning (GitHub Advanced Security requires plan upgrade) + audit logging.
 
 ### 5) Code Quality & Consistency
 
@@ -154,7 +155,7 @@
 
 ### 6) Data Management & Integrity
 
-**Maturity**: Medium — migrations/runbooks + idempotent ingest + locked data systems; Gap: integrity checks + restore drills + data quality monitoring.
+**Maturity**: Medium — migrations/runbooks + idempotent ingest + locked data systems; Gap: integrity checks + restore drills (Neon PITR requires plan upgrade) + data quality monitoring.
 
 ### 7) Dev Environment & DevOps
 
@@ -162,7 +163,7 @@
 
 ### 8) Process & Collaboration
 
-**Maturity**: Very High — one active work item + blast radius + regression owner + evidence packs + DONE/SHIFT gates.
+**Maturity**: Very High — one active work item + blast radius + regression owner + evidence packs (template: docs/EVIDENCE_PACKET_TEMPLATE.md) + DONE/SHIFT gates.
 
 **Primary maturity lift before scaling features**: automated test coverage + deeper observability (alerts/dashboards/perf/structured logs).
 

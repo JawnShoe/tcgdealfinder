@@ -11,6 +11,7 @@ export type EmailSubscription = {
   createdAt: Date;
   confirmedAt: Date | null;
   unsubscribedAt: Date | null;
+  lastEmailedAt: Date | null;
   unsubscribeToken: string;
 };
 
@@ -23,7 +24,11 @@ type DbRow = {
   created_at: string;
   confirmed_at: string | null;
   unsubscribed_at: string | null;
+  last_emailed_at: string | null;
 };
+
+/** Cooldown period between emails to the same subscriber (hours) */
+const EMAIL_COOLDOWN_HOURS = 6;
 
 function mapRow(row: DbRow): EmailSubscription {
   return {
@@ -34,6 +39,7 @@ function mapRow(row: DbRow): EmailSubscription {
     createdAt: new Date(row.created_at),
     confirmedAt: row.confirmed_at ? new Date(row.confirmed_at) : null,
     unsubscribedAt: row.unsubscribed_at ? new Date(row.unsubscribed_at) : null,
+    lastEmailedAt: row.last_emailed_at ? new Date(row.last_emailed_at) : null,
     unsubscribeToken: row.unsubscribe_token,
   };
 }
@@ -58,7 +64,7 @@ export async function createOrUpdateSubscription(params: {
       ORDER BY id DESC
       LIMIT 1;
     `,
-    [params.cardId, emailNormalized],
+    [params.cardId, emailNormalized]
   );
 
   const existing = existingRes.rows[0];
@@ -72,7 +78,7 @@ export async function createOrUpdateSubscription(params: {
         WHERE id = $2
         RETURNING *;
       `,
-      [minDiscount, existing.id],
+      [minDiscount, existing.id]
     );
     return mapRow(updated.rows[0]);
   }
@@ -89,7 +95,7 @@ export async function createOrUpdateSubscription(params: {
         WHERE id = $3
         RETURNING *;
       `,
-      [minDiscount, token, existing.id],
+      [minDiscount, token, existing.id]
     );
     return mapRow(updated.rows[0]);
   }
@@ -107,7 +113,7 @@ export async function createOrUpdateSubscription(params: {
       VALUES ($1, $2, $3, $4, NOW())
       RETURNING *;
     `,
-    [params.cardId, emailNormalized, minDiscount, token],
+    [params.cardId, emailNormalized, minDiscount, token]
   );
 
   return mapRow(inserted.rows[0]);
@@ -123,7 +129,7 @@ export async function unsubscribeByToken(token: string): Promise<boolean> {
       WHERE unsubscribe_token = $1 AND unsubscribed_at IS NULL
       RETURNING id;
     `,
-    [token],
+    [token]
   );
 
   return res.rowCount > 0;
@@ -131,8 +137,9 @@ export async function unsubscribeByToken(token: string): Promise<boolean> {
 
 export async function getActiveSubscriptionsForCard(
   cardId: number,
-  minDiscountPercent: number,
+  minDiscountPercent: number
 ): Promise<EmailSubscription[]> {
+  // Filter out subscriptions that were emailed within the cooldown period
   const res = await query<DbRow>(
     `
       SELECT *
@@ -140,10 +147,28 @@ export async function getActiveSubscriptionsForCard(
       WHERE card_id = $1
         AND unsubscribed_at IS NULL
         AND confirmed_at IS NOT NULL
-        AND min_discount_percent <= $2;
+        AND min_discount_percent <= $2
+        AND (last_emailed_at IS NULL OR last_emailed_at < NOW() - INTERVAL '${EMAIL_COOLDOWN_HOURS} hours');
     `,
-    [cardId, clampAlertThreshold(minDiscountPercent)],
+    [cardId, clampAlertThreshold(minDiscountPercent)]
   );
 
   return res.rows.map(mapRow);
+}
+
+/**
+ * Mark a subscription as having received an email.
+ * This updates last_emailed_at to enforce the cooldown period.
+ */
+export async function markSubscriptionEmailed(
+  subscriptionId: number
+): Promise<void> {
+  await query(
+    `
+      UPDATE email_subscriptions
+      SET last_emailed_at = NOW()
+      WHERE id = $1;
+    `,
+    [subscriptionId]
+  );
 }

@@ -43,6 +43,31 @@
 | ------------ | -------- | -------------------------------------------- | --------------------------- |
 | `SENTRY_DSN` | No       | Sentry error tracking DSN (server-side only) | `https://...@sentry.io/...` |
 
+### Email Alerts
+
+| Variable            | Required | Purpose                                       | Example                     |
+| ------------------- | -------- | --------------------------------------------- | --------------------------- |
+| `SENDGRID_API_KEY`  | No\*     | SendGrid API key for alert emails             | `SG.xxxxx...`               |
+| `ALERTS_EMAIL_FROM` | No\*     | Verified sender address for alert emails      | `alerts@yourdomain.com`     |
+| `SITE_BASE_URL`     | No\*     | Base URL for email links (unsubscribe, cards) | `https://tcgdealfinder.com` |
+
+\*Required only when email alerts are enabled. The `check-alerts` script gracefully skips email sending when `SENDGRID_API_KEY` is not set.
+
+**Email Alert Architecture**:
+
+- Users subscribe via card detail pages → stored in `email_subscriptions` table
+- `check-alerts` script runs on schedule → checks thresholds → sends emails via SendGrid
+- Per-subscription cooldown (6 hours) prevents spam loops
+- RFC 8058 `List-Unsubscribe` headers for one-click unsubscribe in email clients
+- Unsubscribe endpoint: `GET /api/alerts/unsubscribe?token={uuid}`
+
+**Required SendGrid Setup**:
+
+1. Create SendGrid account at https://sendgrid.com
+2. Create API key with "Mail Send" permission
+3. Verify sender address or authenticate sending domain
+4. Set `SENDGRID_API_KEY` and `ALERTS_EMAIL_FROM` in environment
+
 ---
 
 ## `.env.example` Alignment Policy

@@ -1,9 +1,9 @@
 # PROJECT SSOT — TCG Deal Finder
 
-**Last Updated**: 2025-12-24
+**Last Updated**: 2025-12-25
 **Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
 
-**ACTIVE WORK**: NONE
+**ACTIVE WORK**: Tier 2: Alerts + DB-backed Watchlist (MVP)
 
 ---
 
@@ -1048,6 +1048,8 @@ High ROI, low product risk, mostly additive.
 ### Automated Data Pipeline + Freshness Observability [DONE ✅]
 
 **Priority**: Critical (addresses existential risk from Guest Expert Audit)
+
+**PR**: #39 | **Merge commit**: 48fcf35
 
 **Implementation** (2025-12-24):
 

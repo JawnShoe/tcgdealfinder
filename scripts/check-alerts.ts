@@ -4,7 +4,10 @@ import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../lib/pricing";
-import { getActiveSubscriptionsForCard } from "../lib/emailSubscriptions";
+import {
+  getActiveSubscriptionsForCard,
+  markSubscriptionEmailed,
+} from "../lib/emailSubscriptions";
 
 const SELLER_MIN_FEEDBACK = 20;
 const SELLER_MIN_POSITIVE_PERCENT = 98;
@@ -272,7 +275,12 @@ Unsubscribe: ${unsubscribeLink}`;
       subject,
       text,
       html,
+      unsubscribeUrl: unsubscribeLink,
     });
+
+    // Mark subscription as emailed to enforce cooldown period
+    await markSubscriptionEmailed(sub.id);
+    console.log(`    [EMAIL] Sent alert to ${sub.email} (sub #${sub.id})`);
   }
 }
 

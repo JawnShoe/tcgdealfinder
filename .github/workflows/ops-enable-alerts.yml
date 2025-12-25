@@ -6,20 +6,21 @@ name: Ops Enablement - Alerts MVP
 # Steps for operator:
 # 1. Set required secrets: DATABASE_URL, SENDGRID_API_KEY, ALERTS_EMAIL_FROM, SITE_BASE_URL
 # 2. Run this workflow with mode="migrate" and confirm="APPLY_MIGRATION_005"
-# 3. Run this workflow with mode="e2e_test_email" and test_email=<your-email>
+# 3. Run this workflow with mode="e2e_test_email", confirm="SEND_REAL_TEST_EMAIL", test_email=<your-email>
 # 4. If e2e test passes (email received), enable scheduled check-alerts in data-pipelines.yml
 #
 # Security notes:
 # - No secrets are printed to logs
 # - Migration is idempotent (IF NOT EXISTS)
-# - e2e_test_email REQUIRES SENDGRID_API_KEY (hard fail if missing)
+# - e2e_test_email REQUIRES confirm="SEND_REAL_TEST_EMAIL" + all email secrets
 # - Test data is cleaned up automatically after the test
+# - Emails only sent to addresses in test_email allowlist
 
 on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'Type "APPLY_MIGRATION_005" to confirm (required for migrate mode)'
+        description: 'Confirmation: "APPLY_MIGRATION_005" for migrate, "SEND_REAL_TEST_EMAIL" for e2e_test_email'
         required: true
         type: string
       mode:
@@ -154,13 +155,21 @@ jobs:
     if: github.event.inputs.mode == 'e2e_test_email'
     timeout-minutes: 10
     steps:
+      - name: Validate confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "SEND_REAL_TEST_EMAIL" ]; then
+            echo "::error::Confirmation required. Input 'SEND_REAL_TEST_EMAIL' to proceed with E2E test."
+            exit 1
+          fi
+          echo "Confirmation validated."
+
       - name: Validate test_email input
         run: |
           if [ -z "${{ github.event.inputs.test_email }}" ]; then
             echo "::error::test_email input is required for e2e_test_email mode."
             exit 1
           fi
-          echo "Test email: ${{ github.event.inputs.test_email }}"
+          echo "Test email allowlist: ${{ github.event.inputs.test_email }}"
 
       - name: Verify DATABASE_URL is set
         run: |
@@ -178,6 +187,22 @@ jobs:
           fi
           echo "SENDGRID_API_KEY is configured (value redacted)."
 
+      - name: Verify ALERTS_EMAIL_FROM is set
+        run: |
+          if [ -z "$ALERTS_EMAIL_FROM" ]; then
+            echo "::error::ALERTS_EMAIL_FROM secret is not set. E2E test requires a verified sender address."
+            exit 1
+          fi
+          echo "ALERTS_EMAIL_FROM is configured (value redacted)."
+
+      - name: Verify SITE_BASE_URL is set
+        run: |
+          if [ -z "$SITE_BASE_URL" ]; then
+            echo "::error::SITE_BASE_URL secret is not set. E2E test requires base URL for email links."
+            exit 1
+          fi
+          echo "SITE_BASE_URL is configured (value redacted)."
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -193,6 +218,7 @@ jobs:
       - name: Run E2E alert test
         run: |
           echo "Running E2E alert test..."
+          echo "Emails will ONLY be sent to: ${{ github.event.inputs.test_email }}"
           npx tsx scripts/e2e-test-alerts.ts "${{ github.event.inputs.test_email }}"
         env:
           NODE_ENV: production

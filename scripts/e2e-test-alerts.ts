@@ -101,6 +101,7 @@ async function createTestWatch(
   condition: string
 ): Promise<number> {
   // Insert test watch with marker in note field for cleanup
+  // Use threshold_value = 0 to guarantee trigger (any discount >= 0%)
   const res = await query<{ id: number }>(
     `
     INSERT INTO alerts_watchlist (
@@ -111,7 +112,7 @@ async function createTestWatch(
       active,
       note
     )
-    VALUES ($1, $2, 'discount_at_least', 1, TRUE, $3)
+    VALUES ($1, $2, 'discount_at_least', 0, TRUE, $3)
     RETURNING id;
     `,
     [cardId, condition, E2E_TEST_MARKER]
@@ -122,35 +123,10 @@ async function createTestWatch(
 async function createTestSubscription(
   cardId: number,
   email: string
-): Promise<number> {
-  // Check if subscription already exists
-  const existing = await query<{ id: number }>(
-    `
-    SELECT id FROM email_subscriptions
-    WHERE card_id = $1 AND email = $2
-    LIMIT 1;
-    `,
-    [cardId, email.toLowerCase()]
-  );
-
-  if (existing.rows.length > 0) {
-    // Update existing subscription to be active and ready
-    await query(
-      `
-      UPDATE email_subscriptions
-      SET min_discount_percent = 1,
-          confirmed_at = NOW(),
-          unsubscribed_at = NULL,
-          last_emailed_at = NULL
-      WHERE id = $1;
-      `,
-      [existing.rows[0].id]
-    );
-    return existing.rows[0].id;
-  }
-
-  // Create new subscription
-  const res = await query<{ id: number }>(
+): Promise<{ id: number; wasCreated: boolean }> {
+  // Use INSERT ... ON CONFLICT DO UPDATE to handle unique constraint
+  // min_discount_percent = 0 to guarantee trigger (any discount >= 0%)
+  const res = await query<{ id: number; was_created: boolean }>(
     `
     INSERT INTO email_subscriptions (
       card_id,
@@ -159,15 +135,27 @@ async function createTestSubscription(
       unsubscribe_token,
       confirmed_at
     )
-    VALUES ($1, $2, 1, $3, NOW())
-    RETURNING id;
+    VALUES ($1, $2, 0, $3, NOW())
+    ON CONFLICT (card_id, email) WHERE unsubscribed_at IS NULL
+    DO UPDATE SET
+      min_discount_percent = 0,
+      confirmed_at = NOW(),
+      last_emailed_at = NULL
+    RETURNING id, (xmax = 0) as was_created;
     `,
     [cardId, email.toLowerCase(), randomUUID()]
   );
-  return res.rows[0].id;
+  return {
+    id: res.rows[0].id,
+    wasCreated: res.rows[0].was_created,
+  };
 }
 
-async function cleanupTestData(watchId: number): Promise<void> {
+async function cleanupTestData(
+  watchId: number,
+  subscriptionId: number,
+  subscriptionWasCreated: boolean
+): Promise<void> {
   // Delete the test watch (alerts_log entries cascade)
   await query(`DELETE FROM alerts_watchlist WHERE id = $1;`, [watchId]);
 
@@ -175,6 +163,15 @@ async function cleanupTestData(watchId: number): Promise<void> {
   await query(`DELETE FROM alerts_watchlist WHERE note = $1;`, [
     E2E_TEST_MARKER,
   ]);
+
+  // If we created a fresh subscription, mark it as unsubscribed
+  // If we updated an existing one, leave it alone (user may want to keep it)
+  if (subscriptionWasCreated) {
+    await query(
+      `UPDATE email_subscriptions SET unsubscribed_at = NOW() WHERE id = $1;`,
+      [subscriptionId]
+    );
+  }
 }
 
 async function runCheckAlerts(): Promise<boolean> {
@@ -209,7 +206,7 @@ async function main() {
     process.exit(1);
   }
 
-  // Hard fail if SENDGRID_API_KEY is missing
+  // Hard fail if required env vars are missing
   if (!process.env.SENDGRID_API_KEY) {
     console.error("ERROR: SENDGRID_API_KEY is not set.");
     console.error(
@@ -219,8 +216,15 @@ async function main() {
   }
 
   if (!process.env.ALERTS_EMAIL_FROM) {
-    console.error("WARNING: ALERTS_EMAIL_FROM is not set.");
-    console.error("Emails may fail to send without a verified sender address.");
+    console.error("ERROR: ALERTS_EMAIL_FROM is not set.");
+    console.error("This test requires a verified sender address.");
+    process.exit(1);
+  }
+
+  if (!process.env.SITE_BASE_URL) {
+    console.error("ERROR: SITE_BASE_URL is not set.");
+    console.error("This test requires a base URL for email links.");
+    process.exit(1);
   }
 
   console.log("=== E2E Alert Test ===");
@@ -252,8 +256,10 @@ async function main() {
 
   // Step 3: Create/update test subscription
   console.log("Step 3: Creating test email subscription...");
-  const subscriptionId = await createTestSubscription(deal.card_id, testEmail);
-  console.log(`  Subscription #${subscriptionId} ready`);
+  const subscription = await createTestSubscription(deal.card_id, testEmail);
+  console.log(
+    `  Subscription #${subscription.id} ${subscription.wasCreated ? "(created)" : "(updated existing)"}`
+  );
   console.log("");
 
   // Step 4: Run check-alerts
@@ -265,8 +271,11 @@ async function main() {
 
   // Step 5: Cleanup
   console.log("Step 5: Cleaning up test data...");
-  await cleanupTestData(watchId);
+  await cleanupTestData(watchId, subscription.id, subscription.wasCreated);
   console.log(`  Deleted watch #${watchId}`);
+  if (subscription.wasCreated) {
+    console.log(`  Marked subscription #${subscription.id} as unsubscribed`);
+  }
   console.log("");
 
   // Summary

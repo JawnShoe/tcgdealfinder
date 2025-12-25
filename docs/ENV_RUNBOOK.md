@@ -2,7 +2,7 @@
 
 **Purpose**: Document required environment variables and `.env.example` alignment policy.
 
-**Last Updated**: 2025-12-24
+**Last Updated**: 2025-12-25
 
 ---
 
@@ -67,6 +67,64 @@
 2. Create API key with "Mail Send" permission
 3. Verify sender address or authenticate sending domain
 4. Set `SENDGRID_API_KEY` and `ALERTS_EMAIL_FROM` in environment
+
+---
+
+## Operator Enablement — Email Alerts (2 minutes)
+
+This section documents the one-time setup for enabling the email alerts subsystem.
+
+### Prerequisites
+
+1. GitHub repository secrets already configured:
+   - `DATABASE_URL` (required)
+   - `EBAY_APP_ID` (required)
+   - `EBAY_CLIENT_SECRET` (required)
+
+### Step 1: Set Email Alert Secrets
+
+In GitHub repo settings → Secrets and variables → Actions, add:
+
+| Secret Name         | Required | Description                                                  |
+| ------------------- | -------- | ------------------------------------------------------------ |
+| `SENDGRID_API_KEY`  | Yes      | SendGrid API key with "Mail Send" permission                 |
+| `ALERTS_EMAIL_FROM` | Yes      | Verified sender address (e.g., `alerts@yourdomain.com`)      |
+| `SITE_BASE_URL`     | Yes      | Base URL for email links (e.g., `https://tcgdealfinder.com`) |
+
+### Step 2: Apply Database Migration
+
+1. Go to **Actions → Ops Enablement - Alerts MVP → Run workflow**
+2. Set inputs:
+   - `confirm`: `APPLY_MIGRATION_005`
+   - `mode`: `migrate`
+3. Click **Run workflow**
+4. Wait for job to complete (green checkmark)
+
+### Step 3: Run Smoke Test
+
+1. Go to **Actions → Ops Enablement - Alerts MVP → Run workflow**
+2. Set inputs:
+   - `confirm`: (any value, not checked for smoke_test)
+   - `mode`: `smoke_test`
+   - `test_email`: (optional) Comma-separated email allowlist for test emails
+3. Click **Run workflow**
+4. Verify job completes successfully
+
+### Step 4: Enable Scheduled Alerts (Optional)
+
+After smoke test passes, to enable scheduled alert checks:
+
+1. Edit `.github/workflows/data-pipelines.yml`
+2. In the `check-alerts` job `if:` condition, add the schedule trigger:
+   ```yaml
+   if: >-
+     github.event.schedule == '*/15 * * * *' ||
+     (github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.job == 'check-alerts' || github.event.inputs.job == 'all'))
+   ```
+3. Commit and merge the change
+
+**Note**: Keep scheduled alerts disabled until email infrastructure is fully tested to prevent noisy failures.
 
 ---
 

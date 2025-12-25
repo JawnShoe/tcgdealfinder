@@ -93,6 +93,8 @@ git branch -D restore-temp
 
 **Schema restoration**: Re-apply migration files from `migrations/` directory in order if schema recovery is needed.
 
+**Plan Limitation (as of 2025-12-24)**: Point-in-time restore beyond minimal window requires paid Neon plan. Current plan does not support restore drills to arbitrary past timestamps. Neon platform provides automated backups per plan; restore capability verified conceptually but not operationally testable under current plan constraints.
+
 ---
 
 ## Operator Checklist

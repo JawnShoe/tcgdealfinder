@@ -38,6 +38,16 @@
 - CI remains the final arbiter: "Check formatting (changed files only)" must be green
 - Baseline remains unformatted; enforcement is incremental on changed files only
 
+### Post-Merge Tooling Sync (LOCKED)
+
+After merging any PR that changes tooling/process (CI workflows, package.json scripts, Husky hooks, Prettier behavior, test scripts/classification, secret hygiene):
+
+1. Open PROJECT_SSOT.md and confirm the merged PR number is recorded with PR # and merge commit hash (if applicable).
+2. Open SHIFT_LOCK.md and confirm the relevant gate/behavior is documented (search keywords: pre-commit, prettier, lint-staged, ci, test:unit, test:integration, secret hygiene).
+3. If either doc is missing the change:
+   - Immediately create a docs-only PR that updates the missing doc(s)
+   - Do not start a new workstream until that docs PR is merged (CI green)
+
 ### Tier-1 Evidence Gate (NEW)
 
 - Tier-1 issues (pricing totals, shipping, dedup integrity, seller trust UI, watchlist persistence, best/featured deal numbers) may not receive a “NO FIX REQUIRED” verdict unless an Evidence Packet is attached.

@@ -1054,9 +1054,9 @@ High ROI, low product risk, mostly additive.
 - Added `.github/workflows/data-pipelines.yml` with scheduled jobs:
   - `update-listings`: Every 30 minutes (cron: `*/30 * * * *`)
   - `check-alerts`: Every 15 minutes (cron: `*/15 * * * *`)
-  - `update-fx-rates`: Twice daily at 6 AM/PM UTC (cron: `0 6,18 * * *`)
   - `update-historical-prices`: Daily at 3 AM UTC (cron: `0 3 * * *`)
   - `update-sold-listings`: Daily at 4 AM UTC (cron: `0 4 * * *`)
+  - `show-fx-rates`: Manual dispatch only (FX rate updates require CLI input)
 - All jobs support manual dispatch via `workflow_dispatch` with job selector
 - Extended `/api/health` with freshness observability:
   - `freshness.listings`: lastUpdated, staleCount1h, totalActive
@@ -1064,13 +1064,37 @@ High ROI, low product risk, mostly additive.
   - `freshness.fxRates`: lastUpdated, rates (currency → USD mapping)
 - Added `lib/rateLimitRetry.ts` with exponential backoff for 429 responses
 - Applied retry wrapper to `fetchEbayListings`, `fetchEbayItemDetail`, `fetchEbaySoldListings`
+- Workflow safety: concurrency control, timeout-minutes, minimal permissions, secrets verification
 
-**Required GitHub Secrets** (set in repo settings → Secrets → Actions):
+**Operator Checklist — Required GitHub Secrets**:
 
-- `DATABASE_URL`: Postgres connection string
-- `EBAY_APP_ID`: eBay API app ID (also used as client ID)
-- `EBAY_CLIENT_SECRET`: eBay API client secret
-- `SENDGRID_API_KEY`: SendGrid API key (optional, for alerts)
+Set these in GitHub repo settings → Secrets and variables → Actions:
+
+| Secret Name          | Required    | Description                                                              |
+| -------------------- | ----------- | ------------------------------------------------------------------------ |
+| `DATABASE_URL`       | ✅ Yes      | Postgres connection string (e.g., `postgresql://user:pass@host:5432/db`) |
+| `EBAY_APP_ID`        | ✅ Yes      | eBay API app ID (also used as EBAY_CLIENT_ID for OAuth2)                 |
+| `EBAY_CLIENT_SECRET` | ✅ Yes      | eBay API client secret for OAuth2 token exchange                         |
+| `SENDGRID_API_KEY`   | ❌ Optional | SendGrid API key for alert emails (alerts job will skip if not set)      |
+
+**First-Run Validation Steps**:
+
+1. Set all required secrets in GitHub repo settings → Secrets → Actions
+2. Go to Actions → Data Pipelines → Run workflow (manual dispatch)
+3. Select `update-listings` job to test eBay API + DB connection
+4. Verify job completes successfully (green checkmark)
+5. Check `/api/health` endpoint for freshness data
+6. If successful, scheduled runs will begin automatically
+
+**FX Rate Updates** (manual process):
+
+FX rates cannot be auto-fetched; update locally with CLI args:
+
+```bash
+npx tsx scripts/update-fx-rates.ts --currency CAD --rate 0.72
+```
+
+The `show-fx-rates` workflow job only displays current rates for monitoring.
 
 **Files changed**:
 

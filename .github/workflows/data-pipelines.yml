@@ -4,11 +4,17 @@ name: Data Pipelines
 # These jobs run on schedule to keep deal data fresh.
 # All jobs are idempotent and safe to rerun.
 #
-# Required secrets (set in GitHub repo settings):
-# - DATABASE_URL: Postgres connection string
-# - EBAY_APP_ID: eBay API app ID (also used as client ID)
-# - EBAY_CLIENT_SECRET: eBay API client secret (for OAuth2)
-# - SENDGRID_API_KEY: SendGrid API key (for alert emails, optional)
+# Required secrets (set in GitHub repo settings → Secrets → Actions):
+# - DATABASE_URL: Postgres connection string (required)
+# - EBAY_APP_ID: eBay API app ID, also used as client ID (required)
+# - EBAY_CLIENT_SECRET: eBay API client secret for OAuth2 (required)
+# - SENDGRID_API_KEY: SendGrid API key for alert emails (optional)
+#
+# First-run validation:
+# 1. Set all required secrets in repo settings
+# 2. Run workflow manually: Actions → Data Pipelines → Run workflow
+# 3. Select "update-listings" job to test eBay API + DB connection
+# 4. Verify job completes successfully before relying on scheduled runs
 
 on:
   schedule:
@@ -16,12 +22,12 @@ on:
     - cron: "*/30 * * * *"
     # Check alerts every 15 minutes
     - cron: "*/15 * * * *"
-    # Update FX rates twice daily (6 AM and 6 PM UTC)
-    - cron: "0 6,18 * * *"
     # Update historical prices daily at 3 AM UTC
     - cron: "0 3 * * *"
     # Update sold listings daily at 4 AM UTC
     - cron: "0 4 * * *"
+    # NOTE: FX rates job removed from schedule - requires manual input
+    # Use workflow_dispatch to show current rates
 
   workflow_dispatch:
     inputs:
@@ -32,13 +38,22 @@ on:
         options:
           - update-listings
           - check-alerts
-          - update-fx-rates
+          - show-fx-rates
           - update-historical-prices
           - update-sold-listings
           - all
 
+# Prevent concurrent runs of the same job to avoid DB conflicts
+concurrency:
+  group: data-pipelines-${{ github.event.schedule || github.event.inputs.job || 'manual' }}
+  cancel-in-progress: false
+
+# Minimal permissions - read-only access to repo contents
 permissions:
   contents: read
+
+# Fork guard: scheduled workflows only run on the main repo
+# Forks can still use workflow_dispatch manually
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -69,6 +84,22 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify secrets are set
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret is not set"
+            exit 1
+          fi
+          if [ -z "$EBAY_APP_ID" ]; then
+            echo "::error::EBAY_APP_ID secret is not set"
+            exit 1
+          fi
+          if [ -z "$EBAY_CLIENT_SECRET" ]; then
+            echo "::error::EBAY_CLIENT_SECRET secret is not set"
+            exit 1
+          fi
+          echo "All required secrets are set"
 
       - name: Run update-listings
         run: npm run listings:update
@@ -102,14 +133,13 @@ jobs:
         env:
           NODE_ENV: production
 
-  update-fx-rates:
-    name: Update FX Rates
+  show-fx-rates:
+    name: Show FX Rates (Manual Only)
     runs-on: ubuntu-latest
-    # Run on 0 6,18 schedule OR manual dispatch
+    # Manual dispatch only - no schedule (FX updates require manual input)
     if: >-
-      github.event.schedule == '0 6,18 * * *' ||
-      (github.event_name == 'workflow_dispatch' &&
-       (github.event.inputs.job == 'update-fx-rates' || github.event.inputs.job == 'all'))
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.job == 'show-fx-rates' || github.event.inputs.job == 'all')
     timeout-minutes: 5
     steps:
       - name: Checkout code
@@ -124,10 +154,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Note: FX rate updates require manual rate input.
-      # This job logs current rates for monitoring; actual updates
-      # should be done via workflow_dispatch with rate parameters
-      # or by updating the script to fetch from an FX API.
+      # FX rate updates require manual rate input via CLI args.
+      # This job only displays current rates for monitoring.
+      # To update rates: run locally with --currency CAD --rate 0.72
       - name: Show current FX rates
         run: npx tsx scripts/update-fx-rates.ts
         env:

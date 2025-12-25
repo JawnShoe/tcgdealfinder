@@ -1170,9 +1170,22 @@ Added `e2e_test_email` mode for no-SQL one-click email validation:
   5. Sends real email to operator's test address
   6. Cleans up all test data (watchlist entry + subscription if created)
 - **Safety**: Requires explicit `SEND_REAL_TEST_EMAIL` confirmation + all email secrets (SENDGRID_API_KEY, ALERTS_EMAIL_FROM, SITE_BASE_URL)
-- **Evidence**: Pending operator E2E run
 
-**Next step**: Scheduled `check-alerts` remains workflow_dispatch-only until E2E test completed (email received + unsubscribe verified).
+**PR #44 Merged** (2025-12-25):
+
+- Merge commit: `8354bfd`
+- E2E email alerts successfully executed on `main` (2025-12-25)
+- Migration run ID (main): `20511389622` — **PASS**
+- E2E test run ID (main): `20511400524` — **PASS**
+- Test email received: ✅
+
+**Root Cause Fix**:
+
+- Prod unique index `email_subscriptions_active_idx` uses `lower(email)`
+- `ON CONFLICT` target aligned to `(card_id, lower(email)) WHERE unsubscribed_at IS NULL`
+- `verify-migration-005.ts` now enforces index presence
+
+**Next step**: Scheduled `check-alerts` remains workflow_dispatch-only. Operator may enable scheduled alerts per `docs/ENV_RUNBOOK.md` Step 4 when ready.
 
 Full Pokémon Set Coverage (SSOT Catalog) [DONE ✅ — API-complete, audited 2025-12-18]
 

@@ -16,7 +16,13 @@ import {
 } from "../../dealFormatting";
 import { buildDealViewModel, type DealViewModel } from "../../dealViewModel";
 import { TABLE_TH_NOWRAP } from "../../typography";
-import { HomepageColumns, NewestColumns, TopDealsColumns, EndingSoonColumns, CardDetailListingsColumns } from "../../tableColumns";
+import {
+  HomepageColumns,
+  NewestColumns,
+  TopDealsColumns,
+  EndingSoonColumns,
+  CardDetailListingsColumns,
+} from "../../tableColumns";
 import type { Deal } from "../../../types/deal";
 
 /**
@@ -74,9 +80,13 @@ test("buildDealViewModel sets discountPercent to null when historicUsd is null",
   };
 
   const vm = buildDealViewModel(dealWithoutHistoric);
-  
+
   assert.strictEqual(vm.historicUsd, null, "historicUsd should be null");
-  assert.strictEqual(vm.discountPercent, null, "discountPercent should be null when historic is missing");
+  assert.strictEqual(
+    vm.discountPercent,
+    null,
+    "discountPercent should be null when historic is missing"
+  );
 });
 
 /**
@@ -108,15 +118,22 @@ test("buildDealViewModel computes discountPercent when prices exist", () => {
   };
 
   const vm = buildDealViewModel(dealWithBothPrices);
-  
+
   assert.strictEqual(
     vm.totalUsd,
     dealWithBothPrices.totalUsd,
-    "totalUsd should match deal.totalUsd",
+    "totalUsd should match deal.totalUsd"
   );
-  assert.strictEqual(vm.historicUsd, 100, "historicUsd should match historicPriceCad");
+  assert.strictEqual(
+    vm.historicUsd,
+    100,
+    "historicUsd should match historicPriceCad"
+  );
   assert.ok(vm.discountPercent !== null, "discountPercent should be computed");
-  assert.ok(vm.discountPercent! < 0, "discountPercent should be negative (discount)");
+  assert.ok(
+    vm.discountPercent! < 0,
+    "discountPercent should be negative (discount)"
+  );
 });
 
 /**
@@ -134,7 +151,7 @@ test("Price conf. column headers have whitespace-nowrap", () => {
     if (priceConfCol) {
       assert.ok(
         priceConfCol.headerClassName.includes("whitespace-nowrap") ||
-        priceConfCol.headerClassName.includes(TABLE_TH_NOWRAP),
+          priceConfCol.headerClassName.includes(TABLE_TH_NOWRAP),
         `Price conf. header should have whitespace-nowrap: ${priceConfCol.headerClassName}`
       );
     }
@@ -145,39 +162,93 @@ test("Price conf. column headers have whitespace-nowrap", () => {
  * Test 7: Homepage and EndingSoon columns do NOT include Price conf.
  */
 test("Homepage and EndingSoon variants exclude Price conf. column", () => {
-  const homepageHasPriceConf = HomepageColumns.some((col) => col.key === "priceConf");
-  const endingSoonHasPriceConf = EndingSoonColumns.some((col) => col.key === "priceConf");
+  const homepageHasPriceConf = HomepageColumns.some(
+    (col) => col.key === "priceConf"
+  );
+  const endingSoonHasPriceConf = EndingSoonColumns.some(
+    (col) => col.key === "priceConf"
+  );
 
-  assert.strictEqual(homepageHasPriceConf, false, "Homepage should NOT have Price conf. column");
-  assert.strictEqual(endingSoonHasPriceConf, false, "EndingSoon should NOT have Price conf. column");
+  assert.strictEqual(
+    homepageHasPriceConf,
+    false,
+    "Homepage should NOT have Price conf. column"
+  );
+  assert.strictEqual(
+    endingSoonHasPriceConf,
+    false,
+    "EndingSoon should NOT have Price conf. column"
+  );
 });
 
 /**
  * Test 8: Newest, TopDeals, and CardDetail variants include Price conf.
  */
 test("Newest, TopDeals, and CardDetail variants include Price conf. column", () => {
-  const newestHasPriceConf = NewestColumns.some((col) => col.key === "priceConf");
-  const topDealsHasPriceConf = TopDealsColumns.some((col) => col.key === "priceConf");
-  const cardDetailHasPriceConf = CardDetailListingsColumns.some((col) => col.key === "priceConf");
+  const newestHasPriceConf = NewestColumns.some(
+    (col) => col.key === "priceConf"
+  );
+  const topDealsHasPriceConf = TopDealsColumns.some(
+    (col) => col.key === "priceConf"
+  );
+  const cardDetailHasPriceConf = CardDetailListingsColumns.some(
+    (col) => col.key === "priceConf"
+  );
 
-  assert.strictEqual(newestHasPriceConf, true, "Newest should have Price conf. column");
-  assert.strictEqual(topDealsHasPriceConf, true, "TopDeals should have Price conf. column");
-  assert.strictEqual(cardDetailHasPriceConf, true, "CardDetail should have Price conf. column");
+  assert.strictEqual(
+    newestHasPriceConf,
+    true,
+    "Newest should have Price conf. column"
+  );
+  assert.strictEqual(
+    topDealsHasPriceConf,
+    true,
+    "TopDeals should have Price conf. column"
+  );
+  assert.strictEqual(
+    cardDetailHasPriceConf,
+    true,
+    "CardDetail should have Price conf. column"
+  );
 });
 
 /**
  * Test 9: Condition column only in TopDeals variant
  */
 test("Condition column only appears in TopDeals variant", () => {
-  const homepageHasCondition = HomepageColumns.some((col) => col.key === "condition");
-  const newestHasCondition = NewestColumns.some((col) => col.key === "condition");
-  const topDealsHasCondition = TopDealsColumns.some((col) => col.key === "condition");
-  const endingSoonHasCondition = EndingSoonColumns.some((col) => col.key === "condition");
+  const homepageHasCondition = HomepageColumns.some(
+    (col) => col.key === "condition"
+  );
+  const newestHasCondition = NewestColumns.some(
+    (col) => col.key === "condition"
+  );
+  const topDealsHasCondition = TopDealsColumns.some(
+    (col) => col.key === "condition"
+  );
+  const endingSoonHasCondition = EndingSoonColumns.some(
+    (col) => col.key === "condition"
+  );
 
-  assert.strictEqual(homepageHasCondition, false, "Homepage should NOT have Condition column");
-  assert.strictEqual(newestHasCondition, false, "Newest should NOT have Condition column");
-  assert.strictEqual(topDealsHasCondition, true, "TopDeals SHOULD have Condition column");
-  assert.strictEqual(endingSoonHasCondition, false, "EndingSoon should NOT have Condition column");
+  assert.strictEqual(
+    homepageHasCondition,
+    false,
+    "Homepage should NOT have Condition column"
+  );
+  assert.strictEqual(
+    newestHasCondition,
+    false,
+    "Newest should NOT have Condition column"
+  );
+  assert.strictEqual(
+    topDealsHasCondition,
+    true,
+    "TopDeals SHOULD have Condition column"
+  );
+  assert.strictEqual(
+    endingSoonHasCondition,
+    false,
+    "EndingSoon should NOT have Condition column"
+  );
 });
 
 /**
@@ -234,9 +305,16 @@ test("All column specs have required properties", () => {
   for (const col of allColumns) {
     assert.ok(col.key, `Column should have key: ${JSON.stringify(col)}`);
     assert.ok(col.headerLabel, `Column ${col.key} should have headerLabel`);
-    assert.ok(col.headerClassName, `Column ${col.key} should have headerClassName`);
+    assert.ok(
+      col.headerClassName,
+      `Column ${col.key} should have headerClassName`
+    );
     assert.ok(col.cellClassName, `Column ${col.key} should have cellClassName`);
-    assert.strictEqual(typeof col.renderCell, "function", `Column ${col.key} should have renderCell function`);
+    assert.strictEqual(
+      typeof col.renderCell,
+      "function",
+      `Column ${col.key} should have renderCell function`
+    );
   }
 });
 // ============================================================================
@@ -252,17 +330,17 @@ test("formatMarket returns consistent structure for all markets", () => {
   assert.strictEqual(us.code, "US");
   assert.strictEqual(us.compactLabel, "US");
   assert.ok(us.label.includes("United States"));
-  
-  // CA market  
+
+  // CA market
   const ca = formatMarket("EBAY_CA");
   assert.strictEqual(ca.code, "CA");
   assert.strictEqual(ca.compactLabel, "CA");
   assert.ok(ca.label.includes("Canada"));
-  
+
   // Null/undefined defaults to US
   const nullMarket = formatMarket(null);
   assert.strictEqual(nullMarket.code, "US");
-  
+
   const undefinedMarket = formatMarket(undefined);
   assert.strictEqual(undefinedMarket.code, "US");
 });
@@ -306,14 +384,17 @@ test("buildDealViewModel includes all required fields for table rendering", () =
   };
 
   const vm = buildDealViewModel(testDeal, { computeScore: true });
-  
+
   // Check all required fields exist
   assert.ok("deal" in vm, "vm should have deal");
   assert.ok("affiliateUrl" in vm, "vm should have affiliateUrl");
   assert.ok("totalUsd" in vm, "vm should have totalUsd");
   assert.ok("historicUsd" in vm, "vm should have historicUsd");
   assert.ok("discountPercent" in vm, "vm should have discountPercent");
-  assert.ok("priceConfidenceLabel" in vm, "vm should have priceConfidenceLabel");
+  assert.ok(
+    "priceConfidenceLabel" in vm,
+    "vm should have priceConfidenceLabel"
+  );
   assert.ok("sampleSize" in vm, "vm should have sampleSize");
   assert.ok("trustedSeller" in vm, "vm should have trustedSeller");
   assert.ok("conditionLabel" in vm, "vm should have conditionLabel");
@@ -324,7 +405,7 @@ test("buildDealViewModel includes all required fields for table rendering", () =
   assert.ok("confidenceWeight" in vm, "vm should have confidenceWeight");
   assert.ok("cardSortKey" in vm, "vm should have cardSortKey");
   assert.ok("endsAtMs" in vm, "vm should have endsAtMs");
-  
+
   // Verify types
   assert.strictEqual(typeof vm.totalUsd, "number");
   assert.strictEqual(typeof vm.historicUsd, "number");
@@ -361,28 +442,48 @@ test("formatters produce identical output for same vm across variants", () => {
   };
 
   const vm = buildDealViewModel(testDeal);
-  
+
   // Test that formatters return same value when called multiple times
   // This simulates what would happen on Homepage vs /newest
   const totalFormatted1 = formatUSD(vm.totalUsd);
   const totalFormatted2 = formatUSD(vm.totalUsd);
-  assert.strictEqual(totalFormatted1, totalFormatted2, "formatCurrency should be deterministic");
-  
+  assert.strictEqual(
+    totalFormatted1,
+    totalFormatted2,
+    "formatCurrency should be deterministic"
+  );
+
   const historicFormatted1 = formatCurrency(vm.historicUsd);
   const historicFormatted2 = formatCurrency(vm.historicUsd);
-  assert.strictEqual(historicFormatted1, historicFormatted2, "formatCurrency should be deterministic for historic");
-  
+  assert.strictEqual(
+    historicFormatted1,
+    historicFormatted2,
+    "formatCurrency should be deterministic for historic"
+  );
+
   const discountFormatted1 = formatDiscount(vm.discountPercent);
   const discountFormatted2 = formatDiscount(vm.discountPercent);
-  assert.strictEqual(discountFormatted1, discountFormatted2, "formatDiscount should be deterministic");
-  
+  assert.strictEqual(
+    discountFormatted1,
+    discountFormatted2,
+    "formatDiscount should be deterministic"
+  );
+
   const marketFormatted1 = formatMarket(vm.deal.market);
   const marketFormatted2 = formatMarket(vm.deal.market);
-  assert.deepStrictEqual(marketFormatted1, marketFormatted2, "formatMarket should be deterministic");
-  
+  assert.deepStrictEqual(
+    marketFormatted1,
+    marketFormatted2,
+    "formatMarket should be deterministic"
+  );
+
   const endsFormatted1 = formatEndsAt(vm.deal.endsAt);
   const endsFormatted2 = formatEndsAt(vm.deal.endsAt);
-  assert.strictEqual(endsFormatted1, endsFormatted2, "formatEndsAt should be deterministic");
+  assert.strictEqual(
+    endsFormatted1,
+    endsFormatted2,
+    "formatEndsAt should be deterministic"
+  );
 });
 
 /**
@@ -413,9 +514,9 @@ test("Missing historic price displays as --", () => {
   };
 
   const vm = buildDealViewModel(dealWithNoHistoric);
-  
+
   assert.strictEqual(vm.historicUsd, null, "historicUsd should be null");
-  
+
   const formatted = formatCurrency(vm.historicUsd);
   assert.strictEqual(formatted, "--", "Missing historic should display as --");
   assert.ok(!formatted.includes("Unscored"), "Should never show Unscored");
@@ -451,9 +552,13 @@ test("Missing discount displays as --", () => {
   };
 
   const vm = buildDealViewModel(dealWithNoDiscount);
-  
-  assert.strictEqual(vm.discountPercent, null, "discountPercent should be null");
-  
+
+  assert.strictEqual(
+    vm.discountPercent,
+    null,
+    "discountPercent should be null"
+  );
+
   const formatted = formatDiscount(vm.discountPercent);
   assert.strictEqual(formatted, "--", "Missing discount should display as --");
   assert.ok(!formatted.includes("N/A"), "Should never show N/A");

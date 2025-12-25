@@ -31,10 +31,10 @@ test("weight influences ordering but does not hide deals", () => {
   const lowerBaseHighWeight = applyConfidenceToScore(65, 0.9);
   assert.ok(
     (highBaseLowWeight ?? 0) < (lowerBaseHighWeight ?? 0),
-    "expected weighted ordering to change",
+    "expected weighted ordering to change"
   );
   assert.ok(
     (highBaseLowWeight ?? 0) > 0,
-    "low confidence still yields a positive score so listing remains visible",
+    "low confidence still yields a positive score so listing remains visible"
   );
 });

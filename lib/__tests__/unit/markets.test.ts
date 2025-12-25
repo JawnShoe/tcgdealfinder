@@ -5,7 +5,7 @@ import {
   normalizeMarketCode,
   getExpectedCurrency,
   DEFAULT_MARKET,
-} from "../markets";
+} from "../../markets";
 
 test("normalizeMarketCode handles lowercase shortcuts", () => {
   assert.equal(normalizeMarketCode("us"), "EBAY_US");

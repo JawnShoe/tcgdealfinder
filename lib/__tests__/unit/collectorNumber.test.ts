@@ -5,7 +5,7 @@ import {
   extractCollectorNumber,
   shouldRejectCollectorNumber,
   type CollectorNumberResult,
-} from "../collectorNumber";
+} from "../../collectorNumber";
 
 test("extractCollectorNumber handles fraction formats", () => {
   const result = extractCollectorNumber({

@@ -5,7 +5,7 @@ import {
   getVariantContradictionReason,
   getBlacklistReason,
   type CardContext,
-} from "../blacklist";
+} from "../../blacklist";
 
 // =============================================================================
 // getVariantContradictionReason tests
@@ -28,11 +28,7 @@ test("should block hard contradiction keywords regardless of card context", () =
     const result = getVariantContradictionReason({
       listingTitle: `Pokemon Charizard ${keyword} card rare`,
     });
-    assert.equal(
-      result.blocked,
-      true,
-      `Expected "${keyword}" to be blocked`
-    );
+    assert.equal(result.blocked, true, `Expected "${keyword}" to be blocked`);
     assert.equal(result.category, "variant_contradiction");
     assert.equal(result.reason, "hard_modifier_contradiction");
   }
@@ -49,7 +45,7 @@ test("should block rainbow in title for non-rainbow card with secret number", ()
       rarity: null, // unknown rarity
     },
   });
-  
+
   assert.equal(result.blocked, true);
   assert.equal(result.reason, "rainbow_modifier_contradiction");
   assert.equal(result.hit, "rainbow");
@@ -65,7 +61,7 @@ test("should block rainbow in title when rarity confirms non-rainbow", () => {
       rarity: "Ultra Rare", // Not a rainbow rare
     },
   });
-  
+
   assert.equal(result.blocked, true);
   assert.equal(result.reason, "rainbow_modifier_contradiction");
 });
@@ -80,7 +76,7 @@ test("should allow rainbow in title for actual rainbow rare", () => {
       rarity: "Rainbow Rare", // Actually a rainbow rare
     },
   });
-  
+
   assert.equal(result.blocked, false);
 });
 
@@ -94,7 +90,7 @@ test("should allow rainbow in title when card name includes rainbow", () => {
       rarity: null,
     },
   });
-  
+
   assert.equal(result.blocked, false);
 });
 
@@ -109,7 +105,7 @@ test("should not block rainbow for cards without secret numbers (conservative)",
       rarity: null,
     },
   });
-  
+
   assert.equal(result.blocked, false);
 });
 
@@ -118,7 +114,7 @@ test("should not block rainbow when no card context provided", () => {
   const result = getVariantContradictionReason({
     listingTitle: "Pokemon Card Rainbow Rare",
   });
-  
+
   // Only hard keywords should block without card context
   assert.equal(result.blocked, false);
 });
@@ -137,7 +133,7 @@ test("getBlacklistReason should check variant contradictions when card provided"
       rarity: "Alternate Art Secret Rare",
     }
   );
-  
+
   assert.equal(result.blocked, true);
   assert.equal(result.category, "variant_contradiction");
 });
@@ -152,16 +148,16 @@ test("getBlacklistReason should allow legit rainbow rare with card context", () 
       rarity: "Rainbow Rare",
     }
   );
-  
+
   assert.equal(result.blocked, false);
 });
 
 test("getBlacklistReason should still block hard keywords without card context", () => {
   // Hard keywords like "metal" should block even without card context
-  const result = getBlacklistReason(
-    { title: "Charizard Metal Gold Card Custom" }
-  );
-  
+  const result = getBlacklistReason({
+    title: "Charizard Metal Gold Card Custom",
+  });
+
   // Should be blocked by existing BANNED_TITLE_KEYWORDS or variant contradiction
   assert.equal(result.blocked, true);
 });
@@ -176,7 +172,7 @@ test("should block SV-prefixed cards claiming rainbow", () => {
       rarity: null,
     },
   });
-  
+
   assert.equal(result.blocked, true);
   assert.equal(result.reason, "rainbow_modifier_contradiction");
 });

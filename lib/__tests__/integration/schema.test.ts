@@ -10,7 +10,7 @@ import {
   ensureListingsMarketColumn,
   ensureHistoricalMarketColumn,
   ensureHistoricalStdDevColumn,
-} from "../schema";
+} from "../../schema";
 
 /**
  * Test that all schema introspection helpers return boolean values.
@@ -36,15 +36,13 @@ test("schema introspection helpers return boolean", async () => {
  */
 test("ensureHistoricalStdDevColumn enables safe SQL query building", async () => {
   const hasStdDev = await ensureHistoricalStdDevColumn();
-  
+
   // Build SQL fragment based on column existence
-  const stdDevSelect = hasStdDev
-    ? "hp.std_dev_cad"
-    : "NULL::numeric";
-  
+  const stdDevSelect = hasStdDev ? "hp.std_dev_cad" : "NULL::numeric";
+
   // Verify the fragment is a valid SQL expression
   assert.match(stdDevSelect, /^(hp\.std_dev_cad|NULL::numeric)$/);
-  
+
   // If column doesn't exist, must use NULL fallback
   if (!hasStdDev) {
     assert.strictEqual(stdDevSelect, "NULL::numeric");
@@ -59,7 +57,7 @@ test("schema introspection uses cache on repeated calls", async () => {
   const first = await ensureHistoricalStdDevColumn();
   const second = await ensureHistoricalStdDevColumn();
   const third = await ensureHistoricalStdDevColumn();
-  
+
   assert.strictEqual(first, second, "Cached result should match first call");
   assert.strictEqual(second, third, "Cached result should remain consistent");
 });
@@ -70,16 +68,19 @@ test("schema introspection uses cache on repeated calls", async () => {
  */
 test("top-deals query builder uses NULL fallback when std_dev_cad missing", async () => {
   const hasStdDev = await ensureHistoricalStdDevColumn();
-  
+
   // Simulate the query builder logic from app/top-deals/page.tsx
   const stdDevSelect = hasStdDev ? "hp.std_dev_cad" : "NULL::numeric";
-  
+
   // Build a minimal SELECT fragment like the real query
   const selectFragment = `SELECT ${stdDevSelect} AS std_dev_cad`;
-  
+
   // Verify the fragment is syntactically valid SQL
-  assert.match(selectFragment, /^SELECT (hp\.std_dev_cad|NULL::numeric) AS std_dev_cad$/);
-  
+  assert.match(
+    selectFragment,
+    /^SELECT (hp\.std_dev_cad|NULL::numeric) AS std_dev_cad$/
+  );
+
   // When column doesn't exist, the fallback ensures no runtime crash
   if (!hasStdDev) {
     assert.strictEqual(

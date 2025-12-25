@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { compareStrictBestDiscountValues } from "../dealSort";
+import { compareStrictBestDiscountValues } from "../../dealSort";
 
 test("strict best discount sorts true discounts ahead of markups", () => {
   const result = compareStrictBestDiscountValues(-10, 50);

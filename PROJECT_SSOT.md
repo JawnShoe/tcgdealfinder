@@ -134,6 +134,13 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 - Use listing exclusion for isolated bad listings; use seller blacklist for systemic seller abuse.
 - Debug views display overrides as exclusion badges.
 
+**Batched Exclusion Checks (Performance)**:
+
+- For batch operations, use `shouldExcludeListingsBatch()` which fetches all overrides in ONE query (or cache hit) then evaluates synchronously.
+- This eliminates the N+1 query pattern when filtering many listings (e.g., 50 deals → 1 query instead of 50).
+- The sync helper `shouldExcludeListingFromCardSurfacesSync()` is available for callers who pre-fetch overrides via `getOverridesForListings()`.
+- Single-listing calls via `shouldExcludeListingFromCardSurfaces()` remain available for backward compatibility.
+
 **FRESHNESS + TIMEZONE CLARIFICATION (2025-12-20)**:
 
 - Canonical freshness timestamp across the system is `Deal.updatedAt`, sourced from `listings.updated_at` in the database.

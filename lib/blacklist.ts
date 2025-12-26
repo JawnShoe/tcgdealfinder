@@ -1,7 +1,7 @@
 /**
  * Centralized blacklist module for filtering fake/non-card items
  * Applies to all markets: US/CA/UK/AU
- * 
+ *
  * This module works in conjunction with BANNED_TITLE_KEYWORDS in lib/ebay.ts
  * which is used during ingestion. This module provides:
  * 1. Additional categorized keywords for reporting
@@ -33,27 +33,27 @@ const OVERRIDE_CACHE_TTL = 60_000; // 60 seconds
  */
 async function getOverridesCache(): Promise<Map<string, ListingOverride>> {
   const now = Date.now();
-  
+
   // Return cached if still fresh
   if (now - overrideCacheTimestamp < OVERRIDE_CACHE_TTL) {
     return overrideCache;
   }
-  
+
   try {
     const result = await query<ListingOverride>(
       `SELECT * FROM listing_overrides
        WHERE expires_at IS NULL OR expires_at > NOW()`,
       []
     );
-    
+
     const newCache = new Map<string, ListingOverride>();
     for (const row of result.rows) {
       newCache.set(row.listing_id, row);
     }
-    
+
     overrideCache = newCache;
     overrideCacheTimestamp = now;
-    
+
     return newCache;
   } catch (error) {
     console.error("Error fetching overrides cache:", error);
@@ -66,9 +66,38 @@ async function getOverridesCache(): Promise<Map<string, ListingOverride>> {
  * Check if a listing has an override.
  * Returns null if no override exists.
  */
-export async function checkListingOverride(listingId: string): Promise<ListingOverride | null> {
+export async function checkListingOverride(
+  listingId: string
+): Promise<ListingOverride | null> {
   const cache = await getOverridesCache();
   return cache.get(listingId) ?? null;
+}
+
+/**
+ * Pre-fetch overrides for a batch of listing IDs.
+ * Returns a Map from listingId -> ListingOverride (only for IDs that have overrides).
+ * This is the batched alternative to calling checkListingOverride() per listing.
+ */
+export async function getOverridesForListings(
+  listingIds: string[]
+): Promise<Map<string, ListingOverride>> {
+  if (listingIds.length === 0) {
+    return new Map();
+  }
+
+  // Use the shared cache - one query (or cache hit) for all listings
+  const cache = await getOverridesCache();
+
+  // Filter to only the listings that have overrides
+  const result = new Map<string, ListingOverride>();
+  for (const id of listingIds) {
+    const override = cache.get(id);
+    if (override) {
+      result.set(id, override);
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -249,12 +278,24 @@ export const NOT_A_SINGLE_CARD_KEYWORDS = [
 /**
  * All denylist keywords combined with their categories
  */
-export const ALL_DENYLIST_KEYWORDS: Array<{ keyword: string; category: string }> = [
+export const ALL_DENYLIST_KEYWORDS: Array<{
+  keyword: string;
+  category: string;
+}> = [
   ...REPLICA_KEYWORDS.map((k) => ({ keyword: k, category: "replica" })),
-  ...NON_CARD_MATERIAL_KEYWORDS.map((k) => ({ keyword: k, category: "non_card_material" })),
-  ...DISPLAY_CASE_KEYWORDS.map((k) => ({ keyword: k, category: "display_case" })),
+  ...NON_CARD_MATERIAL_KEYWORDS.map((k) => ({
+    keyword: k,
+    category: "non_card_material",
+  })),
+  ...DISPLAY_CASE_KEYWORDS.map((k) => ({
+    keyword: k,
+    category: "display_case",
+  })),
   ...ART_ONLY_KEYWORDS.map((k) => ({ keyword: k, category: "art_only" })),
-  ...NOT_A_SINGLE_CARD_KEYWORDS.map((k) => ({ keyword: k, category: "not_single_card" })),
+  ...NOT_A_SINGLE_CARD_KEYWORDS.map((k) => ({
+    keyword: k,
+    category: "not_single_card",
+  })),
 ];
 
 // =============================================================================
@@ -278,16 +319,16 @@ export const SOFT_EXCLUSION_KEYWORDS = [
   "bedsheet",
   "pillow",
   "cushion",
-  
+
   // Plush/toys
   "plush",
   "plushie",
   "stuffed",
   "soft toy",
   "teddy",
-  
+
   // Wall/prints (compound to avoid "art" alone)
-  // Note: "poster" and "wall art" are also in ART_ONLY_KEYWORDS - that's fine, 
+  // Note: "poster" and "wall art" are also in ART_ONLY_KEYWORDS - that's fine,
   // hard block takes precedence anyway
   "canvas",
   "wall art",
@@ -295,14 +336,14 @@ export const SOFT_EXCLUSION_KEYWORDS = [
   "framed art",
   "wall decor",
   "wall hanging",
-  
+
   // Accessories/gaming
   "playmat",
   "play mat",
   "mousepad",
   "mouse pad",
   "coaster",
-  
+
   // Clothing
   "hoodie",
   "tshirt",
@@ -318,7 +359,7 @@ export const SOFT_EXCLUSION_KEYWORDS = [
   "pants",
   "dress",
   "skirt",
-  
+
   // Misc merchandise
   "keychain",
   "key chain",
@@ -410,17 +451,19 @@ export const REAL_CARD_INDICATORS: Array<RegExp | string> = [
  */
 export function normalizeListingText(title: string, subtitle?: string): string {
   const combined = subtitle ? `${title} ${subtitle}` : title;
-  
-  return combined
-    .toLowerCase()
-    // Normalize common diacritics
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    // Replace punctuation with spaces (keep alphanumeric)
-    .replace(/[^\w\s]/g, " ")
-    // Collapse multiple spaces
-    .replace(/\s+/g, " ")
-    .trim();
+
+  return (
+    combined
+      .toLowerCase()
+      // Normalize common diacritics
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      // Replace punctuation with spaces (keep alphanumeric)
+      .replace(/[^\w\s]/g, " ")
+      // Collapse multiple spaces
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 // =============================================================================
@@ -515,10 +558,10 @@ function isRainbowRarity(rarity: string | null | undefined): boolean {
 
 /**
  * Check for card-aware variant contradictions
- * 
+ *
  * Catches scam/novelty listings that slip past keyword blacklist by checking
  * if listing title claims variants that contradict the card's actual rarity.
- * 
+ *
  * @param listingTitle - The listing title to check
  * @param card - Optional card context (name, setName, number, rarity)
  * @returns Contradiction result with block status and reason
@@ -529,7 +572,7 @@ export function getVariantContradictionReason(args: {
 }): VariantContradictionResult {
   const { listingTitle, card } = args;
   const normalized = normalizeListingText(listingTitle);
-  
+
   // A) Check hard contradiction keywords (always block)
   for (const keyword of HARD_CONTRADICTION_KEYWORDS) {
     const pattern = new RegExp(`\\b${keyword.replace(/\s+/g, "\\s+")}\\b`, "i");
@@ -542,7 +585,7 @@ export function getVariantContradictionReason(args: {
       };
     }
   }
-  
+
   // B) Check "rainbow" contradiction (card-aware)
   if (/\brainbow\b/i.test(normalized)) {
     // If we have rarity info, check if it's actually a rainbow card
@@ -558,13 +601,13 @@ export function getVariantContradictionReason(args: {
       // Rarity indicates rainbow - allow
       return { blocked: false };
     }
-    
+
     // No rarity info - use conservative heuristic based on card number
     if (card?.number) {
       const isSecretAlt = isSecretOrAltNumber(card.number);
       const cardNameLower = (card.name ?? "").toLowerCase();
       const nameHasRainbow = cardNameLower.includes("rainbow");
-      
+
       // If it's a secret/alt numbered card and the name doesn't include "rainbow",
       // then claiming "rainbow" in the title is suspicious
       if (isSecretAlt && !nameHasRainbow) {
@@ -578,7 +621,7 @@ export function getVariantContradictionReason(args: {
     }
     // No card number or not a secret/alt - don't block (conservative)
   }
-  
+
   return { blocked: false };
 }
 
@@ -597,7 +640,7 @@ export type BlacklistResult = {
  * Check if a listing should be blocked based on title/subtitle
  * Uses the centralized BANNED_TITLE_KEYWORDS from ebay.ts
  * Returns blocking info with reason and category
- * 
+ *
  * @param listing - Listing with title and optional subtitle
  * @param card - Optional card context for variant contradiction checks
  */
@@ -606,24 +649,24 @@ export function getBlacklistReason(
     title: string;
     subtitle?: string;
   },
-  card?: CardContext,
+  card?: CardContext
 ): BlacklistResult {
   const title = cleanTitle(listing.title);
   const subtitle = listing.subtitle ? cleanTitle(listing.subtitle) : "";
   const combined = `${title} ${subtitle}`.trim();
   const normalized = normalizeListingText(listing.title, listing.subtitle);
-  
+
   // Check against BANNED_TITLE_KEYWORDS (the source of truth)
   for (const keyword of BANNED_TITLE_KEYWORDS) {
     if (combined.includes(keyword)) {
       // Determine category based on keyword
       const category = categorizeKeyword(keyword);
-      
+
       // Check allowlist before blocking
       if (shouldAllowDespiteMatch(normalized, category, keyword)) {
         continue; // Skip this match, try next keyword
       }
-      
+
       return {
         blocked: true,
         reason: `Matched "${keyword}"`,
@@ -632,19 +675,20 @@ export function getBlacklistReason(
       };
     }
   }
-  
+
   // Also check our additional categorized keywords for edge cases
   for (const { keyword, category } of ALL_DENYLIST_KEYWORDS) {
     const normalizedKeyword = normalizeListingText(keyword);
-    
+
     // Skip if already in BANNED_TITLE_KEYWORDS
     if (BANNED_TITLE_KEYWORDS.includes(keyword as any)) {
       continue;
     }
-    
+
     // Use word boundary matching for short keywords
-    const isShortKeyword = normalizedKeyword.split(" ").length === 1 && normalizedKeyword.length < 6;
-    
+    const isShortKeyword =
+      normalizedKeyword.split(" ").length === 1 && normalizedKeyword.length < 6;
+
     let matched = false;
     if (isShortKeyword) {
       const regex = new RegExp(`\\b${escapeRegex(normalizedKeyword)}\\b`, "i");
@@ -652,12 +696,12 @@ export function getBlacklistReason(
     } else {
       matched = normalized.includes(normalizedKeyword);
     }
-    
+
     if (matched) {
       if (shouldAllowDespiteMatch(normalized, category, keyword)) {
         continue;
       }
-      
+
       return {
         blocked: true,
         reason: `Matched "${keyword}" in ${category}`,
@@ -666,11 +710,11 @@ export function getBlacklistReason(
       };
     }
   }
-  
+
   // Check for variant contradictions (hard keywords always, rainbow only with card context)
   const contradictionResult = getVariantContradictionReason({
     listingTitle: listing.title,
-    card,  // undefined if no card context - will only check hard keywords
+    card, // undefined if no card context - will only check hard keywords
   });
   if (contradictionResult.blocked) {
     return {
@@ -680,7 +724,7 @@ export function getBlacklistReason(
       keyword: contradictionResult.hit,
     };
   }
-  
+
   return { blocked: false };
 }
 
@@ -690,13 +734,13 @@ export function getBlacklistReason(
 
 /**
  * Check if a listing should be soft-excluded as non-card merchandise
- * 
+ *
  * This is separate from hard blocking - soft-excluded items:
  * - Are NOT scams/fakes, just category leakage from eBay search
  * - Should be hidden from card-deal surfaces (homepage, /top-deals, etc.)
  * - Should NOT be deleted from DB
  * - Can be shown in other contexts if needed
- * 
+ *
  * @param args.title - Listing title
  * @param args.subtitle - Optional listing subtitle
  * @param args.categoryName - Optional eBay category name
@@ -708,19 +752,19 @@ export function getSoftExclusionReason(args: {
 }): SoftExclusionResult {
   const { title, subtitle, categoryName } = args;
   const normalized = normalizeListingText(title, subtitle ?? undefined);
-  
+
   // Also check category name if available
-  const normalizedCategory = categoryName 
-    ? normalizeListingText(categoryName) 
+  const normalizedCategory = categoryName
+    ? normalizeListingText(categoryName)
     : "";
   const searchText = `${normalized} ${normalizedCategory}`.trim();
-  
+
   for (const keyword of SOFT_EXCLUSION_KEYWORDS) {
     const normalizedKeyword = normalizeListingText(keyword);
-    
+
     // Use word boundary matching for single words, substring for phrases
     const isSingleWord = normalizedKeyword.split(" ").length === 1;
-    
+
     let matched = false;
     if (isSingleWord) {
       const regex = new RegExp(`\\b${escapeRegex(normalizedKeyword)}\\b`, "i");
@@ -728,13 +772,13 @@ export function getSoftExclusionReason(args: {
     } else {
       matched = searchText.includes(normalizedKeyword);
     }
-    
+
     if (matched) {
       // Check if this is a false positive for legit cards
       if (shouldAllowSoftExclusionMatch(normalized, keyword)) {
         continue;
       }
-      
+
       return {
         excluded: true,
         reason: "non_card_merch",
@@ -742,14 +786,17 @@ export function getSoftExclusionReason(args: {
       };
     }
   }
-  
+
   return { excluded: false };
 }
 
 /**
  * Check if a soft exclusion match should be allowed (false positive protection)
  */
-function shouldAllowSoftExclusionMatch(normalizedText: string, keyword: string): boolean {
+function shouldAllowSoftExclusionMatch(
+  normalizedText: string,
+  keyword: string
+): boolean {
   // "hat" can appear in legitimate contexts - be conservative
   if (keyword === "hat") {
     // Only exclude if clearly merchandise (e.g., "pokemon hat", "pikachu hat")
@@ -758,28 +805,28 @@ function shouldAllowSoftExclusionMatch(normalizedText: string, keyword: string):
       return true;
     }
   }
-  
+
   // "cap" can be part of card terminology
   if (keyword === "cap") {
     if (hasRealCardIndicators(normalizedText)) {
       return true;
     }
   }
-  
+
   // "figure" might appear in "full art figure" style cards - allow if has card indicators
   if (keyword === "figure" || keyword === "figurine") {
     if (hasRealCardIndicators(normalizedText)) {
       return true;
     }
   }
-  
+
   // "bag" can be part of "booster bag" etc - allow if has card indicators
   if (keyword === "bag" || keyword === "tote") {
     if (hasRealCardIndicators(normalizedText)) {
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -799,80 +846,66 @@ export type ListingExclusionResult = {
 };
 
 /**
- * Combined helper to check if a listing should be excluded from card-deal surfaces.
- * 
- * This is the single source of truth for all card-deal surfaces:
- * - Homepage featured deals
- * - /top-deals
- * - /ending-soon
- * - /newest
- * - /cards/[cardId] listings
- * 
- * Precedence order:
- * 0. Database override (ALLOW/HARD_BLOCK/SOFT_EXCLUDE) - HIGHEST PRIORITY
- * 1. Hard block (getBlacklistReason) - fake/scam items
- * 2. Soft exclusion (getSoftExclusionReason) - non-card merchandise
- * 
- * @param listing - Listing to check (include listingId for override support)
+ * Synchronous core logic for exclusion check.
+ * Use this when you have pre-fetched overrides via getOverridesForListings().
+ *
+ * @param listing - Listing to check
+ * @param override - Pre-fetched override for this listing (or undefined if none)
  * @param card - Optional card context for variant contradiction checks
  */
-export async function shouldExcludeListingFromCardSurfaces(
+export function shouldExcludeListingFromCardSurfacesSync(
   listing: {
     title: string;
     subtitle?: string | null;
     categoryName?: string | null;
-    listingId?: string | null;
   },
-  card?: CardContext,
-): Promise<ListingExclusionResult> {
+  override: ListingOverride | undefined,
+  card?: CardContext
+): ListingExclusionResult {
   // FIRST: Check database override (highest precedence)
-  if (listing.listingId) {
-    const override = await checkListingOverride(listing.listingId);
-    
-    if (override) {
-      if (override.override_type === "ALLOW") {
-        // ALLOW bypasses all exclusions
-        return {
-          excluded: false,
-          hardBlocked: false,
-          softExcluded: false,
-          overrideType: "ALLOW",
-          overrideReason: override.reason ?? undefined,
-        };
-      } else if (override.override_type === "HARD_BLOCK") {
-        // Force hard block
-        return {
-          excluded: true,
-          hardBlocked: true,
-          softExcluded: false,
-          reason: override.reason ?? "Manual override",
-          category: "override",
-          hit: "manual_override",
-          overrideType: "HARD_BLOCK",
-          overrideReason: override.reason ?? undefined,
-        };
-      } else if (override.override_type === "SOFT_EXCLUDE") {
-        // Force soft exclusion
-        return {
-          excluded: true,
-          hardBlocked: false,
-          softExcluded: true,
-          reason: override.reason ?? "Manual override",
-          category: "override",
-          hit: "manual_override",
-          overrideType: "SOFT_EXCLUDE",
-          overrideReason: override.reason ?? undefined,
-        };
-      }
+  if (override) {
+    if (override.override_type === "ALLOW") {
+      // ALLOW bypasses all exclusions
+      return {
+        excluded: false,
+        hardBlocked: false,
+        softExcluded: false,
+        overrideType: "ALLOW",
+        overrideReason: override.reason ?? undefined,
+      };
+    } else if (override.override_type === "HARD_BLOCK") {
+      // Force hard block
+      return {
+        excluded: true,
+        hardBlocked: true,
+        softExcluded: false,
+        reason: override.reason ?? "Manual override",
+        category: "override",
+        hit: "manual_override",
+        overrideType: "HARD_BLOCK",
+        overrideReason: override.reason ?? undefined,
+      };
+    } else if (override.override_type === "SOFT_EXCLUDE") {
+      // Force soft exclusion
+      return {
+        excluded: true,
+        hardBlocked: false,
+        softExcluded: true,
+        reason: override.reason ?? "Manual override",
+        category: "override",
+        hit: "manual_override",
+        overrideType: "SOFT_EXCLUDE",
+        overrideReason: override.reason ?? undefined,
+      };
     }
   }
-  
+
   // SECOND: check hard block (normal rules)
   const hardBlockResult = getBlacklistReason(
     { title: listing.title, subtitle: listing.subtitle ?? undefined },
     card
   );
-  
+
   if (hardBlockResult.blocked) {
     return {
       excluded: true,
@@ -883,14 +916,14 @@ export async function shouldExcludeListingFromCardSurfaces(
       hit: hardBlockResult.keyword,
     };
   }
-  
+
   // THIRD: check soft exclusion (normal rules)
   const softExclusionResult = getSoftExclusionReason({
     title: listing.title,
     subtitle: listing.subtitle,
     categoryName: listing.categoryName,
   });
-  
+
   if (softExclusionResult.excluded) {
     return {
       excluded: true,
@@ -901,7 +934,7 @@ export async function shouldExcludeListingFromCardSurfaces(
       hit: softExclusionResult.hit,
     };
   }
-  
+
   return {
     excluded: false,
     hardBlocked: false,
@@ -910,39 +943,203 @@ export async function shouldExcludeListingFromCardSurfaces(
 }
 
 /**
+ * Combined helper to check if a listing should be excluded from card-deal surfaces.
+ *
+ * This is the single source of truth for all card-deal surfaces:
+ * - Homepage featured deals
+ * - /top-deals
+ * - /ending-soon
+ * - /newest
+ * - /cards/[cardId] listings
+ *
+ * Precedence order:
+ * 0. Database override (ALLOW/HARD_BLOCK/SOFT_EXCLUDE) - HIGHEST PRIORITY
+ * 1. Hard block (getBlacklistReason) - fake/scam items
+ * 2. Soft exclusion (getSoftExclusionReason) - non-card merchandise
+ *
+ * NOTE: For batch operations, prefer shouldExcludeListingsBatch() to avoid N+1 queries.
+ *
+ * @param listing - Listing to check (include listingId for override support)
+ * @param card - Optional card context for variant contradiction checks
+ */
+export async function shouldExcludeListingFromCardSurfaces(
+  listing: {
+    title: string;
+    subtitle?: string | null;
+    categoryName?: string | null;
+    listingId?: string | null;
+  },
+  card?: CardContext
+): Promise<ListingExclusionResult> {
+  // Fetch override for this single listing
+  const override = listing.listingId
+    ? await checkListingOverride(listing.listingId)
+    : null;
+
+  return shouldExcludeListingFromCardSurfacesSync(
+    listing,
+    override ?? undefined,
+    card
+  );
+}
+
+/**
+ * Batch version of shouldExcludeListingFromCardSurfaces.
+ *
+ * Fetches all overrides in ONE query (or cache hit), then evaluates each listing
+ * synchronously. This eliminates the N+1 pattern when filtering many listings.
+ *
+ * @param listings - Array of listings to check
+ * @returns Array of results in the same order as input listings
+ */
+export async function shouldExcludeListingsBatch<
+  T extends {
+    title: string;
+    subtitle?: string | null;
+    categoryName?: string | null;
+    listingId?: string | null;
+    card?: CardContext;
+  },
+>(
+  listings: T[]
+): Promise<Array<{ listing: T; result: ListingExclusionResult }>> {
+  if (listings.length === 0) {
+    return [];
+  }
+
+  // Collect all listing IDs that need override lookup
+  const listingIds = listings
+    .map((l) => l.listingId)
+    .filter((id): id is string => id != null);
+
+  // ONE query (or cache hit) for all overrides
+  const overridesMap = await getOverridesForListings(listingIds);
+
+  // Evaluate each listing synchronously using pre-fetched overrides
+  return listings.map((listing) => {
+    const override = listing.listingId
+      ? overridesMap.get(listing.listingId)
+      : undefined;
+
+    const result = shouldExcludeListingFromCardSurfacesSync(
+      listing,
+      override,
+      listing.card
+    );
+
+    return { listing, result };
+  });
+}
+
+/**
  * Categorize a banned keyword for reporting purposes
  */
 function categorizeKeyword(keyword: string): string {
   const k = keyword.toLowerCase();
-  
+
   // Replica/fake
-  if (["replica", "repro", "reproduction", "bootleg", "counterfeit", "fake", "proxy", "proxi", "proxies", 
-       "carta replica", "replica carta", "falsa", "imitazione", "faux", "contrefacon"].some(x => k.includes(x))) {
+  if (
+    [
+      "replica",
+      "repro",
+      "reproduction",
+      "bootleg",
+      "counterfeit",
+      "fake",
+      "proxy",
+      "proxi",
+      "proxies",
+      "carta replica",
+      "replica carta",
+      "falsa",
+      "imitazione",
+      "faux",
+      "contrefacon",
+    ].some((x) => k.includes(x))
+  ) {
     return "replica";
   }
-  
+
   // Materials
-  if (["metal", "acrylic", "stainless", "aluminum", "aluminium", "alloy", "brass", "copper", "iron", 
-       "steel", "tin", "chrome", "chromium", "etched", "engraved", "plated"].some(x => k.includes(x))) {
+  if (
+    [
+      "metal",
+      "acrylic",
+      "stainless",
+      "aluminum",
+      "aluminium",
+      "alloy",
+      "brass",
+      "copper",
+      "iron",
+      "steel",
+      "tin",
+      "chrome",
+      "chromium",
+      "etched",
+      "engraved",
+      "plated",
+    ].some((x) => k.includes(x))
+  ) {
     return "non_card_material";
   }
-  
+
   // Display/accessories
-  if (["display", "case", "holder", "stand", "frame", "slab", "magnetic", "toploader", "binder", 
-       "album", "storage", "sleeve", "protector", "portfolio", "deck box"].some(x => k.includes(x))) {
+  if (
+    [
+      "display",
+      "case",
+      "holder",
+      "stand",
+      "frame",
+      "slab",
+      "magnetic",
+      "toploader",
+      "binder",
+      "album",
+      "storage",
+      "sleeve",
+      "protector",
+      "portfolio",
+      "deck box",
+    ].some((x) => k.includes(x))
+  ) {
     return "display_case";
   }
-  
+
   // Art only
-  if (["art", "custom", "fan", "handmade", "hand made", "illustration", "poster", "canvas", "print"].some(x => k.includes(x))) {
+  if (
+    [
+      "art",
+      "custom",
+      "fan",
+      "handmade",
+      "hand made",
+      "illustration",
+      "poster",
+      "canvas",
+      "print",
+    ].some((x) => k.includes(x))
+  ) {
     return "art_only";
   }
-  
+
   // Lots/bundles/sealed
-  if (["lot", "bulk", "bundle", "booster", "sealed", "mystery", "wholesale", "collection lot"].some(x => k.includes(x))) {
+  if (
+    [
+      "lot",
+      "bulk",
+      "bundle",
+      "booster",
+      "sealed",
+      "mystery",
+      "wholesale",
+      "collection lot",
+    ].some((x) => k.includes(x))
+  ) {
     return "not_single_card";
   }
-  
+
   return "other";
 }
 
@@ -956,14 +1153,17 @@ function shouldAllowDespiteMatch(
 ): boolean {
   // "alt art" and "alternate art" are legitimate card terms, not "altered art"
   if (keyword === "altered art") {
-    if (normalizedText.includes("alt art") || normalizedText.includes("alternate art")) {
+    if (
+      normalizedText.includes("alt art") ||
+      normalizedText.includes("alternate art")
+    ) {
       // Check it's not actually "altered"
       if (!normalizedText.includes("altered")) {
         return true;
       }
     }
   }
-  
+
   // "Art card" can be legitimate promo cards
   if (keyword === "art card") {
     // If it has set numbers or grading, it's likely legitimate
@@ -971,7 +1171,7 @@ function shouldAllowDespiteMatch(
       return true;
     }
   }
-  
+
   // For graded cards, "acrylic" often refers to a bonus accessory, not the card itself
   // e.g., "PSA 10 + Free Acrylic" or "with acrylic stand"
   if (keyword === "acrylic" && hasGradedIndicators(normalizedText)) {
@@ -993,10 +1193,10 @@ function shouldAllowDespiteMatch(
       }
     }
   }
-  
+
   // For display_case category, check if it's actually a card + case combo
   // Usually still want to block these since they're not pure singles
-  
+
   // For graded items, be more lenient with certain keywords
   if (hasGradedIndicators(normalizedText)) {
     // But still block non-card materials and replicas
@@ -1007,12 +1207,16 @@ function shouldAllowDespiteMatch(
       }
     }
     // Allow graded cards that might have "holder" in description
-    if (keyword === "card holder" || keyword === "slab holder" || keyword === "slab case") {
+    if (
+      keyword === "card holder" ||
+      keyword === "slab holder" ||
+      keyword === "slab case"
+    ) {
       // Only if it looks like it's describing the grading slab
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -1067,13 +1271,13 @@ export const EBAY_NEGATIVE_KEYWORDS = [
   "-aluminum",
   // Replicas
   "-replica",
-  "-\"carta replica\"",
+  '-"carta replica"',
   "-bootleg",
   "-counterfeit",
   // Display/accessories
-  "-\"display case\"",
-  "-\"display stand\"",
-  "-\"art extender\"",
+  '-"display case"',
+  '-"display stand"',
+  '-"art extender"',
   "-holder",
   "-stand",
   "-frame",
@@ -1118,9 +1322,7 @@ export type ListingWithCard = {
  * Process a batch of listings and return blocking stats
  * Optionally accepts card context for variant contradiction checks
  */
-export function processBlacklistBatch(
-  listings: ListingWithCard[]
-): {
+export function processBlacklistBatch(listings: ListingWithCard[]): {
   allowed: ListingWithCard[];
   blocked: Array<ListingWithCard & BlacklistResult>;
   stats: BlacklistStats;
@@ -1130,29 +1332,32 @@ export function processBlacklistBatch(
   const byCategory: Record<string, number> = {};
   const reasonCounts: Record<string, number> = {};
   const variantContradictionHits: Record<string, number> = {};
-  
+
   for (const listing of listings) {
     const result = getBlacklistReason(listing, listing.card);
-    
+
     if (result.blocked) {
       blocked.push({ ...listing, ...result });
-      byCategory[result.category ?? "unknown"] = (byCategory[result.category ?? "unknown"] ?? 0) + 1;
-      reasonCounts[result.reason ?? "unknown"] = (reasonCounts[result.reason ?? "unknown"] ?? 0) + 1;
-      
+      byCategory[result.category ?? "unknown"] =
+        (byCategory[result.category ?? "unknown"] ?? 0) + 1;
+      reasonCounts[result.reason ?? "unknown"] =
+        (reasonCounts[result.reason ?? "unknown"] ?? 0) + 1;
+
       // Track variant_contradiction hits separately
       if (result.category === "variant_contradiction" && result.keyword) {
-        variantContradictionHits[result.keyword] = (variantContradictionHits[result.keyword] ?? 0) + 1;
+        variantContradictionHits[result.keyword] =
+          (variantContradictionHits[result.keyword] ?? 0) + 1;
       }
     } else {
       allowed.push(listing);
     }
   }
-  
+
   const topReasons = Object.entries(reasonCounts)
     .map(([reason, count]) => ({ reason, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 20);
-  
+
   return {
     allowed,
     blocked,
@@ -1161,9 +1366,10 @@ export function processBlacklistBatch(
       blocked: blocked.length,
       byCategory,
       topReasons,
-      variantContradictionHits: Object.keys(variantContradictionHits).length > 0 
-        ? variantContradictionHits 
-        : undefined,
+      variantContradictionHits:
+        Object.keys(variantContradictionHits).length > 0
+          ? variantContradictionHits
+          : undefined,
     },
   };
 }
@@ -1175,8 +1381,11 @@ export function printVariantContradictionStats(stats: BlacklistStats): void {
   const vcCount = stats.byCategory["variant_contradiction"] ?? 0;
   console.log(`\n=== Variant Contradiction Stats ===`);
   console.log(`Total blocked by variant_contradiction: ${vcCount}`);
-  
-  if (stats.variantContradictionHits && Object.keys(stats.variantContradictionHits).length > 0) {
+
+  if (
+    stats.variantContradictionHits &&
+    Object.keys(stats.variantContradictionHits).length > 0
+  ) {
     console.log("\nTop hits:");
     const sorted = Object.entries(stats.variantContradictionHits)
       .sort((a, b) => b[1] - a[1])
@@ -1220,6 +1429,8 @@ export type ListingForExclusion = {
 /**
  * Process a batch of listings and return combined exclusion stats
  * Includes both hard blocks and soft exclusions
+ *
+ * Uses shouldExcludeListingsBatch() internally to avoid N+1 queries.
  */
 export async function processCombinedExclusionBatch(
   listings: ListingForExclusion[]
@@ -1233,29 +1444,34 @@ export async function processCombinedExclusionBatch(
   const hardBlockByCategory: Record<string, number> = {};
   const softExclusionHits: Record<string, number> = {};
   const samples: CombinedExclusionStats["samples"] = [];
-  
+
   let hardBlocked = 0;
   let softExcluded = 0;
-  
-  for (const listing of listings) {
-    const result = await shouldExcludeListingFromCardSurfaces(
-      {
-        title: listing.title,
-        subtitle: listing.subtitle,
-        categoryName: listing.categoryName,
-        listingId: String(listing.id),
-      },
-      listing.card
-    );
-    
+
+  // Use batched function to avoid N+1 queries
+  const batchResults = await shouldExcludeListingsBatch(
+    listings.map((listing) => ({
+      title: listing.title,
+      subtitle: listing.subtitle,
+      categoryName: listing.categoryName,
+      listingId: String(listing.id),
+      card: listing.card,
+    }))
+  );
+
+  // Process results
+  for (let i = 0; i < listings.length; i++) {
+    const listing = listings[i];
+    const result = batchResults[i].result;
+
     if (result.excluded) {
       excluded.push({ ...listing, ...result });
-      
+
       if (result.hardBlocked) {
         hardBlocked++;
-        hardBlockByCategory[result.category ?? "unknown"] = 
+        hardBlockByCategory[result.category ?? "unknown"] =
           (hardBlockByCategory[result.category ?? "unknown"] ?? 0) + 1;
-        
+
         // Collect samples (limit to 10 total)
         if (samples.length < 10) {
           samples.push({
@@ -1268,9 +1484,9 @@ export async function processCombinedExclusionBatch(
         }
       } else if (result.softExcluded) {
         softExcluded++;
-        softExclusionHits[result.hit ?? "unknown"] = 
+        softExclusionHits[result.hit ?? "unknown"] =
           (softExclusionHits[result.hit ?? "unknown"] ?? 0) + 1;
-        
+
         // Collect samples (limit to 10 total)
         if (samples.length < 10) {
           samples.push({
@@ -1286,7 +1502,7 @@ export async function processCombinedExclusionBatch(
       allowed.push(listing);
     }
   }
-  
+
   return {
     allowed,
     excluded,
@@ -1306,22 +1522,25 @@ export async function processCombinedExclusionBatch(
  * Print combined exclusion stats to console
  * Useful for debugging and monitoring
  */
-export function printCombinedExclusionStats(stats: CombinedExclusionStats): void {
+export function printCombinedExclusionStats(
+  stats: CombinedExclusionStats
+): void {
   console.log(`\n=== Combined Exclusion Stats ===`);
   console.log(`Total listings: ${stats.total}`);
   console.log(`Hard blocked: ${stats.hardBlocked}`);
   console.log(`Soft excluded: ${stats.softExcluded}`);
   console.log(`Allowed: ${stats.allowed}`);
-  
+
   if (Object.keys(stats.hardBlockByCategory).length > 0) {
     console.log("\nHard blocks by category:");
-    const sorted = Object.entries(stats.hardBlockByCategory)
-      .sort((a, b) => b[1] - a[1]);
+    const sorted = Object.entries(stats.hardBlockByCategory).sort(
+      (a, b) => b[1] - a[1]
+    );
     for (const [category, count] of sorted) {
       console.log(`  ${category}: ${count}`);
     }
   }
-  
+
   if (Object.keys(stats.softExclusionHits).length > 0) {
     console.log("\nTop soft exclusion hits:");
     const sorted = Object.entries(stats.softExclusionHits)
@@ -1331,13 +1550,15 @@ export function printCombinedExclusionStats(stats: CombinedExclusionStats): void
       console.log(`  "${hit}": ${count}`);
     }
   }
-  
+
   if (stats.samples.length > 0) {
     console.log("\nSample excluded listings:");
     for (const sample of stats.samples) {
       const tag = sample.excluded === "hard" ? "[HARD]" : "[SOFT]";
       const market = sample.market ? ` (${sample.market})` : "";
-      console.log(`  ${tag} ID ${sample.id}${market}: "${sample.title}" (hit: ${sample.hit})`);
+      console.log(
+        `  ${tag} ID ${sample.id}${market}: "${sample.title}" (hit: ${sample.hit})`
+      );
     }
   }
 }

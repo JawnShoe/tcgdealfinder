@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import {
   getSoftExclusionReason,
   shouldExcludeListingFromCardSurfaces,
+  shouldExcludeListingFromCardSurfacesSync,
+  shouldExcludeListingsBatch,
 } from "../../blacklist";
 
 // =============================================================================
@@ -273,4 +275,134 @@ test("backpack should be soft-excluded", () => {
 
   assert.equal(result.excluded, true);
   assert.equal(result.hit, "backpack");
+});
+
+// =============================================================================
+// BATCH FUNCTION PARITY TESTS
+// =============================================================================
+
+test("shouldExcludeListingsBatch returns same results as individual calls", async () => {
+  const testListings = [
+    {
+      title: "Umbreon VMAX 215/203 Alternate Art Evolving Skies NM",
+      listingId: "1",
+    },
+    { title: "Pokemon Pikachu Plush Stuffed Animal", listingId: "2" },
+    { title: "Custom Acrylic Pokemon Card", listingId: "3" },
+    { title: "Charizard V Full Art 154/172 Pokemon TCG", listingId: "4" },
+    { title: "Pokemon Mousepad Gaming Large Extended", listingId: "5" },
+  ];
+
+  // Get results via batch function
+  const batchResults = await shouldExcludeListingsBatch(testListings);
+
+  // Get results via individual calls
+  const individualResults = await Promise.all(
+    testListings.map((listing) => shouldExcludeListingFromCardSurfaces(listing))
+  );
+
+  // Verify parity
+  assert.equal(batchResults.length, individualResults.length);
+
+  for (let i = 0; i < testListings.length; i++) {
+    const batch = batchResults[i].result;
+    const individual = individualResults[i];
+
+    assert.equal(
+      batch.excluded,
+      individual.excluded,
+      `Mismatch for "${testListings[i].title}": batch.excluded=${batch.excluded}, individual.excluded=${individual.excluded}`
+    );
+    assert.equal(
+      batch.hardBlocked,
+      individual.hardBlocked,
+      `Mismatch for "${testListings[i].title}": batch.hardBlocked=${batch.hardBlocked}, individual.hardBlocked=${individual.hardBlocked}`
+    );
+    assert.equal(
+      batch.softExcluded,
+      individual.softExcluded,
+      `Mismatch for "${testListings[i].title}": batch.softExcluded=${batch.softExcluded}, individual.softExcluded=${individual.softExcluded}`
+    );
+    assert.equal(
+      batch.category,
+      individual.category,
+      `Mismatch for "${testListings[i].title}": batch.category=${batch.category}, individual.category=${individual.category}`
+    );
+    assert.equal(
+      batch.hit,
+      individual.hit,
+      `Mismatch for "${testListings[i].title}": batch.hit=${batch.hit}, individual.hit=${individual.hit}`
+    );
+  }
+});
+
+test("shouldExcludeListingsBatch handles empty array", async () => {
+  const batchResults = await shouldExcludeListingsBatch([]);
+  assert.equal(batchResults.length, 0);
+});
+
+test("shouldExcludeListingsBatch preserves listing order", async () => {
+  const testListings = [
+    { title: "First Listing", listingId: "a" },
+    { title: "Second Listing", listingId: "b" },
+    { title: "Third Listing", listingId: "c" },
+  ];
+
+  const batchResults = await shouldExcludeListingsBatch(testListings);
+
+  assert.equal(batchResults[0].listing.title, "First Listing");
+  assert.equal(batchResults[1].listing.title, "Second Listing");
+  assert.equal(batchResults[2].listing.title, "Third Listing");
+});
+
+test("shouldExcludeListingFromCardSurfacesSync matches async version for non-override cases", async () => {
+  const testCases = [
+    { title: "Umbreon VMAX 215/203 Alternate Art" },
+    { title: "Pokemon Pikachu Plush Toy" },
+    { title: "Custom Acrylic Card" },
+  ];
+
+  for (const listing of testCases) {
+    const asyncResult = await shouldExcludeListingFromCardSurfaces(listing);
+    const syncResult = shouldExcludeListingFromCardSurfacesSync(
+      listing,
+      undefined
+    );
+
+    assert.equal(
+      asyncResult.excluded,
+      syncResult.excluded,
+      `Mismatch for "${listing.title}"`
+    );
+    assert.equal(
+      asyncResult.hardBlocked,
+      syncResult.hardBlocked,
+      `Mismatch for "${listing.title}"`
+    );
+    assert.equal(
+      asyncResult.softExcluded,
+      syncResult.softExcluded,
+      `Mismatch for "${listing.title}"`
+    );
+  }
+});
+
+test("shouldExcludeListingsBatch passes card context correctly", async () => {
+  const testListings = [
+    {
+      title: "Umbreon VMAX Rainbow 215/203 Pokemon",
+      listingId: "1",
+      card: {
+        name: "Umbreon VMAX",
+        setName: "Evolving Skies",
+        number: "215/203",
+        rarity: "Alternate Art Rare", // Not rainbow - should block
+      },
+    },
+  ];
+
+  const batchResults = await shouldExcludeListingsBatch(testListings);
+
+  assert.equal(batchResults[0].result.excluded, true);
+  assert.equal(batchResults[0].result.hardBlocked, true);
 });

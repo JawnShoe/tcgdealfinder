@@ -151,6 +151,22 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 - **Environment note**: Server runtime (`NEXT_RUNTIME === "nodejs"`) uses simpler scrubbing (message/exception only). Edge runtime now has comprehensive scrubbing for all PII vectors.
 - **Regression**: No runtime logic change besides scrubbing; Sentry events still sent normally with redacted fields.
 
+**Rate Limiting — Subscribe Endpoint (Workstream 6, 2025-12-26)**:
+
+- **Status**: IMPLEMENTED — DB-backed sliding-window rate limiting on `/api/alerts/subscribe`.
+- **Policy**: 5 requests per 5 minutes per IP address.
+- **Files changed**:
+  - `migrations/007_add_rate_limits.sql` — New `rate_limits` table with indexes + cleanup function.
+  - `lib/rateLimit.ts` — Rate limit helper: `checkRateLimit()`, `getClientIp()`, config constants.
+  - `app/api/alerts/subscribe/route.ts` — Enforces rate limit before any processing.
+- **IP extraction priority**: `x-forwarded-for` (first IP) → `x-real-ip` → `x-vercel-forwarded-for` → `"unknown"`.
+- **Response on block**: HTTP 429 with `{"ok": false, "error": "Too many requests. Please try again later."}` + `Retry-After` header.
+- **Response headers** (all responses): `X-RateLimit-Limit`, `X-RateLimit-Remaining`.
+- **Cleanup**: Opportunistic 1% chance per request deletes entries older than 1 hour; also provides `cleanup_old_rate_limits()` SQL function.
+- **FRAGILE**: Relies on reverse proxy headers for IP. Direct connections without proxy will group under `"unknown"`.
+- **Regression**: Normal subscribe flow unchanged under limit; only blocked when exceeding 5 requests in 5 minutes.
+- **Unsubscribe route**: NOT rate-limited (GET with token, low abuse potential, returns HTML).
+
 ### Listing Exclusion (Admin)
 
 - Single-listing exclusions live in `listing_overrides` (`override_type = HARD_BLOCK`) and are managed via `/admin/listings`.

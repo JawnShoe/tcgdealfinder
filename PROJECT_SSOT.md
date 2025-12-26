@@ -1199,7 +1199,7 @@ Added `e2e_test_email` mode for no-SQL one-click email validation:
 
 **Priority**: Operational reliability (ensures operators are notified when scheduled jobs fail)
 
-**PR**: #50 | **Merge commit**: (pending)
+**PR**: #50 | **Merge commit**: 7b8249a
 
 **Implementation** (2025-12-25):
 

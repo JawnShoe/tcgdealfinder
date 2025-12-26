@@ -127,6 +127,15 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 - To apply `migrations/004_add_seller_blacklist_history.sql`, open Neon SQL editor and run the file contents.
 - Verify with: `SELECT to_regclass('public.seller_blacklist_history') IS NOT NULL AS exists;`
 
+**SQL Injection — ORDER BY Hardening (Workstream 4 Audit, 2025-12-26)**:
+
+- **Status**: VERIFIED SECURE — No vulnerable dynamic ORDER BY found.
+- **API sort parameter** (`/api/deals?sort=...`): Validated via strict allowlist in `app/api/deals/route.ts:13-19`. Invalid input (e.g., `sort="price); DROP TABLE listings;--"`) defaults to `"best"`.
+- **SQL construction**: `buildOrderByClause()` in `app/api/deals/dealsQuery.ts:541-572` uses switch statement with hardcoded SQL fragments only. No user input interpolation.
+- **Type safety**: `DealsApiSort` type in `types/dealsApi.ts:4` restricts to `"best" | "newest" | "endingSoon"`.
+- **All other ORDER BY clauses**: Completely hardcoded (scripts, admin routes, debug endpoints). No dynamic column names from user input anywhere.
+- **Attack-proof claim**: Malicious sort string never reaches SQL; rejected at API layer and normalized to default.
+
 ### Listing Exclusion (Admin)
 
 - Single-listing exclusions live in `listing_overrides` (`override_type = HARD_BLOCK`) and are managed via `/admin/listings`.

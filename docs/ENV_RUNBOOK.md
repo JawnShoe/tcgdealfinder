@@ -321,6 +321,14 @@ The existing Sentry integration captures **application runtime errors** (errors 
 
 ---
 
+## Neon Database Access Rules
+
+1. **Operators must not run SQL in Neon** unless the coder names the exact Neon Project + Branch + Database from `DATABASE_URL`.
+2. **Never apply migrations to CI branches** unless explicitly told to; default target is the branch used by `DATABASE_URL` (usually Production/main).
+3. **After running SQL**, always run `SELECT to_regclass(...)` verification and paste outputs back to the coder.
+
+---
+
 ## Security Notes
 
 - **Never commit `.env.local`** - it's in `.gitignore` by design

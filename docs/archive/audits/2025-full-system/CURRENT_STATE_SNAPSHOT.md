@@ -1,11 +1,12 @@
-# Current State Snapshot
+> **Archived after Full System Audit closeout (2025-12-26)**
+
+# Current State Snapshot (Archived)
 
 ```
-Audit Artifact (Temporary)
+Audit Artifact (Archived)
 Phase: 4 — Clean-Slate Snapshot
 Created: 2025-12-26
-Collapses into: PROJECT_SSOT.md
-Delete/Archive after: Audit Closeout Approved
+Archived: 2025-12-26
 ```
 
 ---

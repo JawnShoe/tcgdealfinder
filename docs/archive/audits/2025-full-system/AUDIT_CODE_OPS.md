@@ -1,10 +1,13 @@
-# Full System Audit: Phase 3D — Ops, Pipelines & Alerts
+> **Archived after Full System Audit closeout (2025-12-26)**
+
+# Full System Audit: Phase 3D — Ops, Pipelines & Alerts (Archived)
 
 **Audit Type**: READ-ONLY code analysis
 **Scope**: GitHub Actions workflows, scheduled jobs, data pipelines, alerts subsystem, cleanup scripts
 **Date**: 2025-12-26
 **Auditor**: Claude Opus 4.5
 **Branch Base**: `main` @ `1bd4f9022f5771b4a796247c1f70aa0ad6b23f08`
+**Archived**: 2025-12-26
 
 ---
 

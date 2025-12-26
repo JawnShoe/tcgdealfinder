@@ -2,7 +2,7 @@
 
 **Purpose**: Map of all documentation files and their authoritative status.
 
-**Last Updated**: 2025-12-24
+**Last Updated**: 2025-12-26
 
 ---
 
@@ -102,9 +102,16 @@ CI runs only unit tests (`npm run test:unit`) to avoid requiring DATABASE_URL se
 
 ## Historical Archive
 
-Completed implementation records and audits moved to [docs/archive/](archive/) for reference.
+Completed implementation records and audits are moved to `docs/archive/` for reference.
 
-See [docs/archive/README.md](archive/README.md) for index of archived documents.
+### Archive Structure
+
+| Folder                                  | Contents                                     |
+| --------------------------------------- | -------------------------------------------- |
+| [docs/archive/](archive/)               | Historical implementation records (14 files) |
+| [docs/archive/audits/](archive/audits/) | Audit artifacts (archived after closeout)    |
+
+**Recent Audit**: The Full System Audit (December 2025) has been completed and archived to `docs/archive/audits/2025-full-system/`. See the [audit README](archive/audits/2025-full-system/README.md) for details.
 
 ---
 

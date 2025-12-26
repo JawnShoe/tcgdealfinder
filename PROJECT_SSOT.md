@@ -1195,6 +1195,50 @@ Added `e2e_test_email` mode for no-SQL one-click email validation:
 
 **Next step**: Scheduled `check-alerts` remains workflow_dispatch-only. Operator may enable scheduled alerts per `docs/ENV_RUNBOOK.md` Step 4 when ready.
 
+### Scheduled Job Failure Alerting [DONE ✅]
+
+**Priority**: Operational reliability (ensures operators are notified when scheduled jobs fail)
+
+**PR**: #48 | **Merge commit**: (pending)
+
+**Implementation** (2025-12-25):
+
+- **Approach**: GitHub-native notifications (Option A — lowest code churn)
+- **Mechanism**: GitHub automatically emails repository owner + watchers when scheduled workflow runs fail
+- **Why not Sentry**: Sentry captures application runtime errors, not GitHub Actions workflow failures. Workflows run in isolated CI environments before the application executes.
+
+**Scheduled Workflows Covered**:
+
+| Workflow File        | Job Name                   | Schedule       |
+| -------------------- | -------------------------- | -------------- |
+| `data-pipelines.yml` | `update-listings`          | Every 30 min   |
+| `data-pipelines.yml` | `update-historical-prices` | Daily 3 AM UTC |
+| `data-pipelines.yml` | `update-sold-listings`     | Daily 4 AM UTC |
+| `data-pipelines.yml` | `check-alerts`             | (Manual only)  |
+
+**Operator Checklist — Enable Failure Notifications**:
+
+1. Go to https://github.com/JawnShoe/tcgdealfinder
+2. Click **Watch** → **Custom** → Check **Workflows** → **Apply**
+3. Verify email notifications enabled at https://github.com/settings/notifications
+
+**Files changed**:
+
+- `docs/ENV_RUNBOOK.md` (added "Scheduled Job Failure Alerting" section)
+- `PROJECT_SSOT.md` (this entry)
+
+**Notification Path Verification**:
+
+- GitHub-native workflow failure notifications are automatic for repo owners
+- Watchers with "Workflows" subscription also receive notifications
+- No secrets required; no workflow code changes needed
+- Fallback: Manual monitoring via GitHub Actions tab
+
+**LOCKED**: scheduled job failure alerting only (docs/SSOT)
+**VERIFIED**: notification path documented, workflows listed
+**FRAGILE**: none (no secrets/vars required for notifications)
+**REGRESSION**: no runtime behavior changes
+
 Full Pokémon Set Coverage (SSOT Catalog) [DONE ✅ — API-complete, audited 2025-12-18]
 
 Add all Pokémon TCG sets (historical + modern).

@@ -135,6 +135,21 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 - **Type safety**: `DealsApiSort` type in `types/dealsApi.ts:4` restricts to `"best" | "newest" | "endingSoon"`.
 - **All other ORDER BY clauses**: Completely hardcoded (scripts, admin routes, debug endpoints). No dynamic column names from user input anywhere.
 - **Attack-proof claim**: Malicious sort string never reaches SQL; rejected at API layer and normalized to default.
+- **Accepted sort inputs are allowlisted**: `best`, `newest`, `endingSoon` (aliases: `endingsoon`, `ending-soon`). Anything else falls back to `best`.
+
+**Sentry Edge Runtime PII Scrubbing (Workstream 5 Audit, 2025-12-26)**:
+
+- **Status**: IMPLEMENTED — Edge runtime now has `beforeSend` scrubbing matching server-side policy.
+- **File changed**: `instrumentation.ts` (edge runtime section, lines 40-138).
+- **Scrubbing applied**:
+  - `event.message` / `event.exception.values[].value`: Emails → `[EMAIL]`, 32+ char tokens → `[TOKEN]`.
+  - `event.request.url`: Query params → `[QUERY_REDACTED]`.
+  - `event.request.query_string`: → `[REDACTED]`.
+  - `event.request.headers`: `authorization`, `cookie`, `set-cookie`, `x-api-key`, `x-auth-token`, `x-admin-secret` → `[REDACTED]`.
+  - `event.user`: `email` → `[EMAIL]`, `username` / `ip_address` → `[REDACTED]`.
+  - `event.extra` / `event.tags`: Emails/tokens scrubbed via regex.
+- **Environment note**: Server runtime (`NEXT_RUNTIME === "nodejs"`) uses simpler scrubbing (message/exception only). Edge runtime now has comprehensive scrubbing for all PII vectors.
+- **Regression**: No runtime logic change besides scrubbing; Sentry events still sent normally with redacted fields.
 
 ### Listing Exclusion (Admin)
 

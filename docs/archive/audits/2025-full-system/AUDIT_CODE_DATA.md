@@ -1,11 +1,12 @@
-# Data / DB Layer Code Audit
+> **Archived after Full System Audit closeout (2025-12-26)**
+
+# Data / DB Layer Code Audit (Archived)
 
 ```
-Audit Artifact (Temporary)
+Audit Artifact (Archived)
 Phase: 3C — Data / DB Layer
 Created: 2025-12-26
-Collapses into: CURRENT_STATE_SNAPSHOT.md
-Delete/Archive after: Full Audit Closeout
+Archived: 2025-12-26
 ```
 
 ---

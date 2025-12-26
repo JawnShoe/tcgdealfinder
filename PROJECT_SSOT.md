@@ -166,6 +166,10 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 - **FRAGILE**: Relies on reverse proxy headers for IP. Direct connections without proxy will group under `"unknown"`.
 - **Regression**: Normal subscribe flow unchanged under limit; only blocked when exceeding 5 requests in 5 minutes.
 - **Unsubscribe route**: NOT rate-limited (GET with token, low abuse potential, returns HTML).
+- **Migration 007 applied**: 2025-12-26 to Neon DB `ep-rapid-cake-afiy0ttd` / `neondb`.
+- **Prod verification** (2025-12-26):
+  - Requests 1-5: HTTP 200, `X-RateLimit-Remaining` decremented 4→3→2→1→0
+  - Request 6: HTTP 429, `Retry-After: 251`, body `{"ok":false,"error":"Too many requests. Please try again later."}`
 
 ### Listing Exclusion (Admin)
 

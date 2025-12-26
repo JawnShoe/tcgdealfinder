@@ -266,6 +266,59 @@ Every quarter (or before major releases):
 
 ---
 
+## Scheduled Job Failure Alerting
+
+GitHub Actions automatically notifies repository owners and watchers when scheduled workflow runs fail. This section documents how to ensure you receive these notifications.
+
+### Notification Path (GitHub-native)
+
+When a scheduled workflow fails, GitHub sends email notifications to:
+
+1. **Repository owner** (automatic)
+2. **Users watching the repository** with "All Activity" or "Custom" → "Workflows" enabled
+
+### Scheduled Workflows Covered
+
+| Workflow File        | Job Name                   | Schedule        | Description                  |
+| -------------------- | -------------------------- | --------------- | ---------------------------- |
+| `data-pipelines.yml` | `update-listings`          | Every 30 min    | Refresh eBay listings        |
+| `data-pipelines.yml` | `update-historical-prices` | Daily 3 AM UTC  | Update historical price data |
+| `data-pipelines.yml` | `update-sold-listings`     | Daily 4 AM UTC  | Update sold listings data    |
+| `data-pipelines.yml` | `check-alerts`             | (Manual only)\* | Check and send price alerts  |
+
+\*`check-alerts` schedule is disabled until SENDGRID_API_KEY is configured.
+
+### Enable Workflow Failure Notifications (Required One-Time Setup)
+
+1. Go to https://github.com/JawnShoe/tcgdealfinder (or your fork)
+2. Click **Watch** (top right) → **Custom**
+3. Check **Workflows** checkbox
+4. Click **Apply**
+
+**Alternative**: Select "All Activity" to receive all repository notifications.
+
+### Verification
+
+To verify notifications are working:
+
+1. Check GitHub notification settings: https://github.com/settings/notifications
+2. Ensure "Email" is enabled under "Watching"
+3. Ensure "Actions" notifications are not disabled in your notification routing
+
+### Fallback: Manual Monitoring
+
+If email notifications are unreliable, monitor scheduled job health via:
+
+- GitHub Actions tab: https://github.com/JawnShoe/tcgdealfinder/actions
+- Filter by workflow: "Data Pipelines"
+- Check for red (failed) runs
+
+### Why Sentry Can't Alert on Workflow Failures
+
+The existing Sentry integration captures **application runtime errors** (errors in Next.js server/edge runtime). GitHub Actions workflow failures occur in isolated CI environments before the application runs, so Sentry cannot observe them. GitHub-native notifications are the appropriate mechanism for workflow failure alerting.
+
+---
+
 ## Security Notes
 
 - **Never commit `.env.local`** - it's in `.gitignore` by design

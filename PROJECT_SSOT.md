@@ -134,7 +134,7 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 - Use listing exclusion for isolated bad listings; use seller blacklist for systemic seller abuse.
 - Debug views display overrides as exclusion badges.
 
-**Batched Exclusion Checks (Performance)**:
+**Batched Exclusion Checks (Performance)** — PR #47, merged 67d118f:
 
 - For batch operations, use `shouldExcludeListingsBatch()` which fetches all overrides in ONE query (or cache hit) then evaluates synchronously.
 - This eliminates the N+1 query pattern when filtering many listings (e.g., 50 deals → 1 query instead of 50).

@@ -268,14 +268,16 @@ Every quarter (or before major releases):
 
 ## Scheduled Job Failure Alerting
 
-GitHub Actions automatically notifies repository owners and watchers when scheduled workflow runs fail. This section documents how to ensure you receive these notifications.
+GitHub can notify you via UI and email when scheduled workflow runs fail, **depending on your notification settings**. This section documents how to ensure you receive these notifications.
 
 ### Notification Path (GitHub-native)
 
-When a scheduled workflow fails, GitHub sends email notifications to:
+When a scheduled workflow fails, GitHub can send notifications to:
 
-1. **Repository owner** (automatic)
-2. **Users watching the repository** with "All Activity" or "Custom" → "Workflows" enabled
+1. **Repository owner** — if email notifications are enabled in GitHub settings
+2. **Users watching the repository** — if "Workflows" watch subscription is enabled
+
+**Important**: Notifications are not guaranteed by default. You must configure your watch settings and ensure email notifications are enabled.
 
 ### Scheduled Workflows Covered
 

@@ -1199,12 +1199,13 @@ Added `e2e_test_email` mode for no-SQL one-click email validation:
 
 **Priority**: Operational reliability (ensures operators are notified when scheduled jobs fail)
 
-**PR**: #48 | **Merge commit**: (pending)
+**PR**: #50 | **Merge commit**: (pending)
 
 **Implementation** (2025-12-25):
 
 - **Approach**: GitHub-native notifications (Option A — lowest code churn)
-- **Mechanism**: GitHub automatically emails repository owner + watchers when scheduled workflow runs fail
+- **Mechanism**: GitHub can notify via UI + email depending on notification settings
+- **Requirement**: Operator must enable "Workflows" watch subscription and email notifications
 - **Why not Sentry**: Sentry captures application runtime errors, not GitHub Actions workflow failures. Workflows run in isolated CI environments before the application executes.
 
 **Scheduled Workflows Covered**:
@@ -1229,8 +1230,8 @@ Added `e2e_test_email` mode for no-SQL one-click email validation:
 
 **Notification Path Verification**:
 
-- GitHub-native workflow failure notifications are automatic for repo owners
-- Watchers with "Workflows" subscription also receive notifications
+- GitHub can notify repo owners + watchers when workflows fail (not guaranteed by default)
+- Requires: "Workflows" watch subscription enabled + email notifications enabled
 - No secrets required; no workflow code changes needed
 - Fallback: Manual monitoring via GitHub Actions tab
 

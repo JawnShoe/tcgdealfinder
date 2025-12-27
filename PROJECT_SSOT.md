@@ -190,7 +190,7 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
   - No hard/soft bounce tracking (invalid addresses remain active)
   - No email verification flow (auto-confirmed on subscribe)
   - No dead letter queue for failed sends
-- **Hardening sprint decision**: Skipped implementation due to complexity (webhook + schema + API route changes). Gaps documented here for future workstream.
+- **Hardening sprint decision**: Assessed; implementation deferred due to complexity (would require webhook + schema + API route changes). Gaps documented here for future workstream.
 - **Recommended future work** (not in scope for hardening sprint):
   1. Add SendGrid event webhook handler for bounce/complaint auto-unsubscribe
   2. Implement retry queue with exponential backoff

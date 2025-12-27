@@ -266,6 +266,8 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 
 **Maturity**: Low→Medium — /api/health + server-only Sentry; Gap: alerts/dashboards/perf metrics/structured logs.
 
+Job Silence Watchdog is merged but currently blocked until we have a public domain; set SITE_BASE_URL to the production URL and run workflow once.
+
 ### 3) Documentation & Knowledge Sharing
 
 **Maturity**: High — SSOT + runbooks.

@@ -34,6 +34,19 @@ These document operational procedures and policies (Repo Hardening Pack).
 
 ---
 
+## Design Documents (Advisory — Temporary)
+
+These are planning artifacts for the phased redesign. They will be archived after Phase 1 and Phase 2 are completed.
+
+| Document                                                              | Purpose                                                 | Status         |
+| --------------------------------------------------------------------- | ------------------------------------------------------- | -------------- |
+| [docs/design/DESIGN_AUDIT_2025-01.md](design/DESIGN_AUDIT_2025-01.md) | External expert design audit (advisory, non-executable) | Advisory       |
+| [docs/design/DESIGN_PHASES.md](design/DESIGN_PHASES.md)               | Locked phased redesign plan                             | Phase 1 ACTIVE |
+
+**Note**: The audit is advisory only. All execution must be scoped via DESIGN_PHASES.md.
+
+---
+
 ## Reference Documents
 
 These provide stable reference material for specific domains.

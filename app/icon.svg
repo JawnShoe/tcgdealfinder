@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- TCG Deal Finder Logo: Stylized card with radar/deal indicator -->
+  <!-- Background card shape -->
+  <rect x="4" y="2" width="24" height="28" rx="3" fill="#0f172a"/>
+  <!-- Inner card highlight -->
+  <rect x="6" y="4" width="20" height="24" rx="2" fill="#1e293b"/>
+  <!-- Deal radar rings -->
+  <circle cx="16" cy="14" r="8" stroke="#10b981" stroke-width="1.5" fill="none" opacity="0.3"/>
+  <circle cx="16" cy="14" r="5" stroke="#10b981" stroke-width="1.5" fill="none" opacity="0.5"/>
+  <circle cx="16" cy="14" r="2" fill="#10b981"/>
+  <!-- Price tag indicator -->
+  <path d="M12 22 L16 20 L20 22 L16 24 Z" fill="#38bdf8"/>
+</svg>

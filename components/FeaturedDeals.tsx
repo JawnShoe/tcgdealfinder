@@ -109,7 +109,8 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                             </span>
                             {/* HYDRATION-SAFE: Always render span, hide with CSS when empty */}
                             <span
-                              className={`text-xs text-slate-500 ${secondary ? "" : "hidden"}`}
+                              className={`text-xs text-slate-500 ${secondary ? "" : "invisible"}`}
+                              aria-hidden={!secondary}
                             >
                               {secondary || "\u00A0"}
                             </span>

@@ -754,7 +754,8 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                               </div>
                               {/* HYDRATION-SAFE: Always render, hide with CSS when empty */}
                               <p
-                                className={`text-sm text-slate-500 ${secondary ? "" : "hidden"}`}
+                                className={`text-sm text-slate-500 ${secondary ? "" : "invisible"}`}
+                                aria-hidden={!secondary}
                               >
                                 {secondary || "\u00A0"}
                               </p>

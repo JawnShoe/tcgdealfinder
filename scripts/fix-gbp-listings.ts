@@ -3,7 +3,7 @@
  * Fix GBP listings with inverted FX rate.
  *
  * This script:
- * 1. Updates the GBP rate in fx_rates table to correct value (1.27)
+ * 1. Updates the GBP rate in fx_rates table to correct value (1.35)
  * 2. Recalculates total_usd for all GBP listings
  *
  * Usage:
@@ -19,7 +19,7 @@ import {
   invalidateFXCache,
 } from "../lib/fxRates";
 
-const CORRECT_GBP_RATE = 1.27; // Current market rate (update as needed)
+const CORRECT_GBP_RATE = 1.35; // GBP→USD rate as of Dec 2025 (1 GBP ≈ 1.35 USD)
 
 interface ListingRow {
   id: number;
@@ -44,7 +44,7 @@ async function main() {
   if (currentGbpRate == null) {
     console.log("   ❌ No GBP rate found in database");
     console.log(
-      "   Run: INSERT INTO fx_rates (currency, rate_to_usd) VALUES ('GBP', 1.27);"
+      "   Run: INSERT INTO fx_rates (currency, rate_to_usd) VALUES ('GBP', 1.35);"
     );
     process.exit(1);
   }

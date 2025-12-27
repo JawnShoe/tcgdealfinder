@@ -32,7 +32,7 @@ import {
 import { MarketFlag } from "../components/MarketFlag";
 import { WhyDealHint } from "../components/WhyDealHint";
 import { SellerSeenBadge } from "../components/SellerSeenBadge";
-import { TooltipPopover } from "../components/TooltipPopover";
+import { TooltipPopoverClientOnly } from "../components/TooltipPopoverClientOnly";
 import {
   TABLE_TH,
   TABLE_TH_RIGHT,
@@ -438,14 +438,14 @@ const EndsColumn: ColumnSpec = {
   renderCell: (vm) => {
     const endsDisplay = getEndsAtDisplay(vm.deal.endsAt);
     return (
-      <TooltipPopover
+      <TooltipPopoverClientOnly
         content={endsDisplay.tooltip}
         triggerClassName="whitespace-normal text-sm text-slate-600"
         tooltipClassName="whitespace-nowrap"
         usePortal={true}
       >
         {endsDisplay.label}
-      </TooltipPopover>
+      </TooltipPopoverClientOnly>
     );
   },
 };

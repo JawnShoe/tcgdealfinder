@@ -1,6 +1,6 @@
 "use client";
 
-import { TooltipPopover } from "./TooltipPopover";
+import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
 
 type WhyDealHintProps = {
   label: string;
@@ -8,17 +8,13 @@ type WhyDealHintProps = {
   className?: string;
 };
 
-export function WhyDealHint({
-  label,
-  tooltip,
-  className,
-}: WhyDealHintProps) {
+export function WhyDealHint({ label, tooltip, className }: WhyDealHintProps) {
   if (!tooltip) {
     return <span className={className}>{label}</span>;
   }
 
   return (
-    <TooltipPopover
+    <TooltipPopoverClientOnly
       content={tooltip}
       ariaLabel={`${label} (more info)`}
       className="inline-flex min-w-0 max-w-full items-center whitespace-nowrap"
@@ -26,6 +22,6 @@ export function WhyDealHint({
       size="compact"
     >
       {label}
-    </TooltipPopover>
+    </TooltipPopoverClientOnly>
   );
 }

@@ -39,6 +39,7 @@ import {
   formatPriceWithApprox,
   formatNativeCurrency,
 } from "../lib/dealFormatting";
+import { useViewerCurrency } from "../hooks/useViewerCurrency";
 import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 import { ALERT_THRESHOLD_OPTIONS } from "../lib/alertsConfig";
 import { isDealTrusted } from "../lib/dealScore";
@@ -236,6 +237,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
     otherMarketCounts,
   } = detail;
   const router = useRouter();
+  const viewerCurrency = useViewerCurrency();
   const conditionLabel = formatConditionLabel(card.condition ?? null);
 
   const [conditionFilter, setConditionFilter] = useState<ConditionFilterKey>(
@@ -735,7 +737,8 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                           const { primary, secondary } = formatPriceWithApprox(
                             bestTrustedDeal.totalNative,
                             bestTrustedDeal.currency,
-                            bestTrustedDeal.totalUsd
+                            bestTrustedDeal.totalUsd,
+                            viewerCurrency
                           );
                           return (
                             <div className="flex flex-col">

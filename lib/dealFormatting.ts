@@ -73,31 +73,91 @@ export function formatNativeCurrency(
 }
 
 /**
+ * Map locale/language to likely viewer currency.
+ * Used to determine whether to show ≈ USD approximation.
+ */
+const LOCALE_TO_CURRENCY: Record<string, string> = {
+  "en-US": "USD",
+  "en-GB": "GBP",
+  "en-AU": "AUD",
+  "en-CA": "CAD",
+  "de-DE": "EUR",
+  "fr-FR": "EUR",
+  "es-ES": "EUR",
+  "it-IT": "EUR",
+  // Fallback patterns (language only)
+  en: "USD", // Default English to USD
+  de: "EUR",
+  fr: "EUR",
+  es: "EUR",
+  it: "EUR",
+};
+
+/**
+ * Detect viewer's likely currency from browser locale.
+ * Returns USD as fallback for unknown locales.
+ * Safe to call on server (returns USD).
+ */
+export function getViewerCurrency(): string {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return "USD"; // Server-side fallback
+  }
+
+  const locale = navigator.language || "en-US";
+
+  // Try exact match first (e.g., "en-GB")
+  if (LOCALE_TO_CURRENCY[locale]) {
+    return LOCALE_TO_CURRENCY[locale];
+  }
+
+  // Try language-only match (e.g., "en" from "en-GB")
+  const lang = locale.split("-")[0];
+  if (LOCALE_TO_CURRENCY[lang]) {
+    return LOCALE_TO_CURRENCY[lang];
+  }
+
+  return "USD"; // Default fallback
+}
+
+/**
  * Format price for display: native currency as primary, USD as secondary (approx).
  *
+ * Viewer currency rule:
+ * - If viewer currency matches listing currency → hide ≈ USD (redundant)
+ * - If viewer currency differs from listing currency → show ≈ USD
+ *
  * Returns:
- * - { primary, secondary: null } if currency is USD (no duplicate)
- * - { primary, secondary } with "≈ $X.XX" if non-USD
+ * - { primary, secondary: null } if currencies match or listing is USD
+ * - { primary, secondary } with "≈ $X.XX" if viewer needs USD conversion
  * - Falls back to USD display if native amount is missing but USD is available
  * - { primary: "--", secondary: null } if all data is missing
  */
 export function formatPriceWithApprox(
   nativeAmount: number | null | undefined,
   currency: string | null | undefined,
-  usdAmount: number | null | undefined
+  usdAmount: number | null | undefined,
+  viewerCurrency?: string | null
 ): { primary: string; secondary: string | null } {
   const currencyCode = (currency ?? "USD").toUpperCase();
+  const viewerCurrencyCode = (
+    viewerCurrency ?? getViewerCurrency()
+  ).toUpperCase();
 
   // If native amount is available, use it as primary
   if (nativeAmount != null && Number.isFinite(nativeAmount)) {
     const primary = formatNativeCurrency(nativeAmount, currencyCode);
 
-    // If USD, no need for secondary approximation
+    // If listing currency matches viewer currency, no need for ≈ USD
+    if (currencyCode === viewerCurrencyCode) {
+      return { primary, secondary: null };
+    }
+
+    // If listing is USD, no need for ≈ USD (it IS USD)
     if (currencyCode === "USD") {
       return { primary, secondary: null };
     }
 
-    // Non-USD: show USD as secondary approximation
+    // Viewer currency differs from listing: show ≈ USD for reference
     if (usdAmount != null && Number.isFinite(usdAmount)) {
       const usdFormatted = formatUSD(usdAmount);
       return { primary, secondary: `≈ ${usdFormatted}` };

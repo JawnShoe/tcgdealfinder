@@ -1712,6 +1712,46 @@ No exceptions.
 - Any ambiguity about data correctness
 - Any disagreement about intended UX
 
+13. Operator Involvement Rule (LOCKED)
+
+The Operator is treated like a 10-year-old.
+
+**Principle**
+
+- The Operator must be shielded from investigation, debugging, and decision complexity.
+
+**Rules**
+
+- The Operator's responsibilities are limited to **final verification only**, such as:
+  - Opening a PR
+  - Confirming the list of changed files
+  - Performing simple visual/UI checks
+  - Clicking merge
+- **All investigative work** (debugging, SQL queries, audits, scripting, evidence gathering, root-cause analysis) is the **Coder's responsibility**.
+- The Operator is involved **only when absolutely necessary** and **only after evidence is prepared**.
+- If a task can reasonably be completed by the Coder, it **must not** be escalated to the Operator.
+
+**Status**
+
+- LOCKED — This rule overrides convenience, speed, or preference.
+
+14. Operator Instruction Rule (LOCKED)
+
+Whenever the Operator is involved, instructions must be:
+
+- Explicitly addressed to the Operator
+- Written as short, concrete action steps
+- Assumed to be followed by a 10-year-old
+- Free of investigation, interpretation, or decision-making
+
+It is a process violation to:
+
+- Assume the Operator knows what to do
+- Imply steps without stating them
+- Combine Operator actions with Coder responsibilities
+
+All Operator actions must be spelled out clearly and separately.
+
 Status:
 
 - This section is LOCKED

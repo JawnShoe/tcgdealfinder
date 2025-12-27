@@ -53,5 +53,29 @@ After merging any PR that changes tooling/process (CI workflows, package.json sc
 - Tier-1 issues (pricing totals, shipping, dedup integrity, seller trust UI, watchlist persistence, best/featured deal numbers) may not receive a “NO FIX REQUIRED” verdict unless an Evidence Packet is attached.
 - Missing or partial evidence must be called out as: `INSUFFICIENT EVIDENCE — NEED DB/UI TRACE`.
 - **Evidence Packet** must include: (A) DB query + row values for the specific IDs, (B) two same-surface samples, (C) UI path + exact field rendered, (D) single-sentence call (“DB wrong” or “UI wrong”), (E) if a fix exists: minimal diff summary + verification IDs + lint/build status.
-- **Shift handoff checklist for open Tier-1 bugs**: state current hypothesis, attach the evidence gathered so far, note what’s ruled out, and list the next step plus acceptance criteria.
+- **Shift handoff checklist for open Tier-1 bugs**: state current hypothesis, attach the evidence gathered so far, note what's ruled out, and list the next step plus acceptance criteria.
 - **Seller identity data sources**: Always document whether evidence references buyer Browse APIs or legacy/decommissioned Shopping API data before opening or closing a Tier-1 seller-identity issue.
+
+### Operator Load Minimization Gate (LOCKED)
+
+Before requesting any Operator action, the Coder must confirm:
+
+- Investigation is complete
+- Root cause is identified
+- Evidence is prepared and summarized
+- Operator action is strictly required (cannot be completed by the Coder)
+
+If these conditions are not met, Operator involvement is a **process violation**.
+
+This gate is LOCKED and applies to all handoffs, PRs, audits, and investigations.
+
+### Operator Instruction Clarity Gate (LOCKED)
+
+Before involving the Operator, confirm:
+
+- Operator steps are explicitly written
+- Steps are minimal and mechanical
+- No investigation or judgment is required
+- Operator responsibility is clearly separated from Coder work
+
+Failure to provide explicit Operator instructions is a handoff failure.

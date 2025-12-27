@@ -7,14 +7,17 @@ import { TrustedBadge } from "./TrustedBadge";
 import { WatchlistStarButton } from "./WatchlistStarButton";
 import { buildAffiliateUrl } from "../lib/affiliateUrl";
 import type { Deal } from "../types/deal";
-import { SellerNameWithTooltip, formatSellerSalesCount } from "./SellerNameWithTooltip";
+import {
+  SellerNameWithTooltip,
+  formatSellerSalesCount,
+} from "./SellerNameWithTooltip";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 import {
   discountClass,
-  formatUSD,
   formatDiscount,
   formatMarket,
+  formatPriceWithApprox,
 } from "../lib/dealFormatting";
 import { MarketFlag } from "./MarketFlag";
 
@@ -39,127 +42,144 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
           Featured deals today
         </h2>
         <p className="text-sm text-slate-600">
-          Top listings ranked by our deal quality score. Discounts, seller trust, and data confidence drive placement.
+          Top listings ranked by our deal quality score. Discounts, seller
+          trust, and data confidence drive placement.
         </p>
       </div>
 
       {deduped.length === 0 ? (
         <div className="rounded border border-dashed px-4 py-6 text-center text-sm text-slate-500">
-          No standout deals hit our featured threshold yet. Check back
-          later or browse all deals below.
+          No standout deals hit our featured threshold yet. Check back later or
+          browse all deals below.
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {deduped.map(({ deal, price, discount, trustedSeller }) => {
             const market = formatMarket(deal.market);
             const salesText = formatSellerSalesCount(
-              deal.sellerFeedbackCount ?? null,
+              deal.sellerFeedbackCount ?? null
             );
             return (
-            <div
-              key={deal.id}
-              className="flex flex-col rounded-lg border bg-white p-4 shadow-sm"
-            >
-              <div className="flex gap-3">
-                {deal.thumbnailUrl ? (
-                  <Image
-                    src={deal.thumbnailUrl}
-                    alt={deal.title}
-                    width={72}
-                    height={72}
-                    className="h-20 w-20 rounded-md object-cover"
-                  />
-                ) : (
-                  <div className="h-20 w-20 rounded-md bg-slate-200" />
-                )}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardIdentityBlock
-                      identity={buildCardIdentityFromDeal(deal)}
-                      primaryHref={buildAffiliateUrl(deal.url)}
-                      showListingTitle
-                      showViewCardLink={false}
+              <div
+                key={deal.id}
+                className="flex flex-col rounded-lg border bg-white p-4 shadow-sm"
+              >
+                <div className="flex gap-3">
+                  {deal.thumbnailUrl ? (
+                    <Image
+                      src={deal.thumbnailUrl}
+                      alt={deal.title}
+                      width={72}
+                      height={72}
+                      className="h-20 w-20 rounded-md object-cover"
                     />
-                    <WatchlistStarButton
-                      cardId={deal.card?.id ?? deal.cardId ?? null}
-                      cardName={
-                        deal.card?.name ?? deal.cardName ?? deal.title ?? null
-                      }
-                      setName={deal.card?.setName ?? deal.setName ?? null}
-                    />
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                    <span className="text-base font-semibold text-slate-900">
-                      {formatUSD(price)}
-                    </span>
-                    <span
-                      className={`font-medium ${discountClass(discount)}`}
-                    >
-                      {formatDiscount(discount)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-3 flex-1 text-sm text-slate-600">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-xs uppercase tracking-wide text-slate-500">
-                    Seller
-                  </span>
-                  <div className="flex flex-col items-end gap-0.5 text-right">
-                    <span className="inline-flex items-center gap-1 text-slate-800">
-                      <SellerNameWithTooltip
-                        seller={getSellerDisplayData({
-                          username: deal.sellerUsername,
-                          storeName: deal.sellerStoreName,
-                          feedbackCount: deal.sellerFeedbackCount,
-                          feedbackPercent: deal.sellerPositivePercent,
-                        })}
-                        className="text-sm text-slate-600"
+                  ) : (
+                    <div className="h-20 w-20 rounded-md bg-slate-200" />
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardIdentityBlock
+                        identity={buildCardIdentityFromDeal(deal)}
+                        primaryHref={buildAffiliateUrl(deal.url)}
+                        showListingTitle
+                        showViewCardLink={false}
                       />
-                      {trustedSeller && <TrustedBadge />}
-                    </span>
-                    {salesText ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
-                        <span aria-hidden="true">⭐</span>
-                        <span>{salesText} sales</span>
+                      <WatchlistStarButton
+                        cardId={deal.card?.id ?? deal.cardId ?? null}
+                        cardName={
+                          deal.card?.name ?? deal.cardName ?? deal.title ?? null
+                        }
+                        setName={deal.card?.setName ?? deal.setName ?? null}
+                      />
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                      {(() => {
+                        const { primary, secondary } = formatPriceWithApprox(
+                          deal.totalNative,
+                          deal.currency,
+                          deal.totalUsd
+                        );
+                        return (
+                          <span className="flex flex-col">
+                            <span className="text-base font-semibold text-slate-900">
+                              {primary}
+                            </span>
+                            {secondary && (
+                              <span className="text-xs text-slate-500">
+                                {secondary}
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })()}
+                      <span
+                        className={`font-medium ${discountClass(discount)}`}
+                      >
+                        {formatDiscount(discount)}
                       </span>
-                    ) : null}
+                    </div>
                   </div>
                 </div>
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <span className="text-xs uppercase tracking-wide text-slate-500">
-                    Market
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-slate-800">
-                    <span aria-hidden="true">
-                      <MarketFlag market={deal.market} />
+
+                <div className="mt-3 flex-1 text-sm text-slate-600">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-xs uppercase tracking-wide text-slate-500">
+                      Seller
                     </span>
-                    <span aria-hidden="true">{market.compactLabel}</span>
-                    <span className="sr-only">{market.label}</span>
-                  </span>
+                    <div className="flex flex-col items-end gap-0.5 text-right">
+                      <span className="inline-flex items-center gap-1 text-slate-800">
+                        <SellerNameWithTooltip
+                          seller={getSellerDisplayData({
+                            username: deal.sellerUsername,
+                            storeName: deal.sellerStoreName,
+                            feedbackCount: deal.sellerFeedbackCount,
+                            feedbackPercent: deal.sellerPositivePercent,
+                          })}
+                          className="text-sm text-slate-600"
+                        />
+                        {trustedSeller && <TrustedBadge />}
+                      </span>
+                      {salesText ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
+                          <span aria-hidden="true">⭐</span>
+                          <span>{salesText} sales</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <span className="text-xs uppercase tracking-wide text-slate-500">
+                      Market
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-slate-800">
+                      <span aria-hidden="true">
+                        <MarketFlag market={deal.market} />
+                      </span>
+                      <span aria-hidden="true">{market.compactLabel}</span>
+                      <span className="sr-only">{market.label}</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <a
+                    href={buildAffiliateUrl(deal.url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    View listing
+                  </a>
+                  {deal.cardId && (
+                    <Link
+                      href={`/cards/${deal.cardId}`}
+                      className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                    >
+                      Card page
+                    </Link>
+                  )}
                 </div>
               </div>
-
-              <div className="mt-4 flex gap-2">
-                <a
-                  href={buildAffiliateUrl(deal.url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  View listing
-                </a>
-                {deal.cardId && (
-                  <Link
-                    href={`/cards/${deal.cardId}`}
-                    className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
-                  >
-                    Card page
-                  </Link>
-                )}
-              </div>
-            </div>
             );
           })}
         </div>

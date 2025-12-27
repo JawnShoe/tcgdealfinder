@@ -524,6 +524,30 @@ function toMarketplaceId(market: string): string {
   }
 }
 
+/**
+ * Get the contextual location header for buyer context.
+ * This ensures API prices match what users see on eBay website for that market.
+ * Without this header, eBay may return different prices (e.g., without VAT).
+ *
+ * Format: contextualLocation=country=XX
+ * See: https://developer.ebay.com/api-docs/buy/static/api-browse.html#Headers
+ */
+function getEndUserContextHeader(market: string): string {
+  switch (market) {
+    case "EBAY_CA":
+      return "contextualLocation=country=CA";
+    case "EBAY_GB":
+      return "contextualLocation=country=GB";
+    case "EBAY_DE":
+      return "contextualLocation=country=DE";
+    case "EBAY_AU":
+      return "contextualLocation=country=AU";
+    case "EBAY_US":
+    default:
+      return "contextualLocation=country=US";
+  }
+}
+
 // ---- Browse API search ----
 // NOTE: Signature matches existing callers: fetchEbayListings(searchQuery, market)
 
@@ -547,6 +571,7 @@ export async function fetchEbayListings(
   );
 
   // Use rate limit retry wrapper for 429 responses
+  // X-EBAY-C-ENDUSERCTX ensures prices match what users see on eBay website
   const res = await fetchWithRateLimitRetry(() =>
     fetch(url.toString(), {
       method: "GET",
@@ -554,6 +579,7 @@ export async function fetchEbayListings(
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
         "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
+        "X-EBAY-C-ENDUSERCTX": getEndUserContextHeader(market),
       },
     })
   );
@@ -757,6 +783,7 @@ export async function fetchEbayItemDetail(
 
   try {
     // Use rate limit retry wrapper for 429 responses
+    // X-EBAY-C-ENDUSERCTX ensures prices match what users see on eBay website
     const res = await fetchWithRateLimitRetry(() =>
       fetch(endpoint, {
         method: "GET",
@@ -764,6 +791,7 @@ export async function fetchEbayItemDetail(
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
           "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
+          "X-EBAY-C-ENDUSERCTX": getEndUserContextHeader(market),
         },
       })
     );
@@ -829,6 +857,7 @@ export async function fetchEbaySoldListings(
   );
 
   // Use rate limit retry wrapper for 429 responses
+  // X-EBAY-C-ENDUSERCTX ensures prices match what users see on eBay website
   const res = await fetchWithRateLimitRetry(() =>
     fetch(url.toString(), {
       method: "GET",
@@ -836,6 +865,7 @@ export async function fetchEbaySoldListings(
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
         "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
+        "X-EBAY-C-ENDUSERCTX": getEndUserContextHeader(market),
       },
     })
   );

@@ -256,6 +256,18 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 
 ---
 
+## Design Direction (Advisory)
+
+A comprehensive external design audit was completed in Jan 2025.
+It is advisory only and informs phased redesign planning.
+
+Canonical references:
+
+- `docs/design/DESIGN_AUDIT_2025-01.md`
+- `docs/design/DESIGN_PHASES.md`
+
+---
+
 ## Engineering Baseline Snapshot (as of 2025-12-24)
 
 ### 1) Automated Testing & CI/CD

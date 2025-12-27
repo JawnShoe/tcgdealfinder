@@ -752,11 +752,13 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                                   </span>
                                 )}
                               </div>
-                              {secondary && (
-                                <p className="text-sm text-slate-500">
-                                  {secondary}
-                                </p>
-                              )}
+                              {/* HYDRATION-SAFE: Always render, hide with CSS when empty */}
+                              <p
+                                className={`text-sm text-slate-500 ${secondary ? "" : "invisible"}`}
+                                aria-hidden={!secondary}
+                              >
+                                {secondary || "\u00A0"}
+                              </p>
                             </div>
                           );
                         })()}
@@ -785,6 +787,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                               className="inline"
                               triggerClassName="text-xs text-slate-500 underline decoration-dotted cursor-help"
                               tooltipClassName="whitespace-nowrap"
+                              size="compact"
                               usePortal={true}
                             >
                               Price breakdown

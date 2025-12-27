@@ -1,0 +1,154 @@
+name: Job Silence Watchdog
+
+# Monitors data pipeline health by checking if scheduled jobs are running.
+# This workflow detects "silent failures" - when jobs simply don't run
+# (as opposed to running and failing, which is visible in workflow logs).
+#
+# Alert conditions:
+# - Listings not updated in 2+ hours (job runs every 30 minutes)
+# - Historical prices not updated in 26+ hours (job runs daily at 3 AM UTC)
+#
+# How it works:
+# - Fetches /api/health from production
+# - Checks freshness.listings.lastUpdated and freshness.historicalPrices.lastUpdated
+# - Fails the workflow (visible in Actions tab) if data is stale
+# - Uses annotations for clear operator visibility
+#
+# Anti-spam:
+# - Runs every 2 hours (not every 30 minutes like the data job)
+# - Single alert per stale resource until resolved
+
+on:
+  schedule:
+    # Run every 2 hours
+    - cron: "0 */2 * * *"
+
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: "Production URL to check (default: uses SITE_BASE_URL secret)"
+        required: false
+        type: string
+
+# Minimal permissions
+permissions:
+  contents: read
+
+jobs:
+  check-freshness:
+    name: Check Data Freshness
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Determine site URL
+        id: url
+        run: |
+          if [ -n "${{ github.event.inputs.site_url }}" ]; then
+            echo "url=${{ github.event.inputs.site_url }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ secrets.SITE_BASE_URL }}" ]; then
+            echo "url=${{ secrets.SITE_BASE_URL }}" >> $GITHUB_OUTPUT
+          else
+            echo "::error::No site URL configured. Set SITE_BASE_URL secret or provide site_url input."
+            exit 1
+          fi
+
+      - name: Fetch health endpoint
+        id: health
+        run: |
+          URL="${{ steps.url.outputs.url }}/api/health"
+          echo "Checking: $URL"
+
+          RESPONSE=$(curl -sf --max-time 30 "$URL" || echo "CURL_FAILED")
+
+          if [ "$RESPONSE" = "CURL_FAILED" ]; then
+            echo "::error::Failed to fetch health endpoint. Site may be down."
+            exit 1
+          fi
+
+          echo "response<<EOF" >> $GITHUB_OUTPUT
+          echo "$RESPONSE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "Health response:"
+          echo "$RESPONSE" | jq '.' || echo "$RESPONSE"
+
+      - name: Check listings freshness
+        run: |
+          RESPONSE='${{ steps.health.outputs.response }}'
+
+          # Extract listings last updated timestamp
+          LAST_UPDATED=$(echo "$RESPONSE" | jq -r '.freshness.listings.lastUpdated // empty')
+
+          if [ -z "$LAST_UPDATED" ]; then
+            echo "::warning::Could not determine listings last updated time. Database may be unavailable."
+            exit 0
+          fi
+
+          # Convert to epoch seconds
+          LAST_EPOCH=$(date -d "$LAST_UPDATED" +%s 2>/dev/null || echo "0")
+          NOW_EPOCH=$(date +%s)
+          AGE_SECONDS=$((NOW_EPOCH - LAST_EPOCH))
+          AGE_HOURS=$((AGE_SECONDS / 3600))
+          AGE_MINUTES=$(((AGE_SECONDS % 3600) / 60))
+
+          echo "Listings last updated: $LAST_UPDATED"
+          echo "Age: ${AGE_HOURS}h ${AGE_MINUTES}m"
+
+          # Alert if older than 2 hours (job runs every 30 min, so 2h = 4 missed runs)
+          THRESHOLD_SECONDS=7200
+          if [ "$AGE_SECONDS" -gt "$THRESHOLD_SECONDS" ]; then
+            echo "::error title=Listings Stale::Listings have not been updated in ${AGE_HOURS}h ${AGE_MINUTES}m. The update-listings job may not be running. Check GitHub Actions > Data Pipelines workflow."
+            echo "LISTINGS_STALE=true" >> $GITHUB_ENV
+          else
+            echo "✅ Listings are fresh (updated ${AGE_MINUTES}m ago)"
+          fi
+
+      - name: Check historical prices freshness
+        run: |
+          RESPONSE='${{ steps.health.outputs.response }}'
+
+          # Extract historical prices last updated timestamp
+          LAST_UPDATED=$(echo "$RESPONSE" | jq -r '.freshness.historicalPrices.lastUpdated // empty')
+
+          if [ -z "$LAST_UPDATED" ]; then
+            echo "::warning::Could not determine historical prices last updated time."
+            exit 0
+          fi
+
+          # Convert to epoch seconds
+          LAST_EPOCH=$(date -d "$LAST_UPDATED" +%s 2>/dev/null || echo "0")
+          NOW_EPOCH=$(date +%s)
+          AGE_SECONDS=$((NOW_EPOCH - LAST_EPOCH))
+          AGE_HOURS=$((AGE_SECONDS / 3600))
+
+          echo "Historical prices last updated: $LAST_UPDATED"
+          echo "Age: ${AGE_HOURS}h"
+
+          # Alert if older than 26 hours (job runs daily, so 26h = 2h buffer past schedule)
+          THRESHOLD_SECONDS=93600
+          if [ "$AGE_SECONDS" -gt "$THRESHOLD_SECONDS" ]; then
+            echo "::error title=Historical Prices Stale::Historical prices have not been updated in ${AGE_HOURS}h. The update-historical-prices job may not be running. Check GitHub Actions > Data Pipelines workflow."
+            echo "HISTORICAL_STALE=true" >> $GITHUB_ENV
+          else
+            echo "✅ Historical prices are fresh (updated ${AGE_HOURS}h ago)"
+          fi
+
+      - name: Fail if any staleness detected
+        if: env.LISTINGS_STALE == 'true' || env.HISTORICAL_STALE == 'true'
+        run: |
+          echo ""
+          echo "============================================"
+          echo "  JOB SILENCE DETECTED"
+          echo "============================================"
+          echo ""
+          echo "One or more scheduled jobs have not run recently."
+          echo ""
+          echo "Troubleshooting steps:"
+          echo "1. Go to GitHub Actions > Data Pipelines"
+          echo "2. Check if recent scheduled runs exist"
+          echo "3. If no runs: check workflow is enabled (Actions > ... menu)"
+          echo "4. If runs failed: check logs for errors"
+          echo "5. Manually trigger: Actions > Data Pipelines > Run workflow"
+          echo ""
+          exit 1

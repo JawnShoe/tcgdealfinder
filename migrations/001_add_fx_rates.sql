@@ -11,12 +11,16 @@ CREATE TABLE IF NOT EXISTS fx_rates (
 );
 
 -- 2. Seed initial rates (manual fallback, update via CLI script later)
+-- IMPORTANT: rate_to_usd means "multiply native currency by this to get USD"
+--   - Currencies STRONGER than USD (GBP, EUR): rate > 1.0
+--   - Currencies WEAKER than USD (CAD, AUD): rate < 1.0
+-- Example: GBP 388.74 × 1.35 = USD 524.99
 INSERT INTO fx_rates (currency, rate_to_usd, notes)
 VALUES
   ('USD', 1.000000, 'Base currency'),
-  ('CAD', 0.720000, 'Canadian Dollar - update manually'),
-  ('GBP', 1.270000, 'British Pound - update manually'),
-  ('AUD', 0.640000, 'Australian Dollar - update manually')
+  ('CAD', 0.720000, 'Canadian Dollar - weaker than USD'),
+  ('GBP', 1.350000, 'British Pound - stronger than USD'),
+  ('AUD', 0.640000, 'Australian Dollar - weaker than USD')
 ON CONFLICT (currency) DO NOTHING;
 
 -- 3. Add new columns to listings table for native currency tracking

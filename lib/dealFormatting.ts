@@ -78,7 +78,8 @@ export function formatNativeCurrency(
  * Returns:
  * - { primary, secondary: null } if currency is USD (no duplicate)
  * - { primary, secondary } with "≈ $X.XX" if non-USD
- * - { primary: "--", secondary: null } if data is missing
+ * - Falls back to USD display if native amount is missing but USD is available
+ * - { primary: "--", secondary: null } if all data is missing
  */
 export function formatPriceWithApprox(
   nativeAmount: number | null | undefined,
@@ -87,26 +88,32 @@ export function formatPriceWithApprox(
 ): { primary: string; secondary: string | null } {
   const currencyCode = (currency ?? "USD").toUpperCase();
 
-  // If no native amount, show "--"
-  if (nativeAmount == null || !Number.isFinite(nativeAmount)) {
-    return { primary: "--", secondary: null };
-  }
+  // If native amount is available, use it as primary
+  if (nativeAmount != null && Number.isFinite(nativeAmount)) {
+    const primary = formatNativeCurrency(nativeAmount, currencyCode);
 
-  const primary = formatNativeCurrency(nativeAmount, currencyCode);
+    // If USD, no need for secondary approximation
+    if (currencyCode === "USD") {
+      return { primary, secondary: null };
+    }
 
-  // If USD, no need for secondary approximation
-  if (currencyCode === "USD") {
+    // Non-USD: show USD as secondary approximation
+    if (usdAmount != null && Number.isFinite(usdAmount)) {
+      const usdFormatted = formatUSD(usdAmount);
+      return { primary, secondary: `≈ ${usdFormatted}` };
+    }
+
+    // Non-USD but no USD amount available
     return { primary, secondary: null };
   }
 
-  // Non-USD: show USD as secondary approximation
+  // Fallback: no native amount, but USD is available - show USD as primary
   if (usdAmount != null && Number.isFinite(usdAmount)) {
-    const usdFormatted = formatUSD(usdAmount);
-    return { primary, secondary: `≈ ${usdFormatted}` };
+    return { primary: formatUSD(usdAmount), secondary: null };
   }
 
-  // Non-USD but no USD amount available
-  return { primary, secondary: null };
+  // No data at all
+  return { primary: "--", secondary: null };
 }
 
 export function formatDiscount(value: number | null | undefined): string {

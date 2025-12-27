@@ -8,7 +8,13 @@ import { TooltipPopover } from "./TooltipPopover";
 import type { Deal } from "../types/deal";
 
 type ConfidenceFilterKey = "all" | "high" | "medium" | "low";
-type HeaderSortKey = "total" | "historic" | "discount" | "score" | "priceConf" | "seller";
+type HeaderSortKey =
+  | "total"
+  | "historic"
+  | "discount"
+  | "score"
+  | "priceConf"
+  | "seller";
 type HeaderSort = {
   key: HeaderSortKey | null;
   dir: "asc" | "desc";
@@ -23,7 +29,8 @@ export default function TopDealsClient({
   deals,
   isAdmin = false,
 }: TopDealsClientProps) {
-  const [priceConfFilter, setPriceConfFilter] = useState<ConfidenceFilterKey>("all");
+  const [priceConfFilter, setPriceConfFilter] =
+    useState<ConfidenceFilterKey>("all");
   const [headerSort, setHeaderSort] = useState<HeaderSort>({
     key: "score", // Default: Score DESC
     dir: "desc",
@@ -78,8 +85,16 @@ export default function TopDealsClient({
           case "priceConf":
             // High -> Med -> Low (map to numbers for sorting), nulls last
             const confMap = { high: 3, medium: 2, low: 1 };
-            aVal = a.priceConfidenceLabel ? confMap[a.priceConfidenceLabel] : (dir === "asc" ? Infinity : -Infinity);
-            bVal = b.priceConfidenceLabel ? confMap[b.priceConfidenceLabel] : (dir === "asc" ? Infinity : -Infinity);
+            aVal = a.priceConfidenceLabel
+              ? confMap[a.priceConfidenceLabel]
+              : dir === "asc"
+                ? Infinity
+                : -Infinity;
+            bVal = b.priceConfidenceLabel
+              ? confMap[b.priceConfidenceLabel]
+              : dir === "asc"
+                ? Infinity
+                : -Infinity;
             break;
           case "seller":
             aVal = a.deal.sellerUsername ?? "zzz";
@@ -129,7 +144,8 @@ export default function TopDealsClient({
         if (key === "priceConf" && sortKey === "confidenceWeight") return true;
         return false;
       });
-      const defaultDir = col?.defaultDirection ?? (key === "seller" ? "asc" : "desc");
+      const defaultDir =
+        col?.defaultDirection ?? (key === "seller" ? "asc" : "desc");
       return { key, dir: defaultDir };
     });
   };
@@ -157,8 +173,9 @@ export default function TopDealsClient({
               content="Indicates how reliable recent pricing data is based on sales volume and consistency"
               ariaLabel="Data reliability help"
               triggerClassName="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500"
+              tooltipClassName="tooltip-wide"
               side="top"
-              size="compact"
+              size="wide"
             >
               <span aria-hidden="true">?</span>
             </TooltipPopover>
@@ -188,7 +205,10 @@ export default function TopDealsClient({
           </p>
         </div>
       ) : (
-        <div className="w-full" style={{ overflowX: 'auto', overflowY: 'clip' }}>
+        <div
+          className="w-full"
+          style={{ overflowX: "auto", overflowY: "clip" }}
+        >
           <table className="min-w-full table-fixed text-sm text-slate-900">
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
@@ -199,17 +219,25 @@ export default function TopDealsClient({
                   let sortKey: HeaderSortKey | null = null;
                   if (col.sortKey === "totalUsd") sortKey = "total";
                   else if (col.sortKey === "historicUsd") sortKey = "historic";
-                  else if (col.sortKey === "discountPercent") sortKey = "discount";
+                  else if (col.sortKey === "discountPercent")
+                    sortKey = "discount";
                   else if (col.sortKey === "score") sortKey = "score";
-                  else if (col.sortKey === "confidenceWeight") sortKey = "priceConf";
-                  
+                  else if (col.sortKey === "confidenceWeight")
+                    sortKey = "priceConf";
+
                   return (
                     <th
                       key={col.key}
                       className={`${col.headerClassName} ${col.width ?? ""} ${
-                        isSortable ? "cursor-pointer hover:bg-slate-100 select-none" : ""
+                        isSortable
+                          ? "cursor-pointer hover:bg-slate-100 select-none"
+                          : ""
                       } ${col.key === "score" ? "hidden sm:table-cell" : ""}`}
-                      onClick={isSortable && sortKey ? () => handleHeaderSort(sortKey) : undefined}
+                      onClick={
+                        isSortable && sortKey
+                          ? () => handleHeaderSort(sortKey)
+                          : undefined
+                      }
                       onKeyDown={
                         isSortable && sortKey
                           ? (event) => {
@@ -221,7 +249,11 @@ export default function TopDealsClient({
                           : undefined
                       }
                       tabIndex={isSortable ? 0 : undefined}
-                      aria-label={isSortable && sortKey ? `Sort by ${col.headerLabel}` : undefined}
+                      aria-label={
+                        isSortable && sortKey
+                          ? `Sort by ${col.headerLabel}`
+                          : undefined
+                      }
                       aria-sort={
                         isSortable && sortKey
                           ? headerSort.key === sortKey

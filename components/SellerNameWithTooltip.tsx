@@ -7,7 +7,7 @@ import type { SellerDisplayData } from "@/lib/sellerDisplay";
 const SALES_COUNT_FORMATTER = new Intl.NumberFormat("en-US");
 
 export function formatSellerSalesCount(
-  salesCount: number | null | undefined,
+  salesCount: number | null | undefined
 ): string | null {
   if (salesCount == null || salesCount < 100) {
     return null;
@@ -95,7 +95,10 @@ export function SellerNameWithTooltip({
   useEffect(() => {
     if (showTooltip) {
       const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-        if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
+        if (
+          buttonRef.current &&
+          !buttonRef.current.contains(e.target as Node)
+        ) {
           setShowTooltip(false);
         }
       };
@@ -110,28 +113,29 @@ export function SellerNameWithTooltip({
 
   // Handle missing seller data gracefully (after all hooks to follow Rules of Hooks)
   if (!seller || !seller.tooltip) {
-    return <span className={className}>{seller?.displayName ?? "Unknown"}</span>;
+    return (
+      <span className={className}>{seller?.displayName ?? "Unknown"}</span>
+    );
   }
 
   // Only show tooltip if there's additional info beyond display name
   const baseRows = seller.tooltip.rows ?? [];
   const storeRow = baseRows.find((row) => row.label === "Store");
-  const accountRow = baseRows.find((row) => row.label === "Account");
+  const usernameRow = baseRows.find((row) => row.label === "Username");
 
   const primaryLabel =
     typeof storeRow?.value === "string" && storeRow.value.trim().length > 0
       ? storeRow.value
-      : typeof accountRow?.value === "string" && accountRow.value.trim().length > 0
-        ? accountRow.value
+      : typeof usernameRow?.value === "string" &&
+          usernameRow.value.trim().length > 0
+        ? usernameRow.value
         : seller.displayName;
 
   const tooltipRows = [
-    ...(accountRow ? [accountRow] : []),
+    ...(usernameRow ? [usernameRow] : []),
     ...(storeRow && storeRow.value ? [storeRow] : []),
     ...baseRows.filter(
-      (row) =>
-        row.label !== "Account" &&
-        row.label !== "Store",
+      (row) => row.label !== "Username" && row.label !== "Store"
     ),
   ];
 
@@ -141,31 +145,34 @@ export function SellerNameWithTooltip({
     return <span className={className}>{primaryLabel}</span>;
   }
 
-  const tooltipElement = showTooltip && mounted ? createPortal(
-    <div
-      className="fixed z-[9999] min-w-[200px] max-w-[300px] rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg"
-      style={{ 
-        top: tooltipPosition.top,
-        left: tooltipPosition.left,
-        pointerEvents: "none" 
-      }}
-    >
-      <div className="text-xs font-semibold text-slate-700 mb-1.5">
-        {seller.tooltip.title}
-      </div>
-      <div className="space-y-1">
-        {tooltipRows.map((row, idx) => (
-          <div key={idx} className="flex justify-between gap-3 text-xs">
-            <span className="text-slate-500">{row.label}:</span>
-            <span className="text-slate-900 font-medium break-all">
-              {row.value}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>,
-    document.body
-  ) : null;
+  const tooltipElement =
+    showTooltip && mounted
+      ? createPortal(
+          <div
+            className="fixed z-[9999] min-w-[200px] max-w-[300px] rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg"
+            style={{
+              top: tooltipPosition.top,
+              left: tooltipPosition.left,
+              pointerEvents: "none",
+            }}
+          >
+            <div className="text-xs font-semibold text-slate-700 mb-1.5">
+              {seller.tooltip.title}
+            </div>
+            <div className="space-y-1">
+              {tooltipRows.map((row, idx) => (
+                <div key={idx} className="flex justify-between gap-3 text-xs">
+                  <span className="text-slate-500">{row.label}:</span>
+                  <span className="text-slate-900 font-medium break-all">
+                    {row.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <>
@@ -177,7 +184,7 @@ export function SellerNameWithTooltip({
         onMouseLeave={() => setShowTooltip(false)}
         onClick={() => setShowTooltip(!showTooltip)}
         onBlur={() => setShowTooltip(false)}
-        aria-label={`${seller.tooltip.title}: ${tooltipRows.map(r => `${r.label} ${r.value}`).join(", ")}`}
+        aria-label={`${seller.tooltip.title}: ${tooltipRows.map((r) => `${r.label} ${r.value}`).join(", ")}`}
       >
         {primaryLabel}
       </button>

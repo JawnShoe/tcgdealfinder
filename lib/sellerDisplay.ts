@@ -16,12 +16,12 @@ export type SellerDisplayData = {
    * Always use this for visible seller text
    */
   displayName: string;
-  
+
   /**
    * Whether this seller has a store name different from username
    */
   hasStoreName: boolean;
-  
+
   /**
    * Tooltip data for hover/tap interactions
    */
@@ -31,9 +31,7 @@ export type SellerDisplayData = {
   };
 };
 
-export function normalizeSellerStoreName(
-  name?: string | null,
-): string | null {
+export function normalizeSellerStoreName(name?: string | null): string | null {
   if (!name) {
     return null;
   }
@@ -43,57 +41,77 @@ export function normalizeSellerStoreName(
 
 /**
  * Global display rule: sellerDisplayName = sellerStoreName ?? sellerUsername
- * 
+ *
  * Returns the name to display in UI (store name if available, else username)
  * and tooltip data for transparency.
+ *
+ * NOTE: Store names are only available for a subset of listings (enrichment
+ * from Shopping API is rate-limited). When no store name is available,
+ * we display the username and mark isUsernameOnly=true so the UI can
+ * optionally add a "(username)" label for clarity.
  */
 export function getSellerDisplayData(seller: SellerInfo): SellerDisplayData {
   const username = seller.username?.trim() || null;
   const storeName = normalizeSellerStoreName(seller.storeName);
-  
+
   // Display priority: store name > username > placeholder
   const displayName = storeName || username || "Unknown";
-  const hasStoreName = !!(storeName && username && storeName.toLowerCase() !== username.toLowerCase());
-  
+  const hasStoreName = !!(
+    storeName &&
+    username &&
+    storeName.toLowerCase() !== username.toLowerCase()
+  );
+
+  // Track if we're showing just a username (no store name available)
+  const isUsernameOnly = !storeName && !!username;
+
   // Build tooltip rows
   const tooltipRows: Array<{ label: string; value: string | number }> = [];
-  
+
   // Only show store name row if it's different from username
   if (hasStoreName && storeName) {
     tooltipRows.push({ label: "Store", value: storeName });
   }
-  
+
   // Show account/username if available AND if there's either:
   // - A different store name being shown, OR
   // - Feedback data to supplement
-  const hasFeedbackData = 
+  const hasFeedbackData =
     (seller.feedbackPercent != null && seller.feedbackPercent > 0) ||
     (seller.feedbackCount != null && seller.feedbackCount > 0);
-  
+
   if (username && (hasStoreName || hasFeedbackData)) {
-    tooltipRows.push({ label: "Account", value: username });
+    tooltipRows.push({ label: "Username", value: username });
   }
-  
+
+  // Add note when showing username only (store name not available)
+  if (isUsernameOnly) {
+    tooltipRows.push({
+      label: "Note",
+      value: "Store name may differ.",
+    });
+  }
+
   // Optional feedback data
   if (seller.feedbackPercent != null && seller.feedbackPercent > 0) {
-    tooltipRows.push({ 
-      label: "Feedback", 
-      value: `${seller.feedbackPercent}%` 
+    tooltipRows.push({
+      label: "Feedback",
+      value: `${seller.feedbackPercent}%`,
     });
   }
-  
+
   if (seller.feedbackCount != null && seller.feedbackCount > 0) {
-    tooltipRows.push({ 
-      label: "Sales", 
-      value: seller.feedbackCount 
+    tooltipRows.push({
+      label: "Sales",
+      value: seller.feedbackCount,
     });
   }
-  
+
   return {
     displayName,
     hasStoreName,
     tooltip: {
-      title: "Seller (eBay)",
+      title: isUsernameOnly ? "Seller (eBay username)" : "Seller",
       rows: tooltipRows,
     },
   };
@@ -112,7 +130,7 @@ export function getSellerDisplayName(seller: SellerInfo): string {
  */
 export function getSellerAriaLabel(seller: SellerInfo): string {
   const data = getSellerDisplayData(seller);
-  const parts = data.tooltip.rows.map(row => `${row.label}: ${row.value}`);
+  const parts = data.tooltip.rows.map((row) => `${row.label}: ${row.value}`);
   return `${data.tooltip.title} - ${parts.join(", ")}`;
 }
 
@@ -125,18 +143,18 @@ const STORE_NAME_WARN_THRESHOLD = 0.25;
 
 export function warnIfStoreNamesMissing(
   items: SellerNameCarrier[],
-  context: string,
+  context: string
 ): void {
   if (process.env.NODE_ENV === "production" || items.length === 0) {
     return;
   }
   const missing = items.filter(
-    (item) => !item.sellerStoreName && item.sellerUsername,
+    (item) => !item.sellerStoreName && item.sellerUsername
   ).length;
   const ratio = missing / items.length;
   if (ratio > STORE_NAME_WARN_THRESHOLD) {
     console.warn(
-      `[seller-store-name] ${context}: ${missing}/${items.length} listings missing seller_store_name`,
+      `[seller-store-name] ${context}: ${missing}/${items.length} listings missing seller_store_name`
     );
   }
 }

@@ -58,6 +58,11 @@ type DealRow = {
   integrity_status: string | null;
   integrity_reason: string | null;
   integrity_score: number | null;
+  // Native currency fields
+  currency: string | null;
+  price_native: string | null;
+  shipping_native: string | null;
+  total_native: string | null;
 };
 
 type SellerSeenCountRow = {
@@ -106,7 +111,7 @@ export type DealsQueryOptions = {
 };
 
 export async function runDealsQuery(
-  options: DealsQueryOptions = {},
+  options: DealsQueryOptions = {}
 ): Promise<DealsApiResponse> {
   const hasIntegrityColumns = await ensureListingsIntegrityColumns();
   if (!hasIntegrityColumns) {
@@ -118,7 +123,7 @@ export async function runDealsQuery(
   const hasListingsMarketColumn = await ensureListingsMarketColumn();
   const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
   const market = normalizeMarketCode(
-    (options.market as string | null | undefined) ?? null,
+    (options.market as string | null | undefined) ?? null
   );
 
   const rawPageSize =
@@ -134,7 +139,7 @@ export async function runDealsQuery(
   const totalCount = await getTotalCount(
     sortConfig,
     market,
-    hasListingsMarketColumn,
+    hasListingsMarketColumn
   );
   const rows = await fetchListings(
     sort,
@@ -144,9 +149,9 @@ export async function runDealsQuery(
     hasConfidenceColumn,
     hasListingsMarketColumn,
     hasHistoricalMarketColumn,
-    market,
+    market
   );
-  
+
   // Map rows to deals and filter out any blacklisted/excluded items (safety net)
   const allItems = rows.map(mapRowToDeal);
   warnIfStoreNamesMissing(allItems, `dealsQuery:${sort}`);
@@ -154,12 +159,14 @@ export async function runDealsQuery(
   for (const deal of allItems) {
     const result = await shouldExcludeListingFromCardSurfaces(
       { title: deal.title ?? "", listingId: deal.listingId },
-      deal.card ? {
-        name: deal.card.name,
-        setName: deal.card.setName,
-        number: deal.card.cardNumber,
-        rarity: null, // rarity not yet in cards table
-      } : undefined
+      deal.card
+        ? {
+            name: deal.card.name,
+            setName: deal.card.setName,
+            number: deal.card.cardNumber,
+            rarity: null, // rarity not yet in cards table
+          }
+        : undefined
     );
     if (result.excluded) {
       continue;
@@ -178,14 +185,14 @@ export async function runDealsQuery(
     new Set(
       items
         .map((deal) => deal.sellerUsername)
-        .filter((seller): seller is string => Boolean(seller)),
-    ),
+        .filter((seller): seller is string => Boolean(seller))
+    )
   );
   const sellerSeenCounts = await fetchSellerSeenCounts(
     sellerUsernames,
     sortConfig,
     market,
-    hasListingsMarketColumn,
+    hasListingsMarketColumn
   );
   if (sellerSeenCounts.size > 0) {
     for (const deal of items) {
@@ -224,7 +231,7 @@ function isGradedBucket(bucket: string | null): boolean {
 }
 
 function deriveBaselineConfidence(
-  sampleSize: number | null,
+  sampleSize: number | null
 ): "high" | "medium" | "low" {
   if (sampleSize == null || sampleSize <= 0) {
     return "low";
@@ -241,12 +248,12 @@ function deriveBaselineConfidence(
 async function getTotalCount(
   sortConfig: SortConfig,
   market: MarketCode | "all",
-  hasListingsMarketColumn: boolean,
+  hasListingsMarketColumn: boolean
 ): Promise<number> {
   const baseFilters = buildBaseFilters(
     sortConfig.requireHistoric,
     hasListingsMarketColumn,
-    market,
+    market
   );
   const endsAtFilter = sortConfig.requireEndsAt
     ? "AND l.ends_at IS NOT NULL"
@@ -258,7 +265,7 @@ async function getTotalCount(
       WHERE
         ${baseFilters}
         ${endsAtFilter};
-    `,
+    `
   );
   return Number(res.rows[0]?.count ?? 0);
 }
@@ -271,12 +278,12 @@ async function fetchListings(
   hasConfidenceColumn: boolean,
   hasListingsMarketColumn: boolean,
   hasHistoricalMarketColumn: boolean,
-  market: MarketCode | "all",
+  market: MarketCode | "all"
 ): Promise<DealRow[]> {
   const baseFilters = buildBaseFilters(
     sortConfig.requireHistoric,
     hasListingsMarketColumn,
-    market,
+    market
   );
   const endsAtFilter = sortConfig.requireEndsAt
     ? "AND l.ends_at IS NOT NULL"
@@ -332,10 +339,12 @@ async function fetchListings(
         c.card_number AS card_number,
         c.condition_bucket AS card_condition_bucket,
         ${
-          hasConfidenceColumn
-            ? "l.deal_confidence_weight"
-            : "NULL::numeric"
-        } AS deal_confidence_weight
+          hasConfidenceColumn ? "l.deal_confidence_weight" : "NULL::numeric"
+        } AS deal_confidence_weight,
+        l.currency,
+        l.price_native,
+        l.shipping_native,
+        l.total_native
       FROM listings l
       LEFT JOIN cards c ON c.id = l.card_id
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
@@ -346,7 +355,7 @@ async function fetchListings(
       ${orderByClause}
       LIMIT $1 OFFSET $2;
     `,
-    [pageSize, offset],
+    [pageSize, offset]
   );
   return res.rows;
 }
@@ -355,7 +364,7 @@ async function fetchSellerSeenCounts(
   sellerUsernames: string[],
   sortConfig: SortConfig,
   market: MarketCode | "all",
-  hasListingsMarketColumn: boolean,
+  hasListingsMarketColumn: boolean
 ): Promise<Map<string, number>> {
   if (sellerUsernames.length === 0) {
     return new Map();
@@ -363,7 +372,7 @@ async function fetchSellerSeenCounts(
   const baseFilters = buildBaseFilters(
     sortConfig.requireHistoric,
     hasListingsMarketColumn,
-    market,
+    market
   );
   const endsAtFilter = sortConfig.requireEndsAt
     ? "AND l.ends_at IS NOT NULL"
@@ -381,7 +390,7 @@ async function fetchSellerSeenCounts(
         ${endsAtFilter}
       GROUP BY l.seller_username;
     `,
-    [sellerUsernames],
+    [sellerUsernames]
   );
 
   const counts = new Map<string, number>();
@@ -395,11 +404,12 @@ async function fetchSellerSeenCounts(
 function buildBaseFilters(
   requireHistoric: boolean,
   hasListingsMarketColumn: boolean,
-  market: MarketCode | "all",
+  market: MarketCode | "all"
 ): string {
-  const marketClause = hasListingsMarketColumn && market !== "all"
-    ? `AND l.market = '${market}'`
-    : "";
+  const marketClause =
+    hasListingsMarketColumn && market !== "all"
+      ? `AND l.market = '${market}'`
+      : "";
   return `
     l.total_price_cad IS NOT NULL
     AND l.seller_username IS NOT NULL
@@ -501,6 +511,12 @@ function mapRowToDeal(row: DealRow): Deal {
     totalPriceCad,
     totalUsd,
     historicPriceCad,
+    // Native currency fields
+    currency: row.currency ?? null,
+    priceNative: row.price_native != null ? Number(row.price_native) : null,
+    shippingNative:
+      row.shipping_native != null ? Number(row.shipping_native) : null,
+    totalNative: row.total_native != null ? Number(row.total_native) : null,
     listingId: row.listing_id ?? null,
     historicSampleCount: sampleSize,
     historicBaselineBucketUsed: conditionBucket ?? null,
@@ -540,7 +556,7 @@ function mapRowToDeal(row: DealRow): Deal {
 
 function buildOrderByClause(
   sort: DealsApiSort,
-  hasConfidenceColumn: boolean,
+  hasConfidenceColumn: boolean
 ): string {
   switch (sort) {
     case "best":

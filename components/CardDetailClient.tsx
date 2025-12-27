@@ -36,6 +36,8 @@ import {
   getEndsAtDisplay,
   getConfidenceLabel as getSampleConfidenceLabel,
   formatFreshness,
+  formatPriceWithApprox,
+  formatNativeCurrency,
 } from "../lib/dealFormatting";
 import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 import { ALERT_THRESHOLD_OPTIONS } from "../lib/alertsConfig";
@@ -97,6 +99,11 @@ type ListingRow = {
   integrityReason: string | null;
   integrityScore: number | null;
   overrideType: "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE" | null;
+  // Native currency fields
+  currency: string | null;
+  priceNative: number | null;
+  shippingNative: number | null;
+  totalNative: number | null;
 };
 
 type OtherMarketCount = {
@@ -211,6 +218,11 @@ function listingRowToDeal(
     integrityReason: listing.integrityReason ?? undefined,
     integrityScore: listing.integrityScore ?? undefined,
     overrideType: listing.overrideType ?? undefined,
+    // Native currency fields
+    currency: listing.currency ?? null,
+    priceNative: listing.priceNative ?? null,
+    shippingNative: listing.shippingNative ?? null,
+    totalNative: listing.totalNative ?? null,
   };
 }
 
@@ -514,8 +526,10 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
   const bestTrustedPriceBreakdown = useMemo(() => {
     if (!bestTrustedDeal) return null;
     return {
-      item: bestTrustedDeal.deal.priceCad ?? null,
-      shipping: bestTrustedDeal.deal.shippingCad ?? null,
+      // Use native currency for consistent display
+      itemNative: bestTrustedDeal.deal.priceNative ?? null,
+      shippingNative: bestTrustedDeal.deal.shippingNative ?? null,
+      currency: bestTrustedDeal.deal.currency ?? null,
     };
   }, [bestTrustedDeal]);
 
@@ -710,30 +724,48 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                   </p>
                 </div>
                 {bestTrustedDeal &&
-                  bestTrustedDeal.totalUsd &&
+                  (bestTrustedDeal.totalNative || bestTrustedDeal.totalUsd) &&
                   bestTrustedDeal.deal.market && (
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                       <p className="text-xs uppercase text-slate-500">
-                        Best trusted deal (USD)
+                        Best trusted deal
                       </p>
                       <div className="mt-1 space-y-2">
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-2xl font-semibold text-slate-900">
-                            {formatUSD(bestTrustedDeal.totalUsd)}
-                          </p>
-                          {bestDealFreshness && (
-                            <span className="text-xs text-slate-500">
-                              · {bestDealFreshness}
-                            </span>
-                          )}
-                        </div>
+                        {(() => {
+                          const { primary, secondary } = formatPriceWithApprox(
+                            bestTrustedDeal.totalNative,
+                            bestTrustedDeal.currency,
+                            bestTrustedDeal.totalUsd
+                          );
+                          return (
+                            <div className="flex flex-col">
+                              <div className="flex items-baseline gap-2">
+                                <p className="text-2xl font-semibold text-slate-900">
+                                  {primary}
+                                </p>
+                                {bestDealFreshness && (
+                                  <span className="text-xs text-slate-500">
+                                    · {bestDealFreshness}
+                                  </span>
+                                )}
+                              </div>
+                              {secondary && (
+                                <p className="text-sm text-slate-500">
+                                  {secondary}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })()}
                         {bestTrustedPriceBreakdown && (
                           <p className="text-xs text-slate-500">
-                            {bestTrustedPriceBreakdown.item != null
-                              ? `Item ${formatUSD(bestTrustedPriceBreakdown.item)}`
+                            {bestTrustedPriceBreakdown.itemNative != null &&
+                            bestTrustedPriceBreakdown.currency
+                              ? `Item ${formatNativeCurrency(bestTrustedPriceBreakdown.itemNative, bestTrustedPriceBreakdown.currency)}`
                               : "Item price unavailable"}{" "}
-                            {bestTrustedPriceBreakdown.shipping != null
-                              ? `+ Shipping ${formatUSD(bestTrustedPriceBreakdown.shipping)}`
+                            {bestTrustedPriceBreakdown.shippingNative != null &&
+                            bestTrustedPriceBreakdown.currency
+                              ? `+ Shipping ${formatNativeCurrency(bestTrustedPriceBreakdown.shippingNative, bestTrustedPriceBreakdown.currency)}`
                               : "+ shipping at checkout"}
                           </p>
                         )}

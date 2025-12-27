@@ -140,23 +140,24 @@ export function TooltipPopover({
     };
   }, [usePortal, side, isOpen, size]);
 
+  // Phase 1: Removed w-max to prevent blank space; width: fit-content applied via CSS
   const sizeHoverClasses =
     size === "wide"
-      ? "peer-hover:max-w-[320px] peer-focus-visible:max-w-[320px] peer-hover:w-max peer-focus-visible:w-max"
+      ? "peer-hover:max-w-[320px] peer-focus-visible:max-w-[320px]"
       : size === "medium"
-        ? "peer-hover:max-w-[280px] peer-focus-visible:max-w-[280px] peer-hover:w-max peer-focus-visible:w-max"
+        ? "peer-hover:max-w-[280px] peer-focus-visible:max-w-[280px]"
         : size === "compact"
-          ? "peer-hover:max-w-[240px] peer-focus-visible:max-w-[240px] peer-hover:w-max peer-focus-visible:w-max"
-          : "peer-hover:max-w-sm peer-focus-visible:max-w-sm";
+          ? "peer-hover:max-w-[240px] peer-focus-visible:max-w-[240px]"
+          : "peer-hover:max-w-xs peer-focus-visible:max-w-xs";
 
   const sizeOpenClasses =
     size === "wide"
-      ? "max-w-[320px] w-max"
+      ? "max-w-[320px]"
       : size === "medium"
-        ? "max-w-[280px] w-max"
+        ? "max-w-[280px]"
         : size === "compact"
-          ? "max-w-[240px] w-max"
-          : "max-w-sm";
+          ? "max-w-[240px]"
+          : "max-w-xs";
 
   const bubbleClasses = usePortal
     ? isOpen
@@ -176,7 +177,14 @@ export function TooltipPopover({
       id={tooltipId}
       role="tooltip"
       className={`${usePortal ? "fixed" : "absolute left-0"} ${usePortal ? "" : positionClass} z-50 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-normal normal-case leading-snug text-slate-700 shadow-lg transition-opacity ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
-      style={usePortal ? { top: `${tooltipPosition.top}px`, left: `${tooltipPosition.left}px` } : undefined}
+      style={
+        usePortal
+          ? {
+              top: `${tooltipPosition.top}px`,
+              left: `${tooltipPosition.left}px`,
+            }
+          : undefined
+      }
     >
       {content}
     </span>

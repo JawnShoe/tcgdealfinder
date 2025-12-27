@@ -171,6 +171,28 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
   - Requests 1-5: HTTP 200, `X-RateLimit-Remaining` decremented 4→3→2→1→0
   - Request 6: HTTP 429, `Retry-After: 251`, body `{"ok":false,"error":"Too many requests. Please try again later."}`
 
+**Email Alert Reliability Assessment (Hardening Sprint, 2025-12-26)**:
+
+- **Status**: ASSESSED — Current reliability mechanisms documented; high-complexity improvements deferred.
+- **What exists (working)**:
+  - SendGrid v3 API integration (`lib/emailQueue.ts`)
+  - RFC 8058 one-click unsubscribe headers
+  - Per-subscription cooldown (6 hours via `last_emailed_at`)
+  - DB-backed rate limiting on subscribe endpoint (see above)
+  - Token-based unsubscribe prevents accidental unsubscribes
+- **What exists (gaps)**:
+  - No SendGrid webhook integration (can't detect bounces, complaints, drops)
+  - No retry mechanism for transient send failures (single fire-and-forget)
+  - No hard/soft bounce tracking (invalid addresses remain active)
+  - No email verification flow (auto-confirmed on subscribe)
+  - No dead letter queue for failed sends
+- **Hardening sprint decision**: Skipped implementation due to complexity (webhook + schema + API route changes). Gaps documented here for future workstream.
+- **Recommended future work** (not in scope for hardening sprint):
+  1. Add SendGrid event webhook handler for bounce/complaint auto-unsubscribe
+  2. Implement retry queue with exponential backoff
+  3. Add email verification (confirmation link before activation)
+  4. Track email delivery status in database
+
 ### Listing Exclusion (Admin)
 
 - Single-listing exclusions live in `listing_overrides` (`override_type = HARD_BLOCK`) and are managed via `/admin/listings`.

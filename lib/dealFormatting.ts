@@ -123,21 +123,22 @@ export function getViewerCurrency(): string {
  * Format price for display: native currency as primary, USD as secondary (approx).
  *
  * Viewer currency rule:
- * - If viewer currency matches listing currency → hide ≈ USD (redundant)
+ * - If viewer currency matches listing currency → empty secondary (hide ≈ USD)
  * - If viewer currency differs from listing currency → show ≈ USD
  *
- * Returns:
- * - { primary, secondary: null } if currencies match or listing is USD
- * - { primary, secondary } with "≈ $X.XX" if viewer needs USD conversion
- * - Falls back to USD display if native amount is missing but USD is available
- * - { primary: "--", secondary: null } if all data is missing
+ * HYDRATION-SAFE: Always returns the same structure { primary, secondary }.
+ * The secondary is an empty string "" when not needed, not null.
+ * This ensures DOM structure is stable between SSR and CSR.
+ *
+ * Components should render: {secondary && <span>{secondary}</span>}
+ * Empty string is falsy, so the span won't show content but structure is stable.
  */
 export function formatPriceWithApprox(
   nativeAmount: number | null | undefined,
   currency: string | null | undefined,
   usdAmount: number | null | undefined,
   viewerCurrency?: string | null
-): { primary: string; secondary: string | null } {
+): { primary: string; secondary: string } {
   const currencyCode = (currency ?? "USD").toUpperCase();
   const viewerCurrencyCode = (
     viewerCurrency ?? getViewerCurrency()
@@ -149,12 +150,12 @@ export function formatPriceWithApprox(
 
     // If listing currency matches viewer currency, no need for ≈ USD
     if (currencyCode === viewerCurrencyCode) {
-      return { primary, secondary: null };
+      return { primary, secondary: "" };
     }
 
     // If listing is USD, no need for ≈ USD (it IS USD)
     if (currencyCode === "USD") {
-      return { primary, secondary: null };
+      return { primary, secondary: "" };
     }
 
     // Viewer currency differs from listing: show ≈ USD for reference
@@ -164,16 +165,16 @@ export function formatPriceWithApprox(
     }
 
     // Non-USD but no USD amount available
-    return { primary, secondary: null };
+    return { primary, secondary: "" };
   }
 
   // Fallback: no native amount, but USD is available - show USD as primary
   if (usdAmount != null && Number.isFinite(usdAmount)) {
-    return { primary: formatUSD(usdAmount), secondary: null };
+    return { primary: formatUSD(usdAmount), secondary: "" };
   }
 
   // No data at all
-  return { primary: "--", secondary: null };
+  return { primary: "--", secondary: "" };
 }
 
 export function formatDiscount(value: number | null | undefined): string {

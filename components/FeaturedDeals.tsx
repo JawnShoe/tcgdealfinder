@@ -107,11 +107,12 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                             <span className="text-base font-semibold text-slate-900">
                               {primary}
                             </span>
-                            {secondary && (
-                              <span className="text-xs text-slate-500">
-                                {secondary}
-                              </span>
-                            )}
+                            {/* HYDRATION-SAFE: Always render span, hide with CSS when empty */}
+                            <span
+                              className={`text-xs text-slate-500 ${secondary ? "" : "hidden"}`}
+                            >
+                              {secondary || "\u00A0"}
+                            </span>
                           </span>
                         );
                       })()}

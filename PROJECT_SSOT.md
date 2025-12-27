@@ -1183,15 +1183,31 @@ Set these in GitHub repo settings → Secrets and variables → Actions:
 5. Check `/api/health` endpoint for freshness data
 6. If successful, scheduled runs will begin automatically
 
-**FX Rate Updates** (manual process):
+**FX Rate Updates** (automated daily):
 
-FX rates cannot be auto-fetched; update locally with CLI args:
+FX rates are automatically updated daily at 5 AM UTC via GitHub Actions.
+
+| Property     | Value                                                            |
+| ------------ | ---------------------------------------------------------------- |
+| Schedule     | Daily at 5 AM UTC (`0 5 * * *`)                                  |
+| Data Source  | [Frankfurter API](https://frankfurter.dev/) (free, no API key)   |
+| Currencies   | CAD, GBP, AUD, EUR (USD = 1.0 baseline)                          |
+| Validation   | Direction checks: GBP > 1.0, CAD < 1.0, AUD < 1.0, EUR > 0.9     |
+| Failure Mode | Fail loud — non-zero exit, no partial writes if validation fails |
+| Script       | `scripts/update-fx-rates-auto.ts`                                |
+
+**Kill Switch / Disable**:
+
+- To disable: Go to GitHub Actions → Data Pipelines workflow → Disable workflow (or remove `0 5 * * *` cron line)
+- To run manually: Actions → Data Pipelines → Run workflow → select `update-fx-rates`
+
+**Manual Override** (if needed):
 
 ```bash
 npx tsx scripts/update-fx-rates.ts --currency CAD --rate 0.72
 ```
 
-The `show-fx-rates` workflow job only displays current rates for monitoring.
+The `show-fx-rates` workflow job displays current rates for monitoring.
 
 **Files changed**:
 

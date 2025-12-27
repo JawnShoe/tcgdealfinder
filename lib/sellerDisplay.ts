@@ -84,11 +84,11 @@ export function getSellerDisplayData(seller: SellerInfo): SellerDisplayData {
     tooltipRows.push({ label: "Username", value: username });
   }
 
-  // Add note when showing username only
+  // Add note when showing username only (store name not available)
   if (isUsernameOnly) {
     tooltipRows.push({
       label: "Note",
-      value: "Store name on eBay may differ",
+      value: "Store name may differ.",
     });
   }
 
@@ -111,7 +111,7 @@ export function getSellerDisplayData(seller: SellerInfo): SellerDisplayData {
     displayName,
     hasStoreName,
     tooltip: {
-      title: isUsernameOnly ? "Seller (username)" : "Seller (eBay)",
+      title: isUsernameOnly ? "Seller (eBay username)" : "Seller",
       rows: tooltipRows,
     },
   };

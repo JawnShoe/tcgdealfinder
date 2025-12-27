@@ -100,6 +100,9 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 **Admin gate mechanism**:
 
 - Admin unlock via `POST /api/admin/login` with secret in body; sets HttpOnly `admin_auth` cookie (SameSite=Strict, Secure, Path=/, Max-Age=7d).
+- **Cookie value**: Signed, time-bound token (`timestamp.hmac-sha256-signature`), not a static value. Token verified on each request. Hardened in PR #65 (commit 4996ed9).
+- **Token properties**: Expires after 7 days; rejects future timestamps (>60s clock skew); timing-safe signature comparison.
+- **Rotation**: Changing `ADMIN_SECRET` env var immediately invalidates all existing admin tokens.
 - `/admin/*` pages check `admin_auth` cookie and return `notFound()` (404) when missing/invalid.
 - `/api/admin/*` routes check `admin_auth` cookie; `x-admin-secret` header is a deprecated fallback for internal scripts.
 - `/debug/*` uses `DEBUG_ADMIN_TOKEN` via cookie/header/query (see `lib/debugAuth.ts`); separate from admin gate.

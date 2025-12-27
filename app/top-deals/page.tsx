@@ -1,9 +1,13 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 import TopDealsClient from "../../components/TopDealsClient";
 import { query } from "../../lib/db";
 import type { Deal } from "../../types/deal";
-import { PAGE_TITLE, PAGE_SUBTITLE, TABLE_CONTAINER } from "../../lib/typography";
+import {
+  PAGE_TITLE,
+  PAGE_SUBTITLE,
+  TABLE_CONTAINER,
+} from "../../lib/typography";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
@@ -25,7 +29,10 @@ import {
   ensureListingsIntegrityColumns,
   LISTINGS_INTEGRITY_MISSING_MESSAGE,
 } from "../../lib/schema";
-import { getCardStockImageUrls, TCGPLAYER_ATTRIBUTION } from "../../lib/stockImages";
+import {
+  getCardStockImageUrls,
+  TCGPLAYER_ATTRIBUTION,
+} from "../../lib/stockImages";
 import { shouldExcludeListingFromCardSurfaces } from "../../lib/blacklist";
 import {
   warnIfStoreNamesMissing,
@@ -68,6 +75,11 @@ type TopDealRow = {
   integrity_status: string | null;
   integrity_reason: string | null;
   integrity_score: number | null;
+  // Native currency fields
+  currency: string | null;
+  price_native: string | null;
+  shipping_native: string | null;
+  total_native: string | null;
 };
 
 type SellerSeenCountRow = {
@@ -87,7 +99,7 @@ async function getTopDeals(): Promise<Deal[]> {
   const hasHistoricalMarketColumn = await ensureHistoricalMarketColumn();
   const hasDealConfidenceColumn = await ensureDealConfidenceColumn();
   const hasStdDevColumn = await ensureHistoricalStdDevColumn();
-  
+
   const historicalMarket = market === "all" ? DEFAULT_MARKET : market;
   const marketLiteral = `'${historicalMarket}'::text`;
   const marketSelect = hasListingsMarketColumn ? "l.market" : marketLiteral;
@@ -97,14 +109,13 @@ async function getTopDeals(): Promise<Deal[]> {
       : hasHistoricalMarketColumn && market !== "all"
         ? `AND hp.market = ${marketLiteral}`
         : "";
-  const marketFilterClause = hasListingsMarketColumn && market !== "all" ? "AND l.market = $5" : "";
+  const marketFilterClause =
+    hasListingsMarketColumn && market !== "all" ? "AND l.market = $5" : "";
   const confidenceSelect = hasDealConfidenceColumn
     ? "l.deal_confidence_weight"
     : "NULL::numeric";
-  const stdDevSelect = hasStdDevColumn
-    ? "hp.std_dev_cad"
-    : "NULL::numeric";
-    
+  const stdDevSelect = hasStdDevColumn ? "hp.std_dev_cad" : "NULL::numeric";
+
   const res = await query<TopDealRow>(
     `
       SELECT
@@ -135,6 +146,10 @@ async function getTopDeals(): Promise<Deal[]> {
         , l.integrity_status
         , l.integrity_reason
         , l.integrity_score
+        , l.currency
+        , l.price_native
+        , l.shipping_native
+        , l.total_native
       FROM listings l
       LEFT JOIN cards c ON c.id = l.card_id
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
@@ -188,7 +203,7 @@ async function getTopDeals(): Promise<Deal[]> {
       MIN_SELLER_POSITIVE_PERCENT,
       LIMIT,
       ...(hasListingsMarketColumn && market !== "all" ? [market] : []),
-    ],
+    ]
   );
 
   const deals = res.rows
@@ -220,7 +235,7 @@ async function getTopDeals(): Promise<Deal[]> {
         seller_feedback_count: sellerFeedbackCount,
         seller_positive_percent: sellerPositivePercent,
       });
-      
+
       // Filter out deals that don't meet minimum discount
       if (displayDiscount == null || displayDiscount > -MIN_DISCOUNT) {
         return null;
@@ -248,11 +263,20 @@ async function getTopDeals(): Promise<Deal[]> {
         id: row.listing_id,
         title: row.title,
         url: row.url,
-        priceCad: total ? total - (row.shipping_cad ? Number(row.shipping_cad) : 0) : null,
+        priceCad: total
+          ? total - (row.shipping_cad ? Number(row.shipping_cad) : 0)
+          : null,
         shippingCad: row.shipping_cad ? Number(row.shipping_cad) : null,
         totalPriceCad: total,
         totalUsd,
         historicPriceCad: historic,
+        // Native currency fields
+        currency: row.currency ?? null,
+        priceNative: row.price_native ? Number(row.price_native) : null,
+        shippingNative: row.shipping_native
+          ? Number(row.shipping_native)
+          : null,
+        totalNative: row.total_native ? Number(row.total_native) : null,
         discountPercent: displayDiscount,
         sampleSize,
         confidenceWeight,
@@ -291,20 +315,19 @@ async function getTopDeals(): Promise<Deal[]> {
   for (const deal of deals) {
     const result = await shouldExcludeListingFromCardSurfaces(
       { title: deal.title ?? "", listingId: String(deal.id) }, // listingId must be stable for overrides/backfill (use DB listing id)
-      deal.card ? {
-        name: deal.card.name,
-        setName: deal.card.setName,
-        number: deal.card.cardNumber,
-        rarity: null, // rarity not yet in cards table
-      } : undefined
+      deal.card
+        ? {
+            name: deal.card.name,
+            setName: deal.card.setName,
+            number: deal.card.cardNumber,
+            rarity: null, // rarity not yet in cards table
+          }
+        : undefined
     );
     if (result.excluded) {
       continue;
     }
-    if (
-      deal.integrityStatus === "REVIEW" &&
-      result.overrideType !== "ALLOW"
-    ) {
+    if (deal.integrityStatus === "REVIEW" && result.overrideType !== "ALLOW") {
       continue;
     }
     filteredDeals.push(deal);
@@ -315,14 +338,14 @@ async function getTopDeals(): Promise<Deal[]> {
     new Set(
       filteredDeals
         .map((deal) => deal.sellerUsername)
-        .filter((seller): seller is string => Boolean(seller)),
-    ),
+        .filter((seller): seller is string => Boolean(seller))
+    )
   );
   const sellerSeenCounts = await fetchSellerSeenCounts(
     sellerUsernames,
     market,
     hasListingsMarketColumn,
-    hasHistoricalMarketColumn,
+    hasHistoricalMarketColumn
   );
   if (sellerSeenCounts.size > 0) {
     for (const deal of filteredDeals) {
@@ -365,7 +388,7 @@ async function fetchSellerSeenCounts(
   sellerUsernames: string[],
   market: string,
   hasListingsMarketColumn: boolean,
-  hasHistoricalMarketColumn: boolean,
+  hasHistoricalMarketColumn: boolean
 ): Promise<Map<string, number>> {
   if (sellerUsernames.length === 0) {
     return new Map();
@@ -442,7 +465,7 @@ async function fetchSellerSeenCounts(
         )
       GROUP BY l.seller_username;
     `,
-    params,
+    params
   );
 
   const counts = new Map<string, number>();
@@ -464,15 +487,13 @@ export default async function TopDealsPage() {
         <div className="space-y-2">
           <h1 className={PAGE_TITLE}>Top Deals</h1>
           <p className={PAGE_SUBTITLE}>
-            High-confidence listings with strong discounts versus recent medians.
+            High-confidence listings with strong discounts versus recent
+            medians.
           </p>
         </div>
 
         <div className={TABLE_CONTAINER}>
-          <TopDealsClient
-            deals={deals}
-            isAdmin={isAdmin}
-          />
+          <TopDealsClient deals={deals} isAdmin={isAdmin} />
           <p className="mt-4 text-xs text-slate-400 text-right">
             {TCGPLAYER_ATTRIBUTION}
           </p>

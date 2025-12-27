@@ -15,14 +15,21 @@ import {
   ensureListingsIntegrityColumns,
   LISTINGS_INTEGRITY_MISSING_MESSAGE,
 } from "../../../lib/schema";
-import { DEFAULT_MARKET, SUPPORTED_MARKETS, type MarketCode } from "../../../lib/markets";
+import {
+  DEFAULT_MARKET,
+  SUPPORTED_MARKETS,
+  type MarketCode,
+} from "../../../lib/markets";
 import {
   MARKET_COOKIE_NAME,
   getGeoCountryFromHeaders,
   resolveMarketPreference,
   type MarketPreference,
 } from "../../../lib/marketPreference";
-import { getCardStockImageUrl, TCGPLAYER_ATTRIBUTION } from "../../../lib/stockImages";
+import {
+  getCardStockImageUrl,
+  TCGPLAYER_ATTRIBUTION,
+} from "../../../lib/stockImages";
 import { shouldExcludeListingFromCardSurfaces } from "../../../lib/blacklist";
 import {
   warnIfStoreNamesMissing,
@@ -69,6 +76,11 @@ type ListingDbRow = {
   integrity_reason: string | null;
   integrity_score: number | null;
   override_type: string | null;
+  // Native currency fields
+  currency: string | null;
+  price_native: string | null;
+  shipping_native: string | null;
+  total_native: string | null;
 };
 
 type SellerSeenCountRow = {
@@ -125,6 +137,11 @@ type CardDetail = {
     integrityReason: string | null;
     integrityScore: number | null;
     overrideType: "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE" | null;
+    // Native currency fields
+    currency: string | null;
+    priceNative: number | null;
+    shippingNative: number | null;
+    totalNative: number | null;
   }>;
   selectedMarket: MarketPreference;
   otherMarketCounts: OtherMarketCount[];
@@ -146,7 +163,7 @@ function isGradedBucket(bucket: string | null): boolean {
 
 async function getCard(
   cardId: number,
-  hasLanguageColumn: boolean,
+  hasLanguageColumn: boolean
 ): Promise<CardRecord | null> {
   const res = await query<CardRecord>(
     `
@@ -161,14 +178,14 @@ async function getCard(
       FROM cards
       WHERE id = $1
     `,
-    [cardId],
+    [cardId]
   );
   return res.rows[0] ?? null;
 }
 
 async function getRelatedCards(
   card: CardRecord,
-  hasLanguageColumn: boolean,
+  hasLanguageColumn: boolean
 ): Promise<CardRecord[]> {
   const res = await query<CardRecord>(
     `
@@ -186,16 +203,20 @@ async function getRelatedCards(
         AND card_number = $3
       ORDER BY condition_bucket
     `,
-    [card.name, card.set_name, card.card_number],
+    [card.name, card.set_name, card.card_number]
   );
   return res.rows;
 }
 
 async function getCardsFromSameSet(
   card: CardRecord,
-  limit: number,
+  limit: number
 ): Promise<Array<{ id: number; name: string; cardNumber: string | null }>> {
-  const res = await query<{ id: number; name: string; card_number: string | null }>(
+  const res = await query<{
+    id: number;
+    name: string;
+    card_number: string | null;
+  }>(
     `
       SELECT DISTINCT ON (name, card_number)
         id,
@@ -207,9 +228,9 @@ async function getCardsFromSameSet(
       ORDER BY name, card_number, id
       LIMIT $3
     `,
-    [card.set_name, card.id, limit],
+    [card.set_name, card.id, limit]
   );
-  return res.rows.map(row => ({
+  return res.rows.map((row) => ({
     id: row.id,
     name: row.name,
     cardNumber: row.card_number,
@@ -230,7 +251,7 @@ async function getHistoricals(cardIds: number[]): Promise<HistoricalDbRow[]> {
       WHERE hp.card_id = ANY($1)
       ORDER BY c.condition_bucket
     `,
-    [cardIds],
+    [cardIds]
   );
 
   return res.rows;
@@ -240,7 +261,7 @@ async function getListings(
   cardIds: number[],
   market: MarketPreference,
   hasListingsMarketColumn: boolean,
-  hasHistoricalMarketColumn: boolean,
+  hasHistoricalMarketColumn: boolean
 ): Promise<ListingDbRow[]> {
   if (cardIds.length === 0) return [];
   const hasConfidenceColumn = await ensureDealConfidenceColumn();
@@ -282,14 +303,16 @@ async function getListings(
         l.seller_username,
         l.seller_store_name,
         ${
-          hasConfidenceColumn
-            ? "l.deal_confidence_weight"
-            : "NULL::numeric"
+          hasConfidenceColumn ? "l.deal_confidence_weight" : "NULL::numeric"
         } AS deal_confidence_weight,
         l.integrity_status,
         l.integrity_reason,
         l.integrity_score,
-        lo.override_type
+        lo.override_type,
+        l.currency,
+        l.price_native,
+        l.shipping_native,
+        l.total_native
       FROM listings l
       JOIN cards c ON c.id = l.card_id
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
@@ -326,7 +349,7 @@ async function getListings(
         )
       ORDER BY l.discount_percent ASC NULLS LAST, l.total_price_cad ASC NULLS LAST
     `,
-    params,
+    params
   );
 
   return res.rows;
@@ -335,7 +358,7 @@ async function getListings(
 async function getOtherMarketCounts(
   cardIds: number[],
   selectedMarket: MarketCode,
-  hasListingsMarketColumn: boolean,
+  hasListingsMarketColumn: boolean
 ): Promise<OtherMarketCount[]> {
   if (!hasListingsMarketColumn || cardIds.length === 0) return [];
   const res = await query<{ market: string | null; count: string }>(
@@ -372,7 +395,7 @@ async function getOtherMarketCounts(
         )
       GROUP BY l.market;
     `,
-    [cardIds],
+    [cardIds]
   );
 
   return res.rows
@@ -385,7 +408,7 @@ async function getOtherMarketCounts(
         row.market &&
         row.market !== selectedMarket &&
         SUPPORTED_MARKETS.includes(row.market as MarketCode) &&
-        row.count > 0,
+        row.count > 0
     )
     .map((row) => ({
       market: row.market as MarketCode,
@@ -407,10 +430,7 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
   const cardRecord = await getCard(cardId, hasLanguageColumn);
   if (!cardRecord) return null;
 
-  const relatedCards = await getRelatedCards(
-    cardRecord,
-    hasLanguageColumn,
-  );
+  const relatedCards = await getRelatedCards(cardRecord, hasLanguageColumn);
   const cardIds = relatedCards.map((c) => c.id);
 
   const historicalRows = await getHistoricals(cardIds);
@@ -418,14 +438,14 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
     cardIds,
     selectedMarket,
     hasListingsMarketColumn,
-    hasHistoricalMarketColumn,
+    hasHistoricalMarketColumn
   );
   const otherMarketCounts =
     selectedMarket !== "all" && listingsRows.length === 0
       ? await getOtherMarketCounts(
           cardIds,
           selectedMarket as MarketCode,
-          hasListingsMarketColumn,
+          hasListingsMarketColumn
         )
       : [];
 
@@ -527,11 +547,15 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       integrityReason: row.integrity_reason ?? null,
       integrityScore:
         row.integrity_score != null ? Number(row.integrity_score) : null,
-      overrideType: (row.override_type as
-        | "ALLOW"
-        | "HARD_BLOCK"
-        | "SOFT_EXCLUDE"
-        | null) ?? null,
+      overrideType:
+        (row.override_type as "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE" | null) ??
+        null,
+      // Native currency fields
+      currency: row.currency ?? null,
+      priceNative: row.price_native != null ? Number(row.price_native) : null,
+      shippingNative:
+        row.shipping_native != null ? Number(row.shipping_native) : null,
+      totalNative: row.total_native != null ? Number(row.total_native) : null,
     };
   });
 
@@ -556,14 +580,14 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
     new Set(
       filteredListings
         .map((listing) => listing.sellerUsername)
-        .filter((seller): seller is string => Boolean(seller)),
-    ),
+        .filter((seller): seller is string => Boolean(seller))
+    )
   );
   const sellerSeenCounts = await fetchSellerSeenCountsForCard(
     sellerUsernames,
     cardIds,
     selectedMarket,
-    hasListingsMarketColumn,
+    hasListingsMarketColumn
   );
   if (sellerSeenCounts.size > 0) {
     for (const listing of filteredListings) {
@@ -610,7 +634,7 @@ async function fetchSellerSeenCountsForCard(
   sellerUsernames: string[],
   cardIds: number[],
   market: MarketPreference,
-  hasListingsMarketColumn: boolean,
+  hasListingsMarketColumn: boolean
 ): Promise<Map<string, number>> {
   if (sellerUsernames.length === 0 || cardIds.length === 0) {
     return new Map();
@@ -668,7 +692,7 @@ async function fetchSellerSeenCountsForCard(
         )
       GROUP BY l.seller_username;
     `,
-    params,
+    params
   );
 
   const counts = new Map<string, number>();

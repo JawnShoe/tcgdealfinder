@@ -5,7 +5,11 @@
 
 import type { Deal } from "../types/deal";
 import { getDealDiscount } from "./dealMath";
-import { getDealConfidence, isDealTrusted, type DealConfidence } from "./dealScore";
+import {
+  getDealConfidence,
+  isDealTrusted,
+  type DealConfidence,
+} from "./dealScore";
 import { getConfidenceLabel as getWeightLabel } from "./dealConfidence";
 import { buildAffiliateUrl } from "./affiliateUrl";
 import { normalizeMarketCode } from "./markets";
@@ -14,15 +18,21 @@ import { getWhyDeal } from "./whyDeal";
 export type DealViewModel = {
   // Original deal data (with affiliate-tagged URL)
   deal: Deal;
-  
+
   // Affiliate-tagged URL for eBay links (falls back to original if not configured)
   affiliateUrl: string;
-  
+
   // Normalized display fields (null-safe, ready to render)
   totalUsd: number | null;
   historicUsd: number | null;
   discountPercent: number | null;
-  
+
+  // Native currency display fields
+  currency: string | null;
+  totalNative: number | null;
+  priceNative: number | null;
+  shippingNative: number | null;
+
   // Confidence/quality signals
   priceConfidenceLabel: "high" | "medium" | "low" | null;
   sampleSize: number | null;
@@ -31,7 +41,7 @@ export type DealViewModel = {
     label: string;
     tooltip: string;
   } | null;
-  
+
   // Presentation fields
   conditionLabel: string | null;
   marketCode: "US" | "CA" | "GB" | "AU" | "all" | string;
@@ -40,12 +50,12 @@ export type DealViewModel = {
   integrityStatus: "OK" | "REVIEW";
   integrityReason: string | null;
   integrityScore: number | null;
-  
+
   // Internal scoring (for sorting, not always displayed)
   score: number | null;
   confidence: DealConfidence;
   confidenceWeight: number | null;
-  
+
   // Sort helpers (used internally by table components)
   cardSortKey: string;
   endsAtMs: number | null;
@@ -65,16 +75,22 @@ export function buildDealViewModel(
   const totalUsd = deal.totalUsd ?? null;
   const historicUsd = deal.historicPriceCad ?? null;
   const discountPercent = getDealDiscount(deal);
-  
+
+  // Native currency fields
+  const currency = deal.currency ?? null;
+  const totalNative = deal.totalNative ?? null;
+  const priceNative = deal.priceNative ?? null;
+  const shippingNative = deal.shippingNative ?? null;
+
   const trustedSeller = isDealTrusted(
     deal.sellerFeedbackCount ?? null,
     deal.sellerPositivePercent ?? null
   );
-  
+
   const confidence = getDealConfidence(deal.sampleSize ?? null);
   const confidenceWeight = deal.confidenceWeight ?? null;
   const priceConfidenceLabel = getWeightLabel(confidenceWeight);
-  
+
   // Compute score if needed (for sorting)
   let score: number | null = null;
   if (options?.computeScore) {
@@ -92,17 +108,21 @@ export function buildDealViewModel(
     );
     score = applyConfidenceToScore(baseScore, confidenceWeight);
   }
-  
+
   // Compute sort helpers
   const endsAtMs = deal.endsAt ? Date.parse(deal.endsAt) : null;
   const cardSortKey = buildCardSortKey(deal);
-  
+
   return {
     deal,
     affiliateUrl: buildAffiliateUrl(deal.url),
     totalUsd,
     historicUsd,
     discountPercent,
+    currency,
+    totalNative,
+    priceNative,
+    shippingNative,
     priceConfidenceLabel,
     sampleSize: deal.sampleSize ?? null,
     trustedSeller,
@@ -135,6 +155,11 @@ export function buildDealViewModel(
 function buildCardSortKey(deal: Deal): string {
   const setName = (deal.card?.setName ?? deal.setName ?? "").toLowerCase();
   const number = (deal.card?.cardNumber ?? "").toLowerCase();
-  const name = (deal.card?.name ?? deal.cardName ?? deal.title ?? "").toLowerCase();
+  const name = (
+    deal.card?.name ??
+    deal.cardName ??
+    deal.title ??
+    ""
+  ).toLowerCase();
   return `${setName}||${number}||${name}`;
 }

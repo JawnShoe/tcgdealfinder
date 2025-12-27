@@ -6,7 +6,7 @@ type FormatEndsAtOptions = {
 
 export function formatCurrency(
   value: number | null | undefined,
-  currency: Currency = "USD",
+  currency: Currency = "USD"
 ): string {
   return formatMoneyFromCad(value ?? null, currency);
 }
@@ -30,9 +30,86 @@ export function formatUSD(value: number | null | undefined): string {
   }).format(value);
 }
 
-export function formatDiscount(
-  value: number | null | undefined,
+/**
+ * Currency symbol mapping for common currencies.
+ * Falls back to currency code if not found.
+ */
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$",
+  CAD: "CA$",
+  GBP: "£",
+  AUD: "A$",
+  EUR: "€",
+  JPY: "¥",
+  CNY: "¥",
+  MXN: "MX$",
+  CHF: "CHF",
+};
+
+/**
+ * Format a native currency amount for display.
+ * Uses Intl.NumberFormat for proper locale formatting.
+ */
+export function formatNativeCurrency(
+  amount: number | null | undefined,
+  currency: string | null | undefined
 ): string {
+  if (amount == null || Number.isNaN(amount) || !Number.isFinite(amount)) {
+    return "--";
+  }
+  const currencyCode = (currency ?? "USD").toUpperCase();
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    // Fallback for unknown currency codes
+    const symbol = CURRENCY_SYMBOLS[currencyCode] ?? currencyCode;
+    return `${symbol}${amount.toFixed(2)}`;
+  }
+}
+
+/**
+ * Format price for display: native currency as primary, USD as secondary (approx).
+ *
+ * Returns:
+ * - { primary, secondary: null } if currency is USD (no duplicate)
+ * - { primary, secondary } with "≈ $X.XX" if non-USD
+ * - { primary: "--", secondary: null } if data is missing
+ */
+export function formatPriceWithApprox(
+  nativeAmount: number | null | undefined,
+  currency: string | null | undefined,
+  usdAmount: number | null | undefined
+): { primary: string; secondary: string | null } {
+  const currencyCode = (currency ?? "USD").toUpperCase();
+
+  // If no native amount, show "--"
+  if (nativeAmount == null || !Number.isFinite(nativeAmount)) {
+    return { primary: "--", secondary: null };
+  }
+
+  const primary = formatNativeCurrency(nativeAmount, currencyCode);
+
+  // If USD, no need for secondary approximation
+  if (currencyCode === "USD") {
+    return { primary, secondary: null };
+  }
+
+  // Non-USD: show USD as secondary approximation
+  if (usdAmount != null && Number.isFinite(usdAmount)) {
+    const usdFormatted = formatUSD(usdAmount);
+    return { primary, secondary: `≈ ${usdFormatted}` };
+  }
+
+  // Non-USD but no USD amount available
+  return { primary, secondary: null };
+}
+
+export function formatDiscount(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) {
     return "--";
   }
@@ -40,9 +117,7 @@ export function formatDiscount(
   return `${sign}${value.toFixed(1)}%`;
 }
 
-export function discountClass(
-  value: number | null | undefined,
-): string {
+export function discountClass(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) {
     return "";
   }
@@ -60,10 +135,7 @@ function formatUtcTimestamp(date: Date): string {
   return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
 }
 
-function formatRelativeEnds(
-  date: Date,
-  shortLabel: boolean,
-): string {
+function formatRelativeEnds(date: Date, shortLabel: boolean): string {
   const diffMs = date.getTime() - Date.now();
   if (diffMs <= 0) {
     return shortLabel ? "Ended" : "Ended";
@@ -78,8 +150,7 @@ function formatRelativeEnds(
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) {
     const minutes = diffMinutes % 60;
-    const label =
-      minutes > 0 ? `${diffHours}h ${minutes}m` : `${diffHours}h`;
+    const label = minutes > 0 ? `${diffHours}h ${minutes}m` : `${diffHours}h`;
     return shortLabel ? label : `Ends in ${label}`;
   }
 
@@ -91,7 +162,7 @@ function formatRelativeEnds(
 
 export function getEndsAtDisplay(
   value: string | null | undefined,
-  options?: FormatEndsAtOptions,
+  options?: FormatEndsAtOptions
 ): { label: string; tooltip: string } {
   if (!value) {
     return { label: "--", tooltip: "--" };
@@ -107,13 +178,13 @@ export function getEndsAtDisplay(
 
 export function formatEndsAt(
   value: string | null | undefined,
-  options?: FormatEndsAtOptions,
+  options?: FormatEndsAtOptions
 ): string {
   return getEndsAtDisplay(value, options).label;
 }
 
 export function getConfidenceLabel(
-  sampleSize: number | null | undefined,
+  sampleSize: number | null | undefined
 ): string {
   if (sampleSize == null || Number.isNaN(sampleSize)) {
     return "";
@@ -124,9 +195,7 @@ export function getConfidenceLabel(
   return `Very low`;
 }
 
-export function formatScore(
-  value: number | null | undefined,
-): string {
+export function formatScore(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) {
     return "--";
   }
@@ -177,20 +246,25 @@ export function formatMarket(market: string | null | undefined): {
   compactLabel: string;
 } {
   const normalized = market?.toUpperCase() ?? "EBAY_US";
-  
+
   if (normalized === "EBAY_US" || normalized === "US") {
     return { code: "US", label: "eBay United States", compactLabel: "US" };
   }
   if (normalized === "EBAY_CA" || normalized === "CA") {
     return { code: "CA", label: "eBay Canada", compactLabel: "CA" };
   }
-  if (normalized === "EBAY_GB" || normalized === "GB" || normalized === "UK" || normalized === "EBAY_UK") {
+  if (
+    normalized === "EBAY_GB" ||
+    normalized === "GB" ||
+    normalized === "UK" ||
+    normalized === "EBAY_UK"
+  ) {
     return { code: "GB", label: "eBay United Kingdom", compactLabel: "UK" };
   }
   if (normalized === "EBAY_AU" || normalized === "AU") {
     return { code: "AU", label: "eBay Australia", compactLabel: "AU" };
   }
-  
+
   // Fallback: should never happen with clean data, but provide safe default
   return {
     code: "UNKNOWN",
@@ -205,7 +279,7 @@ export function formatMarket(market: string | null | undefined): {
  */
 export function formatPriceConfidence(
   confidenceLabel: "high" | "medium" | "low" | null,
-  sampleSize: number | null,
+  sampleSize: number | null
 ): {
   chipText: string;
   tooltipText: string;
@@ -239,7 +313,7 @@ export function formatPriceConfidence(
  */
 export function formatFreshness(
   updatedAt: string | null | undefined,
-  thresholdHours: number = 4,
+  thresholdHours: number = 4
 ): string | null {
   if (!updatedAt) {
     return null;

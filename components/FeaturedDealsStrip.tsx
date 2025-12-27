@@ -29,9 +29,7 @@ type FeaturedView = {
   discountMagnitude: number;
 };
 
-export default function FeaturedDealsStrip({
-  deals,
-}: FeaturedDealsStripProps) {
+export default function FeaturedDealsStrip({ deals }: FeaturedDealsStripProps) {
   const featured = buildFeaturedDeals(deals);
 
   return (
@@ -104,15 +102,18 @@ export default function FeaturedDealsStrip({
                       })}
                       className="text-slate-900 font-medium"
                     />
-                    {isDealTrusted(deal.sellerFeedbackCount, deal.sellerPositivePercent) && (
-                      <TrustedBadge />
-                    )}
+                    {isDealTrusted(
+                      deal.sellerFeedbackCount,
+                      deal.sellerPositivePercent
+                    ) && <TrustedBadge />}
                   </div>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs">
                   <TooltipPopover
                     content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                     triggerClassName="text-slate-600"
+                    tooltipClassName="tooltip-wide"
+                    size="wide"
                   >
                     Data reliability
                   </TooltipPopover>
@@ -131,7 +132,9 @@ export default function FeaturedDealsStrip({
                     <span aria-hidden="true">
                       {formatMarket(deal.market).compactLabel}
                     </span>
-                    <span className="sr-only">{formatMarket(deal.market).label}</span>
+                    <span className="sr-only">
+                      {formatMarket(deal.market).label}
+                    </span>
                   </span>
                 </div>
 

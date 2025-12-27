@@ -2,24 +2,24 @@
 
 /**
  * TABLE QA CHECKLIST
- * 
+ *
  * Column visibility by variant/page:
- * 
+ *
  * Homepage (variant="default"):
  *   - Card (320px) | Total USD | Historic USD | Discount | Seller | Market (flag + US/CA) | Ends
  *   - NO Score column (hidden, but used internally for sorting)
  *   - NO Confidence column (removed to reduce width and improve scanability)
- * 
+ *
  * /newest page (variant="newest"):
  *   - Card (280px) | Total USD | Historic USD | Discount | Confidence (centered) | Seller (140px) | Market (flag + US/CA, 80px) | Ends
  *   - NO Score column (hidden on newest)
- * 
+ *
  * /cards page (no variant prop, uses default):
  *   - Card | Total USD | Historic USD | Discount | Score | Confidence (left-aligned) | Seller | Market (flag + US/CA) | Ends
- * 
+ *
  * Other pages (/top-deals, /ending-soon):
  *   - Use custom table implementations with flag + US/CA market display
- * 
+ *
  * Design rules:
  *   - All tables use SVG flag icons + short code (🇺🇸 US or 🇨🇦 CA)
  *   - Long seller names truncate with tooltip (truncate class + title attribute)
@@ -37,7 +37,10 @@ import { TrustedBadge } from "./TrustedBadge";
 import { CardIdentityBlock, buildCardIdentityFromDeal } from "./CardIdentity";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { MarketFlag } from "./MarketFlag";
-import { SellerNameWithTooltip, formatSellerSalesCount } from "./SellerNameWithTooltip";
+import {
+  SellerNameWithTooltip,
+  formatSellerSalesCount,
+} from "./SellerNameWithTooltip";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { WatchlistStarButton } from "./WatchlistStarButton";
 import { WhyDealHint } from "./WhyDealHint";
@@ -75,7 +78,11 @@ import {
 } from "../lib/dealConfidence";
 import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 
-import { DEFAULT_MARKET, getMarketLabel, normalizeMarketCode } from "../lib/markets";
+import {
+  DEFAULT_MARKET,
+  getMarketLabel,
+  normalizeMarketCode,
+} from "../lib/markets";
 import { compareStrictBestDiscountValues } from "../lib/dealSort";
 import {
   getColumnsByVariant,
@@ -91,9 +98,7 @@ const MARKET_PRIORITY: string[] = ["US", "CA", "GB", "AU"];
 function getMarketRank(market: string | null | undefined): number {
   const normalized = normalizeMarketCode(market ?? null);
   const effective =
-    normalized === "all"
-      ? normalizeMarketCode(DEFAULT_MARKET)
-      : normalized;
+    normalized === "all" ? normalizeMarketCode(DEFAULT_MARKET) : normalized;
   const idx = MARKET_PRIORITY.indexOf(effective);
   return idx === -1 ? MARKET_PRIORITY.length : idx;
 }
@@ -127,14 +132,18 @@ function dedupeDealsByListing(deals: Deal[]): Deal[] {
 function renderEndsValue(value: string | null | undefined): JSX.Element {
   const display = getEndsAtDisplay(value);
   return (
-    <TooltipPopover content={display.tooltip} tooltipClassName="whitespace-nowrap" usePortal={true}>
+    <TooltipPopover
+      content={display.tooltip}
+      tooltipClassName="whitespace-nowrap"
+      usePortal={true}
+    >
       {display.label}
     </TooltipPopover>
   );
 }
 
 function renderSellerSalesBadge(
-  salesCount: number | null | undefined,
+  salesCount: number | null | undefined
 ): JSX.Element | null {
   const formatted = formatSellerSalesCount(salesCount);
   if (!formatted) {
@@ -158,7 +167,7 @@ function getSeenMarketLabel(value: string | null | undefined): string {
 function renderSellerSeenBadge(
   count: number | null | undefined,
   windowDays: number | null | undefined,
-  marketValue: string | null | undefined,
+  marketValue: string | null | undefined
 ): JSX.Element | null {
   return (
     <SellerSeenBadge
@@ -195,7 +204,13 @@ type SortOption =
 
 type ConfidenceFilterKey = "all" | "high" | "medium" | "low";
 
-type HeaderSortKey = "total" | "historic" | "discount" | "ends" | "card" | "confidence";
+type HeaderSortKey =
+  | "total"
+  | "historic"
+  | "discount"
+  | "ends"
+  | "card"
+  | "confidence";
 
 type HeaderSort = {
   key: HeaderSortKey | null;
@@ -255,7 +270,7 @@ export default function DealsTable({
   });
   const serverMode = Boolean(initialApiMeta);
   const [remoteMeta, setRemoteMeta] = useState<DealsApiMeta | null>(
-    initialApiMeta ?? null,
+    initialApiMeta ?? null
   );
   const [remoteDeals, setRemoteDeals] = useState<Deal[]>(deals);
   const [remoteLoading, setRemoteLoading] = useState(false);
@@ -264,7 +279,7 @@ export default function DealsTable({
 
   const updateState = (
     producer: (prev: DealsViewState) => DealsViewState,
-    options?: { resetPage?: boolean },
+    options?: { resetPage?: boolean }
   ) => {
     setViewState((prev) => {
       const next = producer(prev);
@@ -281,7 +296,7 @@ export default function DealsTable({
         ...prev,
         marketKey: next,
       }),
-      { resetPage: true },
+      { resetPage: true }
     );
     void persistMarketPreference(next);
   };
@@ -297,10 +312,7 @@ export default function DealsTable({
   }, [serverMode, initialApiMeta]);
 
   const fetchRemotePage = useCallback(
-    async (
-      targetPage: number,
-      overrides?: { market?: MarketFilterKey },
-    ) => {
+    async (targetPage: number, overrides?: { market?: MarketFilterKey }) => {
       if (!serverMode || !remoteMeta) return;
       const params = new URLSearchParams({
         sort: remoteMeta.sort,
@@ -329,13 +341,13 @@ export default function DealsTable({
         });
       } catch (error) {
         setRemoteError(
-          error instanceof Error ? error.message : "Unable to load listings",
+          error instanceof Error ? error.message : "Unable to load listings"
         );
       } finally {
         setRemoteLoading(false);
       }
     },
-    [serverMode, remoteMeta, viewState.marketKey],
+    [serverMode, remoteMeta, viewState.marketKey]
   );
 
   useEffect(() => {
@@ -346,22 +358,19 @@ export default function DealsTable({
 
   const baseDeals = serverMode ? remoteDeals : deals;
   const referenceKey = useMemo(
-    () =>
-      baseDeals
-        .map((deal) => deal.listingId ?? String(deal.id))
-        .join("|"),
-    [baseDeals],
+    () => baseDeals.map((deal) => deal.listingId ?? String(deal.id)).join("|"),
+    [baseDeals]
   );
   const dedupedDeals = useMemo(
     () => dedupeDealsByListing(baseDeals),
-    [baseDeals],
+    [baseDeals]
   );
   const referenceTime = useMemo(
     () => ({
       stamp: Date.now(),
       key: referenceKey,
     }),
-    [referenceKey],
+    [referenceKey]
   ).stamp;
 
   // Use buildDealViewModel() as the single source of truth for derived values
@@ -387,7 +396,7 @@ export default function DealsTable({
       if (
         !matchesConditionFilter(
           deal.condition ?? deal.card?.conditionBucket ?? null,
-          viewState.conditionKey,
+          viewState.conditionKey
         )
       ) {
         return false;
@@ -476,8 +485,22 @@ export default function DealsTable({
             bVal = b.cardSortKey;
             break;
           case "confidence":
-            aVal = a.priceConfidenceLabel === "high" ? 3 : a.priceConfidenceLabel === "medium" ? 2 : a.priceConfidenceLabel === "low" ? 1 : 0;
-            bVal = b.priceConfidenceLabel === "high" ? 3 : b.priceConfidenceLabel === "medium" ? 2 : b.priceConfidenceLabel === "low" ? 1 : 0;
+            aVal =
+              a.priceConfidenceLabel === "high"
+                ? 3
+                : a.priceConfidenceLabel === "medium"
+                  ? 2
+                  : a.priceConfidenceLabel === "low"
+                    ? 1
+                    : 0;
+            bVal =
+              b.priceConfidenceLabel === "high"
+                ? 3
+                : b.priceConfidenceLabel === "medium"
+                  ? 2
+                  : b.priceConfidenceLabel === "low"
+                    ? 1
+                    : 0;
             break;
           default:
             aVal = 0;
@@ -512,11 +535,11 @@ export default function DealsTable({
     const sortKey = viewState.sortBy || "best-discount";
     if (isNewestVariant && sortKey === "best-discount") {
       const hasDiscounted = list.some(
-        (vm) => vm.discountPercent != null && vm.discountPercent < 0,
+        (vm) => vm.discountPercent != null && vm.discountPercent < 0
       );
       if (hasDiscounted) {
         list.sort((a, b) =>
-          compareStrictBestDiscountValues(a.discountPercent, b.discountPercent),
+          compareStrictBestDiscountValues(a.discountPercent, b.discountPercent)
         );
         return { sortedDeals: list, showNoDiscountNotice: false };
       }
@@ -539,9 +562,9 @@ export default function DealsTable({
   }, [serverMode, sortedDeals.length]);
 
   const totalPages = serverMode
-    ? remoteMeta?.totalPages ?? 1
+    ? (remoteMeta?.totalPages ?? 1)
     : Math.max(1, Math.ceil(sortedDeals.length / PAGE_SIZE));
-  const currentPage = serverMode ? remoteMeta?.page ?? 1 : viewState.page;
+  const currentPage = serverMode ? (remoteMeta?.page ?? 1) : viewState.page;
   const pageStart = (viewState.page - 1) * PAGE_SIZE;
   const currentSlice = serverMode
     ? sortedDeals
@@ -556,7 +579,7 @@ export default function DealsTable({
       return;
     }
     setViewState((prev) =>
-      prev.page > 1 ? { ...prev, page: prev.page - 1 } : prev,
+      prev.page > 1 ? { ...prev, page: prev.page - 1 } : prev
     );
   };
 
@@ -573,7 +596,7 @@ export default function DealsTable({
       return;
     }
     setViewState((prev) =>
-      prev.page < totalPages ? { ...prev, page: prev.page + 1 } : prev,
+      prev.page < totalPages ? { ...prev, page: prev.page + 1 } : prev
     );
   };
 
@@ -607,7 +630,7 @@ export default function DealsTable({
       | "seller"
       | "market"
       | "ends",
-    variant: DealsTableVariant = "default",
+    variant: DealsTableVariant = "default"
   ): string => {
     const isNewest = variant === "newest";
     switch (colKey) {
@@ -678,7 +701,7 @@ export default function DealsTable({
                     ...prev,
                     sortBy: event.target.value as SortOption,
                   }),
-                  { resetPage: true },
+                  { resetPage: true }
                 );
                 // Clear header sort when using dropdown
                 setHeaderSort({ key: null, dir: "desc" });
@@ -705,7 +728,7 @@ export default function DealsTable({
                     ...prev,
                     conditionKey: event.target.value as ConditionFilterKey,
                   }),
-                  { resetPage: true },
+                  { resetPage: true }
                 )
               }
             >
@@ -724,6 +747,7 @@ export default function DealsTable({
                 content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                 ariaLabel="Data reliability help"
                 triggerClassName="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500"
+                tooltipClassName="tooltip-wide"
                 side="top"
                 size="wide"
               >
@@ -740,7 +764,7 @@ export default function DealsTable({
                     ...prev,
                     priceConfFilter: event.target.value as ConfidenceFilterKey,
                   }),
-                  { resetPage: true },
+                  { resetPage: true }
                 )
               }
             >
@@ -759,9 +783,7 @@ export default function DealsTable({
               className={inputClasses}
               value={viewState.marketKey}
               onChange={(event) =>
-                handleMarketChange(
-                  event.target.value as MarketFilterKey,
-                )
+                handleMarketChange(event.target.value as MarketFilterKey)
               }
             >
               {MARKET_FILTERS.map((option) => (
@@ -790,7 +812,7 @@ export default function DealsTable({
                     ...prev,
                     minDiscountPercent: parseNumberInput(event.target.value),
                   }),
-                  { resetPage: true },
+                  { resetPage: true }
                 )
               }
             />
@@ -813,7 +835,7 @@ export default function DealsTable({
                       ...prev,
                       minPrice: parseNumberInput(event.target.value),
                     }),
-                    { resetPage: true },
+                    { resetPage: true }
                   )
                 }
               />
@@ -829,7 +851,7 @@ export default function DealsTable({
                       ...prev,
                       maxPrice: parseNumberInput(event.target.value),
                     }),
-                    { resetPage: true },
+                    { resetPage: true }
                   )
                 }
               />
@@ -848,7 +870,7 @@ export default function DealsTable({
               onChange={(event) =>
                 updateState(
                   (prev) => ({ ...prev, setFilter: event.target.value }),
-                  { resetPage: true },
+                  { resetPage: true }
                 )
               }
             />
@@ -863,7 +885,7 @@ export default function DealsTable({
             onChange={(event) =>
               updateState(
                 (prev) => ({ ...prev, topDealsOnly: event.target.checked }),
-                { resetPage: true },
+                { resetPage: true }
               )
             }
           />
@@ -883,312 +905,387 @@ export default function DealsTable({
             <div className="w-full overflow-x-clip">
               <div className="w-full overflow-x-auto overflow-y-clip">
                 <table className="min-w-full table-fixed text-sm text-slate-900">
-                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className={`px-3 py-2 text-left ${colClass("card", variant)}`}>
-                      {getHeaderLabel("card", "Card")}
-                    </th>
-                    <th
-                      className={`${colClass("total", variant)} whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
-                      onClick={() => handleHeaderSort("total")}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          handleHeaderSort("total");
-                        }
-                      }}
-                      tabIndex={0}
-                      aria-label="Sort by Total USD"
-                      aria-sort={headerSort.key === "total" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
-                    >
-                      <span className="inline-flex items-center">
-                        <span>{getHeaderLabel("total", "Total USD")}</span>
-                        <SortArrow colKey="total" />
-                      </span>
-                    </th>
-                    <th
-                      className={`${colClass("historic", variant)} whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
-                      onClick={() => handleHeaderSort("historic")}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          handleHeaderSort("historic");
-                        }
-                      }}
-                      tabIndex={0}
-                      aria-label="Sort by Historic USD"
-                      aria-sort={headerSort.key === "historic" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
-                    >
-                      <span className="inline-flex items-center">
-                        <span>{getHeaderLabel("historic", "Historic USD")}</span>
-                        <SortArrow colKey="historic" />
-                      </span>
-                    </th>
-                    <th
-                      className={`${colClass("discount", variant)} px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
-                      onClick={() => handleHeaderSort("discount")}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          handleHeaderSort("discount");
-                        }
-                      }}
-                      tabIndex={0}
-                      aria-label="Sort by Discount"
-                      aria-sort={headerSort.key === "discount" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
-                    >
-                      <span className="inline-flex items-center">
-                        <span>{getHeaderLabel("discount", "Discount")}</span>
-                        <SortArrow colKey="discount" />
-                      </span>
-                    </th>
-                    {!isNewestVariant && variant !== "default" ? (
-                      <th className={`${colClass("score", variant)} px-3 py-2 text-right`}>Score</th>
-                    ) : null}
-                    {variant !== "default" ? (
+                  <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <tr>
                       <th
-                        className={`${colClass("confidence", variant)} whitespace-nowrap px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"} cursor-pointer hover:bg-slate-100 select-none`}
-                        onClick={() => handleHeaderSort("confidence")}
+                        className={`px-3 py-2 text-left ${colClass("card", variant)}`}
+                      >
+                        {getHeaderLabel("card", "Card")}
+                      </th>
+                      <th
+                        className={`${colClass("total", variant)} whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
+                        onClick={() => handleHeaderSort("total")}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
-                            handleHeaderSort("confidence");
+                            handleHeaderSort("total");
                           }
                         }}
                         tabIndex={0}
-                        aria-label="Sort by Data Reliability"
-                        aria-sort={headerSort.key === "confidence" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
+                        aria-label="Sort by Total USD"
+                        aria-sort={
+                          headerSort.key === "total"
+                            ? headerSort.dir === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
                       >
                         <span className="inline-flex items-center">
-                          {getHeaderLabel("priceConf", "DATA RELIABILITY")}
-                          <SortArrow colKey="confidence" />
+                          <span>{getHeaderLabel("total", "Total USD")}</span>
+                          <SortArrow colKey="total" />
                         </span>
                       </th>
-                    ) : null}
-                    <th className={`${colClass("seller", variant)} px-3 py-2 text-left`}>
-                      {getHeaderLabel("seller", "Seller")}
-                    </th>
-                    <th className={`${colClass("market", variant)} px-3 py-2 text-left`}>
-                      {getHeaderLabel("market", "Market")}
-                    </th>
-                    <th
-                      className={`${colClass("ends", variant)} px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none`}
-                      onClick={() => handleHeaderSort("ends")}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          handleHeaderSort("ends");
+                      <th
+                        className={`${colClass("historic", variant)} whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
+                        onClick={() => handleHeaderSort("historic")}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleHeaderSort("historic");
+                          }
+                        }}
+                        tabIndex={0}
+                        aria-label="Sort by Historic USD"
+                        aria-sort={
+                          headerSort.key === "historic"
+                            ? headerSort.dir === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
                         }
-                      }}
-                      tabIndex={0}
-                      aria-label="Sort by Ends"
-                      aria-sort={headerSort.key === "ends" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
-                    >
-                      <span className="inline-flex items-center">
-                        <span>{getHeaderLabel("ends", "Ends")}</span>
-                        <SortArrow colKey="ends" />
-                      </span>
-                    </th>
-                    {isAdmin ? (
-                      <th className="px-3 py-2 text-left">Admin</th>
-                    ) : null}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {serverMode && remoteLoading ? (
-                    Array.from({ length: 5 }).map((_, idx) => (
-                      <tr key={`loading-${idx}`} className="animate-pulse">
-                        <td className="px-3 py-4" colSpan={100}>
-                          <div className="flex items-center gap-2.5">
-                            <div className="h-16 w-16 rounded bg-slate-200" />
-                            <div className="flex-1 space-y-2">
-                              <div className="h-4 w-3/4 rounded bg-slate-200" />
-                              <div className="h-3 w-1/2 rounded bg-slate-200" />
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    currentSlice.map((vm) => {
-                      const cardId = vm.deal.card?.id ?? vm.deal.cardId ?? null;
-                      const cardName =
-                        vm.deal.card?.name ??
-                        vm.deal.cardName ??
-                        vm.deal.title ??
-                        null;
-                      const setName =
-                        vm.deal.card?.setName ?? vm.deal.setName ?? null;
-                      const sellerSalesBadge = renderSellerSalesBadge(
-                        vm.deal.sellerFeedbackCount,
-                      );
-                      const sellerSeenBadge = renderSellerSeenBadge(
-                        vm.deal.sellerSeenDealCount,
-                        vm.deal.sellerSeenWindowDays,
-                        vm.deal.sellerSeenMarket ?? viewState.marketKey,
-                      );
-                      return (
-                        <tr key={vm.deal.id} className="even:bg-slate-50/50 hover:bg-slate-100">
-                          <td className={`${colClass("card", variant)} px-3 py-4 align-middle`}>
-                            <div className="flex items-start gap-2.5">
-                              {vm.deal.thumbnailUrl ? (
-                                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
-                                  <Image
-                                    src={vm.deal.thumbnailUrl}
-                                    alt={vm.deal.title}
-                                    width={64}
-                                    height={64}
-                                    className="h-full w-full object-contain"
-                                  />
+                      >
+                        <span className="inline-flex items-center">
+                          <span>
+                            {getHeaderLabel("historic", "Historic USD")}
+                          </span>
+                          <SortArrow colKey="historic" />
+                        </span>
+                      </th>
+                      <th
+                        className={`${colClass("discount", variant)} px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none`}
+                        onClick={() => handleHeaderSort("discount")}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleHeaderSort("discount");
+                          }
+                        }}
+                        tabIndex={0}
+                        aria-label="Sort by Discount"
+                        aria-sort={
+                          headerSort.key === "discount"
+                            ? headerSort.dir === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                      >
+                        <span className="inline-flex items-center">
+                          <span>{getHeaderLabel("discount", "Discount")}</span>
+                          <SortArrow colKey="discount" />
+                        </span>
+                      </th>
+                      {!isNewestVariant && variant !== "default" ? (
+                        <th
+                          className={`${colClass("score", variant)} px-3 py-2 text-right`}
+                        >
+                          Score
+                        </th>
+                      ) : null}
+                      {variant !== "default" ? (
+                        <th
+                          className={`${colClass("confidence", variant)} whitespace-nowrap px-3 py-2 ${isNewestVariant ? "text-center" : "text-left"} cursor-pointer hover:bg-slate-100 select-none`}
+                          onClick={() => handleHeaderSort("confidence")}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              handleHeaderSort("confidence");
+                            }
+                          }}
+                          tabIndex={0}
+                          aria-label="Sort by Data Reliability"
+                          aria-sort={
+                            headerSort.key === "confidence"
+                              ? headerSort.dir === "asc"
+                                ? "ascending"
+                                : "descending"
+                              : "none"
+                          }
+                        >
+                          <span className="inline-flex items-center">
+                            {getHeaderLabel("priceConf", "DATA RELIABILITY")}
+                            <SortArrow colKey="confidence" />
+                          </span>
+                        </th>
+                      ) : null}
+                      <th
+                        className={`${colClass("seller", variant)} px-3 py-2 text-left`}
+                      >
+                        {getHeaderLabel("seller", "Seller")}
+                      </th>
+                      <th
+                        className={`${colClass("market", variant)} px-3 py-2 text-left`}
+                      >
+                        {getHeaderLabel("market", "Market")}
+                      </th>
+                      <th
+                        className={`${colClass("ends", variant)} px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none`}
+                        onClick={() => handleHeaderSort("ends")}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleHeaderSort("ends");
+                          }
+                        }}
+                        tabIndex={0}
+                        aria-label="Sort by Ends"
+                        aria-sort={
+                          headerSort.key === "ends"
+                            ? headerSort.dir === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                      >
+                        <span className="inline-flex items-center">
+                          <span>{getHeaderLabel("ends", "Ends")}</span>
+                          <SortArrow colKey="ends" />
+                        </span>
+                      </th>
+                      {isAdmin ? (
+                        <th className="px-3 py-2 text-left">Admin</th>
+                      ) : null}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {serverMode && remoteLoading
+                      ? Array.from({ length: 5 }).map((_, idx) => (
+                          <tr key={`loading-${idx}`} className="animate-pulse">
+                            <td className="px-3 py-4" colSpan={100}>
+                              <div className="flex items-center gap-2.5">
+                                <div className="h-16 w-16 rounded bg-slate-200" />
+                                <div className="flex-1 space-y-2">
+                                  <div className="h-4 w-3/4 rounded bg-slate-200" />
+                                  <div className="h-3 w-1/2 rounded bg-slate-200" />
                                 </div>
-                              ) : (
-                                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
-                              )}
-                              <div className="flex min-w-0 flex-1 items-start gap-2">
-                                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                  <CardIdentityBlock
-                                    identity={buildCardIdentityFromDeal(vm.deal)}
-                                    primaryHref={vm.affiliateUrl}
-                                    showListingTitle={isNewestVariant}
-                                    showViewCardLink
-                                  />
-                                  {vm.deal.historicBaselineConfidence === "none" ? (
-                                    <p className="text-xs text-amber-600">
-                                      {baselineBadgeLabel(
-                                        vm.deal.historicBaselineBucketUsed,
-                                      )}
-                                    </p>
-                                  ) : null}
-                                </div>
-                                <WatchlistStarButton
-                                  cardId={cardId ?? undefined}
-                                  cardName={cardName ?? undefined}
-                                  setName={setName ?? null}
-                                  className="flex-shrink-0"
-                                />
-                              </div>
-                            </div>
-                          </td>
-                          <td className={`${colClass("total", variant)} px-3 py-4 align-middle text-right`}>
-                            <div className="flex flex-col items-end gap-0.5">
-                              <span className="text-base font-semibold">
-                                {formatUSD(vm.totalUsd)}
-                              </span>
-                              {vm.whyDeal ? (
-                                <WhyDealHint
-                                  label={vm.whyDeal.label}
-                                  tooltip={vm.whyDeal.tooltip}
-                                  className="text-xs text-slate-500"
-                                />
-                              ) : null}
-                              {formatFreshness(vm.deal.updatedAt) && (
-                                <span className="text-xs text-slate-500">
-                                  {formatFreshness(vm.deal.updatedAt)}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className={`${colClass("historic", variant)} px-3 py-4 align-middle text-right text-base text-slate-600`}>
-                            {formatUSD(vm.historicUsd)}
-                          </td>
-                          <td
-                            className={`${colClass("discount", variant)} ${discountClass(
-                              vm.discountPercent,
-                            )} whitespace-nowrap px-3 py-4 align-middle text-right text-base font-semibold`}
-                          >
-                            {formatDiscount(vm.discountPercent)}
-                          </td>
-                          {!isNewestVariant && variant !== "default" ? (
-                            <td className={`${colClass("score", variant)} px-3 py-4 align-middle text-right text-base`}>
-                              <div className="flex flex-col items-end gap-1">
-                                <span className={`${scoreClass(vm.score)} font-semibold`}>
-                                  {formatScore(vm.score)}
-                                </span>
-                                <TooltipPopover
-                                  content={CONFIDENCE_TOOLTIP}
-                                  triggerClassName={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
-                                    vm.priceConfidenceLabel,
-                                  )}`}
-                                >
-                                  {getConfidenceDisplayText(vm.priceConfidenceLabel)}
-                                </TooltipPopover>
                               </div>
                             </td>
-                          ) : null}
-                          {variant !== "default" ? (
-                            <td className={`${colClass("confidence", variant)} px-3 py-4 align-middle`}>
-                              <ConfidenceChip
-                                weightLabel={vm.priceConfidenceLabel}
-                                sampleSize={vm.sampleSize}
-                                center={isNewestVariant}
-                              />
-                            </td>
-                          ) : null}
-                          <td className={`${colClass("seller", variant)} px-3 py-4 align-middle text-left text-sm text-slate-700`}>
-                            <div className="flex min-w-0 items-start gap-2">
-                              <div className="min-w-0">
-                                <span
-                                  className={`flex min-w-0 items-center gap-1 ${isNewestVariant ? "max-w-[100px]" : ""
-                                    }`}
-                                >
-                                  <SellerNameWithTooltip
-                                    seller={getSellerDisplayData({
-                                      username: vm.deal.sellerUsername,
-                                      storeName: vm.deal.sellerStoreName,
-                                      feedbackCount: vm.deal.sellerFeedbackCount,
-                                      feedbackPercent: vm.deal.sellerPositivePercent,
-                                    })}
-                                    className="truncate text-slate-600"
-                                  />
-                                  {vm.trustedSeller ? (
-                                    <TrustedBadge className="flex-none" />
-                                  ) : null}
-                                </span>
-                                {sellerSalesBadge || sellerSeenBadge ? (
-                                  <div className="mt-0.5 space-y-0.5">
-                                    {sellerSalesBadge}
-                                    {sellerSeenBadge}
+                          </tr>
+                        ))
+                      : currentSlice.map((vm) => {
+                          const cardId =
+                            vm.deal.card?.id ?? vm.deal.cardId ?? null;
+                          const cardName =
+                            vm.deal.card?.name ??
+                            vm.deal.cardName ??
+                            vm.deal.title ??
+                            null;
+                          const setName =
+                            vm.deal.card?.setName ?? vm.deal.setName ?? null;
+                          const sellerSalesBadge = renderSellerSalesBadge(
+                            vm.deal.sellerFeedbackCount
+                          );
+                          const sellerSeenBadge = renderSellerSeenBadge(
+                            vm.deal.sellerSeenDealCount,
+                            vm.deal.sellerSeenWindowDays,
+                            vm.deal.sellerSeenMarket ?? viewState.marketKey
+                          );
+                          return (
+                            <tr
+                              key={vm.deal.id}
+                              className="even:bg-slate-50/50 hover:bg-slate-100"
+                            >
+                              <td
+                                className={`${colClass("card", variant)} px-3 py-4 align-middle`}
+                              >
+                                <div className="flex items-start gap-2.5">
+                                  {vm.deal.thumbnailUrl ? (
+                                    <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
+                                      <Image
+                                        src={vm.deal.thumbnailUrl}
+                                        alt={vm.deal.title}
+                                        width={64}
+                                        height={64}
+                                        className="h-full w-full object-contain"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
+                                  )}
+                                  <div className="flex min-w-0 flex-1 items-start gap-2">
+                                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                      <CardIdentityBlock
+                                        identity={buildCardIdentityFromDeal(
+                                          vm.deal
+                                        )}
+                                        primaryHref={vm.affiliateUrl}
+                                        showListingTitle={isNewestVariant}
+                                        showViewCardLink
+                                      />
+                                      {vm.deal.historicBaselineConfidence ===
+                                      "none" ? (
+                                        <p className="text-xs text-amber-600">
+                                          {baselineBadgeLabel(
+                                            vm.deal.historicBaselineBucketUsed
+                                          )}
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                    <WatchlistStarButton
+                                      cardId={cardId ?? undefined}
+                                      cardName={cardName ?? undefined}
+                                      setName={setName ?? null}
+                                      className="flex-shrink-0"
+                                    />
                                   </div>
-                                ) : null}
-                              </div>
-                            </div>
-                          </td>
-                          <td className={`${colClass("market", variant)} px-3 py-4 align-middle text-left text-sm text-slate-600${isNewestVariant ? " whitespace-normal break-words" : ""
-                            }`}>
-                            <span className="inline-flex items-center gap-1">
-                              <span aria-hidden="true">
-                                <MarketFlag market={vm.deal.market ?? DEFAULT_MARKET} />
-                              </span>
-                              <span aria-hidden="true">
-                                {formatMarket(vm.deal.market).compactLabel}
-                              </span>
-                              <span className="sr-only">
-                                {formatMarket(vm.deal.market).label}
-                              </span>
-                            </span>
-                          </td>
-                          <td className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}>
-                            {renderEndsValue(vm.deal.endsAt)}
-                          </td>
-                          {isAdmin ? (
-                            <td className="px-3 py-4 align-middle text-sm">
-                              <AdminDealActions
-                                listingId={
-                                  vm.deal.listingId
-                                    ? Number(vm.deal.listingId)
-                                    : vm.deal.id
-                                }
-                                sellerUsername={vm.deal.sellerUsername}
-                                isAdmin={isAdmin}
-                              />
-                            </td>
-                          ) : null}
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                                </div>
+                              </td>
+                              <td
+                                className={`${colClass("total", variant)} px-3 py-4 align-middle text-right`}
+                              >
+                                <div className="flex flex-col items-end gap-0.5">
+                                  <span className="text-base font-semibold">
+                                    {formatUSD(vm.totalUsd)}
+                                  </span>
+                                  {vm.whyDeal ? (
+                                    <WhyDealHint
+                                      label={vm.whyDeal.label}
+                                      tooltip={vm.whyDeal.tooltip}
+                                      className="text-xs text-slate-500"
+                                    />
+                                  ) : null}
+                                  {formatFreshness(vm.deal.updatedAt) && (
+                                    <span className="text-xs text-slate-500">
+                                      {formatFreshness(vm.deal.updatedAt)}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td
+                                className={`${colClass("historic", variant)} px-3 py-4 align-middle text-right text-base text-slate-600`}
+                              >
+                                {formatUSD(vm.historicUsd)}
+                              </td>
+                              <td
+                                className={`${colClass("discount", variant)} ${discountClass(
+                                  vm.discountPercent
+                                )} whitespace-nowrap px-3 py-4 align-middle text-right text-base font-semibold`}
+                              >
+                                {formatDiscount(vm.discountPercent)}
+                              </td>
+                              {!isNewestVariant && variant !== "default" ? (
+                                <td
+                                  className={`${colClass("score", variant)} px-3 py-4 align-middle text-right text-base`}
+                                >
+                                  <div className="flex flex-col items-end gap-1">
+                                    <span
+                                      className={`${scoreClass(vm.score)} font-semibold`}
+                                    >
+                                      {formatScore(vm.score)}
+                                    </span>
+                                    <TooltipPopover
+                                      content={CONFIDENCE_TOOLTIP}
+                                      triggerClassName={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
+                                        vm.priceConfidenceLabel
+                                      )}`}
+                                    >
+                                      {getConfidenceDisplayText(
+                                        vm.priceConfidenceLabel
+                                      )}
+                                    </TooltipPopover>
+                                  </div>
+                                </td>
+                              ) : null}
+                              {variant !== "default" ? (
+                                <td
+                                  className={`${colClass("confidence", variant)} px-3 py-4 align-middle`}
+                                >
+                                  <ConfidenceChip
+                                    weightLabel={vm.priceConfidenceLabel}
+                                    sampleSize={vm.sampleSize}
+                                    center={isNewestVariant}
+                                  />
+                                </td>
+                              ) : null}
+                              <td
+                                className={`${colClass("seller", variant)} px-3 py-4 align-middle text-left text-sm text-slate-700`}
+                              >
+                                <div className="flex min-w-0 items-start gap-2">
+                                  <div className="min-w-0">
+                                    <span
+                                      className={`flex min-w-0 items-center gap-1 ${
+                                        isNewestVariant ? "max-w-[100px]" : ""
+                                      }`}
+                                    >
+                                      <SellerNameWithTooltip
+                                        seller={getSellerDisplayData({
+                                          username: vm.deal.sellerUsername,
+                                          storeName: vm.deal.sellerStoreName,
+                                          feedbackCount:
+                                            vm.deal.sellerFeedbackCount,
+                                          feedbackPercent:
+                                            vm.deal.sellerPositivePercent,
+                                        })}
+                                        className="truncate text-slate-600"
+                                      />
+                                      {vm.trustedSeller ? (
+                                        <TrustedBadge className="flex-none" />
+                                      ) : null}
+                                    </span>
+                                    {sellerSalesBadge || sellerSeenBadge ? (
+                                      <div className="mt-0.5 space-y-0.5">
+                                        {sellerSalesBadge}
+                                        {sellerSeenBadge}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </td>
+                              <td
+                                className={`${colClass("market", variant)} px-3 py-4 align-middle text-left text-sm text-slate-600${
+                                  isNewestVariant
+                                    ? " whitespace-normal break-words"
+                                    : ""
+                                }`}
+                              >
+                                <span className="inline-flex items-center gap-1">
+                                  <span aria-hidden="true">
+                                    <MarketFlag
+                                      market={vm.deal.market ?? DEFAULT_MARKET}
+                                    />
+                                  </span>
+                                  <span aria-hidden="true">
+                                    {formatMarket(vm.deal.market).compactLabel}
+                                  </span>
+                                  <span className="sr-only">
+                                    {formatMarket(vm.deal.market).label}
+                                  </span>
+                                </span>
+                              </td>
+                              <td
+                                className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}
+                              >
+                                {renderEndsValue(vm.deal.endsAt)}
+                              </td>
+                              {isAdmin ? (
+                                <td className="px-3 py-4 align-middle text-sm">
+                                  <AdminDealActions
+                                    listingId={
+                                      vm.deal.listingId
+                                        ? Number(vm.deal.listingId)
+                                        : vm.deal.id
+                                    }
+                                    sellerUsername={vm.deal.sellerUsername}
+                                    isAdmin={isAdmin}
+                                  />
+                                </td>
+                              ) : null}
+                            </tr>
+                          );
+                        })}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -1197,18 +1294,15 @@ export default function DealsTable({
             {currentSlice.map((vm) => {
               const cardId = vm.deal.card?.id ?? vm.deal.cardId ?? null;
               const cardName =
-                vm.deal.card?.name ??
-                vm.deal.cardName ??
-                vm.deal.title ??
-                null;
+                vm.deal.card?.name ?? vm.deal.cardName ?? vm.deal.title ?? null;
               const setName = vm.deal.card?.setName ?? vm.deal.setName ?? null;
               const sellerSalesBadge = renderSellerSalesBadge(
-                vm.deal.sellerFeedbackCount,
+                vm.deal.sellerFeedbackCount
               );
               const sellerSeenBadge = renderSellerSeenBadge(
                 vm.deal.sellerSeenDealCount,
                 vm.deal.sellerSeenWindowDays,
-                vm.deal.sellerSeenMarket ?? viewState.marketKey,
+                vm.deal.sellerSeenMarket ?? viewState.marketKey
               );
               return (
                 <div
@@ -1246,7 +1340,9 @@ export default function DealsTable({
 
                   <div className="mt-3 grid grid-cols-2 gap-3 text-base">
                     <div>
-                      <p className="text-slate-500">{getHeaderLabel("total", "Total USD")}</p>
+                      <p className="text-slate-500">
+                        {getHeaderLabel("total", "Total USD")}
+                      </p>
                       <p className="text-base font-semibold text-slate-900">
                         {formatUSD(vm.totalUsd)}
                       </p>
@@ -1264,12 +1360,18 @@ export default function DealsTable({
                       )}
                     </div>
                     <div>
-                      <p className="text-slate-500">{getHeaderLabel("historic", "Historic USD")}</p>
+                      <p className="text-slate-500">
+                        {getHeaderLabel("historic", "Historic USD")}
+                      </p>
                       <p className="text-base">{formatUSD(vm.historicUsd)}</p>
                     </div>
                     <div>
-                      <p className="text-slate-500">{getHeaderLabel("discount", "Discount")}</p>
-                      <p className={`${discountClass(vm.discountPercent)} text-base`}>
+                      <p className="text-slate-500">
+                        {getHeaderLabel("discount", "Discount")}
+                      </p>
+                      <p
+                        className={`${discountClass(vm.discountPercent)} text-base`}
+                      >
                         {formatDiscount(vm.discountPercent)}
                       </p>
                     </div>
@@ -1282,7 +1384,7 @@ export default function DealsTable({
                         <TooltipPopover
                           content={CONFIDENCE_TOOLTIP}
                           triggerClassName={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
-                            vm.priceConfidenceLabel,
+                            vm.priceConfidenceLabel
                           )}`}
                         >
                           {getConfidenceDisplayText(vm.priceConfidenceLabel)}
@@ -1292,9 +1394,7 @@ export default function DealsTable({
                   </div>
 
                   <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-                    <span>
-                      Confidence: {getConfidenceLabel(vm.sampleSize)}
-                    </span>
+                    <span>Confidence: {getConfidenceLabel(vm.sampleSize)}</span>
                     <div className="flex flex-col gap-0.5">
                       <span className="flex items-center gap-1">
                         <span className="text-slate-500">Seller:</span>
@@ -1307,7 +1407,9 @@ export default function DealsTable({
                           })}
                           className="text-slate-600"
                         />
-                        {vm.trustedSeller ? <TrustedBadge className="flex-none" /> : null}
+                        {vm.trustedSeller ? (
+                          <TrustedBadge className="flex-none" />
+                        ) : null}
                       </span>
                       {sellerSalesBadge || sellerSeenBadge ? (
                         <div className="space-y-0.5">
@@ -1333,7 +1435,11 @@ export default function DealsTable({
                     {(() => {
                       const endsDisplay = getEndsAtDisplay(vm.deal.endsAt);
                       return (
-                        <TooltipPopover content={endsDisplay.tooltip} tooltipClassName="whitespace-nowrap" usePortal={true}>
+                        <TooltipPopover
+                          content={endsDisplay.tooltip}
+                          tooltipClassName="whitespace-nowrap"
+                          usePortal={true}
+                        >
                           Ends {endsDisplay.label}
                         </TooltipPopover>
                       );
@@ -1400,9 +1506,9 @@ export default function DealsTable({
           disabled={
             serverMode
               ? !remoteMeta ||
-              remoteLoading ||
-              (remoteMeta.totalPages != null &&
-                remoteMeta.page >= remoteMeta.totalPages)
+                remoteLoading ||
+                (remoteMeta.totalPages != null &&
+                  remoteMeta.page >= remoteMeta.totalPages)
               : currentPage >= totalPages
           }
         >

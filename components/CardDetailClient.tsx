@@ -11,7 +11,10 @@ import { WatchlistStarButton } from "./WatchlistStarButton";
 import { CardIdentityBlock } from "./CardIdentity";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { MarketFlag } from "./MarketFlag";
-import { SellerNameWithTooltip, formatSellerSalesCount } from "./SellerNameWithTooltip";
+import {
+  SellerNameWithTooltip,
+  formatSellerSalesCount,
+} from "./SellerNameWithTooltip";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { WhyDealHint } from "./WhyDealHint";
 import { SellerSeenBadge } from "./SellerSeenBadge";
@@ -162,14 +165,12 @@ function getSeenMarketLabel(value: string | null | undefined): string {
   return getMarketLabel(normalized);
 }
 
-
-
 // Convert ListingRow to Deal for buildDealViewModel
 function listingRowToDeal(
   listing: ListingRow,
   cardId: number,
   cardName: string,
-  setName: string,
+  setName: string
 ): Deal {
   return {
     id: listing.id,
@@ -213,9 +214,7 @@ function listingRowToDeal(
   };
 }
 
-export default function CardDetailClient({
-  detail,
-}: CardDetailClientProps) {
+export default function CardDetailClient({ detail }: CardDetailClientProps) {
   const {
     card,
     historicals,
@@ -228,10 +227,10 @@ export default function CardDetailClient({
   const conditionLabel = formatConditionLabel(card.condition ?? null);
 
   const [conditionFilter, setConditionFilter] = useState<ConditionFilterKey>(
-    CONDITION_FILTERS[0]?.key ?? "all",
+    CONDITION_FILTERS[0]?.key ?? "all"
   );
   const [marketFilter, setMarketFilter] = useState<MarketFilterKey>(
-    selectedMarket ?? (MARKET_FILTERS[0]?.key ?? "all"),
+    selectedMarket ?? MARKET_FILTERS[0]?.key ?? "all"
   );
   const [showOtherMarkets, setShowOtherMarkets] = useState(false);
   const [otherMarketListings, setOtherMarketListings] = useState<
@@ -239,7 +238,7 @@ export default function CardDetailClient({
   >({});
   const [otherMarketsLoading, setOtherMarketsLoading] = useState(false);
   const [otherMarketsError, setOtherMarketsError] = useState<string | null>(
-    null,
+    null
   );
 
   useEffect(() => {
@@ -248,7 +247,8 @@ export default function CardDetailClient({
     setOtherMarketListings({});
     setOtherMarketsError(null);
   }, [selectedMarket]);
-  const [priceConfFilter, setPriceConfFilter] = useState<ConfidenceFilterKey>("all");
+  const [priceConfFilter, setPriceConfFilter] =
+    useState<ConfidenceFilterKey>("all");
   const [headerSort, setHeaderSort] = useState<HeaderSort>({
     key: "total", // Default: Total ASC
     dir: "asc",
@@ -260,7 +260,7 @@ export default function CardDetailClient({
     useState<PriceHistoryStatus>("idle");
   const [alertEmail, setAlertEmail] = useState("");
   const [alertThreshold, setAlertThreshold] = useState(
-    ALERT_THRESHOLD_OPTIONS[0],
+    ALERT_THRESHOLD_OPTIONS[0]
   );
   const [alertStatus, setAlertStatus] = useState<AlertStatus>("idle");
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
@@ -313,7 +313,7 @@ export default function CardDetailClient({
     let filtered = viewModels.filter(
       (vm) =>
         matchesConditionFilter(vm.deal.condition, conditionFilter) &&
-        matchesMarket(vm.deal.market, marketFilter),
+        matchesMarket(vm.deal.market, marketFilter)
     );
 
     // Price confidence filter
@@ -386,8 +386,10 @@ export default function CardDetailClient({
   const selectedHistorical = useMemo(() => {
     return (
       historicals.find((row) =>
-        matchesConditionFilter(row.condition, conditionFilter),
-      ) ?? historicals[0] ?? null
+        matchesConditionFilter(row.condition, conditionFilter)
+      ) ??
+      historicals[0] ??
+      null
     );
   }, [historicals, conditionFilter]);
 
@@ -399,8 +401,8 @@ export default function CardDetailClient({
             vm.integrityStatus !== "REVIEW") &&
           isDealTrusted(
             vm.deal.sellerFeedbackCount,
-            vm.deal.sellerPositivePercent,
-          ),
+            vm.deal.sellerPositivePercent
+          )
       )
       .sort((a, b) => {
         const discountA = a.discountPercent ?? Number.POSITIVE_INFINITY;
@@ -432,7 +434,7 @@ export default function CardDetailClient({
   }, [bestTrustedDeal, listings]);
 
   const listingsLabel = `${filteredListings.length} listings / ${getSampleConfidenceLabel(
-    selectedHistorical?.sampleSize ?? null,
+    selectedHistorical?.sampleSize ?? null
   )} data`;
   const historyPointCount = priceHistory.length;
   const historyLabel = conditionLabel ?? "This condition";
@@ -444,9 +446,7 @@ export default function CardDetailClient({
   const canShowOtherMarkets =
     selectedMarket !== "all" && !hasAnyListings && otherMarketCounts.length > 0;
   const selectedMarketLabel =
-    selectedMarket === "all"
-      ? "All markets"
-      : getMarketLabel(selectedMarket);
+    selectedMarket === "all" ? "All markets" : getMarketLabel(selectedMarket);
   const otherMarketSummary = otherMarketCounts
     .map((entry) => `${getMarketCompactLabel(entry.market)} (${entry.count})`)
     .join(", ");
@@ -475,7 +475,10 @@ export default function CardDetailClient({
       const dates = priceHistory.map((p) => new Date(p.date).getTime());
       const minDate = Math.min(...dates);
       const maxDate = Math.max(...dates);
-      const daySpan = Math.max(1, Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)));
+      const daySpan = Math.max(
+        1,
+        Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24))
+      );
 
       // Calculate average sales per week (approximate, rounded)
       const weeksSpan = Math.max(1, daySpan / 7);
@@ -567,7 +570,7 @@ export default function CardDetailClient({
       }
       setAlertStatus("success");
       setAlertMessage(
-        `We'll email ${trimmed} when the discount hits ${alertThreshold}%`,
+        `We'll email ${trimmed} when the discount hits ${alertThreshold}%`
       );
     } catch (error) {
       console.error(error);
@@ -601,7 +604,7 @@ export default function CardDetailClient({
         .map((entry) => entry.market)
         .join(",");
       const res = await fetch(
-        `/api/cards/${card.id}/other-markets?markets=${encodeURIComponent(marketsParam)}`,
+        `/api/cards/${card.id}/other-markets?markets=${encodeURIComponent(marketsParam)}`
       );
       if (!res.ok) {
         throw new Error(`Request failed (${res.status})`);
@@ -616,7 +619,7 @@ export default function CardDetailClient({
       setOtherMarketListings(grouped);
     } catch (error) {
       setOtherMarketsError(
-        error instanceof Error ? error.message : "Unable to load other markets",
+        error instanceof Error ? error.message : "Unable to load other markets"
       );
     } finally {
       setOtherMarketsLoading(false);
@@ -640,7 +643,10 @@ export default function CardDetailClient({
             <div className="aspect-[3/4] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
               {(card.stockImageUrl ?? filteredListings[0]?.thumbnailUrl) ? (
                 <Image
-                  src={(card.stockImageUrl ?? filteredListings[0]?.thumbnailUrl) as string}
+                  src={
+                    (card.stockImageUrl ??
+                      filteredListings[0]?.thumbnailUrl) as string
+                  }
                   alt={card.name}
                   width={320}
                   height={420}
@@ -687,7 +693,9 @@ export default function CardDetailClient({
                   />
                 </div>
               </div>
-              <div className={`grid gap-4 ${bestTrustedDeal && bestTrustedDeal.totalUsd && bestTrustedDeal.deal.market ? "md:grid-cols-2" : ""}`}>
+              <div
+                className={`grid gap-4 ${bestTrustedDeal && bestTrustedDeal.totalUsd && bestTrustedDeal.deal.market ? "md:grid-cols-2" : ""}`}
+              >
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs uppercase text-slate-500">
                     Historic median (USD)
@@ -701,92 +709,97 @@ export default function CardDetailClient({
                       : "Limited data"}
                   </p>
                 </div>
-                {bestTrustedDeal && bestTrustedDeal.totalUsd && bestTrustedDeal.deal.market && (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs uppercase text-slate-500">
-                      Best trusted deal (USD)
-                    </p>
-                    <div className="mt-1 space-y-2">
-                      <div className="flex items-baseline gap-2">
-                        <p className="text-2xl font-semibold text-slate-900">
-                          {formatUSD(bestTrustedDeal.totalUsd)}
+                {bestTrustedDeal &&
+                  bestTrustedDeal.totalUsd &&
+                  bestTrustedDeal.deal.market && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs uppercase text-slate-500">
+                        Best trusted deal (USD)
+                      </p>
+                      <div className="mt-1 space-y-2">
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-2xl font-semibold text-slate-900">
+                            {formatUSD(bestTrustedDeal.totalUsd)}
+                          </p>
+                          {bestDealFreshness && (
+                            <span className="text-xs text-slate-500">
+                              · {bestDealFreshness}
+                            </span>
+                          )}
+                        </div>
+                        {bestTrustedPriceBreakdown && (
+                          <p className="text-xs text-slate-500">
+                            {bestTrustedPriceBreakdown.item != null
+                              ? `Item ${formatUSD(bestTrustedPriceBreakdown.item)}`
+                              : "Item price unavailable"}{" "}
+                            {bestTrustedPriceBreakdown.shipping != null
+                              ? `+ Shipping ${formatUSD(bestTrustedPriceBreakdown.shipping)}`
+                              : "+ shipping at checkout"}
+                          </p>
+                        )}
+                        <p
+                          className={`text-sm ${discountClass(
+                            bestTrustedDeal.discountPercent ?? null
+                          )}`}
+                        >
+                          {formatDiscount(bestTrustedDeal.discountPercent)}
                         </p>
-                        {bestDealFreshness && (
-                          <span className="text-xs text-slate-500">
-                            · {bestDealFreshness}
-                          </span>
+                        {bestTrustedDealUrl && (
+                          <a
+                            href={bestTrustedDealUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-slate-700 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                          >
+                            <span>View listing</span>
+                            <svg
+                              viewBox="0 0 20 20"
+                              fill="none"
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5 stroke-current"
+                              strokeWidth="1.5"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M11 4h5v5"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M16 4l-5.75 5.75"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M9 6H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3"
+                              />
+                            </svg>
+                          </a>
                         )}
                       </div>
-                      {bestTrustedPriceBreakdown && (
-                        <p className="text-xs text-slate-500">
-                          {bestTrustedPriceBreakdown.item != null
-                            ? `Item ${formatUSD(bestTrustedPriceBreakdown.item)}`
-                            : "Item price unavailable"}{" "}
-                          {bestTrustedPriceBreakdown.shipping != null
-                            ? `+ Shipping ${formatUSD(bestTrustedPriceBreakdown.shipping)}`
-                            : "+ shipping at checkout"}
-                        </p>
-                      )}
-                      <p
-                        className={`text-sm ${discountClass(
-                          bestTrustedDeal.discountPercent ?? null,
-                        )}`}
-                      >
-                        {formatDiscount(bestTrustedDeal.discountPercent)}
-                      </p>
-                      {bestTrustedDealUrl && (
-                        <a
-                          href={bestTrustedDealUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-slate-700 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                      {bestTrustedDeal.deal.endsAt && (
+                        <TooltipPopover
+                          content={
+                            getEndsAtDisplay(bestTrustedDeal.deal.endsAt)
+                              .tooltip
+                          }
+                          className="block text-xs text-slate-500"
+                          triggerClassName="text-xs text-slate-500"
+                          tooltipClassName="whitespace-nowrap"
+                          usePortal={true}
                         >
-                          <span>View listing</span>
-                          <svg
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            aria-hidden="true"
-                            className="h-3.5 w-3.5 stroke-current"
-                            strokeWidth="1.5"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M11 4h5v5"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M16 4l-5.75 5.75"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 6H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3"
-                            />
-                          </svg>
-                        </a>
+                          {bestTrustedDeal.marketCode} /{" "}
+                          {getEndsAtDisplay(bestTrustedDeal.deal.endsAt).label}
+                        </TooltipPopover>
                       )}
+                      <p className="mt-3 text-xs text-slate-500">
+                        {bestDealFreshness
+                          ? `Updated ${bestDealFreshness} ago • Price may have changed on eBay`
+                          : "Price may have changed on eBay"}
+                      </p>
                     </div>
-                    {bestTrustedDeal.deal.endsAt && (
-                      <TooltipPopover
-                        content={getEndsAtDisplay(bestTrustedDeal.deal.endsAt).tooltip}
-                        className="block text-xs text-slate-500"
-                        triggerClassName="text-xs text-slate-500"
-                        tooltipClassName="whitespace-nowrap"
-                        usePortal={true}
-                      >
-                        {bestTrustedDeal.marketCode} /{" "}
-                        {getEndsAtDisplay(bestTrustedDeal.deal.endsAt).label}
-                      </TooltipPopover>
-                    )}
-                    <p className="mt-3 text-xs text-slate-500">
-                      {bestDealFreshness
-                        ? `Updated ${bestDealFreshness} ago • Price may have changed on eBay`
-                        : "Price may have changed on eBay"}
-                    </p>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
 
@@ -794,7 +807,9 @@ export default function CardDetailClient({
               onSubmit={handleAlertSubmit}
               className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
             >
-              <p className="text-sm font-semibold text-slate-900">Email alerts</p>
+              <p className="text-sm font-semibold text-slate-900">
+                Email alerts
+              </p>
               <div className="grid gap-3 sm:grid-cols-[2fr_1fr_auto]">
                 <input
                   type="email"
@@ -844,7 +859,9 @@ export default function CardDetailClient({
       {moreFromSet.length > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6 lg:px-8">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-slate-900">More from this set</h2>
+            <h2 className="text-base font-semibold text-slate-900">
+              More from this set
+            </h2>
             <Link
               href={`/sets/${encodeURIComponent(card.setName)}#catalog-cards`}
               className="text-sm text-slate-600 transition hover:text-slate-900"
@@ -864,7 +881,9 @@ export default function CardDetailClient({
                     {relatedCard.name}
                   </p>
                   {relatedCard.cardNumber && (
-                    <p className="text-xs text-slate-500">#{relatedCard.cardNumber}</p>
+                    <p className="text-xs text-slate-500">
+                      #{relatedCard.cardNumber}
+                    </p>
                   )}
                 </div>
                 <svg
@@ -914,6 +933,7 @@ export default function CardDetailClient({
                   content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                   ariaLabel="Data reliability help"
                   triggerClassName="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500"
+                  tooltipClassName="tooltip-wide"
                   side="top"
                   size="wide"
                 >
@@ -958,7 +978,9 @@ export default function CardDetailClient({
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6 lg:px-8">
-        <h2 className="mb-3 text-base font-semibold text-slate-900">Price history</h2>
+        <h2 className="mb-3 text-base font-semibold text-slate-900">
+          Price history
+        </h2>
         {priceHistoryStatus === "loading" && (
           <p className="text-sm text-slate-500">Loading chart...</p>
         )}
@@ -984,403 +1006,454 @@ export default function CardDetailClient({
 
       <section className="rounded-2xl border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6 lg:px-8">
         <div className="mb-3 flex items-baseline justify-between gap-2">
-          <h2 className="text-base font-semibold text-slate-900">Live listings</h2>
+          <h2 className="text-base font-semibold text-slate-900">
+            Live listings
+          </h2>
           <p className="text-xs text-slate-500">{listingsLabel}</p>
         </div>
         <div className="w-full overflow-x-clip">
           <div className="w-full overflow-x-auto overflow-y-clip">
             <table className="min-w-full table-fixed text-sm text-slate-900">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-3 py-2 text-left">Listing</th>
-                <th 
-                  className="whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
-                  onClick={() => handleHeaderSort("total")}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      handleHeaderSort("total");
-                    }
-                  }}
-                  tabIndex={0}
-                  aria-label="Sort by Total USD"
-                  aria-sort={headerSort.key === "total" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
-                >
-                  <span className="inline-flex items-center justify-end">
-                    <span>Total USD</span>
-                    <SortArrow colKey="total" />
-                  </span>
-                </th>
-                <th 
-                  className="whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
-                  onClick={() => handleHeaderSort("historic")}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      handleHeaderSort("historic");
-                    }
-                  }}
-                  tabIndex={0}
-                  aria-label="Sort by Historic USD"
-                  aria-sort={headerSort.key === "historic" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
-                >
-                  <span className="inline-flex items-center justify-end">
-                    <span>Historic USD</span>
-                    <SortArrow colKey="historic" />
-                  </span>
-                </th>
-                <th 
-                  className="px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
-                  onClick={() => handleHeaderSort("discount")}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      handleHeaderSort("discount");
-                    }
-                  }}
-                  tabIndex={0}
-                  aria-label="Sort by Discount"
-                  aria-sort={headerSort.key === "discount" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
-                >
-                  <span className="inline-flex items-center justify-end">
-                    <span>Discount</span>
-                    <SortArrow colKey="discount" />
-                  </span>
-                </th>
-                <th
-                  className="whitespace-nowrap px-3 py-2 text-center"
-                >
-                  DATA RELIABILITY
-                </th>
-                <th 
-                  className="px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none"
-                  onClick={() => handleHeaderSort("seller")}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      handleHeaderSort("seller");
-                    }
-                  }}
-                  tabIndex={0}
-                  aria-label="Sort by Seller"
-                  aria-sort={headerSort.key === "seller" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
-                >
-                  <span className="inline-flex items-center">
-                    <span>Seller</span>
-                    <SortArrow colKey="seller" />
-                  </span>
-                </th>
-                <th className="px-3 py-2 text-left">Market</th>
-                <th 
-                  className="px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
-                  onClick={() => handleHeaderSort("ends")}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      handleHeaderSort("ends");
-                    }
-                  }}
-                  tabIndex={0}
-                  aria-label="Sort by Ends"
-                  aria-sort={headerSort.key === "ends" ? (headerSort.dir === "asc" ? "ascending" : "descending") : "none"}
-                >
-                  <span className="inline-flex items-center justify-end">
-                    <span>Ends</span>
-                    <SortArrow colKey="ends" />
-                  </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredListings.length === 0 ? (
+              <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-3 py-6 text-center"
+                  <th className="px-3 py-2 text-left">Listing</th>
+                  <th
+                    className="whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
+                    onClick={() => handleHeaderSort("total")}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleHeaderSort("total");
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-label="Sort by Total USD"
+                    aria-sort={
+                      headerSort.key === "total"
+                        ? headerSort.dir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
                   >
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm font-medium text-slate-700">
-                          {hasAnyListings
-                            ? "No listings match your current filters."
-                            : "No live deals right now"}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {hasAnyListings
-                            ? "Try adjusting condition or market selection."
-                            : "Deals appear periodically for this card."}
-                        </p>
-                      </div>
-
-                      {noDealsIntelligence && (
-                        <p className="pt-1 text-xs text-slate-600">
-                          {noDealsIntelligence.priceRangeLow !== null && (
-                            <span>
-                              Recent sold range:{" "}
-                              <span className="font-semibold text-slate-800">
-                                {noDealsIntelligence.priceRangeLow ===
-                                noDealsIntelligence.priceRangeHigh
-                                  ? formatCurrency(noDealsIntelligence.priceRangeLow)
-                                  : `${formatCurrency(noDealsIntelligence.priceRangeLow)} - ${formatCurrency(noDealsIntelligence.priceRangeHigh)}`}
-                              </span>
-                            </span>
-                          )}
-                          {noDealsIntelligence.frequencyHint && (
-                            <span>
-                              {noDealsIntelligence.priceRangeLow !== null ? " • " : ""}
-                              Deal frequency:{" "}
-                              <span className="font-semibold text-slate-800">
-                                {noDealsIntelligence.frequencyHint}
-                              </span>
-                            </span>
-                          )}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-center gap-2 pt-2">
-                        <WatchlistStarButton
-                          cardId={card.id}
-                          cardName={card.name}
-                          setName={card.setName}
-                        />
-                        <span className="text-sm text-slate-600">
-                          Watch this card
-                        </span>
-                      </div>
-
-                      {canShowOtherMarkets && (
-                        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-left">
-                          <p className="text-sm font-semibold text-slate-800">
-                            No {selectedMarketLabel} listings right now.
+                    <span className="inline-flex items-center justify-end">
+                      <span>Total USD</span>
+                      <SortArrow colKey="total" />
+                    </span>
+                  </th>
+                  <th
+                    className="whitespace-nowrap px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
+                    onClick={() => handleHeaderSort("historic")}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleHeaderSort("historic");
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-label="Sort by Historic USD"
+                    aria-sort={
+                      headerSort.key === "historic"
+                        ? headerSort.dir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
+                  >
+                    <span className="inline-flex items-center justify-end">
+                      <span>Historic USD</span>
+                      <SortArrow colKey="historic" />
+                    </span>
+                  </th>
+                  <th
+                    className="px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
+                    onClick={() => handleHeaderSort("discount")}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleHeaderSort("discount");
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-label="Sort by Discount"
+                    aria-sort={
+                      headerSort.key === "discount"
+                        ? headerSort.dir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
+                  >
+                    <span className="inline-flex items-center justify-end">
+                      <span>Discount</span>
+                      <SortArrow colKey="discount" />
+                    </span>
+                  </th>
+                  <th className="whitespace-nowrap px-3 py-2 text-center">
+                    DATA RELIABILITY
+                  </th>
+                  <th
+                    className="px-3 py-2 text-left cursor-pointer hover:bg-slate-100 select-none"
+                    onClick={() => handleHeaderSort("seller")}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleHeaderSort("seller");
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-label="Sort by Seller"
+                    aria-sort={
+                      headerSort.key === "seller"
+                        ? headerSort.dir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
+                  >
+                    <span className="inline-flex items-center">
+                      <span>Seller</span>
+                      <SortArrow colKey="seller" />
+                    </span>
+                  </th>
+                  <th className="px-3 py-2 text-left">Market</th>
+                  <th
+                    className="px-3 py-2 text-right cursor-pointer hover:bg-slate-100 select-none"
+                    onClick={() => handleHeaderSort("ends")}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleHeaderSort("ends");
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-label="Sort by Ends"
+                    aria-sort={
+                      headerSort.key === "ends"
+                        ? headerSort.dir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
+                  >
+                    <span className="inline-flex items-center justify-end">
+                      <span>Ends</span>
+                      <SortArrow colKey="ends" />
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredListings.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-3 py-6 text-center">
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium text-slate-700">
+                            {hasAnyListings
+                              ? "No listings match your current filters."
+                              : "No live deals right now"}
                           </p>
-                          <p className="mt-1 text-xs text-slate-600">
-                            Other markets available: {otherMarketSummary}
+                          <p className="mt-1 text-xs text-slate-500">
+                            {hasAnyListings
+                              ? "Try adjusting condition or market selection."
+                              : "Deals appear periodically for this card."}
                           </p>
-                          <div className="mt-3 flex flex-wrap items-center gap-3">
-                            <button
-                              type="button"
-                              className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white"
-                              onClick={() => void handleToggleOtherMarkets()}
-                            >
-                              {showOtherMarkets ? "Hide other markets" : "Show other markets"}
-                            </button>
-                            {otherMarketsLoading && (
-                              <span className="text-xs text-slate-500">
-                                Loading other markets...
+                        </div>
+
+                        {noDealsIntelligence && (
+                          <p className="pt-1 text-xs text-slate-600">
+                            {noDealsIntelligence.priceRangeLow !== null && (
+                              <span>
+                                Recent sold range:{" "}
+                                <span className="font-semibold text-slate-800">
+                                  {noDealsIntelligence.priceRangeLow ===
+                                  noDealsIntelligence.priceRangeHigh
+                                    ? formatCurrency(
+                                        noDealsIntelligence.priceRangeLow
+                                      )
+                                    : `${formatCurrency(noDealsIntelligence.priceRangeLow)} - ${formatCurrency(noDealsIntelligence.priceRangeHigh)}`}
+                                </span>
                               </span>
                             )}
-                            {otherMarketsError && (
-                              <span className="text-xs text-rose-600">
-                                {otherMarketsError}
+                            {noDealsIntelligence.frequencyHint && (
+                              <span>
+                                {noDealsIntelligence.priceRangeLow !== null
+                                  ? " • "
+                                  : ""}
+                                Deal frequency:{" "}
+                                <span className="font-semibold text-slate-800">
+                                  {noDealsIntelligence.frequencyHint}
+                                </span>
                               </span>
+                            )}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-center gap-2 pt-2">
+                          <WatchlistStarButton
+                            cardId={card.id}
+                            cardName={card.name}
+                            setName={card.setName}
+                          />
+                          <span className="text-sm text-slate-600">
+                            Watch this card
+                          </span>
+                        </div>
+
+                        {canShowOtherMarkets && (
+                          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-left">
+                            <p className="text-sm font-semibold text-slate-800">
+                              No {selectedMarketLabel} listings right now.
+                            </p>
+                            <p className="mt-1 text-xs text-slate-600">
+                              Other markets available: {otherMarketSummary}
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-3">
+                              <button
+                                type="button"
+                                className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-white"
+                                onClick={() => void handleToggleOtherMarkets()}
+                              >
+                                {showOtherMarkets
+                                  ? "Hide other markets"
+                                  : "Show other markets"}
+                              </button>
+                              {otherMarketsLoading && (
+                                <span className="text-xs text-slate-500">
+                                  Loading other markets...
+                                </span>
+                              )}
+                              {otherMarketsError && (
+                                <span className="text-xs text-rose-600">
+                                  {otherMarketsError}
+                                </span>
+                              )}
+                            </div>
+
+                            {showOtherMarkets && !otherMarketsLoading && (
+                              <div className="mt-4 space-y-4">
+                                {otherMarketCounts.map((entry) => {
+                                  const listingsForMarket =
+                                    otherMarketListings[entry.market] ?? [];
+                                  return (
+                                    <div
+                                      key={entry.market}
+                                      className="space-y-2"
+                                    >
+                                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                        {getMarketLabel(entry.market)} (
+                                        {entry.count})
+                                      </div>
+                                      {listingsForMarket.length === 0 ? (
+                                        <p className="text-xs text-slate-500">
+                                          No listings loaded yet for this
+                                          market.
+                                        </p>
+                                      ) : (
+                                        <ul className="space-y-2 text-sm text-slate-700">
+                                          {listingsForMarket.map((listing) => (
+                                            <li
+                                              key={listing.id}
+                                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"
+                                            >
+                                              <a
+                                                href={buildAffiliateUrl(
+                                                  listing.url ?? ""
+                                                )}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="min-w-0 flex-1 truncate text-slate-900 hover:text-amber-600"
+                                                title={listing.title}
+                                              >
+                                                {listing.title}
+                                              </a>
+                                              <span className="text-xs text-slate-500">
+                                                {formatUSD(listing.totalUsd)}
+                                              </span>
+                                              <span className="text-xs text-slate-500">
+                                                {listing.sellerUsername ?? "--"}
+                                              </span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             )}
                           </div>
-
-                          {showOtherMarkets && !otherMarketsLoading && (
-                            <div className="mt-4 space-y-4">
-                              {otherMarketCounts.map((entry) => {
-                                const listingsForMarket =
-                                  otherMarketListings[entry.market] ?? [];
-                                return (
-                                  <div key={entry.market} className="space-y-2">
-                                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                      {getMarketLabel(entry.market)} ({entry.count})
-                                    </div>
-                                    {listingsForMarket.length === 0 ? (
-                                      <p className="text-xs text-slate-500">
-                                        No listings loaded yet for this market.
-                                      </p>
-                                    ) : (
-                                      <ul className="space-y-2 text-sm text-slate-700">
-                                        {listingsForMarket.map((listing) => (
-                                          <li
-                                            key={listing.id}
-                                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"
-                                          >
-                                            <a
-                                              href={buildAffiliateUrl(listing.url ?? "")}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="min-w-0 flex-1 truncate text-slate-900 hover:text-amber-600"
-                                              title={listing.title}
-                                            >
-                                              {listing.title}
-                                            </a>
-                                            <span className="text-xs text-slate-500">
-                                              {formatUSD(listing.totalUsd)}
-                                            </span>
-                                            <span className="text-xs text-slate-500">
-                                              {listing.sellerUsername ?? "--"}
-                                            </span>
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredListings.map((vm) => {
-                  const listing = vm.deal;
-                  const weightLabel = vm.priceConfidenceLabel;
-                  const sellerSalesText = formatSellerSalesCount(
-                    listing.sellerFeedbackCount ?? null,
-                  );
-                  const sellerSeenBadge = (
-                    <SellerSeenBadge
-                      count={listing.sellerSeenDealCount}
-                      windowDays={listing.sellerSeenWindowDays}
-                      marketLabel={getSeenMarketLabel(listing.sellerSeenMarket)}
-                    />
-                  );
-                  return (
-                    <tr key={listing.id} className="even:bg-slate-50/50 hover:bg-slate-100">
-                      <td className="px-3 py-4 align-middle">
-                        <div className="flex items-start gap-3">
-                          {listing.thumbnailUrl ? (
-                            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
-                              <Image
-                                src={listing.thumbnailUrl}
-                                alt={listing.title ?? ""}
-                                width={64}
-                                height={64}
-                                className="h-full w-full object-contain"
-                              />
-                            </div>
-                          ) : (
-                            <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
-                          )}
-                          <CardIdentityBlock
-                            identity={{
-                              primary: detail.card.name ?? listing.title,
-                              setName: detail.card.setName ?? null,
-                              listingTitle: listing.title,
-                              cardId: detail.card.id,
-                            }}
-                            primaryHref={buildAffiliateUrl(listing.url ?? "")}
-                            showListingTitle
-                            showViewCardLink={false}
-                          />
-                          {vm.integrityStatus === "REVIEW" && (
-                            <TooltipPopover
-                              content={
-                                listing.integrityReason ??
-                                "Flagged automatically for manual review"
-                              }
-                              triggerClassName="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
-                            >
-                              Review
-                            </TooltipPopover>
-                          )}
-                        </div>
-                      </td>
-                    <td className="px-3 py-4 align-middle text-right">
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="text-base font-semibold">
-                          {formatUSD(vm.totalUsd)}
-                        </span>
-                        {vm.whyDeal ? (
-                          <WhyDealHint
-                            label={vm.whyDeal.label}
-                            tooltip={vm.whyDeal.tooltip}
-                            className="text-xs text-slate-500"
-                          />
-                        ) : null}
-                        {formatFreshness(listing.updatedAt) && (
-                          <span className="text-xs text-slate-500">
-                            {formatFreshness(listing.updatedAt)}
-                          </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-4 align-middle text-right text-base text-slate-600">
-                      {formatUSD(vm.historicUsd)}
-                    </td>
-                    <td
-                      className={`px-3 py-4 align-middle text-right text-base font-semibold ${discountClass(
-                        vm.discountPercent,
-                      )}`}
-                    >
-                      {formatDiscount(vm.discountPercent)}
-                    </td>
-                    <td className="px-3 py-4 align-middle text-center">
-                      <ConfidenceChip
-                        weightLabel={weightLabel}
-                        sampleSize={vm.sampleSize}
-                        center={false}
+                  </tr>
+                ) : (
+                  filteredListings.map((vm) => {
+                    const listing = vm.deal;
+                    const weightLabel = vm.priceConfidenceLabel;
+                    const sellerSalesText = formatSellerSalesCount(
+                      listing.sellerFeedbackCount ?? null
+                    );
+                    const sellerSeenBadge = (
+                      <SellerSeenBadge
+                        count={listing.sellerSeenDealCount}
+                        windowDays={listing.sellerSeenWindowDays}
+                        marketLabel={getSeenMarketLabel(
+                          listing.sellerSeenMarket
+                        )}
                       />
-                    </td>
-                    <td className="px-3 py-4 align-middle text-sm text-slate-700 w-[160px] overflow-visible">
-                      <div className="flex min-w-0 items-start gap-2">
-                        <div className="min-w-0">
-                          <div className="flex min-w-0 items-center gap-1">
-                            <SellerNameWithTooltip
-                              seller={getSellerDisplayData({
-                                username: listing.sellerUsername,
-                                storeName: listing.sellerStoreName,
-                                feedbackCount: listing.sellerFeedbackCount,
-                                feedbackPercent: listing.sellerPositivePercent,
-                              })}
-                              className="text-slate-700 truncate block"
+                    );
+                    return (
+                      <tr
+                        key={listing.id}
+                        className="even:bg-slate-50/50 hover:bg-slate-100"
+                      >
+                        <td className="px-3 py-4 align-middle">
+                          <div className="flex items-start gap-3">
+                            {listing.thumbnailUrl ? (
+                              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
+                                <Image
+                                  src={listing.thumbnailUrl}
+                                  alt={listing.title ?? ""}
+                                  width={64}
+                                  height={64}
+                                  className="h-full w-full object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
+                            )}
+                            <CardIdentityBlock
+                              identity={{
+                                primary: detail.card.name ?? listing.title,
+                                setName: detail.card.setName ?? null,
+                                listingTitle: listing.title,
+                                cardId: detail.card.id,
+                              }}
+                              primaryHref={buildAffiliateUrl(listing.url ?? "")}
+                              showListingTitle
+                              showViewCardLink={false}
                             />
-                            {isDealTrusted(
-                              listing.sellerFeedbackCount,
-                              listing.sellerPositivePercent,
-                            ) && <TrustedBadge className="flex-none" />}
+                            {vm.integrityStatus === "REVIEW" && (
+                              <TooltipPopover
+                                content={
+                                  listing.integrityReason ??
+                                  "Flagged automatically for manual review"
+                                }
+                                triggerClassName="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
+                              >
+                                Review
+                              </TooltipPopover>
+                            )}
                           </div>
-                          {sellerSalesText || sellerSeenBadge ? (
-                            <div className="mt-0.5 space-y-0.5">
-                              {sellerSalesText ? (
-                                <div className="text-[11px] text-slate-500">
-                                  <span aria-hidden="true">⭐</span>{" "}
-                                  <span>{sellerSalesText} sales</span>
+                        </td>
+                        <td className="px-3 py-4 align-middle text-right">
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-base font-semibold">
+                              {formatUSD(vm.totalUsd)}
+                            </span>
+                            {vm.whyDeal ? (
+                              <WhyDealHint
+                                label={vm.whyDeal.label}
+                                tooltip={vm.whyDeal.tooltip}
+                                className="text-xs text-slate-500"
+                              />
+                            ) : null}
+                            {formatFreshness(listing.updatedAt) && (
+                              <span className="text-xs text-slate-500">
+                                {formatFreshness(listing.updatedAt)}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-4 align-middle text-right text-base text-slate-600">
+                          {formatUSD(vm.historicUsd)}
+                        </td>
+                        <td
+                          className={`px-3 py-4 align-middle text-right text-base font-semibold ${discountClass(
+                            vm.discountPercent
+                          )}`}
+                        >
+                          {formatDiscount(vm.discountPercent)}
+                        </td>
+                        <td className="px-3 py-4 align-middle text-center">
+                          <ConfidenceChip
+                            weightLabel={weightLabel}
+                            sampleSize={vm.sampleSize}
+                            center={false}
+                          />
+                        </td>
+                        <td className="px-3 py-4 align-middle text-sm text-slate-700 w-[160px] overflow-visible">
+                          <div className="flex min-w-0 items-start gap-2">
+                            <div className="min-w-0">
+                              <div className="flex min-w-0 items-center gap-1">
+                                <SellerNameWithTooltip
+                                  seller={getSellerDisplayData({
+                                    username: listing.sellerUsername,
+                                    storeName: listing.sellerStoreName,
+                                    feedbackCount: listing.sellerFeedbackCount,
+                                    feedbackPercent:
+                                      listing.sellerPositivePercent,
+                                  })}
+                                  className="text-slate-700 truncate block"
+                                />
+                                {isDealTrusted(
+                                  listing.sellerFeedbackCount,
+                                  listing.sellerPositivePercent
+                                ) && <TrustedBadge className="flex-none" />}
+                              </div>
+                              {sellerSalesText || sellerSeenBadge ? (
+                                <div className="mt-0.5 space-y-0.5">
+                                  {sellerSalesText ? (
+                                    <div className="text-[11px] text-slate-500">
+                                      <span aria-hidden="true">⭐</span>{" "}
+                                      <span>{sellerSalesText} sales</span>
+                                    </div>
+                                  ) : null}
+                                  {sellerSeenBadge}
                                 </div>
                               ) : null}
-                              {sellerSeenBadge}
                             </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-4 align-middle text-sm text-slate-600">
-                      {(() => {
-                        const normalized = normalizeMarketCode(listing.market);
-                        const marketCode =
-                          normalized === "all" ? DEFAULT_MARKET : normalized;
-                        const { label, compactLabel } = formatMarket(marketCode);
-                        return (
-                          <span className="inline-flex items-center gap-1">
-                            <span aria-hidden="true">
-                              <MarketFlag market={marketCode} />
-                            </span>
-                            <span aria-hidden="true" >
-                              {compactLabel}
-                            </span>
-                            <span className="sr-only">
-                              {label}
-                            </span>
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-3 py-4 align-middle text-right text-slate-600">
-                      <TooltipPopover content={getEndsAtDisplay(listing.endsAt).tooltip} tooltipClassName="whitespace-nowrap" usePortal={true}>
-                        {getEndsAtDisplay(listing.endsAt).label}
-                      </TooltipPopover>
-                    </td>
-                  </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                          </div>
+                        </td>
+                        <td className="px-3 py-4 align-middle text-sm text-slate-600">
+                          {(() => {
+                            const normalized = normalizeMarketCode(
+                              listing.market
+                            );
+                            const marketCode =
+                              normalized === "all"
+                                ? DEFAULT_MARKET
+                                : normalized;
+                            const { label, compactLabel } =
+                              formatMarket(marketCode);
+                            return (
+                              <span className="inline-flex items-center gap-1">
+                                <span aria-hidden="true">
+                                  <MarketFlag market={marketCode} />
+                                </span>
+                                <span aria-hidden="true">{compactLabel}</span>
+                                <span className="sr-only">{label}</span>
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-3 py-4 align-middle text-right text-slate-600">
+                          <TooltipPopover
+                            content={getEndsAtDisplay(listing.endsAt).tooltip}
+                            tooltipClassName="whitespace-nowrap"
+                            usePortal={true}
+                          >
+                            {getEndsAtDisplay(listing.endsAt).label}
+                          </TooltipPopover>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>

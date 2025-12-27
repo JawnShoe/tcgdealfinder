@@ -6,10 +6,16 @@
  */
 
 import Image from "next/image";
-import { CardIdentityBlock, buildCardIdentityFromDeal } from "../components/CardIdentity";
+import {
+  CardIdentityBlock,
+  buildCardIdentityFromDeal,
+} from "../components/CardIdentity";
 import { TrustedBadge } from "../components/TrustedBadge";
 import { ConfidenceChip } from "../components/ConfidenceChip";
-import { SellerNameWithTooltip, formatSellerSalesCount } from "../components/SellerNameWithTooltip";
+import {
+  SellerNameWithTooltip,
+  formatSellerSalesCount,
+} from "../components/SellerNameWithTooltip";
 import { WatchlistStarButton } from "../components/WatchlistStarButton";
 import { getSellerDisplayData } from "./sellerDisplay";
 import type { DealViewModel } from "./dealViewModel";
@@ -21,16 +27,25 @@ import {
   formatCondition,
   formatMarket,
   discountClass,
+  formatPriceWithApprox,
 } from "./dealFormatting";
 import { MarketFlag } from "../components/MarketFlag";
 import { WhyDealHint } from "../components/WhyDealHint";
 import { SellerSeenBadge } from "../components/SellerSeenBadge";
 import { TooltipPopover } from "../components/TooltipPopover";
-import { TABLE_TH, TABLE_TH_RIGHT, TABLE_TH_NOWRAP, TABLE_TD, TABLE_TD_RIGHT, NUM_CELL, NUM_CELL_SECONDARY } from "./typography";
+import {
+  TABLE_TH,
+  TABLE_TH_RIGHT,
+  TABLE_TH_NOWRAP,
+  TABLE_TD,
+  TABLE_TD_RIGHT,
+  NUM_CELL,
+  NUM_CELL_SECONDARY,
+} from "./typography";
 import { getMarketLabel, normalizeMarketCode } from "./markets";
 
 function renderSellerSalesBadge(
-  salesCount: number | null | undefined,
+  salesCount: number | null | undefined
 ): JSX.Element | null {
   const formatted = formatSellerSalesCount(salesCount);
   if (!formatted) {
@@ -54,7 +69,7 @@ function getSeenMarketLabel(value: string | null | undefined): string {
 function renderSellerSeenBadge(
   count: number | null | undefined,
   windowDays: number | null | undefined,
-  marketValue: string | null | undefined,
+  marketValue: string | null | undefined
 ): JSX.Element | null {
   return (
     <SellerSeenBadge
@@ -112,10 +127,7 @@ const CardColumn: ColumnSpec = {
     const imageUrl = vm.stockImageUrl ?? vm.thumbnailUrl;
     const cardId = vm.deal.card?.id ?? vm.deal.cardId ?? null;
     const cardName =
-      vm.deal.card?.name ??
-      vm.deal.cardName ??
-      vm.deal.title ??
-      null;
+      vm.deal.card?.name ?? vm.deal.cardName ?? vm.deal.title ?? null;
     const setName = vm.deal.card?.setName ?? vm.deal.setName ?? null;
     return (
       <div className="flex items-start gap-2.5">
@@ -215,22 +227,32 @@ const ConditionColumn: ColumnSpec = {
 
 const TotalColumn: ColumnSpec = {
   key: "total",
-  headerLabel: "Total USD",
+  headerLabel: "Total",
   headerClassName: `${TABLE_TH_RIGHT} ${TABLE_TH_NOWRAP}`,
   cellClassName: `${TABLE_TD_RIGHT}`,
   width: "w-[120px]",
-  renderCell: (vm) => (
-    <div className="flex flex-col items-end gap-0.5 text-right">
-      <span className={NUM_CELL}>{formatUSD(vm.totalUsd)}</span>
-      {vm.whyDeal ? (
-        <WhyDealHint
-          label={vm.whyDeal.label}
-          tooltip={vm.whyDeal.tooltip}
-          className="text-xs text-slate-500"
-        />
-      ) : null}
-    </div>
-  ),
+  renderCell: (vm) => {
+    const { primary, secondary } = formatPriceWithApprox(
+      vm.totalNative,
+      vm.currency,
+      vm.totalUsd
+    );
+    return (
+      <div className="flex flex-col items-end gap-0.5 text-right">
+        <span className={NUM_CELL}>{primary}</span>
+        {secondary ? (
+          <span className="text-xs text-slate-500">{secondary}</span>
+        ) : null}
+        {vm.whyDeal ? (
+          <WhyDealHint
+            label={vm.whyDeal.label}
+            tooltip={vm.whyDeal.tooltip}
+            className="text-xs text-slate-500"
+          />
+        ) : null}
+      </div>
+    );
+  },
 };
 
 const HistoricColumn: ColumnSpec = {
@@ -250,7 +272,9 @@ const DiscountColumn: ColumnSpec = {
   headerClassName: `${TABLE_TH_RIGHT}`,
   cellClassName: `${TABLE_TD_RIGHT}`,
   renderCell: (vm) => (
-    <span className={`${discountClass(vm.discountPercent)} ${NUM_CELL} whitespace-nowrap`}>
+    <span
+      className={`${discountClass(vm.discountPercent)} ${NUM_CELL} whitespace-nowrap`}
+    >
       {formatDiscount(vm.discountPercent)}
     </span>
   ),
@@ -263,7 +287,12 @@ const ScoreColumn: ColumnSpec = {
   cellClassName: `${TABLE_TD_RIGHT}`,
   width: "w-[80px]",
   renderCell: (vm) => {
-    const scoreClass = vm.score !== null && vm.score >= 80 ? "text-emerald-600" : vm.score !== null && vm.score >= 60 ? "text-slate-900" : "text-slate-600";
+    const scoreClass =
+      vm.score !== null && vm.score >= 80
+        ? "text-emerald-600"
+        : vm.score !== null && vm.score >= 60
+          ? "text-slate-900"
+          : "text-slate-600";
     return (
       <span className={`${scoreClass} ${NUM_CELL} font-semibold`}>
         {vm.score !== null ? Math.round(vm.score) : "--"}
@@ -310,7 +339,7 @@ const SellerColumn: ColumnSpec = {
     const seen = renderSellerSeenBadge(
       vm.deal.sellerSeenDealCount,
       vm.deal.sellerSeenWindowDays,
-      vm.deal.sellerSeenMarket ?? vm.deal.market,
+      vm.deal.sellerSeenMarket ?? vm.deal.market
     );
     return (
       <div className="flex min-w-0 items-start gap-2">
@@ -347,7 +376,7 @@ const SellerColumnNarrow: ColumnSpec = {
     const seen = renderSellerSeenBadge(
       vm.deal.sellerSeenDealCount,
       vm.deal.sellerSeenWindowDays,
-      vm.deal.sellerSeenMarket ?? vm.deal.market,
+      vm.deal.sellerSeenMarket ?? vm.deal.market
     );
     return (
       <div className="flex min-w-0 items-start gap-2">
@@ -448,23 +477,63 @@ export const NewestColumns: ColumnSpec[] = [
 
 export const CardDetailListingsColumns: ColumnSpec[] = [
   ListingColumn,
-  { ...TotalColumn, sortable: true, sortKey: "totalUsd", defaultDirection: "asc" },
-  { ...HistoricColumn, sortable: true, sortKey: "historicUsd", defaultDirection: "desc" },
-  { ...DiscountColumn, sortable: true, sortKey: "discountPercent", defaultDirection: "desc" },
+  {
+    ...TotalColumn,
+    sortable: true,
+    sortKey: "totalUsd",
+    defaultDirection: "asc",
+  },
+  {
+    ...HistoricColumn,
+    sortable: true,
+    sortKey: "historicUsd",
+    defaultDirection: "desc",
+  },
+  {
+    ...DiscountColumn,
+    sortable: true,
+    sortKey: "discountPercent",
+    defaultDirection: "desc",
+  },
   PriceConfColumnCentered,
   SellerColumn,
   MarketColumn,
-  { ...EndsColumn, sortable: true, sortKey: "endsAtMs", defaultDirection: "asc" },
+  {
+    ...EndsColumn,
+    sortable: true,
+    sortKey: "endsAtMs",
+    defaultDirection: "asc",
+  },
 ];
 
 export const TopDealsColumns: ColumnSpec[] = [
   CardColumn,
-  { ...TotalColumn, sortable: true, sortKey: "totalUsd", defaultDirection: "asc" },
-  { ...HistoricColumn, sortable: true, sortKey: "historicUsd", defaultDirection: "desc" },
-  { ...DiscountColumn, sortable: true, sortKey: "discountPercent", defaultDirection: "desc" },
+  {
+    ...TotalColumn,
+    sortable: true,
+    sortKey: "totalUsd",
+    defaultDirection: "asc",
+  },
+  {
+    ...HistoricColumn,
+    sortable: true,
+    sortKey: "historicUsd",
+    defaultDirection: "desc",
+  },
+  {
+    ...DiscountColumn,
+    sortable: true,
+    sortKey: "discountPercent",
+    defaultDirection: "desc",
+  },
   SellerColumn,
   MarketColumn,
-  { ...EndsColumn, sortable: true, sortKey: "endsAtMs", defaultDirection: "asc" },
+  {
+    ...EndsColumn,
+    sortable: true,
+    sortKey: "endsAtMs",
+    defaultDirection: "asc",
+  },
 ];
 
 export const EndingSoonColumns: ColumnSpec[] = [

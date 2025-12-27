@@ -76,7 +76,6 @@ type HotCard = {
   bestDealUrl: string | null;
 };
 
-
 type HotCardRowData = {
   id: number;
   name: string;
@@ -89,7 +88,6 @@ type HotCardRowData = {
   deal_seller_feedback_count: number | null;
   deal_seller_positive_percent: number | null;
 };
-
 
 type DealRow = {
   id: number;
@@ -115,6 +113,11 @@ type DealRow = {
   card_set_name: string | null;
   card_number: string | null;
   card_condition_bucket: string | null;
+  // Native currency fields
+  currency: string | null;
+  price_native: string | null;
+  shipping_native: string | null;
+  total_native: string | null;
 };
 
 type SellerSeenCountRow = {
@@ -139,7 +142,7 @@ async function ensureSetExists(setName: string): Promise<boolean> {
         WHERE set_name = $1
       ) AS exists;
     `,
-    [setName],
+    [setName]
   );
   return Boolean(res.rows[0]?.exists);
 }
@@ -167,7 +170,7 @@ async function getSetMetadata(setName: string): Promise<SetMetadata | null> {
       WHERE name = $1
       LIMIT 1;
     `,
-    [setName],
+    [setName]
   );
 
   if (res.rows.length === 0) {
@@ -188,7 +191,7 @@ async function getSetMetadata(setName: string): Promise<SetMetadata | null> {
 
 async function getSetOverview(
   setName: string,
-  context: MarketContext,
+  context: MarketContext
 ): Promise<SetOverviewStats> {
   const totalsRes = await query<{ count: string }>(
     `
@@ -196,7 +199,7 @@ async function getSetOverview(
       FROM cards
       WHERE set_name = $1;
     `,
-    [setName],
+    [setName]
   );
   const listingsRes = await query<{
     card_count: string | null;
@@ -247,7 +250,7 @@ async function getSetOverview(
     `,
     context.hasListingsMarketColumn && context.market !== "all"
       ? [setName, context.market]
-      : [setName],
+      : [setName]
   );
 
   const listingRow = listingsRes.rows[0];
@@ -266,16 +269,17 @@ async function getSetOverview(
 
 async function getHotCards(
   setName: string,
-  context: MarketContext,
+  context: MarketContext
 ): Promise<HotCard[]> {
   const params: (string | number)[] = [
     setName,
     HOT_CARD_THRESHOLD,
     HOT_CARD_LIMIT,
   ];
-  const marketFilterClause = context.hasListingsMarketColumn && context.market !== "all"
-    ? "AND l.market = $4"
-    : "";
+  const marketFilterClause =
+    context.hasListingsMarketColumn && context.market !== "all"
+      ? "AND l.market = $4"
+      : "";
   if (context.hasListingsMarketColumn && context.market !== "all") {
     params.push(context.market);
   }
@@ -361,7 +365,7 @@ async function getHotCards(
       ORDER BY best.deal_discount_percent ASC
       LIMIT $3;
     `,
-    params,
+    params
   );
 
   const deals = res.rows.map((row) => {
@@ -407,7 +411,7 @@ async function getHotCards(
 
 async function getSetDeals(
   setName: string,
-  context: MarketContext,
+  context: MarketContext
 ): Promise<Deal[]> {
   const historicalMarket =
     context.market === "all" ? DEFAULT_MARKET : context.market;
@@ -415,9 +419,10 @@ async function getSetDeals(
   const marketSelect = context.hasListingsMarketColumn
     ? "l.market"
     : marketLiteral;
-  const marketFilterClause = context.hasListingsMarketColumn && context.market !== "all"
-    ? "AND l.market = $3"
-    : "";
+  const marketFilterClause =
+    context.hasListingsMarketColumn && context.market !== "all"
+      ? "AND l.market = $3"
+      : "";
   const historicalJoinClause =
     context.hasHistoricalMarketColumn && context.hasListingsMarketColumn
       ? "AND hp.market = l.market"
@@ -453,7 +458,11 @@ async function getSetDeals(
         c.name AS card_name,
         c.set_name AS card_set_name,
         c.card_number AS card_number,
-        c.condition_bucket AS card_condition_bucket
+        c.condition_bucket AS card_condition_bucket,
+        l.currency,
+        l.price_native,
+        l.shipping_native,
+        l.total_native
       FROM listings l
       JOIN cards c ON c.id = l.card_id
       LEFT JOIN historical_prices hp ON hp.card_id = l.card_id
@@ -494,7 +503,7 @@ async function getSetDeals(
         l.ends_at ASC NULLS LAST
       LIMIT $2;
     `,
-    params,
+    params
   );
 
   const deals: Deal[] = res.rows.map((row) => {
@@ -506,8 +515,7 @@ async function getSetDeals(
     const totalUsd = row.total_usd != null ? Number(row.total_usd) : null;
     const historicPriceCad =
       row.historic_price_cad != null ? Number(row.historic_price_cad) : null;
-    const sampleSize =
-      row.sample_size != null ? Number(row.sample_size) : null;
+    const sampleSize = row.sample_size != null ? Number(row.sample_size) : null;
     const sellerFeedbackCount =
       row.seller_feedback_count != null
         ? Number(row.seller_feedback_count)
@@ -521,7 +529,7 @@ async function getSetDeals(
       row.discount_percent != null ? Number(row.discount_percent) : null;
     let rawDiscount = computeDiscountPercent(
       totalPriceCad ?? priceCad,
-      historicPriceCad,
+      historicPriceCad
     );
     if (rawDiscount == null && storedDiscount != null) {
       rawDiscount = Number.isNaN(storedDiscount) ? null : storedDiscount;
@@ -568,6 +576,12 @@ async function getSetDeals(
       setName: row.card_set_name,
       cardName: row.card_name,
       cardId: row.card_id,
+      // Native currency fields
+      currency: row.currency ?? null,
+      priceNative: row.price_native != null ? Number(row.price_native) : null,
+      shippingNative:
+        row.shipping_native != null ? Number(row.shipping_native) : null,
+      totalNative: row.total_native != null ? Number(row.total_native) : null,
     };
   });
 
@@ -575,13 +589,13 @@ async function getSetDeals(
     new Set(
       deals
         .map((deal) => deal.sellerUsername)
-        .filter((seller): seller is string => Boolean(seller)),
-    ),
+        .filter((seller): seller is string => Boolean(seller))
+    )
   );
   const sellerSeenCounts = await fetchSellerSeenCountsForSet(
     sellerUsernames,
     setName,
-    context,
+    context
   );
   if (sellerSeenCounts.size > 0) {
     for (const deal of deals) {
@@ -601,7 +615,7 @@ async function getSetDeals(
 async function fetchSellerSeenCountsForSet(
   sellerUsernames: string[],
   setName: string,
-  context: MarketContext,
+  context: MarketContext
 ): Promise<Map<string, number>> {
   if (sellerUsernames.length === 0) {
     return new Map();
@@ -658,7 +672,7 @@ async function fetchSellerSeenCountsForSet(
         )
       GROUP BY l.seller_username;
     `,
-    params,
+    params
   );
 
   const counts = new Map<string, number>();
@@ -751,290 +765,301 @@ export default async function SetDetailPage({
     <main className="bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-10 space-y-8 pb-8">
         <header className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-4">
-            <Link
-              href="/sets"
-              className="text-sm text-slate-500 transition hover:text-slate-700"
-            >
-              Back to sets
-            </Link>
-            <div className="flex items-start gap-4">
-              {renderSetIconFromMetadata(metadata)}
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">
-                  Pokémon set
-                </p>
-                <h1 className="text-3xl font-bold text-slate-900">
-                  {displayName}
-                </h1>
-                <p className="text-base text-slate-600">
-                  Part of {seriesLabel}. Released {releaseLabel}.
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3 text-sm">
-            <Link
-              href="#deals"
-              className="inline-flex items-center rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              Jump to deals
-            </Link>
-            <a
-              href="#catalog-cards"
-              className="inline-flex items-center rounded-full border border-slate-200 px-4 py-2 text-slate-600 transition hover:bg-slate-50"
-            >
-              Jump to catalog cards
-            </a>
-          </div>
-        </div>
-        <div className="grid gap-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Series
-            </p>
-            <p className="text-base font-semibold text-slate-900">
-              {seriesLabel}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Release date
-            </p>
-            <p className="text-base font-semibold text-slate-900">
-              {releaseLabel}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Total cards
-            </p>
-            <p className="text-base font-semibold text-slate-900">
-              {totalCardsLabel ?? "Unknown"}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Catalog coverage
-            </p>
-            <p className="text-base font-semibold text-slate-900">
-              {catalogCoverageLabel}
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Cards with deals
-            </p>
-            <p className="text-base font-semibold text-slate-900">
-              {stats.cardCountWithDeals}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Active listings
-            </p>
-            <p className="text-base font-semibold text-slate-900">
-              {stats.activeListingsCount}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Avg discount
-            </p>
-            <p className="text-base font-semibold text-slate-900">
-              {formatDiscount(stats.avgDiscountPercent)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Best discount
-            </p>
-            <p className="text-base font-semibold text-slate-900">
-              {formatDiscount(stats.bestDiscountPercent)}
-            </p>
-          </div>
-        </div>
-      </header>
-
-      <section className="panel space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Hot cards in this set
-          </h2>
-          <p className="text-xs text-slate-500">
-            Showing cards with at least {Math.abs(HOT_CARD_THRESHOLD)}% off
-          </p>
-        </div>
-        {hotCards.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            No deals below recent median right now. Check back soon.
-          </p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {hotCards.map((card) => (
-              <div
-                key={card.id}
-                className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="text-sm font-semibold text-slate-900">
-                    <Link
-                      href={`/cards/${card.id}`}
-                      className="transition hover:text-slate-600"
-                    >
-                      {card.name}
-                    </Link>
-                  </div>
-                  <WatchlistStarButton
-                    cardId={card.id}
-                    cardName={card.name}
-                    setName={setName}
-                  />
-                </div>
-                <div className="text-xs text-slate-500">
-                  #{card.cardNumber ?? "—"} • {card.condition ?? "Unknown"}
-                </div>
-                <div className="mt-3 flex items-baseline justify-between text-sm">
-                  <span className="text-slate-500">Best price</span>
-                  <span className="font-semibold text-slate-900">
-                    {formatCurrency(card.bestDealTotalPriceCad)}
-                  </span>
-                </div>
-                <div className="mt-1 flex items-baseline justify-between text-sm">
-                  <span className="text-slate-500">Discount</span>
-                  <span className={discountBadgeClass(card.bestDealDiscountPercent)}>
-                    {formatDiscount(card.bestDealDiscountPercent)}
-                  </span>
-                </div>
-                <div className="mt-1 flex items-baseline justify-between text-xs text-slate-500">
-                  <span>Median:</span>
-                  <span>{formatCurrency(card.medianPriceCad)}</span>
-                </div>
-                <div className="mt-3">
-                  <a
-                    href={card.bestDealUrl ?? `/cards/${card.id}`}
-                    target={card.bestDealUrl ? "_blank" : "_self"}
-                    rel={card.bestDealUrl ? "noreferrer" : undefined}
-                    className="inline-flex w-full justify-center rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                  >
-                    View listing
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section id="deals" className="panel space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Live deals</h2>
-          <p className="text-xs text-slate-500">
-            Sorted by best discount with trust filters applied
-          </p>
-        </div>
-        {deals.length === 0 ? (
-          <div className="py-10 text-center text-sm text-slate-500">
-            No active listings for this set right now.
-          </div>
-        ) : (
-          <DealsTable deals={deals} page={1} totalPages={1} />
-        )}
-      </section>
-
-      <section id="catalog-cards" className="space-y-4">
-        <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Catalog cards</h2>
-            <p className="text-sm text-slate-500">
-              {catalogCardCount > 0
-                ? `${catalogCardCount} cards imported for this set`
-                : "Card data for this set is loading. Check back shortly."}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3 text-sm">
-            <Link
-              href="/sets"
-              className="inline-flex items-center rounded border border-slate-300 px-3 py-1.5 text-slate-700 transition hover:bg-white"
-            >
-              Back to sets
-            </Link>
-            <a
-              href="#deals"
-              className="inline-flex items-center rounded border border-slate-200 px-3 py-1.5 text-slate-500 transition hover:bg-white"
-            >
-              View live deals
-            </a>
-          </div>
-        </div>
-        {catalogCards.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center text-sm text-slate-500">
-            <p className="font-medium text-slate-700">No catalog cards yet</p>
-            <p className="mt-1">
-              We have the set, but card-level catalog data hasn&apos;t been imported for it yet.
-            </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-3">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-4">
               <Link
                 href="/sets"
-                className="inline-flex items-center rounded border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-white"
+                className="text-sm text-slate-500 transition hover:text-slate-700"
+              >
+                Back to sets
+              </Link>
+              <div className="flex items-start gap-4">
+                {renderSetIconFromMetadata(metadata)}
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                    Pokémon set
+                  </p>
+                  <h1 className="text-3xl font-bold text-slate-900">
+                    {displayName}
+                  </h1>
+                  <p className="text-base text-slate-600">
+                    Part of {seriesLabel}. Released {releaseLabel}.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3 text-sm">
+              <Link
+                href="#deals"
+                className="inline-flex items-center rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Jump to deals
+              </Link>
+              <a
+                href="#catalog-cards"
+                className="inline-flex items-center rounded-full border border-slate-200 px-4 py-2 text-slate-600 transition hover:bg-slate-50"
+              >
+                Jump to catalog cards
+              </a>
+            </div>
+          </div>
+          <div className="grid gap-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Series
+              </p>
+              <p className="text-base font-semibold text-slate-900">
+                {seriesLabel}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Release date
+              </p>
+              <p className="text-base font-semibold text-slate-900">
+                {releaseLabel}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Total cards
+              </p>
+              <p className="text-base font-semibold text-slate-900">
+                {totalCardsLabel ?? "Unknown"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Catalog coverage
+              </p>
+              <p className="text-base font-semibold text-slate-900">
+                {catalogCoverageLabel}
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Cards with deals
+              </p>
+              <p className="text-base font-semibold text-slate-900">
+                {stats.cardCountWithDeals}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Active listings
+              </p>
+              <p className="text-base font-semibold text-slate-900">
+                {stats.activeListingsCount}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Avg discount
+              </p>
+              <p className="text-base font-semibold text-slate-900">
+                {formatDiscount(stats.avgDiscountPercent)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Best discount
+              </p>
+              <p className="text-base font-semibold text-slate-900">
+                {formatDiscount(stats.bestDiscountPercent)}
+              </p>
+            </div>
+          </div>
+        </header>
+
+        <section className="panel space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Hot cards in this set
+            </h2>
+            <p className="text-xs text-slate-500">
+              Showing cards with at least {Math.abs(HOT_CARD_THRESHOLD)}% off
+            </p>
+          </div>
+          {hotCards.length === 0 ? (
+            <p className="text-sm text-slate-500">
+              No deals below recent median right now. Check back soon.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {hotCards.map((card) => (
+                <div
+                  key={card.id}
+                  className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-sm font-semibold text-slate-900">
+                      <Link
+                        href={`/cards/${card.id}`}
+                        className="transition hover:text-slate-600"
+                      >
+                        {card.name}
+                      </Link>
+                    </div>
+                    <WatchlistStarButton
+                      cardId={card.id}
+                      cardName={card.name}
+                      setName={setName}
+                    />
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    #{card.cardNumber ?? "—"} • {card.condition ?? "Unknown"}
+                  </div>
+                  <div className="mt-3 flex items-baseline justify-between text-sm">
+                    <span className="text-slate-500">Best price</span>
+                    <span className="font-semibold text-slate-900">
+                      {formatCurrency(card.bestDealTotalPriceCad)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-baseline justify-between text-sm">
+                    <span className="text-slate-500">Discount</span>
+                    <span
+                      className={discountBadgeClass(
+                        card.bestDealDiscountPercent
+                      )}
+                    >
+                      {formatDiscount(card.bestDealDiscountPercent)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-baseline justify-between text-xs text-slate-500">
+                    <span>Median:</span>
+                    <span>{formatCurrency(card.medianPriceCad)}</span>
+                  </div>
+                  <div className="mt-3">
+                    <a
+                      href={card.bestDealUrl ?? `/cards/${card.id}`}
+                      target={card.bestDealUrl ? "_blank" : "_self"}
+                      rel={card.bestDealUrl ? "noreferrer" : undefined}
+                      className="inline-flex w-full justify-center rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      View listing
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section id="deals" className="panel space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">Live deals</h2>
+            <p className="text-xs text-slate-500">
+              Sorted by best discount with trust filters applied
+            </p>
+          </div>
+          {deals.length === 0 ? (
+            <div className="py-10 text-center text-sm text-slate-500">
+              No active listings for this set right now.
+            </div>
+          ) : (
+            <DealsTable deals={deals} page={1} totalPages={1} />
+          )}
+        </section>
+
+        <section id="catalog-cards" className="space-y-4">
+          <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Catalog cards
+              </h2>
+              <p className="text-sm text-slate-500">
+                {catalogCardCount > 0
+                  ? `${catalogCardCount} cards imported for this set`
+                  : "Card data for this set is loading. Check back shortly."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 text-sm">
+              <Link
+                href="/sets"
+                className="inline-flex items-center rounded border border-slate-300 px-3 py-1.5 text-slate-700 transition hover:bg-white"
               >
                 Back to sets
               </Link>
               <a
                 href="#deals"
-                className="inline-flex items-center rounded border border-slate-200 px-4 py-2 text-slate-500 hover:bg-white"
+                className="inline-flex items-center rounded border border-slate-200 px-3 py-1.5 text-slate-500 transition hover:bg-white"
               >
                 View live deals
               </a>
             </div>
           </div>
-        ) : (
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                    <th className="px-4 py-3">#</th>
-                    <th className="px-4 py-3">Card</th>
-                    <th className="px-4 py-3">Rarity</th>
-                    <th className="px-4 py-3">Type</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {catalogCards.map((card, index) => (
-                    <tr
-                      key={card.id}
-                      className={index === 0 ? "" : "border-t border-slate-100"}
-                    >
-                      <td className="px-4 py-3 text-slate-500">
-                        {card.number ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-slate-900">
-                        {card.name}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {card.rarity ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {card.supertype ?? "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {catalogCards.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center text-sm text-slate-500">
+              <p className="font-medium text-slate-700">No catalog cards yet</p>
+              <p className="mt-1">
+                We have the set, but card-level catalog data hasn&apos;t been
+                imported for it yet.
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-3">
+                <Link
+                  href="/sets"
+                  className="inline-flex items-center rounded border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-white"
+                >
+                  Back to sets
+                </Link>
+                <a
+                  href="#deals"
+                  className="inline-flex items-center rounded border border-slate-200 px-4 py-2 text-slate-500 hover:bg-white"
+                >
+                  View live deals
+                </a>
+              </div>
             </div>
-          </div>
-        )}
-      </section>
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                      <th className="px-4 py-3">#</th>
+                      <th className="px-4 py-3">Card</th>
+                      <th className="px-4 py-3">Rarity</th>
+                      <th className="px-4 py-3">Type</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {catalogCards.map((card, index) => (
+                      <tr
+                        key={card.id}
+                        className={
+                          index === 0 ? "" : "border-t border-slate-100"
+                        }
+                      >
+                        <td className="px-4 py-3 text-slate-500">
+                          {card.number ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-slate-900">
+                          {card.name}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {card.rarity ?? "—"}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {card.supertype ?? "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
 }
 
-function renderSetIconFromMetadata(set: SetMetadata | null): JSX.Element | null {
+function renderSetIconFromMetadata(
+  set: SetMetadata | null
+): JSX.Element | null {
   const src = set?.symbolUrl ?? set?.logoUrl;
   if (!src) return null;
   return (
@@ -1072,10 +1097,8 @@ async function getCatalogCards(catalogSetId: number): Promise<CatalogCard[]> {
         COALESCE(NULLIF(number, ''), 'ZZZ') ASC,
         name ASC;
     `,
-    [catalogSetId],
+    [catalogSetId]
   );
 
   return res.rows;
 }
-
-

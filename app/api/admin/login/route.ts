@@ -21,6 +21,9 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ ok: true });
-  setAdminAuthCookie(response);
+  const cookieSet = setAdminAuthCookie(response);
+  if (!cookieSet) {
+    return new NextResponse("Failed to create auth token", { status: 500 });
+  }
   return response;
 }

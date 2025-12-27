@@ -26,8 +26,8 @@ on:
     - cron: "0 3 * * *"
     # Update sold listings daily at 4 AM UTC
     - cron: "0 4 * * *"
-    # NOTE: FX rates job removed from schedule - requires manual input
-    # Use workflow_dispatch to show current rates
+    # Update FX rates daily at 5 AM UTC (after sold listings)
+    - cron: "0 5 * * *"
 
   workflow_dispatch:
     inputs:
@@ -38,6 +38,7 @@ on:
         options:
           - update-listings
           - check-alerts
+          - update-fx-rates
           - show-fx-rates
           - update-historical-prices
           - update-sold-listings
@@ -160,6 +161,46 @@ jobs:
       # To update rates: run locally with --currency CAD --rate 0.72
       - name: Show current FX rates
         run: npx tsx scripts/update-fx-rates.ts
+        env:
+          NODE_ENV: production
+
+  update-fx-rates:
+    name: Update FX Rates (Automated)
+    runs-on: ubuntu-latest
+    # Run on 0 5 schedule OR manual dispatch
+    if: >-
+      github.event.schedule == '0 5 * * *' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.job == 'update-fx-rates' || github.event.inputs.job == 'all'))
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify DATABASE_URL is set
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL secret is not set"
+            exit 1
+          fi
+          echo "DATABASE_URL is set"
+
+      # Automated FX rate update from Frankfurter API
+      # - Fetches current rates (no API key required)
+      # - Validates direction (GBP > 1.0, CAD < 1.0, etc.)
+      # - Writes to DB only if all validations pass
+      # - Fails loudly if invalid (non-zero exit)
+      - name: Update FX rates
+        run: npx tsx scripts/update-fx-rates-auto.ts --apply
         env:
           NODE_ENV: production
 

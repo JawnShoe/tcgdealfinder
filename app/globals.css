@@ -1,4 +1,130 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+/*
+  =============================================================================
+  DESIGN TOKENS — Phase 1: Visual Legitimacy
+  =============================================================================
+  These CSS custom properties define the visual language for TCG Deal Finder.
+  All color, typography, and spacing values should reference these tokens.
+
+  Extracted from existing hardcoded values — no visual changes expected.
+*/
+:root {
+  /* -------------------------------------------------------------------------
+     COLOR TOKENS
+     ------------------------------------------------------------------------- */
+
+  /* Primary palette (slate-based) */
+  --color-bg-page: #f8fafc; /* slate-50 */
+  --color-bg-surface: #ffffff;
+  --color-bg-surface-alt: #f8fafc; /* table odd rows */
+  --color-bg-hover: #eef6ff; /* table row hover */
+  --color-bg-header: #eaf0f8; /* table header bg */
+
+  /* Border colors */
+  --color-border: #e2e8f0; /* slate-200 */
+  --color-border-input: #cbd5f5; /* input borders */
+  --color-border-focus: #38bdf8; /* sky-400 */
+
+  /* Text colors */
+  --color-text-primary: #0f172a; /* slate-900 */
+  --color-text-secondary: #475569; /* slate-600 */
+  --color-text-muted: #64748b; /* slate-500 */
+  --color-text-heading: #1e293b; /* slate-800 */
+
+  /* Link colors */
+  --color-link: #0369a1; /* sky-700 */
+  --color-link-hover: #0c4a6e; /* sky-900 */
+
+  /* Status: Discount */
+  --color-discount-good: #047857; /* emerald-700 */
+  --color-discount-bad: #dc2626; /* red-600 */
+  --color-discount-neutral: #475569; /* slate-600 */
+
+  /* Status: Confidence badges */
+  --color-confidence-high-bg: #d1fae5;
+  --color-confidence-high-text: #065f46;
+  --color-confidence-medium-bg: #fef3c7;
+  --color-confidence-medium-text: #92400e;
+  --color-confidence-low-bg: #fee2e2;
+  --color-confidence-low-text: #b91c1c;
+  --color-confidence-muted-bg: #e2e8f0;
+  --color-confidence-muted-text: #475569;
+
+  /* Status: Trust/success */
+  --color-trust: #10b981; /* emerald-500 */
+  --color-best-deal-bg: #ecfdf5; /* emerald-50 */
+  --color-best-deal-border: #bbf7d0; /* emerald-200 */
+
+  /* Interactive: Focus/active states */
+  --color-focus-ring: rgba(56, 189, 248, 0.25);
+  --color-active-bg: #e0f2fe; /* sky-100 */
+  --color-active-border: #38bdf8; /* sky-400 */
+  --color-active-text: #0369a1; /* sky-700 */
+
+  /* -------------------------------------------------------------------------
+     TYPOGRAPHY TOKENS
+     ------------------------------------------------------------------------- */
+
+  /* Font family */
+  --font-family-base:
+    "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", Arial, sans-serif;
+
+  /* Font sizes (named scale) */
+  --font-size-xs: 0.7rem; /* 11.2px - badges, chips */
+  --font-size-sm: 0.88rem; /* 14.1px - labels, table headers */
+  --font-size-base: 1.02rem; /* 16.3px - body text, table cells */
+  --font-size-md: 1.05rem; /* 16.8px - default body */
+  --font-size-lg: 0.95rem; /* 15.2px - section titles */
+  --font-size-xl: clamp(1.8rem, 2.4vw, 2.75rem); /* page titles */
+
+  /* Font weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Line heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
+
+  /* Letter spacing */
+  --letter-spacing-tight: -0.01em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.03em;
+  --letter-spacing-wider: 0.05em;
+
+  /* -------------------------------------------------------------------------
+     SPACING TOKENS (4px grid)
+     ------------------------------------------------------------------------- */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --space-10: 2.5rem; /* 40px */
+
+  /* -------------------------------------------------------------------------
+     COMPONENT TOKENS
+     ------------------------------------------------------------------------- */
+
+  /* Border radius */
+  --radius-sm: 0.55rem;
+  --radius-md: 0.65rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.85rem;
+  --radius-full: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 6px 24px rgba(15, 23, 42, 0.08);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+}
 
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
@@ -19,18 +145,18 @@
 }
 
 @utility deals-card {
-  & [class*='md:grid-cols-3'] {
+  & [class*="md:grid-cols-3"] {
     gap: 1rem;
   }
 
   @media (max-width: 767px) {
-    & [class*='md:grid-cols-3'] {
+    & [class*="md:grid-cols-3"] {
       gap: 0.85rem;
     }
   }
 
   @media (min-width: 768px) and (max-width: 1023px) {
-    & [class*='md:grid-cols-3'] {
+    & [class*="md:grid-cols-3"] {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
@@ -61,28 +187,20 @@
 
   body {
     margin: 0;
-    font-family:
-      'Inter',
-      'Segoe UI',
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      'Helvetica Neue',
-      Arial,
-      sans-serif;
-    font-size: 1.05rem;
-    line-height: 1.7;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-relaxed);
     background-color: transparent;
     color: inherit;
   }
 
   a {
-    color: #0369a1;
+    color: var(--color-link);
     text-decoration: none;
   }
 
   a:hover {
-    color: #0c4a6e;
+    color: var(--color-link-hover);
     text-decoration: none;
   }
 
@@ -101,28 +219,28 @@
 
   /* Typography */
   .page-title {
-    font-size: clamp(1.8rem, 2.4vw, 2.75rem);
-    font-weight: 600;
-    color: #0f172a;
-    margin-bottom: 1rem;
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-4);
   }
 
   .section-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 0.75rem;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-heading);
+    margin-bottom: var(--space-3);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: var(--letter-spacing-wider);
   }
 
   /* Panels & Cards */
   .panel {
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.85rem;
+    background-color: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
     padding: 1.7rem;
-    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
+    box-shadow: var(--shadow-md);
   }
 
   @media (min-width: 768px) {
@@ -136,16 +254,16 @@
   .deals-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 1.02rem;
+    font-size: var(--font-size-base);
   }
 
   .table-section thead tr,
   .deals-table thead tr {
-    background-color: #eaf0f8;
-    color: #475569;
+    background-color: var(--color-bg-header);
+    color: var(--color-text-secondary);
     text-transform: uppercase;
-    font-size: 0.88rem;
-    letter-spacing: 0.03em;
+    font-size: var(--font-size-sm);
+    letter-spacing: var(--letter-spacing-wide);
   }
 
   .table-section th,
@@ -153,17 +271,17 @@
   .deals-table th,
   .deals-table td {
     padding: 0.85rem 0.75rem;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .table-section tbody tr:nth-child(odd),
   .deals-table tbody tr:nth-child(odd) {
-    background-color: #f8fafc;
+    background-color: var(--color-bg-surface-alt);
   }
 
   .table-section tbody tr:hover,
   .deals-table tbody tr:hover {
-    background-color: #eef6ff;
+    background-color: var(--color-bg-hover);
   }
 
   .table-cell--numeric {
@@ -171,11 +289,29 @@
     white-space: nowrap;
   }
 
+  /* Table hierarchy polish — Phase 1 */
+  /* Emphasize price columns for faster visual scanning */
+  .table-cell--price {
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* De-emphasize secondary columns */
+  .table-cell--secondary {
+    color: var(--color-text-muted);
+    font-size: 0.9em;
+  }
+
+  /* Discount column emphasis */
+  .table-cell--discount {
+    font-weight: var(--font-weight-semibold);
+  }
+
   /* Form Controls */
   .deal-control__label {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: #475569;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
     display: inline-block;
     margin-bottom: 0.35rem;
   }
@@ -184,99 +320,223 @@
   .deal-control__input {
     width: 100%;
     padding: 0.65rem 0.85rem;
-    border: 1px solid #cbd5f5;
-    border-radius: 0.55rem;
-    background-color: #fff;
+    border: 1px solid var(--color-border-input);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg-surface);
     font-size: 0.98rem;
     transition:
-      border-color 0.15s ease,
-      box-shadow 0.15s ease;
+      border-color var(--transition-fast),
+      box-shadow var(--transition-fast);
   }
 
   .deal-control__select:focus,
   .deal-control__input:focus {
-    border-color: #38bdf8;
-    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
     outline: none;
   }
 
   /* Discount & Confidence */
   .discount-good {
-    color: #047857;
+    color: var(--color-discount-good);
   }
 
   .discount-bad {
-    color: #dc2626;
+    color: var(--color-discount-bad);
   }
 
   .discount-neutral {
-    color: #475569;
+    color: var(--color-discount-neutral);
   }
 
   .confidence-chip {
     display: inline-flex;
     padding: 0.2rem 0.55rem;
-    border-radius: 999px;
-    font-size: 0.7rem;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: var(--letter-spacing-wide);
   }
 
   .confidence-high {
-    background-color: #d1fae5;
-    color: #065f46;
+    background-color: var(--color-confidence-high-bg);
+    color: var(--color-confidence-high-text);
   }
 
   .confidence-medium {
-    background-color: #fef3c7;
-    color: #92400e;
+    background-color: var(--color-confidence-medium-bg);
+    color: var(--color-confidence-medium-text);
   }
 
   .confidence-low {
-    background-color: #fee2e2;
-    color: #b91c1c;
+    background-color: var(--color-confidence-low-bg);
+    color: var(--color-confidence-low-text);
   }
 
   .confidence-muted {
-    background-color: #e2e8f0;
-    color: #475569;
+    background-color: var(--color-confidence-muted-bg);
+    color: var(--color-confidence-muted-text);
   }
 
   /* Watchlist Button */
   .watchlist-button {
-    border: 1px solid #cbd5f5;
-    border-radius: 999px;
+    border: 1px solid var(--color-border-input);
+    border-radius: var(--radius-full);
     padding: 0.45rem 1rem;
     font-size: 0.95rem;
-    font-weight: 600;
-    background-color: #ffffff;
+    font-weight: var(--font-weight-semibold);
+    background-color: var(--color-bg-surface);
   }
 
   .watchlist-button.watchlist-active {
-    background-color: #e0f2fe;
-    border-color: #38bdf8;
-    color: #0369a1;
+    background-color: var(--color-active-bg);
+    border-color: var(--color-active-border);
+    color: var(--color-active-text);
   }
 
   .watchlist-button-icon {
-    border: 1px solid #cbd5f5;
-    border-radius: 999px;
+    border: 1px solid var(--color-border-input);
+    border-radius: var(--radius-full);
     font-size: 0.9rem;
     padding: 0.3rem 0.5rem;
   }
 
   .watchlist-button-icon.watchlist-active {
-    background-color: #e0f2fe;
-    border-color: #38bdf8;
-    color: #0369a1;
+    background-color: var(--color-active-bg);
+    border-color: var(--color-active-border);
+    color: var(--color-active-text);
   }
 
   /* Best Deal Callout */
   .best-deal-panel {
-    border: 1px solid #bbf7d0;
-    border-radius: 0.75rem;
+    border: 1px solid var(--color-best-deal-border);
+    border-radius: var(--radius-lg);
     padding: 1rem 1.25rem;
-    background-color: #ecfdf5;
+    background-color: var(--color-best-deal-bg);
+  }
+
+  /* ==========================================================================
+     BUTTON SYSTEM — Phase 1: Visual Legitimacy
+     ========================================================================== */
+
+  /* Base button styles */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.25;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition:
+      background-color var(--transition-fast),
+      border-color var(--transition-fast),
+      color var(--transition-fast);
+  }
+
+  .btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Primary button (dark) */
+  .btn-primary {
+    background-color: var(--color-text-primary);
+    color: var(--color-bg-surface);
+    border-color: var(--color-text-primary);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-text-heading);
+    border-color: var(--color-text-heading);
+  }
+
+  /* Secondary button (outlined) */
+  .btn-secondary {
+    background-color: var(--color-bg-surface);
+    color: var(--color-text-secondary);
+    border-color: var(--color-border-input);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-bg-surface-alt);
+    border-color: var(--color-border);
+  }
+
+  /* Ghost button (text only) */
+  .btn-ghost {
+    background-color: transparent;
+    color: var(--color-text-secondary);
+    border-color: transparent;
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background-color: var(--color-bg-surface-alt);
+    color: var(--color-text-primary);
+  }
+
+  /* Button sizes */
+  .btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: var(--font-size-xs);
+  }
+
+  .btn-lg {
+    padding: 0.625rem 1.25rem;
+    font-size: var(--font-size-base);
+  }
+
+  /* ==========================================================================
+     BADGE SYSTEM — Phase 1: Visual Legitimacy
+     ========================================================================== */
+
+  /* Base badge styles */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.4;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+  }
+
+  /* Badge variants */
+  .badge-success {
+    background-color: var(--color-confidence-high-bg);
+    color: var(--color-confidence-high-text);
+  }
+
+  .badge-warning {
+    background-color: var(--color-confidence-medium-bg);
+    color: var(--color-confidence-medium-text);
+  }
+
+  .badge-error {
+    background-color: var(--color-confidence-low-bg);
+    color: var(--color-confidence-low-text);
+  }
+
+  .badge-neutral {
+    background-color: var(--color-confidence-muted-bg);
+    color: var(--color-confidence-muted-text);
+  }
+
+  .badge-info {
+    background-color: var(--color-active-bg);
+    color: var(--color-active-text);
   }
 
   /* Responsive Spacing Utilities */
@@ -292,8 +552,8 @@
   @media (max-width: 640px) {
     .panel {
       padding: 1.2rem;
-      border-radius: 0.65rem;
-      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
     }
 
     .deals-table th,

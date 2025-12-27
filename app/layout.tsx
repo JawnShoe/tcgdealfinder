@@ -1,5 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const SITE_TITLE =
   "TCG Deal Finder \u2013 Real-time undervalued Pok\u00e9mon card deals";
@@ -48,7 +50,11 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased min-h-screen flex flex-col">
+        <SiteHeader />
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   );
 }

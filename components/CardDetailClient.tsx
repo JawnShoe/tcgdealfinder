@@ -97,6 +97,11 @@ type ListingRow = {
   integrityReason: string | null;
   integrityScore: number | null;
   overrideType: "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE" | null;
+  // Native currency fields
+  currency: string | null;
+  priceNative: number | null;
+  shippingNative: number | null;
+  totalNative: number | null;
 };
 
 type OtherMarketCount = {
@@ -211,6 +216,11 @@ function listingRowToDeal(
     integrityReason: listing.integrityReason ?? undefined,
     integrityScore: listing.integrityScore ?? undefined,
     overrideType: listing.overrideType ?? undefined,
+    // Native currency fields
+    currency: listing.currency ?? null,
+    priceNative: listing.priceNative ?? null,
+    shippingNative: listing.shippingNative ?? null,
+    totalNative: listing.totalNative ?? null,
   };
 }
 

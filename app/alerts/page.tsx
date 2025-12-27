@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import DealsTable from "../../components/DealsTable";
@@ -36,6 +36,11 @@ type AlertRow = {
   seller_feedback_count: number | null;
   seller_positive_percent: string | null;
   sample_size: number | null;
+  // Native currency fields
+  currency: string | null;
+  price_native: string | null;
+  shipping_native: string | null;
+  total_native: string | null;
 };
 
 async function fetchRecentAlerts(): Promise<Deal[]> {
@@ -63,7 +68,11 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
         l.seller_store_name,
         l.seller_feedback_count,
         l.seller_positive_percent,
-        hp.sample_size
+        hp.sample_size,
+        l.currency,
+        l.price_native,
+        l.shipping_native,
+        l.total_native
       FROM alerts_log al
       JOIN cards c ON c.id = al.card_id
       LEFT JOIN listings l ON l.id = al.listing_id
@@ -72,7 +81,7 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
       ORDER BY al.discount_percent ASC NULLS LAST, al.created_at DESC
       LIMIT $1;
     `,
-    [ALERT_LIMIT],
+    [ALERT_LIMIT]
   );
 
   const deals = res.rows.map((row) => {
@@ -83,8 +92,7 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
       row.median_price_cad != null ? Number(row.median_price_cad) : null;
     const rawDiscount =
       row.discount_percent != null ? Number(row.discount_percent) : null;
-    const sampleSize =
-      row.sample_size != null ? Number(row.sample_size) : null;
+    const sampleSize = row.sample_size != null ? Number(row.sample_size) : null;
     const sellerFeedbackCount =
       row.seller_feedback_count != null
         ? Number(row.seller_feedback_count)
@@ -133,6 +141,12 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
       setName: row.card_set_name,
       cardName: row.card_name,
       cardId: row.card_id,
+      // Native currency fields
+      currency: row.currency ?? null,
+      priceNative: row.price_native != null ? Number(row.price_native) : null,
+      shippingNative:
+        row.shipping_native != null ? Number(row.shipping_native) : null,
+      totalNative: row.total_native != null ? Number(row.total_native) : null,
     } satisfies Deal;
   });
   warnIfStoreNamesMissing(deals, "alerts");

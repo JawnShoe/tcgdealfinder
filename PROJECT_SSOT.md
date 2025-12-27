@@ -93,12 +93,16 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 - Restorepoint bundle for SSOT commit e7e0717: `T:\Projects\restorepoints\tcg-deal-finder_ssot-e7e0717_restorepoint.bundle`.
 - Restorepoint bundle for admin UI fixes (2025-12-22): `T:\Projects\restorepoints\admin-ui-8b6003c.bundle`.
 - Restorepoint bundle for pre-Tailwind v4 migration (2025-12-24): `t:\Projects\tcg-deal-finder-pre-tailwind-v4-migration.bundle` (HEAD: 1861b7f).
+- Job Silence Watchdog (2025-12-26): Added `.github/workflows/job-silence-watchdog.yml` to detect when scheduled data pipeline jobs have not run. Runs every 2 hours; checks `/api/health` freshness data; fails workflow if listings >2h stale or historical prices >26h stale. Distinguishes "job didn't run" from "job ran and failed". PR #66 (commit eea4de6).
 
 ### Security / Admin Access
 
 **Admin gate mechanism**:
 
 - Admin unlock via `POST /api/admin/login` with secret in body; sets HttpOnly `admin_auth` cookie (SameSite=Strict, Secure, Path=/, Max-Age=7d).
+- **Cookie value**: Signed, time-bound token (`timestamp.hmac-sha256-signature`), not a static value. Token verified on each request. Hardened in PR #65 (commit 4996ed9).
+- **Token properties**: Expires after 7 days; rejects future timestamps (>60s clock skew); timing-safe signature comparison.
+- **Rotation**: Changing `ADMIN_SECRET` env var immediately invalidates all existing admin tokens.
 - `/admin/*` pages check `admin_auth` cookie and return `notFound()` (404) when missing/invalid.
 - `/api/admin/*` routes check `admin_auth` cookie; `x-admin-secret` header is a deprecated fallback for internal scripts.
 - `/debug/*` uses `DEBUG_ADMIN_TOKEN` via cookie/header/query (see `lib/debugAuth.ts`); separate from admin gate.

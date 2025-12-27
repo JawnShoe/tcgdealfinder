@@ -41,36 +41,65 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: Determine site URL
+      - name: Validate and determine site URL
         id: url
         run: |
+          # Determine URL source
           if [ -n "${{ github.event.inputs.site_url }}" ]; then
-            echo "url=${{ github.event.inputs.site_url }}" >> $GITHUB_OUTPUT
+            BASE_URL="${{ github.event.inputs.site_url }}"
+            echo "URL source: workflow input"
           elif [ -n "${{ secrets.SITE_BASE_URL }}" ]; then
-            echo "url=${{ secrets.SITE_BASE_URL }}" >> $GITHUB_OUTPUT
+            BASE_URL="${{ secrets.SITE_BASE_URL }}"
+            echo "URL source: SITE_BASE_URL secret"
           else
             echo "::error::No site URL configured. Set SITE_BASE_URL secret or provide site_url input."
             exit 1
           fi
 
-      - name: Fetch health endpoint
-        id: health
-        run: |
-          URL="${{ steps.url.outputs.url }}/api/health"
-          echo "Checking: $URL"
+          # Remove trailing slash if present
+          BASE_URL="${BASE_URL%/}"
 
-          RESPONSE=$(curl -sf --max-time 30 "$URL" || echo "CURL_FAILED")
-
-          if [ "$RESPONSE" = "CURL_FAILED" ]; then
-            echo "::error::Failed to fetch health endpoint. Site may be down."
+          # Validate URL starts with https://
+          if [[ ! "$BASE_URL" =~ ^https:// ]]; then
+            echo "::error::SITE_BASE_URL must start with https:// (got: ${BASE_URL:0:20}...)"
             exit 1
           fi
 
+          # Extract and display hostname only (no secrets in logs)
+          HOSTNAME=$(echo "$BASE_URL" | sed -E 's|^https://([^/]+).*|\1|')
+          echo "Target hostname: $HOSTNAME"
+
+          echo "url=$BASE_URL" >> $GITHUB_OUTPUT
+
+      - name: Fetch health endpoint
+        id: health
+        run: |
+          BASE_URL="${{ steps.url.outputs.url }}"
+          URL="${BASE_URL}/api/health"
+          echo "Fetching: $URL"
+
+          # Capture HTTP status and body separately for better diagnostics
+          HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" --max-time 30 "$URL" 2>&1)
+          CURL_EXIT=$?
+
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::error::curl failed (exit code $CURL_EXIT). Check if site is reachable."
+            exit 1
+          fi
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Health endpoint returned HTTP $HTTP_CODE (expected 200)"
+            echo "Response body:"
+            cat /tmp/response.json 2>/dev/null || echo "(empty)"
+            exit 1
+          fi
+
+          RESPONSE=$(cat /tmp/response.json)
           echo "response<<EOF" >> $GITHUB_OUTPUT
           echo "$RESPONSE" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          echo "Health response:"
+          echo "Health response (HTTP $HTTP_CODE):"
           echo "$RESPONSE" | jq '.' || echo "$RESPONSE"
 
       - name: Check listings freshness

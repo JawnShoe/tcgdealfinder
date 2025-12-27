@@ -1,5 +1,6 @@
 name: Job Silence Watchdog
 
+# Detects when scheduled data pipeline jobs have not run ("silent failures").
 # Monitors data pipeline health by checking if scheduled jobs are running.
 # This workflow detects "silent failures" - when jobs simply don't run
 # (as opposed to running and failing, which is visible in workflow logs).

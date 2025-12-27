@@ -59,18 +59,29 @@ jobs:
           URL="${{ steps.url.outputs.url }}/api/health"
           echo "Checking: $URL"
 
-          RESPONSE=$(curl -sf --max-time 30 "$URL" || echo "CURL_FAILED")
+          # Use -w to capture HTTP status, -o to capture body
+          HTTP_STATUS=$(curl -s -o /tmp/health_response.json -w "%{http_code}" --max-time 30 "$URL" 2>/tmp/curl_error.txt)
+          CURL_EXIT=$?
 
-          if [ "$RESPONSE" = "CURL_FAILED" ]; then
-            echo "::error::Failed to fetch health endpoint. Site may be down."
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "::error::curl failed with exit code $CURL_EXIT"
+            cat /tmp/curl_error.txt 2>/dev/null || true
             exit 1
           fi
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "::error::Health endpoint returned HTTP $HTTP_STATUS (expected 200)"
+            cat /tmp/health_response.json 2>/dev/null || true
+            exit 1
+          fi
+
+          RESPONSE=$(cat /tmp/health_response.json)
 
           echo "response<<EOF" >> $GITHUB_OUTPUT
           echo "$RESPONSE" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          echo "Health response:"
+          echo "Health response (HTTP $HTTP_STATUS):"
           echo "$RESPONSE" | jq '.' || echo "$RESPONSE"
 
       - name: Check listings freshness

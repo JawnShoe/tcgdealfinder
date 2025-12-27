@@ -3,13 +3,27 @@
 import type { MarketCode } from "./markets";
 import { getAppAccessToken } from "./ebay";
 
-export type StorefrontSource = "api";
+export type StorefrontSource = "api" | "override";
 
 export type StorefrontInfo = {
   storeName: string;
   storeUrl: string | null;
   source: StorefrontSource;
 };
+
+/**
+ * DEPRECATED: Shopping API is disabled due to aggressive IP rate limits.
+ *
+ * The Shopping API (GetSingleItem) has much stricter rate limits than Browse API,
+ * causing "IP limit exceeded" errors during bulk ingestion. Store name enrichment
+ * is non-critical metadata and should not block listing ingestion.
+ *
+ * This flag disables all Shopping API calls. Set to false only for debugging
+ * or if eBay increases rate limits in the future.
+ *
+ * See: https://developer.ebay.com/support/kb-article?KBid=5305
+ */
+const SHOPPING_API_DISABLED = true;
 
 const SHOPPING_ENDPOINT = "https://open.api.ebay.com/shopping";
 const DEFAULT_SITE_ID = 0; // eBay US
@@ -63,7 +77,7 @@ async function rateLimitDelay(): Promise<void> {
   const elapsed = now - lastRequestAt;
   if (elapsed < MIN_INTERVAL_MS) {
     await new Promise((resolve) =>
-      setTimeout(resolve, MIN_INTERVAL_MS - elapsed),
+      setTimeout(resolve, MIN_INTERVAL_MS - elapsed)
     );
   }
   lastRequestAt = Date.now();
@@ -101,8 +115,18 @@ export function extractItemId(listingId: string): string {
 export async function fetchStorefrontInfo(
   listingId: string,
   market?: MarketCode,
-  sellerUsername?: string | null,
+  sellerUsername?: string | null
 ): Promise<StorefrontInfo | null> {
+  // Check for seller overrides first (works even when API is disabled)
+  if (sellerUsername && SELLER_OVERRIDES[sellerUsername]) {
+    return { ...SELLER_OVERRIDES[sellerUsername], source: "override" };
+  }
+
+  // Shopping API is disabled due to rate limits - return null for all other cases
+  if (SHOPPING_API_DISABLED) {
+    return null;
+  }
+
   const itemId = extractNumericItemId(listingId);
   if (!itemId) {
     return null;
@@ -157,24 +181,24 @@ export async function fetchStorefrontInfo(
 
     if (!response.ok) {
       console.warn(
-        `[storefront] Shopping API ${response.status} for item ${itemId}`,
+        `[storefront] Shopping API ${response.status} for item ${itemId}`
       );
-    const fallbackValue =
-      (sellerUsername && SELLER_OVERRIDES[sellerUsername]) || null;
-    storefrontCache.set(cacheKey, {
-      value: fallbackValue,
-      expiresAt: Date.now() + 1000 * 60 * 10,
-    });
-    return fallbackValue;
-  }
+      const fallbackValue =
+        (sellerUsername && SELLER_OVERRIDES[sellerUsername]) || null;
+      storefrontCache.set(cacheKey, {
+        value: fallbackValue,
+        expiresAt: Date.now() + 1000 * 60 * 10,
+      });
+      return fallbackValue;
+    }
 
     const payload = (await response.json()) as ShoppingResponse;
     if (payload.Ack && payload.Ack !== "Success" && payload.Ack !== "Warning") {
       const errorText = payload.Errors?.map(
-        (err) => err.ShortMessage ?? err.LongMessage ?? "unknown",
+        (err) => err.ShortMessage ?? err.LongMessage ?? "unknown"
       ).join(" | ");
       console.warn(
-        `[storefront] Shopping API ack=${payload.Ack} for item ${itemId} ${errorText ? `(${errorText})` : ""}`,
+        `[storefront] Shopping API ack=${payload.Ack} for item ${itemId} ${errorText ? `(${errorText})` : ""}`
       );
     }
 
@@ -186,9 +210,7 @@ export async function fetchStorefrontInfo(
       normalizeStoreName(fallbackSeller?.SellerInfo?.StoreName);
 
     const storeUrl =
-      storefront?.StoreURL ??
-      fallbackSeller?.SellerInfo?.StoreURL ??
-      null;
+      storefront?.StoreURL ?? fallbackSeller?.SellerInfo?.StoreURL ?? null;
 
     const result: StorefrontInfo | null = storeName
       ? {
@@ -199,9 +221,7 @@ export async function fetchStorefrontInfo(
       : null;
 
     const finalValue =
-      result ??
-      (sellerUsername && SELLER_OVERRIDES[sellerUsername]) ??
-      null;
+      result ?? (sellerUsername && SELLER_OVERRIDES[sellerUsername]) ?? null;
 
     storefrontCache.set(cacheKey, {
       value: finalValue,
@@ -212,7 +232,7 @@ export async function fetchStorefrontInfo(
     console.error(
       `[storefront] Failed to fetch store for ${itemId}: ${
         (error as Error).message
-      }`,
+      }`
     );
     const fallbackValue =
       (sellerUsername && SELLER_OVERRIDES[sellerUsername]) ?? null;

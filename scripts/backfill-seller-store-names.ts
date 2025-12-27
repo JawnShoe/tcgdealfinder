@@ -1,13 +1,38 @@
 /**
- * Backfill seller_store_name via the official eBay Shopping API.
+ * DEPRECATED: This script uses the Shopping API which is now disabled.
  *
- * Usage:
+ * The Shopping API (GetSingleItem) has aggressive IP rate limits that
+ * cause "IP limit exceeded" errors during bulk operations. Store name
+ * enrichment is non-critical and has been disabled.
+ *
+ * If you need to run this script, you must first set SHOPPING_API_DISABLED=false
+ * in lib/ebayStorefront.ts. This is NOT recommended for production use.
+ *
+ * Original usage:
  *   npx tsx scripts/backfill-seller-store-names.ts [--limit=50] [--market=EBAY_US] [--force]
  */
 
 import { query } from "../lib/db";
 import { fetchStorefrontInfo } from "../lib/ebayStorefront";
 import type { MarketCode } from "../lib/markets";
+
+const DEPRECATION_WARNING = `
+⚠️  WARNING: Shopping API is DISABLED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This script uses the eBay Shopping API which has been disabled due to
+aggressive IP rate limits that block listing ingestion.
+
+The fetchStorefrontInfo() function will return null for all sellers
+(except manual overrides). No API calls will be made.
+
+To re-enable (NOT recommended):
+  1. Edit lib/ebayStorefront.ts
+  2. Set SHOPPING_API_DISABLED = false
+  3. Run with small --limit values only
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
 
 interface BackfillStats {
   total: number;
@@ -57,7 +82,7 @@ function randomDelay(min: number, max: number): Promise<void> {
 async function getListingsToProcess(
   market: MarketCode,
   limit: number,
-  force: boolean,
+  force: boolean
 ): Promise<ListingToProcess[]> {
   const cutoff = force
     ? null
@@ -90,7 +115,7 @@ async function getListingsToProcess(
 async function updateListingStoreName(
   listingId: string,
   storeName: string | null,
-  source: string | null,
+  source: string | null
 ): Promise<void> {
   const now = new Date();
   await query(
@@ -101,24 +126,24 @@ async function updateListingStoreName(
         seller_store_name_last_checked_at = $3
     WHERE listing_id = $4
   `,
-    [storeName, source, now, listingId],
+    [storeName, source, now, listingId]
   );
 }
 
 async function processListing(
   listing: ListingToProcess,
-  stats: BackfillStats,
+  stats: BackfillStats
 ): Promise<void> {
   try {
     const itemId = listing.listing_id.split("|")[1] || listing.listing_id;
     console.log(
-      `[${stats.processed + 1}/${stats.total}] item=${itemId} seller=${listing.seller_username}`,
+      `[${stats.processed + 1}/${stats.total}] item=${itemId} seller=${listing.seller_username}`
     );
 
     const result = await fetchStorefrontInfo(
       listing.listing_id,
       listing.market as MarketCode,
-      listing.seller_username,
+      listing.seller_username
     );
 
     if (result?.storeName) {
@@ -126,7 +151,7 @@ async function processListing(
       await updateListingStoreName(
         listing.listing_id,
         result.storeName,
-        result.source,
+        result.source
       );
       stats.found++;
     } else {
@@ -135,9 +160,7 @@ async function processListing(
       stats.failed++;
     }
   } catch (error) {
-    console.error(
-      `  ⚠️  Error: ${(error as Error).message ?? String(error)}`,
-    );
+    console.error(`  ⚠️  Error: ${(error as Error).message ?? String(error)}`);
     stats.errors.push(`${listing.listing_id}: ${(error as Error).message}`);
     stats.failed++;
     await updateListingStoreName(listing.listing_id, null, null);
@@ -147,6 +170,9 @@ async function processListing(
 }
 
 async function backfillStoreNames(): Promise<void> {
+  // Show deprecation warning immediately
+  console.log(DEPRECATION_WARNING);
+
   const { limit, market, force } = parseArgs();
 
   console.log("=== eBay store-name backfill ===");
@@ -154,7 +180,7 @@ async function backfillStoreNames(): Promise<void> {
   console.log(`Limit: ${limit}`);
   console.log(`Force re-check: ${force ? "YES" : "NO"}`);
   console.log(
-    `Cooldown between requests: ${MIN_DELAY_MS}-${MAX_DELAY_MS} ms\n`,
+    `Cooldown between requests: ${MIN_DELAY_MS}-${MAX_DELAY_MS} ms\n`
   );
 
   const listings = await getListingsToProcess(market, limit, force);

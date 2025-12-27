@@ -757,18 +757,36 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                             </div>
                           );
                         })()}
-                        {bestTrustedPriceBreakdown && (
-                          <p className="text-xs text-slate-500">
-                            {bestTrustedPriceBreakdown.itemNative != null &&
-                            bestTrustedPriceBreakdown.currency
-                              ? `Item ${formatNativeCurrency(bestTrustedPriceBreakdown.itemNative, bestTrustedPriceBreakdown.currency)}`
-                              : "Item price unavailable"}{" "}
-                            {bestTrustedPriceBreakdown.shippingNative != null &&
-                            bestTrustedPriceBreakdown.currency
-                              ? `+ Shipping ${formatNativeCurrency(bestTrustedPriceBreakdown.shippingNative, bestTrustedPriceBreakdown.currency)}`
-                              : "+ shipping at checkout"}
-                          </p>
-                        )}
+                        {bestTrustedPriceBreakdown &&
+                          bestTrustedPriceBreakdown.itemNative != null &&
+                          bestTrustedPriceBreakdown.currency && (
+                            <TooltipPopover
+                              content={
+                                <>
+                                  Item:{" "}
+                                  {formatNativeCurrency(
+                                    bestTrustedPriceBreakdown.itemNative,
+                                    bestTrustedPriceBreakdown.currency
+                                  )}
+                                  <br />
+                                  Shipping:{" "}
+                                  {bestTrustedPriceBreakdown.shippingNative !=
+                                  null
+                                    ? formatNativeCurrency(
+                                        bestTrustedPriceBreakdown.shippingNative,
+                                        bestTrustedPriceBreakdown.currency
+                                      )
+                                    : "at checkout"}
+                                </>
+                              }
+                              className="inline"
+                              triggerClassName="text-xs text-slate-500 underline decoration-dotted cursor-help"
+                              tooltipClassName="whitespace-nowrap"
+                              usePortal={true}
+                            >
+                              Price breakdown
+                            </TooltipPopover>
+                          )}
                         <p
                           className={`text-sm ${discountClass(
                             bestTrustedDeal.discountPercent ?? null

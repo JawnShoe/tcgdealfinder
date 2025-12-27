@@ -18,7 +18,7 @@ import {
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { WhyDealHint } from "./WhyDealHint";
 import { SellerSeenBadge } from "./SellerSeenBadge";
-import { TooltipPopover } from "./TooltipPopover";
+import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
 import {
   CONDITION_FILTERS,
   type ConditionFilterKey,
@@ -765,7 +765,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                         {bestTrustedPriceBreakdown &&
                           bestTrustedPriceBreakdown.itemNative != null &&
                           bestTrustedPriceBreakdown.currency && (
-                            <TooltipPopover
+                            <TooltipPopoverClientOnly
                               content={
                                 <>
                                   Item:{" "}
@@ -791,7 +791,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                               usePortal={true}
                             >
                               Price breakdown
-                            </TooltipPopover>
+                            </TooltipPopoverClientOnly>
                           )}
                         <p
                           className={`text-sm ${discountClass(
@@ -835,7 +835,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                         )}
                       </div>
                       {bestTrustedDeal.deal.endsAt && (
-                        <TooltipPopover
+                        <TooltipPopoverClientOnly
                           content={
                             getEndsAtDisplay(bestTrustedDeal.deal.endsAt)
                               .tooltip
@@ -847,7 +847,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                         >
                           {bestTrustedDeal.marketCode} /{" "}
                           {getEndsAtDisplay(bestTrustedDeal.deal.endsAt).label}
-                        </TooltipPopover>
+                        </TooltipPopoverClientOnly>
                       )}
                       <p className="mt-3 text-xs text-slate-500">
                         {bestDealFreshness
@@ -985,7 +985,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
             <div className="flex flex-col gap-1">
               <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase text-slate-500">
                 <label htmlFor="cardDetailConfFilter">DATA RELIABILITY</label>
-                <TooltipPopover
+                <TooltipPopoverClientOnly
                   content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                   ariaLabel="Data reliability help"
                   triggerClassName="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500"
@@ -994,7 +994,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                   size="wide"
                 >
                   <span aria-hidden="true">?</span>
-                </TooltipPopover>
+                </TooltipPopoverClientOnly>
               </span>
               <select
                 id="cardDetailConfFilter"
@@ -1392,7 +1392,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                               showViewCardLink={false}
                             />
                             {vm.integrityStatus === "REVIEW" && (
-                              <TooltipPopover
+                              <TooltipPopoverClientOnly
                                 content={
                                   listing.integrityReason ??
                                   "Flagged automatically for manual review"
@@ -1400,7 +1400,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                                 triggerClassName="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
                               >
                                 Review
-                              </TooltipPopover>
+                              </TooltipPopoverClientOnly>
                             )}
                           </div>
                         </td>
@@ -1496,13 +1496,13 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                           })()}
                         </td>
                         <td className="px-3 py-4 align-middle text-right text-slate-600">
-                          <TooltipPopover
+                          <TooltipPopoverClientOnly
                             content={getEndsAtDisplay(listing.endsAt).tooltip}
                             tooltipClassName="whitespace-nowrap"
                             usePortal={true}
                           >
                             {getEndsAtDisplay(listing.endsAt).label}
-                          </TooltipPopover>
+                          </TooltipPopoverClientOnly>
                         </td>
                       </tr>
                     );

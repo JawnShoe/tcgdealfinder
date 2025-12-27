@@ -176,7 +176,7 @@ export function TooltipPopover({
       ref={tooltipRef}
       id={tooltipId}
       role="tooltip"
-      className={`${usePortal ? "fixed" : "absolute left-0"} ${usePortal ? "" : positionClass} z-50 whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-normal normal-case leading-snug text-slate-700 shadow-lg transition-opacity ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
+      className={`${usePortal ? "fixed" : "absolute left-0"} ${usePortal ? "" : positionClass} z-50 w-fit whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-left text-xs font-normal normal-case leading-snug text-slate-700 shadow-lg transition-opacity ${bubbleClasses} ${tooltipClassName ?? ""}`.trim()}
       style={
         usePortal
           ? {

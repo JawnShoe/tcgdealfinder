@@ -45,7 +45,7 @@ import { getSellerDisplayData } from "@/lib/sellerDisplay";
 import { WatchlistStarButton } from "./WatchlistStarButton";
 import { WhyDealHint } from "./WhyDealHint";
 import { SellerSeenBadge } from "./SellerSeenBadge";
-import { TooltipPopover } from "./TooltipPopover";
+import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
 import type { Deal } from "../types/deal";
 import type { DealsApiMeta, DealsApiResponse } from "@/types/dealsApi";
 import {
@@ -132,13 +132,13 @@ function dedupeDealsByListing(deals: Deal[]): Deal[] {
 function renderEndsValue(value: string | null | undefined): JSX.Element {
   const display = getEndsAtDisplay(value);
   return (
-    <TooltipPopover
+    <TooltipPopoverClientOnly
       content={display.tooltip}
       tooltipClassName="whitespace-nowrap"
       usePortal={true}
     >
       {display.label}
-    </TooltipPopover>
+    </TooltipPopoverClientOnly>
   );
 }
 
@@ -743,7 +743,7 @@ export default function DealsTable({
           <div className="flex flex-col gap-1 text-sm text-slate-600">
             <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase text-slate-500">
               <label htmlFor="priceConfFilter">DATA RELIABILITY</label>
-              <TooltipPopover
+              <TooltipPopoverClientOnly
                 content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                 ariaLabel="Data reliability help"
                 triggerClassName="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500"
@@ -752,7 +752,7 @@ export default function DealsTable({
                 size="wide"
               >
                 <span aria-hidden="true">?</span>
-              </TooltipPopover>
+              </TooltipPopoverClientOnly>
             </span>
             <select
               id="priceConfFilter"
@@ -1184,7 +1184,7 @@ export default function DealsTable({
                                     >
                                       {formatScore(vm.score)}
                                     </span>
-                                    <TooltipPopover
+                                    <TooltipPopoverClientOnly
                                       content={CONFIDENCE_TOOLTIP}
                                       triggerClassName={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
                                         vm.priceConfidenceLabel
@@ -1193,7 +1193,7 @@ export default function DealsTable({
                                       {getConfidenceDisplayText(
                                         vm.priceConfidenceLabel
                                       )}
-                                    </TooltipPopover>
+                                    </TooltipPopoverClientOnly>
                                   </div>
                                 </td>
                               ) : null}
@@ -1381,14 +1381,14 @@ export default function DealsTable({
                         <p className={`${scoreClass(vm.score)} text-base`}>
                           {formatScore(vm.score)}
                         </p>
-                        <TooltipPopover
+                        <TooltipPopoverClientOnly
                           content={CONFIDENCE_TOOLTIP}
                           triggerClassName={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
                             vm.priceConfidenceLabel
                           )}`}
                         >
                           {getConfidenceDisplayText(vm.priceConfidenceLabel)}
-                        </TooltipPopover>
+                        </TooltipPopoverClientOnly>
                       </div>
                     </div>
                   </div>
@@ -1435,13 +1435,13 @@ export default function DealsTable({
                     {(() => {
                       const endsDisplay = getEndsAtDisplay(vm.deal.endsAt);
                       return (
-                        <TooltipPopover
+                        <TooltipPopoverClientOnly
                           content={endsDisplay.tooltip}
                           tooltipClassName="whitespace-nowrap"
                           usePortal={true}
                         >
                           Ends {endsDisplay.label}
-                        </TooltipPopover>
+                        </TooltipPopoverClientOnly>
                       );
                     })()}
                   </div>

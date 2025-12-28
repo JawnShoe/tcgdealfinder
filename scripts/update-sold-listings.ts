@@ -2,7 +2,12 @@ import "dotenv/config";
 import { query } from "../lib/db.ts";
 import { fetchEbaySoldListings, isValidListingTitle } from "../lib/ebay.ts";
 import type { SoldListing } from "../lib/ebay.ts";
-import { normalizeMarketCode, type MarketCode } from "../lib/markets";
+import { convertToUSD } from "../lib/fxRates";
+import {
+  getExpectedCurrency,
+  normalizeMarketCode,
+  type MarketCode,
+} from "../lib/markets";
 
 type CardConfigRow = {
   card_id: number;
@@ -23,7 +28,7 @@ async function fetchCardConfigs(): Promise<CardConfigRow[]> {
       JOIN cards c ON c.id = cfg.card_id
       WHERE cfg.is_active = TRUE
       ORDER BY c.id;
-    `,
+    `
   );
   return res.rows;
 }
@@ -32,8 +37,23 @@ async function insertSoldListing(
   cardId: number,
   condition: string,
   market: MarketCode,
-  item: SoldListing,
+  item: SoldListing
 ): Promise<void> {
+  const currency = getExpectedCurrency(market);
+
+  const priceNative = item.priceCad;
+  const shippingNative: number | null = null;
+  const shippingUnknown = shippingNative == null;
+  const totalNative = priceNative;
+
+  const snapshotAt = new Date();
+
+  const conversion = await convertToUSD(totalNative, currency);
+  const totalUsd = conversion?.usd ?? null;
+  const fxRateToUsd = conversion?.rate ?? null;
+  const fxTimestamp = conversion?.fxTimestamp ?? null;
+  const fxStatus = conversion ? "OK" : "MISSING";
+
   await query(
     `
       INSERT INTO ebay_sold_listings (
@@ -42,10 +62,20 @@ async function insertSoldListing(
         condition,
         title,
         price,
+        currency,
+        price_native,
+        shipping_native,
+        shipping_unknown,
+        total_native,
+        fx_status,
+        fx_rate_to_usd,
+        fx_timestamp,
+        total_usd,
         sold_at,
+        snapshot_at,
         raw
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7);
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);
     `,
     [
       cardId,
@@ -53,9 +83,19 @@ async function insertSoldListing(
       condition,
       item.title,
       item.priceCad,
+      currency,
+      priceNative,
+      shippingNative,
+      shippingUnknown,
+      totalNative,
+      fxStatus,
+      fxRateToUsd,
+      fxTimestamp,
+      totalUsd,
       item.soldAt ? new Date(item.soldAt) : null,
+      snapshotAt,
       item.raw ?? {},
-    ],
+    ]
   );
 }
 
@@ -69,13 +109,10 @@ async function main() {
 
   for (const config of configs) {
     console.log(
-      `Fetching sold listings for card ${config.card_id} (${config.condition_bucket})...`,
+      `Fetching sold listings for card ${config.card_id} (${config.condition_bucket})...`
     );
     const market = normalizeMarketCode(config.market);
-    const soldItems = await fetchEbaySoldListings(
-      config.search_query,
-      market,
-    );
+    const soldItems = await fetchEbaySoldListings(config.search_query, market);
 
     let insertedForCard = 0;
     for (const item of soldItems) {
@@ -87,12 +124,17 @@ async function main() {
       }
 
       try {
-        await insertSoldListing(config.card_id, config.condition_bucket, market, item);
+        await insertSoldListing(
+          config.card_id,
+          config.condition_bucket,
+          market,
+          item
+        );
         insertedForCard += 1;
       } catch (err) {
         console.error(
           `Failed to insert sold listing "${item.title}" for card ${config.card_id}:`,
-          err,
+          err
         );
       }
     }
@@ -100,12 +142,12 @@ async function main() {
     processed += 1;
     totalInserted += insertedForCard;
     console.log(
-      `Card ${config.card_id}: inserted ${insertedForCard} sold rows (processed ${processed}/${configs.length}).`,
+      `Card ${config.card_id}: inserted ${insertedForCard} sold rows (processed ${processed}/${configs.length}).`
     );
   }
 
   console.log(
-    `Sold listings update complete. Total rows inserted: ${totalInserted}.`,
+    `Sold listings update complete. Total rows inserted: ${totalInserted}.`
   );
 }
 

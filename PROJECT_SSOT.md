@@ -279,6 +279,21 @@ Canonical references:
 
 **Maturity**: Medium — CI lint+build + formatting gate; Gap: real automated tests (unit/integration/e2e) and/or CI "test" job.
 
+#### CI Budget Optimization (LOCKED)
+
+- **Docs-only changes**: CI SHALL skip heavy jobs where safe (use `paths-ignore` and/or conditional jobs) and route to a lightweight workflow/job.
+- **No redundant builds**: `npm run build` SHALL NOT run more than once per workflow run for a given commit.
+- **Caching**: CI SHALL use caching where applicable (npm cache and Next.js cache such as `.next/cache`) to reduce run time and minutes.
+- **Concurrency**: CI SHALL cancel superseded PR runs (use GitHub Actions `concurrency` with `cancel-in-progress: true`).
+- **Required checks**: Required status checks SHALL be minimal for docs-only PRs (or satisfied via a lighter workflow/job for docs-only diffs).
+
+**How to verify CI burn is reduced**
+
+- Open Actions → verify a docs-only PR triggers only the lightweight docs job (no lint/test/build) and still satisfies required checks.
+- Open Actions → verify that pushing multiple commits to the same PR cancels older runs (only the latest is in-progress).
+- Inspect workflow logs → confirm cache restore hits for npm and `.next/cache` on subsequent runs.
+- Compare repo Actions usage (minutes) week-over-week after the change lands.
+
 ### 2) Observability & Monitoring
 
 **Maturity**: Low→Medium — /api/health + server-only Sentry; Gap: alerts/dashboards/perf metrics/structured logs.

@@ -20,7 +20,7 @@
  */
 
 import { query } from "../lib/db";
-import { SUPPORTED_MARKETS, getExpectedCurrency } from "../lib/markets";
+import { SUPPORTED_CURRENCIES } from "../lib/markets";
 import {
   FXRateRunStatus,
   classifyFXDriftStatus,
@@ -35,10 +35,6 @@ const CADENCE = "hourly";
 
 const OXR_URL = "https://openexchangerates.org/api/latest.json";
 const OXR_APP_ID_ENV = "OPEN_EXCHANGE_RATES_APP_ID";
-
-const SUPPORTED_CURRENCIES = Array.from(
-  new Set(["USD", ...SUPPORTED_MARKETS.map((m) => getExpectedCurrency(m))])
-);
 
 type OpenExchangeRatesResponse = {
   disclaimer?: string;

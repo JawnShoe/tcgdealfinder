@@ -1,4 +1,9 @@
-export const SUPPORTED_MARKETS = ["EBAY_US", "EBAY_CA", "EBAY_GB", "EBAY_AU"] as const;
+export const SUPPORTED_MARKETS = [
+  "EBAY_US",
+  "EBAY_CA",
+  "EBAY_GB",
+  "EBAY_AU",
+] as const;
 
 export type MarketCode = (typeof SUPPORTED_MARKETS)[number];
 
@@ -11,15 +16,23 @@ const MARKET_LABELS: Record<MarketCode, string> = {
   EBAY_AU: "Australia",
 };
 
-const MARKET_CURRENCIES: Record<MarketCode, string> = {
+export const MARKET_CURRENCIES: Record<MarketCode, string> = {
   EBAY_US: "USD",
   EBAY_CA: "CAD",
   EBAY_GB: "GBP",
   EBAY_AU: "AUD",
 };
 
+// Unique currency allowlist derived from SUPPORTED_MARKETS + MARKET_CURRENCIES.
+export const SUPPORTED_CURRENCIES = Array.from(
+  new Set([
+    "USD",
+    ...SUPPORTED_MARKETS.map((market) => MARKET_CURRENCIES[market]),
+  ])
+);
+
 export function normalizeMarketCode(
-  value: string | null | undefined,
+  value: string | null | undefined
 ): MarketCode | "all" {
   if (!value) {
     return DEFAULT_MARKET;
@@ -31,13 +44,28 @@ export function normalizeMarketCode(
   if (upper === "US" || upper === "EBAY_US" || upper === "USA") {
     return "EBAY_US";
   }
-  if (upper === "CA" || upper === "EBAY_CA" || upper === "CAN" || upper === "CANADA") {
+  if (
+    upper === "CA" ||
+    upper === "EBAY_CA" ||
+    upper === "CAN" ||
+    upper === "CANADA"
+  ) {
     return "EBAY_CA";
   }
-  if (upper === "GB" || upper === "EBAY_GB" || upper === "UK" || upper === "EBAY_UK") {
+  if (
+    upper === "GB" ||
+    upper === "EBAY_GB" ||
+    upper === "UK" ||
+    upper === "EBAY_UK"
+  ) {
     return "EBAY_GB";
   }
-  if (upper === "AU" || upper === "EBAY_AU" || upper === "AUS" || upper === "AUSTRALIA") {
+  if (
+    upper === "AU" ||
+    upper === "EBAY_AU" ||
+    upper === "AUS" ||
+    upper === "AUSTRALIA"
+  ) {
     return "EBAY_AU";
   }
   return DEFAULT_MARKET;
@@ -66,4 +94,3 @@ export function getMarketCompactLabel(code: MarketCode): string {
 export function getExpectedCurrency(code: MarketCode): string {
   return MARKET_CURRENCIES[code];
 }
-

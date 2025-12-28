@@ -21,6 +21,7 @@ jobs:
         id: changes
         uses: dorny/paths-filter@v3
         with:
+          predicate-quantifier: "every"
           filters: |
             non_docs:
               - "**"

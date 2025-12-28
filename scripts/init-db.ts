@@ -24,6 +24,11 @@ CREATE TABLE IF NOT EXISTS historical_prices (
   median_price_cad NUMERIC(10, 2) NOT NULL,
   sample_size INTEGER NOT NULL,
   last_updated_at TIMESTAMP NOT NULL,
+  baseline_median_usd NUMERIC(18, 6),
+  baseline_sample_size_usd INTEGER,
+  baseline_window_days INTEGER,
+  baseline_outlier_trim_percent NUMERIC(5, 2) NOT NULL DEFAULT 5.00,
+  baseline_status TEXT NOT NULL DEFAULT 'OK' CHECK (baseline_status IN ('OK', 'INSUFFICIENT_DATA')),
   UNIQUE (card_id, market)
 );
 
@@ -103,10 +108,27 @@ CREATE TABLE IF NOT EXISTS ebay_sold_listings (
   condition TEXT NOT NULL,
   title TEXT NOT NULL,
   price NUMERIC(10, 2) NOT NULL,
+  currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+  price_native NUMERIC(10, 2) NOT NULL,
+  shipping_native NUMERIC(10, 2),
+  shipping_unknown BOOLEAN NOT NULL DEFAULT TRUE,
+  total_native NUMERIC(10, 2) NOT NULL,
+  fx_status TEXT NOT NULL DEFAULT 'OK' CHECK (fx_status IN ('OK', 'MISSING')),
+  fx_rate_to_usd NUMERIC(18, 10),
+  fx_timestamp TIMESTAMPTZ,
+  total_usd NUMERIC(18, 6),
+  snapshot_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ingested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   sold_at TIMESTAMP,
   raw JSONB NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS ebay_sold_listings_card_market_sold_at_desc_idx
+  ON ebay_sold_listings (card_id, market, sold_at DESC);
+
+CREATE INDEX IF NOT EXISTS ebay_sold_listings_fx_status_idx
+  ON ebay_sold_listings (fx_status);
 
 CREATE TABLE IF NOT EXISTS card_search_config (
   id SERIAL PRIMARY KEY,

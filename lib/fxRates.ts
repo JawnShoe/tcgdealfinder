@@ -13,16 +13,49 @@ const FX_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 /**
  * Canonical FX definition: rate_to_usd = "USD per 1 unit of native currency"
  * Formula: native_amount × rate_to_usd = USD_amount
- *
- * Direction validation (prevents inverted rates):
- * - Currencies STRONGER than USD must have rate > 1.0 (1 GBP = ~1.27 USD)
- * - Currencies WEAKER than USD must have rate < 1.0 (1 CAD = ~0.72 USD)
  */
-const CURRENCIES_STRONGER_THAN_USD = new Set(["GBP", "EUR", "CHF"]);
-const CURRENCIES_WEAKER_THAN_USD = new Set(["CAD", "AUD", "MXN", "JPY", "CNY"]);
+const FX_RATE_MIN = 0.0001;
+const FX_RATE_MAX = 10000;
+
+export type FXRateRunStatus = "SUCCESS" | "DRIFT_SUSPECT" | "FAILED";
+
+export const FX_DRIFT_SUSPECT_PERCENT = 5;
+export const FX_DRIFT_FAILED_PERCENT = 15;
+
+export function computeFXDriftPercent(
+  previousRateToUsd: number,
+  nextRateToUsd: number
+): number {
+  if (
+    !Number.isFinite(previousRateToUsd) ||
+    previousRateToUsd <= 0 ||
+    !Number.isFinite(nextRateToUsd) ||
+    nextRateToUsd <= 0
+  ) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return (
+    (Math.abs(nextRateToUsd - previousRateToUsd) / previousRateToUsd) * 100
+  );
+}
+
+export function classifyFXDriftStatus(
+  maxDriftPercent: number
+): FXRateRunStatus {
+  if (!Number.isFinite(maxDriftPercent)) {
+    return "FAILED";
+  }
+  if (maxDriftPercent > FX_DRIFT_FAILED_PERCENT) {
+    return "FAILED";
+  }
+  if (maxDriftPercent > FX_DRIFT_SUSPECT_PERCENT) {
+    return "DRIFT_SUSPECT";
+  }
+  return "SUCCESS";
+}
 
 /**
- * Validate FX rate direction to prevent inverted rates.
+ * Validate FX rate hard bounds (Option A Phase 0).
  * Returns error message if invalid, null if valid.
  */
 export function validateFXRateDirection(
@@ -32,32 +65,11 @@ export function validateFXRateDirection(
   const upper = currency.toUpperCase();
 
   if (!Number.isFinite(rate) || rate <= 0) {
-    return `Invalid rate: ${rate} (must be positive number)`;
+    return `Invalid rate for ${upper}: ${rate} (must be finite and > 0)`;
   }
 
-  if (upper === "USD") {
-    if (rate !== 1.0) {
-      return `USD rate must be exactly 1.0, got ${rate}`;
-    }
-    return null;
-  }
-
-  if (CURRENCIES_STRONGER_THAN_USD.has(upper)) {
-    if (rate < 1.0) {
-      return (
-        `${upper} is stronger than USD, so rate must be > 1.0. ` +
-        `Got ${rate}, which looks inverted (USD→${upper} instead of ${upper}→USD).`
-      );
-    }
-  }
-
-  if (CURRENCIES_WEAKER_THAN_USD.has(upper)) {
-    if (rate > 1.0) {
-      return (
-        `${upper} is weaker than USD, so rate must be < 1.0. ` +
-        `Got ${rate}, which looks inverted (USD→${upper} instead of ${upper}→USD).`
-      );
-    }
+  if (rate < FX_RATE_MIN || rate > FX_RATE_MAX) {
+    return `Invalid rate for ${upper}: ${rate} (must be within [${FX_RATE_MIN}, ${FX_RATE_MAX}])`;
   }
 
   return null;
@@ -129,7 +141,7 @@ export function invalidateFXCache(): void {
 
 /**
  * Update a single FX rate in the database.
- * Validates rate direction unless skipValidation is true.
+ * Validates hard bounds unless skipValidation is true.
  */
 export async function updateFXRate(
   currency: string,
@@ -155,6 +167,65 @@ export async function updateFXRate(
       notes = COALESCE(EXCLUDED.notes, fx_rates.notes);
     `,
     [currency.toUpperCase(), rateToUsd, notes ?? null]
+  );
+
+  invalidateFXCache();
+}
+
+/**
+ * Bulk upsert FX rates in a single statement (atomic).
+ * Ensures no partial writes across currencies.
+ */
+export async function upsertFXRates(
+  rates: Map<string, number>,
+  notes?: string,
+  options?: { skipValidation?: boolean }
+): Promise<void> {
+  const entries: Array<[string, number]> = Array.from(rates.entries()).map(
+    ([currency, rateToUsd]): [string, number] => [
+      currency.toUpperCase(),
+      rateToUsd,
+    ]
+  );
+
+  if (entries.length === 0) {
+    return;
+  }
+
+  if (!options?.skipValidation) {
+    const errors: string[] = [];
+    for (const [currency, rateToUsd] of entries) {
+      const error = validateFXRateDirection(currency, rateToUsd);
+      if (error) errors.push(error);
+    }
+    if (errors.length > 0) {
+      throw new Error(`FX rate validation failed:\n- ${errors.join("\n- ")}`);
+    }
+  }
+
+  entries.sort(([a], [b]) => a.localeCompare(b));
+
+  const values: Array<string | number | null> = [];
+  const rowsSql: string[] = [];
+  let paramIndex = 1;
+  for (const [currency, rateToUsd] of entries) {
+    rowsSql.push(
+      `($${paramIndex++}, $${paramIndex++}, CURRENT_TIMESTAMP, $${paramIndex++})`
+    );
+    values.push(currency, rateToUsd, notes ?? null);
+  }
+
+  await query(
+    `
+      INSERT INTO fx_rates (currency, rate_to_usd, updated_at, notes)
+      VALUES ${rowsSql.join(",\n")}
+      ON CONFLICT (currency)
+      DO UPDATE SET
+        rate_to_usd = EXCLUDED.rate_to_usd,
+        updated_at = CURRENT_TIMESTAMP,
+        notes = COALESCE(EXCLUDED.notes, fx_rates.notes);
+    `,
+    values
   );
 
   invalidateFXCache();

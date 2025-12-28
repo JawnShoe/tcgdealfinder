@@ -1,6 +1,6 @@
 # PROJECT SSOT — TCG Deal Finder
 
-**Last Updated**: 2025-12-27
+**Last Updated**: 2025-12-28
 **Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
 
 **ACTIVE WORK**: Tier 2: Alerts + DB-backed Watchlist (MVP)
@@ -95,6 +95,7 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 - Restorepoint bundle for pre-Tailwind v4 migration (2025-12-24): `t:\Projects\tcg-deal-finder-pre-tailwind-v4-migration.bundle` (HEAD: 1861b7f).
 - Job Silence Watchdog (2025-12-26): Added `.github/workflows/job-silence-watchdog.yml` to detect when scheduled data pipeline jobs have not run. Runs every 2 hours; checks `/api/health` freshness data; fails workflow if listings >2h stale or historical prices >26h stale. Distinguishes "job didn't run" from "job ran and failed". PR #66 (commit eea4de6).
 - Design Audit + Phases Docs (2025-12-27): Added `docs/design/DESIGN_AUDIT_2025-01.md` (external expert audit, advisory-only) and `docs/design/DESIGN_PHASES.md` (locked Phase 1 definition). Design Direction section added to SSOT as pointer. Classification: Docs-only (advisory planning artifacts, temporary). PR: #73 (merged). Merge commit: d21300c.
+- Option A Phase 0 ƒ?" FX run instrumentation (2025-12-28): Added `migrations/009_option_a_fx_rate_runs.sql` and updated `scripts/update-fx-rates-auto.ts` to use Open Exchange Rates (env-only `OPEN_EXCHANGE_RATES_APP_ID`) with hard bounds + 5%/15% drift gating (hold last-known). `/api/health` now surfaces provider/cadence + last-success vs last-attempt status and listing invariant rates (`total_usd` null rate, shipping unknown rate). PR: #96 (open).
 
 ### Security / Admin Access
 

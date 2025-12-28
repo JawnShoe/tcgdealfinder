@@ -20,6 +20,7 @@
  */
 
 import { query } from "../lib/db";
+import { SUPPORTED_MARKETS, getExpectedCurrency } from "../lib/markets";
 import {
   FXRateRunStatus,
   classifyFXDriftStatus,
@@ -34,6 +35,10 @@ const CADENCE = "hourly";
 
 const OXR_URL = "https://openexchangerates.org/api/latest.json";
 const OXR_APP_ID_ENV = "OPEN_EXCHANGE_RATES_APP_ID";
+
+const SUPPORTED_CURRENCIES = Array.from(
+  new Set(["USD", ...SUPPORTED_MARKETS.map((m) => getExpectedCurrency(m))])
+);
 
 type OpenExchangeRatesResponse = {
   disclaimer?: string;
@@ -152,6 +157,25 @@ function validateAllRates(ratesToUsd: Map<string, number>): string[] {
   return errors;
 }
 
+function pickSupportedCurrencies(ratesToUsd: Map<string, number>): {
+  rates: Map<string, number>;
+  missing: string[];
+} {
+  const picked = new Map<string, number>();
+  const missing: string[] = [];
+
+  for (const currency of SUPPORTED_CURRENCIES) {
+    const rate = ratesToUsd.get(currency);
+    if (rate == null) {
+      missing.push(currency);
+      continue;
+    }
+    picked.set(currency, rate);
+  }
+
+  return { rates: picked, missing };
+}
+
 function computeDriftDetails(
   previousRates: Map<string, number>,
   nextRates: Map<string, number>
@@ -261,15 +285,28 @@ async function main(): Promise<number> {
   try {
     const fetched = await fetchOpenExchangeRates();
     providerTimestamp = fetched.providerTimestamp;
-    nextRates = fetched.ratesToUsd;
+    const providerRates = fetched.ratesToUsd;
     rawPayloadJson = fetched.rawPayloadJson;
 
     console.log(
       `Provider timestamp: ${new Date(providerTimestamp * 1000).toISOString()}`
     );
-    console.log(`Provider currencies: ${nextRates.size}`);
+    console.log(`Provider currencies: ${providerRates.size}`);
+
+    const { rates: supportedRates, missing } =
+      pickSupportedCurrencies(providerRates);
+    nextRates = supportedRates;
+
+    console.log(
+      `Applying currencies: ${SUPPORTED_CURRENCIES.join(", ")} (count=${nextRates.size})`
+    );
 
     const validationErrors = validateAllRates(nextRates);
+    if (missing.length > 0) {
+      validationErrors.push(
+        `Missing required currencies from provider payload: ${missing.join(", ")}`
+      );
+    }
     if (validationErrors.length > 0) {
       status = "FAILED";
       maxDriftPercent = 0;

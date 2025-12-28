@@ -2,7 +2,8 @@
 
 **Status**: DRAFT (definitions-only; suitable for locking after explicit approval)  
 **Last Updated**: 2025-12-28  
-**STOP**: Do not proceed beyond this audit until reviewed and explicitly approved.
+**STOP**: Do not proceed beyond this audit until reviewed and explicitly approved.  
+**Note**: Merged but not approved; implementation blocked until APPROVED.
 
 **Scope**: Declarative, testable product truths and invariants required for Option A (“global comparability with FX”).  
 **Constraints (LOCKED)**: `PROJECT_SSOT.md` + all LOCKED governance docs are hard constraints. This document introduces no code changes, no fixes, no recommendations, and does not resolve conflicts.
@@ -33,8 +34,8 @@
 - For any persisted listing row, the system SHALL treat the following fields as **internally immutable for that snapshot** (i.e., UI/render code SHALL NOT recompute them): `currency`, `price_native`, `shipping_native`, `shipping_unknown`, `total_native`, `fx_rate_to_usd`, `total_usd`.
 - The system SHALL require `currency` to be a normalized, uppercase ISO 4217 code.
 - The system SHALL require `fx_rate_to_usd` to mean **USD per 1 unit of `currency`** (rate direction as defined in `lib/fxRates.ts`).
-- When `total_native` is present, the system SHALL require `total_usd = round(total_native * fx_rate_to_usd, 2)` for that listing snapshot.
-- When `shipping_unknown = true`, the system SHALL set `total_native = price_native` for that snapshot and SHALL compute `total_usd` from that `total_native` using the snapshot’s `fx_rate_to_usd`.
+- When `total_native` is present, the system SHALL compute `total_usd` from `total_native * fx_rate_to_usd` and SHALL persist it without display rounding; rounding SHALL be applied for display only.
+- When `shipping_unknown = true`, the system SHALL set `total_native = price_native` for that snapshot and SHALL compute `total_usd` from that `total_native` using the snapshot's `fx_rate_to_usd`.
 
 **References**: `PROJECT_SSOT.md` (Deal Systems; Price Integrity Fix), `lib/fxRates.ts` (FX definition).
 
@@ -53,15 +54,15 @@
   - the listing is not excluded by blacklist/overrides governance,
   - the listing meets seller trust requirements for surfaces that claim “trusted/best”.
 - The system SHALL treat `shipping_unknown = true` listings as ineligible for any surface that claims “best” or “trusted” deal ranking.
-- The system SHALL define a **trusted seller** as meeting (at minimum) the locked seller trust threshold: `seller_positive_percent >= 98` AND `seller_feedback_count >= 20`.
+- The system SHALL define a **trusted seller** as meeting (at minimum) the LOCKED seller trust thresholds defined in `PROJECT_SSOT.md`.
 - The system SHALL define the canonical cross-market listing identity as `listing_id` and SHALL suppress duplicate identities across markets using the locked market priority order (US > CA > GB > AU > others).
 - The system SHALL define **best** as a deterministic selection within an explicit surface context (e.g., “Top Deals”, “Best Trusted Deal”), with a declared ordering rule and tie-breakers.
 
 ### Statistical Basis (Median / Window / Exclusions)
 
 - The system SHALL compute sold-price baselines using the **median** (50th percentile), not the mean.
-- The system SHALL compute baselines over a **365-day rolling lookback window**.
-- The system SHALL require a minimum sold sample size of **5** for a baseline to exist.
+- The system SHALL compute baselines over the LOCKED rolling lookback window defined in `PROJECT_SSOT.md`.
+- The system SHALL require the LOCKED minimum eligible sold sample size defined in `PROJECT_SSOT.md` for a baseline to exist.
 - The system SHALL exclude sold rows from baseline computation when any of the following are true:
   - sold timestamp is missing,
   - sold price is missing, non-finite, or non-positive,
@@ -123,8 +124,8 @@
 ### FX Validation (Robust, Non-Brittle)
 
 - The system SHALL validate each candidate FX rate as finite and strictly greater than 0.
-- The system SHALL validate each candidate FX rate against broad absolute bounds: `0.000001 <= fx_rate_to_usd <= 1000000`.
-- The system SHALL validate drift against the prior persisted snapshot for each currency with an existing rate: `abs(new_rate - prior_rate) / prior_rate <= 0.5`.
+- The system SHALL validate each candidate FX rate against broad absolute bounds per the LOCKED thresholds defined in `PROJECT_SSOT.md`.
+- The system SHALL validate drift against the prior persisted snapshot for each currency with an existing rate per the LOCKED thresholds defined in `PROJECT_SSOT.md`.
 - If drift validation fails, the system SHALL hold the last known-good FX rates, SHALL mark the attempted snapshot as stale/failed, and SHALL surface that degradation state.
 - The system SHALL guarantee “no partial writes” for automated FX updates: if validation fails, persisted rates SHALL remain unchanged.
 - The system SHALL guarantee that missing FX rates do not silently corrupt totals: listings requiring conversion with an unavailable FX rate SHALL NOT produce a `total_usd` value.
@@ -177,7 +178,7 @@
 
 ### Integrity/Trust Failures
 
-- For raw (non-graded) listings, if the listing price violates the configured floor ratio against baseline (e.g., `< 0.35`), the system SHALL mark the listing for integrity review.
+- For raw (non-graded) listings, if the listing price violates the LOCKED integrity floor ratio threshold against baseline (as defined in `PROJECT_SSOT.md`), the system SHALL mark the listing for integrity review.
 - Listings marked for integrity review SHALL be treated as “trust-degraded” and SHALL NOT be presented as “best trusted deal”.
 
 **References**: `PROJECT_SSOT.md` (Integrity + trust philosophy; Deal Systems), `scripts/update-listings.ts` (integrity floor), `lib/fxRates.ts` (FX failure semantics).
@@ -199,6 +200,6 @@
 
 - `PROJECT_SSOT.md` contains both (a) a historical audit note claiming “no scheduler” for pipeline scripts and (b) a later section declaring scheduled GitHub Actions pipelines; this is a documentation-level conflict to be reviewed, not resolved here.
 - `PROJECT_SSOT.md` declares baselines are stored in CAD and rendered into USD at display time; this audit defines `baseline_median_usd` as the canonical baseline for Option A ranking truth, which is a documentation-level conflict to be reviewed, not resolved here.
-- `PROJECT_SSOT.md` includes FX validation direction-check heuristics (e.g., GBP > 1.0 / CAD < 1.0); this audit defines robust FX validation via bounds + drift checks, which is a documentation-level conflict to be reviewed, not resolved here.
+- `PROJECT_SSOT.md` includes FX validation direction-check heuristics; this audit defines robust FX validation via bounds + drift checks, which is a documentation-level conflict to be reviewed, not resolved here.
 - `docs/market-policy.md` is an active reference document that describes CAD-based normalization and supported markets; where it diverges from SSOT-locked Deal Systems, SSOT remains authoritative.
 - SSOT-locked UI governance (`docs/ui/UI_CONSISTENCY_CONTRACT.md`) remains binding; this audit does not authorize tooltip/layout behavior changes.

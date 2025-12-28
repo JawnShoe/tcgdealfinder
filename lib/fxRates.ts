@@ -181,10 +181,12 @@ export async function upsertFXRates(
   notes?: string,
   options?: { skipValidation?: boolean }
 ): Promise<void> {
-  const entries = Array.from(rates.entries()).map(([currency, rateToUsd]) => [
-    currency.toUpperCase(),
-    rateToUsd,
-  ]);
+  const entries: Array<[string, number]> = Array.from(rates.entries()).map(
+    ([currency, rateToUsd]): [string, number] => [
+      currency.toUpperCase(),
+      rateToUsd,
+    ]
+  );
 
   if (entries.length === 0) {
     return;

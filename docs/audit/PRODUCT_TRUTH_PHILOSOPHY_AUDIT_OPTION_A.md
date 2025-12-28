@@ -13,24 +13,28 @@
 
 ### What Constitutes a Price
 
-- The system SHALL define a listing’s **item price** as the eBay-provided item price amount as captured at ingestion.
-- The system SHALL define a listing’s **shipping price** as the eBay-provided shipping amount as captured at ingestion.
-- The system SHALL define a listing’s **total price** as `item price + shipping price` when (and only when) shipping is known.
+- The system SHALL define a listing’s **item price** as the eBay-provided item price amount as captured at ingestion (`price_native`).
+- The system SHALL define a listing’s **shipping price** as the eBay-provided shipping amount as captured at ingestion (`shipping_native`), which MAY be NULL.
+- The system SHALL define `shipping_unknown` as `shipping_native IS NULL` for that listing snapshot.
+- The system SHALL define a listing’s **total native** (`total_native`) as:
+  - `price_native + shipping_native` when `shipping_unknown = false`,
+  - `price_native` when `shipping_unknown = true`.
 - The system SHALL treat taxes, duties, and buyer-location adjustments as **out of scope** for the price model unless explicitly present in the captured eBay price/shipping fields.
 
 ### When Price Becomes Final (for This System)
 
-- The system SHALL treat all listing price fields as a **snapshot** whose “finality” is anchored to the listing record’s ingestion timestamp (e.g., `listings.updated_at`).
+- The system SHALL treat all listing price fields as a **snapshot** whose “finality” is anchored to an explicit ingestion timestamp (`snapshot_at` / `ingested_at`) for that listing snapshot.
+- The system SHALL NOT treat a generic `updated_at` value as `snapshot_at` unless the system explicitly defines that mapping for listing snapshots.
 - The system SHALL NOT claim that a listing snapshot equals the eventual checkout total on eBay.
 - The system SHALL surface a staleness disclaimer where defined by SSOT (“Price may have changed on eBay”) and SHALL treat that disclaimer as a first-class truth, not an error state.
 
 ### Immutable Price Fields (Snapshot-Immutability)
 
-- For any persisted listing row, the system SHALL treat the following fields as **internally immutable for that snapshot** (i.e., UI/render code SHALL NOT recompute them): `currency`, `price_native`, `shipping_native`, `total_native`, `fx_rate_to_usd`, `total_usd`.
+- For any persisted listing row, the system SHALL treat the following fields as **internally immutable for that snapshot** (i.e., UI/render code SHALL NOT recompute them): `currency`, `price_native`, `shipping_native`, `shipping_unknown`, `total_native`, `fx_rate_to_usd`, `total_usd`.
 - The system SHALL require `currency` to be a normalized, uppercase ISO 4217 code.
 - The system SHALL require `fx_rate_to_usd` to mean **USD per 1 unit of `currency`** (rate direction as defined in `lib/fxRates.ts`).
 - When `total_native` is present, the system SHALL require `total_usd = round(total_native * fx_rate_to_usd, 2)` for that listing snapshot.
-- When shipping is unknown, the system SHALL allow `total_native` and `total_usd` to be NULL and SHALL treat the listing as **non-comparable** for total-based ranking.
+- When `shipping_unknown = true`, the system SHALL set `total_native = price_native` for that snapshot and SHALL compute `total_usd` from that `total_native` using the snapshot’s `fx_rate_to_usd`.
 
 **References**: `PROJECT_SSOT.md` (Deal Systems; Price Integrity Fix), `lib/fxRates.ts` (FX definition).
 
@@ -40,13 +44,15 @@
 
 ### Formal Definitions
 
-- The system SHALL define a **baseline** as the median of eligible sold listings for a given card/bucket over a rolling time window (see Statistical Basis).
+- The system SHALL define **USD** as the canonical ranking currency for Option A.
+- The system SHALL define a **baseline** as `baseline_median_usd`: the median of eligible sold listings’ `total_usd` for a given card/bucket over a rolling time window (see Statistical Basis).
 - The system SHALL define **undervalued** as “priced below baseline” when a baseline exists:
   - `undervalued ⇔ discount_percent < 0` where `discount_percent` is defined below.
 - The system SHALL define **deal** as “undervalued + eligible + trust-safe”, where eligibility includes (at minimum):
-  - shipping is known,
+  - `shipping_unknown = false`,
   - the listing is not excluded by blacklist/overrides governance,
   - the listing meets seller trust requirements for surfaces that claim “trusted/best”.
+- The system SHALL treat `shipping_unknown = true` listings as ineligible for any surface that claims “best” or “trusted” deal ranking.
 - The system SHALL define a **trusted seller** as meeting (at minimum) the locked seller trust threshold: `seller_positive_percent >= 98` AND `seller_feedback_count >= 20`.
 - The system SHALL define the canonical cross-market listing identity as `listing_id` and SHALL suppress duplicate identities across markets using the locked market priority order (US > CA > GB > AU > others).
 - The system SHALL define **best** as a deterministic selection within an explicit surface context (e.g., “Top Deals”, “Best Trusted Deal”), with a declared ordering rule and tie-breakers.
@@ -61,20 +67,21 @@
   - sold price is missing, non-finite, or non-positive,
   - condition bucket is missing,
   - the sold listing title fails the title validity gate.
-- The system SHALL store baseline values canonically in **CAD** (as `median_price_cad`) and SHALL treat CAD as the baseline’s authoritative unit.
+- The system SHALL define `baseline_median_usd` as a USD-denominated value derived from eligible sold rows’ `total_usd` values.
+- The system SHALL NOT compute `discount_percent` or rank listings by mixing USD totals with non-USD baselines (display currencies SHALL NOT affect ranking truth).
 
 ### Discount Semantics
 
 - The system SHALL define `discount_percent` as:
-  - `discount_percent = ((total_price - baseline_price) / baseline_price) * 100`
+  - `discount_percent = ((total_usd - baseline_median_usd) / baseline_median_usd) * 100`
 - The system SHALL interpret `discount_percent < 0` as “below baseline” and `discount_percent > 0` as “above baseline”.
 - The system SHALL allow display-layer clamping of extreme `discount_percent` values for low-trust sellers, but SHALL NOT change the underlying stored baseline or totals to do so.
 
 ### “Best” Semantics (Surface-Scoped)
 
 - For “Top Deals”, the system SHALL define “best” as “most undervalued” using the ordering:
-  - lowest `discount_percent` (most negative) first, then lowest total price, then soonest end time (tie-breakers).
-- For “Best Trusted Deal” (card detail highlight), the system SHALL define the “best” selection as a single listing chosen from the trusted/eligible set for that card, and SHALL define that listing’s displayed total as “item price + shipping” (or “+ shipping at checkout” when unknown), per SSOT.
+  - lowest `discount_percent` (most negative) first, then lowest `total_usd`, then soonest end time (tie-breakers).
+- For “Best Trusted Deal” (card detail highlight), the system SHALL define the “best” selection as a single listing chosen from the trusted/eligible set for that card, where `shipping_unknown = false`, and SHALL define that listing’s displayed total as “item price + shipping”, per SSOT.
 
 **References**: `scripts/update-sold-listings.ts`, `scripts/update-historical-prices.ts`, `lib/pricing.ts`, `PROJECT_SSOT.md` (Deal Systems; Seller Trust; Integrity).
 
@@ -84,7 +91,8 @@
 
 ### Time Axes (Canonical)
 
-- The system SHALL treat listing ingestion time as `listings.updated_at` and SHALL use it as the canonical “as of” timestamp for any listing snapshot.
+- The system SHALL assign each listing snapshot an explicit ingestion timestamp (`snapshot_at` / `ingested_at`) and SHALL use it as the canonical “as of” timestamp for that snapshot.
+- The system SHALL NOT treat a generic `updated_at` value as the canonical ingestion timestamp unless the system explicitly defines that mapping for listing snapshots.
 - The system SHALL treat listing end time as `listings.ends_at` when present.
 - The system SHALL treat sold time as `ebay_sold_listings.sold_at` (or equivalent) and SHALL use it as the time axis for baseline construction.
 - The system SHALL treat baseline compute time as `historical_prices.last_updated_at` (or equivalent) and SHALL use it as the timestamp for baseline freshness.
@@ -104,6 +112,7 @@
 
 ### FX Snapshot Policy
 
+- The system SHALL source FX rates from a paid provider for Option A.
 - The system SHALL normalize cross-market monetary comparison into **USD** using a captured FX rate.
 - For each listing snapshot with `total_native` present, the system SHALL:
   - select an FX rate `fx_rate_to_usd` for that listing’s `currency`,
@@ -111,15 +120,12 @@
   - persist both `fx_rate_to_usd` and `total_usd` with the listing snapshot.
 - The system SHALL treat `total_usd` as the canonical numeric value for cross-market total comparisons and sorting where “Total USD” is displayed.
 
-### Baseline FX Handling (CAD → USD)
+### FX Validation (Robust, Non-Brittle)
 
-- The system SHALL treat sold baselines as canonically **CAD**.
-- When a “Historic USD” value is displayed, the system SHALL derive it from the canonical CAD baseline via an explicit CAD→USD FX rate from `fx_rates`.
-- The system SHALL treat the derived “Historic USD” as **display-only** unless explicitly persisted with its own FX snapshot metadata.
-
-### Required Guarantees
-
-- The system SHALL enforce FX direction validity (e.g., GBP > 1.0, CAD < 1.0) as a hard invariant for automated FX updates.
+- The system SHALL validate each candidate FX rate as finite and strictly greater than 0.
+- The system SHALL validate each candidate FX rate against broad absolute bounds: `0.000001 <= fx_rate_to_usd <= 1000000`.
+- The system SHALL validate drift against the prior persisted snapshot for each currency with an existing rate: `abs(new_rate - prior_rate) / prior_rate <= 0.5`.
+- If drift validation fails, the system SHALL hold the last known-good FX rates, SHALL mark the attempted snapshot as stale/failed, and SHALL surface that degradation state.
 - The system SHALL guarantee “no partial writes” for automated FX updates: if validation fails, persisted rates SHALL remain unchanged.
 - The system SHALL guarantee that missing FX rates do not silently corrupt totals: listings requiring conversion with an unavailable FX rate SHALL NOT produce a `total_usd` value.
 
@@ -133,12 +139,13 @@
 
 - The UI SHALL render persisted totals as-is and SHALL NOT “repair” currency/FX math at render time.
 - Any UI surface labeled “Total USD” SHALL render the stored `total_usd` value and SHALL NOT substitute any native-currency field for it.
-- Any UI surface labeled “Historic USD” SHALL render a value derived from the canonical baseline (stored in CAD) using the declared FX handling policy.
+- Any UI surface labeled “Historic USD” SHALL render `baseline_median_usd` and SHALL NOT mix units (e.g., compare USD totals against non-USD baselines).
+- Display currencies and locale formatting SHALL NOT affect deal ranking truth (ordering/labels SHALL derive from canonical USD fields).
 - The UI SHALL treat missing/unknown values as first-class states (e.g., unknown shipping, missing baseline) and SHALL NOT fabricate values.
 
 ### SSR / CSR Invariants
 
-- SSR pages that render deal data SHALL be safe to build without a live database connection (build-time DB access SHALL NOT be required).
+- SSR pages that render deal data SHALL be safe to build without a live database connection (build-time DB access SHALL NOT be required); runtime SSR MAY require DB access.
 - Client-side state (e.g., watchlist v1) SHALL remain client-only per SSOT and SHALL NOT be treated as a source of price truth.
 - UI tooltip and overflow behavior SHALL comply with the LOCKED UI Consistency Contract and SHALL NOT be altered by this audit.
 
@@ -150,16 +157,17 @@
 
 ### Price/FX Failures
 
-- If shipping is unknown, the system SHALL:
+- If shipping is unknown (`shipping_unknown = true`), the system SHALL:
+  - set `total_native = price_native` and compute `total_usd` from that total,
   - display a non-final shipping state (e.g., “+ shipping at checkout” where defined),
-  - treat the listing as non-comparable for total-based deal ranking.
+  - treat the listing as non-comparable for total-based deal ranking (e.g., exclude from “best/trusted” surfaces).
 - If an FX rate is missing for a required currency conversion, the system SHALL:
   - fail the conversion explicitly (no `total_usd`),
   - prevent the listing from being treated as USD-comparable.
 - If automated FX updates fail validation, the system SHALL:
   - fail loud (non-zero exit),
   - guarantee no partial writes,
-  - preserve the last known-good FX table state.
+  - preserve the last known-good FX table state and mark the attempted snapshot as stale/failed.
 
 ### Baseline Failures
 
@@ -183,13 +191,14 @@
 - The system SHALL NOT promise that any “deal” remains available or purchasable after ingestion.
 - The system SHALL NOT attempt to compute a universal “true market value” beyond the declared sold-median baseline model.
 - The system SHALL NOT provide financial advice or profit guarantees from cross-market arbitrage.
-- The system SHALL NOT retroactively rewrite historical baselines solely due to FX drift (canonical baseline remains CAD unless explicitly migrated under a Tier-1-approved workstream).
+- The system SHALL NOT retroactively rewrite historical baselines solely due to FX drift.
 
 ---
 
 ## Appendix: Implications for Existing System (No Fixes)
 
 - `PROJECT_SSOT.md` contains both (a) a historical audit note claiming “no scheduler” for pipeline scripts and (b) a later section declaring scheduled GitHub Actions pipelines; this is a documentation-level conflict to be reviewed, not resolved here.
-- `PROJECT_SSOT.md` declares baselines are stored in CAD and rendered into USD at display time; any existing surfaces that compare USD totals against CAD baselines without an explicit conversion policy would violate this audit’s “no mixed units” truth.
+- `PROJECT_SSOT.md` declares baselines are stored in CAD and rendered into USD at display time; this audit defines `baseline_median_usd` as the canonical baseline for Option A ranking truth, which is a documentation-level conflict to be reviewed, not resolved here.
+- `PROJECT_SSOT.md` includes FX validation direction-check heuristics (e.g., GBP > 1.0 / CAD < 1.0); this audit defines robust FX validation via bounds + drift checks, which is a documentation-level conflict to be reviewed, not resolved here.
 - `docs/market-policy.md` is an active reference document that describes CAD-based normalization and supported markets; where it diverges from SSOT-locked Deal Systems, SSOT remains authoritative.
 - SSOT-locked UI governance (`docs/ui/UI_CONSISTENCY_CONTRACT.md`) remains binding; this audit does not authorize tooltip/layout behavior changes.

@@ -6,7 +6,7 @@ export type FXRate = {
   updatedAt: Date;
 };
 
-let fxRatesCache: Map<string, number> | null = null;
+let fxRateSnapshotsCache: Map<string, FXRate> | null = null;
 let fxCacheExpiry: number = 0;
 const FX_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -76,29 +76,58 @@ export function validateFXRateDirection(
 }
 
 /**
+ * Get all FX rates from the database (rate + updated_at), with caching.
+ * Returns a map of currency code -> FXRate snapshot.
+ */
+export async function getFXRateSnapshots(): Promise<Map<string, FXRate>> {
+  const now = Date.now();
+
+  if (fxRateSnapshotsCache && now < fxCacheExpiry) {
+    return fxRateSnapshotsCache;
+  }
+
+  const result = await query<{
+    currency: string;
+    rate_to_usd: string;
+    updated_at: Date;
+  }>(`SELECT currency, rate_to_usd, updated_at FROM fx_rates;`);
+
+  const snapshots = new Map<string, FXRate>();
+  for (const row of result.rows) {
+    const upper = row.currency.toUpperCase();
+    snapshots.set(upper, {
+      currency: upper,
+      rateToUsd: parseFloat(row.rate_to_usd),
+      updatedAt: new Date(row.updated_at),
+    });
+  }
+
+  fxRateSnapshotsCache = snapshots;
+  fxCacheExpiry = now + FX_CACHE_TTL_MS;
+
+  return snapshots;
+}
+
+/**
  * Get all FX rates from the database, with caching.
  * Returns a map of currency code -> rate_to_usd.
  */
 export async function getFXRates(): Promise<Map<string, number>> {
-  const now = Date.now();
-
-  if (fxRatesCache && now < fxCacheExpiry) {
-    return fxRatesCache;
-  }
-
-  const result = await query<{ currency: string; rate_to_usd: string }>(
-    `SELECT currency, rate_to_usd FROM fx_rates;`
-  );
-
+  const snapshots = await getFXRateSnapshots();
   const rates = new Map<string, number>();
-  for (const row of result.rows) {
-    rates.set(row.currency.toUpperCase(), parseFloat(row.rate_to_usd));
-  }
 
-  fxRatesCache = rates;
-  fxCacheExpiry = now + FX_CACHE_TTL_MS;
+  for (const [currency, snapshot] of snapshots.entries()) {
+    rates.set(currency, snapshot.rateToUsd);
+  }
 
   return rates;
+}
+
+export async function getFXRateSnapshot(
+  currency: string
+): Promise<FXRate | null> {
+  const snapshots = await getFXRateSnapshots();
+  return snapshots.get(currency.toUpperCase()) ?? null;
 }
 
 /**
@@ -106,8 +135,8 @@ export async function getFXRates(): Promise<Map<string, number>> {
  * Returns null if not found (caller should skip ingestion for that market).
  */
 export async function getFXRate(currency: string): Promise<number | null> {
-  const rates = await getFXRates();
-  return rates.get(currency.toUpperCase()) ?? null;
+  const snapshot = await getFXRateSnapshot(currency);
+  return snapshot?.rateToUsd ?? null;
 }
 
 /**
@@ -117,25 +146,33 @@ export async function getFXRate(currency: string): Promise<number | null> {
 export async function convertToUSD(
   amount: number | null | undefined,
   currency: string
-): Promise<{ usd: number; rate: number } | null> {
+): Promise<{ usd: number; rate: number; fxTimestamp: Date } | null> {
   if (amount == null || !Number.isFinite(amount) || amount < 0) {
     return null;
   }
 
-  const rate = await getFXRate(currency);
-  if (rate == null) {
+  const snapshot = await getFXRateSnapshot(currency);
+  if (snapshot == null) {
     return null;
   }
 
-  const usd = amount * rate;
-  return { usd: Number(usd.toFixed(2)), rate };
+  const usd = amount * snapshot.rateToUsd;
+
+  // Align with DB storage scale (NUMERIC(18, 6)). Rounding for display remains a UI concern.
+  const usdRounded = Math.round(usd * 1_000_000) / 1_000_000;
+
+  return {
+    usd: usdRounded,
+    rate: snapshot.rateToUsd,
+    fxTimestamp: snapshot.updatedAt,
+  };
 }
 
 /**
  * Invalidate the FX rates cache (call after manual updates).
  */
 export function invalidateFXCache(): void {
-  fxRatesCache = null;
+  fxRateSnapshotsCache = null;
   fxCacheExpiry = 0;
 }
 

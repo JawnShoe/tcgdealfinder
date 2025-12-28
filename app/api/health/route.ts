@@ -145,6 +145,12 @@ async function getFreshnessData(): Promise<FreshnessData | null> {
       }
     }
 
+    if (!lastSuccessAt) {
+      // Fallback: since fx_rates is only mutated on successful runs, its last update
+      // is a best-effort proxy for "last success" when fx_rate_runs is empty.
+      lastSuccessAt = fxLastUpdated;
+    }
+
     const totalRows = listingsRow ? parseInt(listingsRow.total_rows, 10) : null;
     const totalUsdNullCount = listingsRow
       ? parseInt(listingsRow.total_usd_null_count, 10)

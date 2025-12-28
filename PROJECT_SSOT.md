@@ -1190,6 +1190,8 @@ Set these in GitHub repo settings → Secrets and variables → Actions:
 
 FX rates are automatically updated on an hourly cadence via GitHub Actions.
 
+Historical note: The older workflow description referenced Frankfurter daily at 5 AM UTC; this has been superseded by the Open Exchange Rates hourly updater.
+
 | Property        | Value                                                                                       |
 | --------------- | ------------------------------------------------------------------------------------------- |
 | Provider        | Open Exchange Rates (requires GitHub Actions secret `OPEN_EXCHANGE_RATES_APP_ID`)           |
@@ -1198,7 +1200,7 @@ FX rates are automatically updated on an hourly cadence via GitHub Actions.
 | Drift Policy    | >5%: `DRIFT_SUSPECT` (hold last-known, alert); >15%: `FAILED` (reject, hold last-known)     |
 | Instrumentation | `fx_rate_runs` run log table + `/api/health` visibility (last-attempt, last-success, rates) |
 | Script          | `scripts/update-fx-rates-auto.ts`                                                           |
-| Reference       | PR #96                                                                                      |
+| Reference       | PR #96, PR #99                                                                              |
 
 **Kill Switch / Disable**:
 

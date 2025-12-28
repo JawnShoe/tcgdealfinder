@@ -35,6 +35,12 @@ const CADENCE = "hourly";
 const OXR_URL = "https://openexchangerates.org/api/latest.json";
 const OXR_APP_ID_ENV = "OPEN_EXCHANGE_RATES_APP_ID";
 
+// Supported markets (Phase 0): US/CA/GB/AU (+ USD base).
+// We intentionally limit ingestion to supported currencies so locked bounds
+// ([0.0001, 10000] on USD-per-1-native-unit) remain compatible.
+const TARGET_CURRENCIES = ["CAD", "GBP", "AUD"] as const;
+const TARGET_CURRENCY_SET = new Set<string>(TARGET_CURRENCIES);
+
 type OpenExchangeRatesResponse = {
   disclaimer?: string;
   license?: string;
@@ -101,7 +107,8 @@ async function fetchOpenExchangeRates(): Promise<{
     throw new Error(`${OXR_APP_ID_ENV} is not set`);
   }
 
-  const url = `${OXR_URL}?app_id=${encodeURIComponent(appId)}`;
+  const symbols = TARGET_CURRENCIES.join(",");
+  const url = `${OXR_URL}?app_id=${encodeURIComponent(appId)}&symbols=${encodeURIComponent(symbols)}`;
   console.log(`Fetching rates from: ${redactUrl(url)}`);
 
   const response = await fetch(url);
@@ -124,6 +131,7 @@ async function fetchOpenExchangeRates(): Promise<{
   for (const [currency, usdToCurrency] of Object.entries(data.rates)) {
     const upper = currency.toUpperCase();
     if (upper.length !== 3) continue;
+    if (!TARGET_CURRENCY_SET.has(upper)) continue;
     if (!Number.isFinite(usdToCurrency) || usdToCurrency <= 0) {
       throw new Error(`Invalid provider rate for ${upper}: ${usdToCurrency}`);
     }
@@ -135,6 +143,14 @@ async function fetchOpenExchangeRates(): Promise<{
 
   // Ensure USD is present canonically
   ratesToUsd.set("USD", 1.0);
+
+  for (const currency of TARGET_CURRENCIES) {
+    if (!ratesToUsd.has(currency)) {
+      throw new Error(
+        `Provider response missing required currency: ${currency}`
+      );
+    }
+  }
 
   return {
     providerTimestamp: data.timestamp,
@@ -231,6 +247,21 @@ async function insertFxRateRun(args: {
   }
 }
 
+async function hasPriorFxSuccessRun(): Promise<boolean> {
+  try {
+    const res = await query<{ exists: boolean }>(`
+      SELECT EXISTS (
+        SELECT 1
+        FROM fx_rate_runs
+        WHERE status = 'SUCCESS'
+      ) AS exists;
+    `);
+    return Boolean(res.rows[0]?.exists);
+  } catch {
+    return false;
+  }
+}
+
 async function main(): Promise<number> {
   const applyMode = process.argv.includes("--apply");
 
@@ -278,15 +309,28 @@ async function main(): Promise<number> {
       });
       failureReason = `Hard validation failed (${validationErrors.length} errors)`;
     } else {
-      const drift = computeDriftDetails(currentRates, nextRates);
-      maxDriftPercent = drift.maxDriftPercent;
-      driftDetailsJson = JSON.stringify({
-        provider_timestamp: providerTimestamp,
-        sample_top_drifts: drift.topDrifts,
-      });
-      status = classifyFXDriftStatus(maxDriftPercent);
-      if (status !== "SUCCESS") {
-        failureReason = `Drift exceeded threshold (max=${maxDriftPercent.toFixed(4)}%)`;
+      const priorSuccessExists = applyMode
+        ? await hasPriorFxSuccessRun()
+        : true;
+
+      if (!priorSuccessExists) {
+        status = "SUCCESS";
+        maxDriftPercent = 0;
+        driftDetailsJson = JSON.stringify({
+          provider_timestamp: providerTimestamp,
+          drift_check: "SKIPPED_NO_PRIOR_SUCCESS",
+        });
+      } else {
+        const drift = computeDriftDetails(currentRates, nextRates);
+        maxDriftPercent = drift.maxDriftPercent;
+        driftDetailsJson = JSON.stringify({
+          provider_timestamp: providerTimestamp,
+          sample_top_drifts: drift.topDrifts,
+        });
+        status = classifyFXDriftStatus(maxDriftPercent);
+        if (status !== "SUCCESS") {
+          failureReason = `Drift exceeded threshold (max=${maxDriftPercent.toFixed(4)}%)`;
+        }
       }
     }
   } catch (err) {

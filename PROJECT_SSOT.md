@@ -95,7 +95,7 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 - Restorepoint bundle for pre-Tailwind v4 migration (2025-12-24): `t:\Projects\tcg-deal-finder-pre-tailwind-v4-migration.bundle` (HEAD: 1861b7f).
 - Job Silence Watchdog (2025-12-26): Added `.github/workflows/job-silence-watchdog.yml` to detect when scheduled data pipeline jobs have not run. Runs every 2 hours; checks `/api/health` freshness data; fails workflow if listings >2h stale or historical prices >26h stale. Distinguishes "job didn't run" from "job ran and failed". PR #66 (commit eea4de6).
 - Design Audit + Phases Docs (2025-12-27): Added `docs/design/DESIGN_AUDIT_2025-01.md` (external expert audit, advisory-only) and `docs/design/DESIGN_PHASES.md` (locked Phase 1 definition). Design Direction section added to SSOT as pointer. Classification: Docs-only (advisory planning artifacts, temporary). PR: #73 (merged). Merge commit: d21300c.
-- Option A Phase 0 ƒ?" FX run instrumentation (2025-12-28): Added `migrations/009_option_a_fx_rate_runs.sql` and updated `scripts/update-fx-rates-auto.ts` to use Open Exchange Rates (env-only `OPEN_EXCHANGE_RATES_APP_ID`) with hard bounds + 5%/15% drift gating (hold last-known). `/api/health` now surfaces provider/cadence + last-success vs last-attempt status and listing invariant rates (`total_usd` null rate, shipping unknown rate). PR: #96 (open).
+- Option A Phase 0 ƒ?" FX run instrumentation (2025-12-28): Added `migrations/009_option_a_fx_rate_runs.sql` and updated `scripts/update-fx-rates-auto.ts` to use Open Exchange Rates (env-only `OPEN_EXCHANGE_RATES_APP_ID`) with hard bounds + 5%/15% drift gating (hold last-known). `/api/health` now surfaces provider/cadence + last-success vs last-attempt status and listing invariant rates (`total_usd` null rate, shipping unknown rate). PR: #96 (merged).
 
 ### Security / Admin Access
 
@@ -1168,12 +1168,13 @@ High ROI, low product risk, mostly additive.
 
 Set these in GitHub repo settings → Secrets and variables → Actions:
 
-| Secret Name          | Required    | Description                                                              |
-| -------------------- | ----------- | ------------------------------------------------------------------------ |
-| `DATABASE_URL`       | ✅ Yes      | Postgres connection string (e.g., `postgresql://user:pass@host:5432/db`) |
-| `EBAY_APP_ID`        | ✅ Yes      | eBay API app ID (also used as EBAY_CLIENT_ID for OAuth2)                 |
-| `EBAY_CLIENT_SECRET` | ✅ Yes      | eBay API client secret for OAuth2 token exchange                         |
-| `SENDGRID_API_KEY`   | ❌ Optional | SendGrid API key for alert emails (alerts job will skip if not set)      |
+| Secret Name                  | Required    | Description                                                              |
+| ---------------------------- | ----------- | ------------------------------------------------------------------------ |
+| `DATABASE_URL`               | ✅ Yes      | Postgres connection string (e.g., `postgresql://user:pass@host:5432/db`) |
+| `EBAY_APP_ID`                | ✅ Yes      | eBay API app ID (also used as EBAY_CLIENT_ID for OAuth2)                 |
+| `EBAY_CLIENT_SECRET`         | ✅ Yes      | eBay API client secret for OAuth2 token exchange                         |
+| `OPEN_EXCHANGE_RATES_APP_ID` | ✅ Yes      | Open Exchange Rates app ID for FX updater                                |
+| `SENDGRID_API_KEY`           | ❌ Optional | SendGrid API key for alert emails (alerts job will skip if not set)      |
 
 **First-Run Validation Steps**:
 
@@ -1184,22 +1185,23 @@ Set these in GitHub repo settings → Secrets and variables → Actions:
 5. Check `/api/health` endpoint for freshness data
 6. If successful, scheduled runs will begin automatically
 
-**FX Rate Updates** (automated daily):
+**FX Rate Updates** (automated):
 
-FX rates are automatically updated daily at 5 AM UTC via GitHub Actions.
+FX rates are automatically updated on an hourly cadence via GitHub Actions.
 
-| Property     | Value                                                            |
-| ------------ | ---------------------------------------------------------------- |
-| Schedule     | Daily at 5 AM UTC (`0 5 * * *`)                                  |
-| Data Source  | [Frankfurter API](https://frankfurter.dev/) (free, no API key)   |
-| Currencies   | CAD, GBP, AUD, EUR (USD = 1.0 baseline)                          |
-| Validation   | Direction checks: GBP > 1.0, CAD < 1.0, AUD < 1.0, EUR > 0.9     |
-| Failure Mode | Fail loud — non-zero exit, no partial writes if validation fails |
-| Script       | `scripts/update-fx-rates-auto.ts`                                |
+| Property        | Value                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| Provider        | Open Exchange Rates (requires GitHub Actions secret `OPEN_EXCHANGE_RATES_APP_ID`)           |
+| Cadence         | Hourly (one call/hour; cache the rates table)                                               |
+| Hard Validation | Rate is finite, > 0, and within [0.0001, 10000]                                             |
+| Drift Policy    | >5%: `DRIFT_SUSPECT` (hold last-known, alert); >15%: `FAILED` (reject, hold last-known)     |
+| Instrumentation | `fx_rate_runs` run log table + `/api/health` visibility (last-attempt, last-success, rates) |
+| Script          | `scripts/update-fx-rates-auto.ts`                                                           |
+| Reference       | PR #96                                                                                      |
 
 **Kill Switch / Disable**:
 
-- To disable: Go to GitHub Actions → Data Pipelines workflow → Disable workflow (or remove `0 5 * * *` cron line)
+- To disable: Go to GitHub Actions → Data Pipelines workflow → Disable workflow (or remove the `update-fx-rates` cron schedule entry)
 - To run manually: Actions → Data Pipelines → Run workflow → select `update-fx-rates`
 
 **Manual Override** (if needed):

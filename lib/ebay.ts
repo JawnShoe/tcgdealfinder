@@ -1,5 +1,5 @@
-import type { MarketCode } from "./markets";
-import { fetchWithRateLimitRetry } from "./rateLimitRetry"; // lib/ebay.ts
+import type { MarketCode } from "./markets.ts";
+import { fetchWithRateLimitRetry } from "./rateLimitRetry.ts"; // lib/ebay.ts
 
 //
 // eBay integration using the modern Buy/Browse API.
@@ -524,6 +524,23 @@ function toMarketplaceId(market: string): string {
   }
 }
 
+// Map our stored market code to the Finding API GLOBAL-ID param.
+function toFindingGlobalId(market: string): string {
+  switch (market) {
+    case "EBAY_CA":
+      return "EBAY-ENCA";
+    case "EBAY_GB":
+      return "EBAY-GB";
+    case "EBAY_DE":
+      return "EBAY-DE";
+    case "EBAY_AU":
+      return "EBAY-AU";
+    case "EBAY_US":
+    default:
+      return "EBAY-US";
+  }
+}
+
 /**
  * Get the contextual location header for buyer context.
  * This ensures API prices match what users see on eBay website for that market.
@@ -839,76 +856,142 @@ selfTestTitleFilter();
 export async function fetchEbaySoldListings(
   searchQuery: string,
   market: string,
-  limit = 50
+  limitOrOptions:
+    | number
+    | { limit?: number; maxPages?: number; maxResults?: number } = 50
 ): Promise<SoldListing[]> {
-  const marketplaceId = toMarketplaceId(market);
-  const accessToken = await getAppAccessToken();
+  const options =
+    typeof limitOrOptions === "number"
+      ? { limit: limitOrOptions }
+      : (limitOrOptions ?? {});
 
-  const baseUrl = "https://api.ebay.com/buy/browse/v1/item_summary/search";
-  const url = new URL(baseUrl);
+  const limit = Math.min(Math.max(options.limit ?? 50, 1), 100);
+  const maxPages = Math.max(1, Math.floor(options.maxPages ?? 1));
+  const maxResults =
+    options.maxResults == null
+      ? Number.POSITIVE_INFINITY
+      : Math.max(1, Math.floor(options.maxResults));
 
-  url.searchParams.set("q", searchQuery);
-  url.searchParams.set("limit", String(Math.min(limit, 50)));
-  url.searchParams.set("sort", "-endTime");
-  url.searchParams.set("filter", "salesStatus:{SOLD}");
+  const { appId } = getEbayEnv();
+  const globalId = toFindingGlobalId(market);
 
   console.log(
-    `fetchEbaySoldListings: calling Browse API for "${searchQuery}" on ${marketplaceId}`
-  );
-
-  // Use rate limit retry wrapper for 429 responses
-  // X-EBAY-C-ENDUSERCTX ensures prices match what users see on eBay website
-  const res = await fetchWithRateLimitRetry(() =>
-    fetch(url.toString(), {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        "X-EBAY-C-MARKETPLACE-ID": marketplaceId,
-        "X-EBAY-C-ENDUSERCTX": getEndUserContextHeader(market),
-      },
-    })
-  );
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    console.error(
-      `fetchEbaySoldListings: HTTP ${res.status} ${res.statusText}. Body (truncated):`,
-      text.slice(0, 400)
-    );
-    return [];
-  }
-
-  const data = (await res.json()) as {
-    itemSummaries?: Array<{
-      itemId?: string;
-      title?: string;
-      price?: { value?: string };
-      itemEndDate?: string;
-    }>;
-  };
-
-  const items = data.itemSummaries ?? [];
-  console.log(
-    `fetchEbaySoldListings: received ${items.length} sold items for "${searchQuery}".`
+    `fetchEbaySoldListings: calling Finding API (completed/sold) for "${searchQuery}" on ${globalId} (limit=${limit}, maxPages=${maxPages})`
   );
 
   const soldListings: SoldListing[] = [];
-  for (const item of items) {
-    if (!item.title || !item.price?.value) {
-      continue;
+  const seenListingIds = new Set<string>();
+
+  let totalPages: number | null = null;
+
+  for (
+    let pageNumber = 1;
+    pageNumber <= maxPages && soldListings.length < maxResults;
+    pageNumber += 1
+  ) {
+    const url = new URL(
+      "https://svcs.ebay.com/services/search/FindingService/v1"
+    );
+    url.searchParams.set("OPERATION-NAME", "findCompletedItems");
+    url.searchParams.set("SERVICE-VERSION", "1.13.0");
+    url.searchParams.set("SECURITY-APPNAME", appId);
+    url.searchParams.set("RESPONSE-DATA-FORMAT", "JSON");
+    url.searchParams.set("REST-PAYLOAD", "");
+    url.searchParams.set("GLOBAL-ID", globalId);
+    url.searchParams.set("keywords", searchQuery);
+    url.searchParams.set("paginationInput.entriesPerPage", String(limit));
+    url.searchParams.set("paginationInput.pageNumber", String(pageNumber));
+    url.searchParams.set("itemFilter(0).name", "SoldItemsOnly");
+    url.searchParams.set("itemFilter(0).value", "true");
+
+    const res = await fetchWithRateLimitRetry(() =>
+      fetch(url.toString(), { method: "GET" })
+    );
+
+    const text = await res.text().catch(() => "");
+    let json: any = null;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      // Ignore parse errors; we handle below.
     }
-    const priceValue = Number(item.price.value);
-    if (!Number.isFinite(priceValue) || priceValue <= 0) {
-      continue;
+
+    if (!res.ok) {
+      console.error(
+        `fetchEbaySoldListings: HTTP ${res.status} ${res.statusText}. Body (truncated):`,
+        text.slice(0, 400)
+      );
+      if (pageNumber === 1) return [];
+      break;
     }
-    soldListings.push({
-      listingId: item.itemId,
-      title: item.title,
-      priceCad: priceValue,
-      soldAt: item.itemEndDate ?? null,
-      raw: item,
-    });
+
+    const root = json?.findCompletedItemsResponse?.[0];
+    const ack = root?.ack?.[0];
+    if (ack !== "Success") {
+      const message =
+        root?.errorMessage?.[0]?.error?.[0]?.message?.[0] ??
+        "Finding API returned non-success ack";
+      console.error(`fetchEbaySoldListings: ${message}`);
+      if (pageNumber === 1) return [];
+      break;
+    }
+
+    const items: any[] = root?.searchResult?.[0]?.item ?? [];
+
+    const totalPagesRaw = root?.paginationOutput?.[0]?.totalPages?.[0];
+    if (totalPages == null && totalPagesRaw) {
+      const parsed = parseInt(String(totalPagesRaw), 10);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        totalPages = parsed;
+      }
+    }
+
+    console.log(
+      `fetchEbaySoldListings: received ${items.length} sold items on page ${pageNumber}${totalPages ? `/${totalPages}` : ""} for "${searchQuery}".`
+    );
+
+    for (const item of items) {
+      const listingIdRaw = item?.itemId?.[0];
+      const title = item?.title?.[0];
+      const endTime = item?.listingInfo?.[0]?.endTime?.[0];
+      const priceValueRaw =
+        item?.sellingStatus?.[0]?.currentPrice?.[0]?.__value__;
+
+      if (!listingIdRaw || !title || !endTime || !priceValueRaw) {
+        continue;
+      }
+
+      const listingId = String(listingIdRaw);
+      if (seenListingIds.has(listingId)) {
+        continue;
+      }
+
+      const priceValue = Number(priceValueRaw);
+      if (!Number.isFinite(priceValue) || priceValue <= 0) {
+        continue;
+      }
+
+      seenListingIds.add(listingId);
+      soldListings.push({
+        listingId,
+        title: String(title),
+        priceCad: priceValue,
+        soldAt: String(endTime),
+        raw: item,
+      });
+
+      if (soldListings.length >= maxResults) {
+        break;
+      }
+    }
+
+    if (items.length === 0) {
+      break;
+    }
+
+    if (totalPages != null && pageNumber >= totalPages) {
+      break;
+    }
   }
 
   return soldListings;

@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
-import { Pool, QueryResultRow } from "pg";
+import pg from "pg";
+import type { Pool, QueryResultRow } from "pg";
 
 // Load environment variables for scripts (db:init, db:seed)
 // This will read .env.local when running via tsx / Node.
@@ -13,14 +14,16 @@ function getPool(): Pool {
   const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
-    throw new Error("DATABASE_URL is not set. Check your environment configuration.");
+    throw new Error(
+      "DATABASE_URL is not set. Check your environment configuration."
+    );
   }
 
   if (global.pgPool) {
     return global.pgPool;
   }
 
-  const pool = new Pool({ connectionString });
+  const pool = new pg.Pool({ connectionString });
 
   if (process.env.NODE_ENV !== "production") {
     global.pgPool = pool;
@@ -31,7 +34,7 @@ function getPool(): Pool {
 
 export function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
-  params?: any[],
+  params?: any[]
 ) {
   return getPool().query<T>(text, params);
 }

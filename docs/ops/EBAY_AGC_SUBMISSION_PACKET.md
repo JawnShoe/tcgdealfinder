@@ -2,6 +2,8 @@
 
 **Status**: READY TO SUBMIT (copy/paste)  
 **Last Updated**: 2025-12-28  
+**AGC Link**: https://developer.ebay.com/my/support/tickets?tab=app-check<br />
+**AGC Reference #**: 251228-000007<br />
 **STOP**: Sold baselines remain blocked pending approved sold-data source.
 
 ---
@@ -9,7 +11,7 @@
 ## 1) App + Keyset Identifiers
 
 - **Product / App name (internal)**: TCG Deal Finder
-- **eBay Developer account ID**: TODO (paste from eBay Developer Portal)
+- **eBay Developer account ID**: `6dade35e-0101-40ad-8b51-481fa3337c89`
 - **Keyset**: Production (PRD)
 - **App ID (Client ID)**: `Jonathan-Cards-PRD-0e082e800-5cca6df6`
 

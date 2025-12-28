@@ -1,5 +1,5 @@
 -- Migration: Option A Phase 1 - Listings snapshot timestamps + shipping_unknown + FX snapshot + precision widening
--- Run with: psql -d tcg_deals -f migrations/008_option_a_listings_snapshot_fx_precision.sql
+-- Run with: psql -d tcg_deals -f migrations/010_option_a_listings_snapshot_fx_precision.sql
 
 -- Adds listing snapshot timestamps (snapshot_at + ingested_at),
 -- shipping_unknown + fx_status flags, per-listing fx_timestamp, and widens precision for USD storage.

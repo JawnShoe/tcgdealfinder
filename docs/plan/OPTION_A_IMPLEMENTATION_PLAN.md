@@ -116,7 +116,7 @@ The following become the canonical truth values used for ranking, labeling, and 
 
 **Migration files (proposed)**
 
-- `migrations/008_option_a_listings_snapshot_fx_precision.sql`
+- `migrations/010_option_a_listings_snapshot_fx_precision.sql`
   - Adds columns: `snapshot_at`, `ingested_at`, `shipping_unknown`, `fx_status`, `fx_timestamp`
   - Alters precision for `total_usd` and `fx_rate_to_usd`
   - Adds indexes as needed (e.g., `listings_snapshot_at_idx`, optional)
@@ -385,7 +385,7 @@ The following become the canonical truth values used for ranking, labeling, and 
 
 **Expected files to change (high level)**
 
-- `migrations/008_option_a_listings_snapshot_fx_precision.sql`
+- `migrations/010_option_a_listings_snapshot_fx_precision.sql`
 - `scripts/update-listings.ts`
 - `lib/fxRates.ts`
 - `scripts/init-db.ts` (bootstrap schema alignment)

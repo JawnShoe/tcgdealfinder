@@ -69,10 +69,11 @@ The following become the canonical truth values used for ranking, labeling, and 
   - `discount_percent = ((total_usd - baseline_median_usd) / baseline_median_usd) * 100`
   - Display currencies and locale formatting SHALL NOT affect ranking truth
 - FX:
-  - Rates are sourced from a paid provider (provider not named here)
-  - Validation is robust (bounds + drift checks), not currency-direction heuristics
-  - On drift trigger: hold last-known good rates, mark the attempted snapshot stale/failed, and surface degradation
-  - No partial writes on validation failure
+  - Provider: Open Exchange Rates (primary). Optional future fallback: ECB daily sanity source (not primary).
+  - Refresh cadence: fetch hourly (one call/hour) and cache the full rates table.
+  - Hard validation: each rate is finite, `> 0`, and within `[0.0001, 10000]`.
+  - Drift checks (hourly): `> 5%` → `DRIFT_SUSPECT` (hold last-known, alert); `> 15%` → `FAILED` (reject, hold last-known).
+  - No partial writes: the rates table SHALL only be mutated on `SUCCESS` runs.
 - Precision:
   - Store precise computed values; apply rounding for display only
 - UI:
@@ -81,7 +82,7 @@ The following become the canonical truth values used for ranking, labeling, and 
 
 **Known governance conflicts (must be carried, not resolved here)**
 
-- `PROJECT_SSOT.md` describes CAD-based historic baseline storage and a free FX source; Option A defines USD-canonical baseline ranking and paid-provider FX. Any implementation that changes SSOT-locked meaning requires explicit unlock or an SSOT update workstream.
+- `PROJECT_SSOT.md` describes CAD-based historic baseline storage and a free FX source; Option A defines USD-canonical baseline ranking (`baseline_median_usd`) and Open Exchange Rates (paid) for FX. Any implementation that changes SSOT-locked meaning requires an SSOT update workstream (docs) or explicit unlock.
 
 ---
 
@@ -93,12 +94,16 @@ The following become the canonical truth values used for ranking, labeling, and 
 
 **Schema changes (required)**
 
-- Add listing snapshot timestamp:
-  - `listings.snapshot_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
-  - Backfill strategy: `snapshot_at = listings.updated_at` for existing rows (explicitly declaring the mapping for legacy rows only).
+- Add listing timestamps (both concepts):
+  - `listings.snapshot_at TIMESTAMPTZ NOT NULL` (observed time)
+  - `listings.ingested_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` (DB write time)
+  - Backfill strategy (legacy rows only): `snapshot_at = listings.updated_at` and `ingested_at = listings.updated_at`.
 - Add shipping unknown flag:
   - `listings.shipping_unknown BOOLEAN NOT NULL DEFAULT FALSE`
   - Backfill strategy: `shipping_unknown = (shipping_native IS NULL)` (or `NOT shipping_known` where shipping_native is absent).
+- Add listing FX status:
+  - `listings.fx_status TEXT NOT NULL DEFAULT 'OK' CHECK (fx_status IN ('OK', 'MISSING'))`
+  - Backfill strategy: `fx_status = CASE WHEN total_usd IS NULL THEN 'MISSING' ELSE 'OK' END`.
 - Add FX snapshot timestamp used for conversion:
   - `listings.fx_timestamp TIMESTAMPTZ NULL` (or `NOT NULL` after backfill)
   - Backfill strategy: for each row with `fx_rate_to_usd` present, set `fx_timestamp` to the corresponding `fx_rates.updated_at` for that row’s `currency` at migration time (best-effort), and mark rows without a resolvable mapping as `fx_timestamp = NULL`.
@@ -112,7 +117,7 @@ The following become the canonical truth values used for ranking, labeling, and 
 **Migration files (proposed)**
 
 - `migrations/008_option_a_listings_snapshot_fx_precision.sql`
-  - Adds columns: `snapshot_at`, `shipping_unknown`, `fx_timestamp`
+  - Adds columns: `snapshot_at`, `ingested_at`, `shipping_unknown`, `fx_status`, `fx_timestamp`
   - Alters precision for `total_usd` and `fx_rate_to_usd`
   - Adds indexes as needed (e.g., `listings_snapshot_at_idx`, optional)
 
@@ -127,8 +132,11 @@ The following become the canonical truth values used for ranking, labeling, and 
 **Schema changes (required to surface degradation)**
 
 - Add run-level tracking table (recommended minimal):
-  - `fx_rate_runs(id, provider, started_at, completed_at, status, failure_reason, drift_detected, raw_payload_json, created_at)`
-  - This table is the authoritative record of “last success” vs “last failed/stale attempt” without mutating `fx_rates` on failure.
+  - `fx_rate_runs(id, provider, cadence, started_at, completed_at, status, max_drift_percent, drift_details_json, failure_reason, raw_payload_json, created_at)`
+  - `provider` SHALL be `OPEN_EXCHANGE_RATES` for Option A.
+  - `cadence` SHALL be `hourly` for Option A.
+  - `status` SHALL be one of: `SUCCESS`, `DRIFT_SUSPECT`, `FAILED`.
+  - This table is the authoritative record of “last success” vs “last drift/failed attempt” without mutating `fx_rates` on drift/failure.
 
 **Migration files (proposed)**
 
@@ -150,10 +158,12 @@ The following become the canonical truth values used for ranking, labeling, and 
   - `shipping_native NUMERIC(10, 2) NULL` (may remain NULL if not available)
   - `shipping_unknown BOOLEAN NOT NULL`
   - `total_native NUMERIC(10, 2) NOT NULL` (per shipping_unknown policy)
-  - `fx_rate_to_usd NUMERIC(18, 10) NOT NULL`
-  - `fx_timestamp TIMESTAMPTZ NOT NULL`
-  - `total_usd NUMERIC(18, 6) NOT NULL`
-  - `ingested_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
+  - `fx_status TEXT NOT NULL DEFAULT 'OK' CHECK (fx_status IN ('OK', 'MISSING'))`
+  - `fx_rate_to_usd NUMERIC(18, 10) NULL`
+  - `fx_timestamp TIMESTAMPTZ NULL`
+  - `total_usd NUMERIC(18, 6) NULL`
+  - `snapshot_at TIMESTAMPTZ NOT NULL` (observed time)
+  - `ingested_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` (DB write time)
 
 **Migration files (proposed)**
 
@@ -168,14 +178,20 @@ The following become the canonical truth values used for ranking, labeling, and 
 
 **Schema changes (required)**
 
-- Add Option A baseline:
+- Adopt dual-baseline during migration:
+  - Canonical for ranking: `historical_prices.baseline_median_usd`
+  - Legacy/display only (explicitly non-canonical): `historical_prices.median_price_cad` (planned deprecation after migration)
+- Add Option A baseline fields:
   - `historical_prices.baseline_median_usd NUMERIC(18, 6) NULL`
-  - Optional: `historical_prices.baseline_sample_size_usd INTEGER NULL` if sample sizes differ from CAD baseline sample size.
+  - `historical_prices.baseline_sample_size_usd INTEGER NULL`
+  - `historical_prices.baseline_window_days INTEGER NULL` (expected: `90` primary, `180` fallback)
+  - `historical_prices.baseline_outlier_trim_percent NUMERIC(5, 2) NOT NULL DEFAULT 5.00`
+  - `historical_prices.baseline_status TEXT NOT NULL DEFAULT 'OK' CHECK (baseline_status IN ('OK', 'INSUFFICIENT_DATA'))`
 
 **Migration files (proposed)**
 
 - `migrations/011_option_a_historical_baseline_usd.sql`
-  - Adds `baseline_median_usd` (and any associated metadata columns)
+  - Adds `baseline_median_usd` and baseline metadata (`baseline_sample_size_usd`, `baseline_window_days`, `baseline_outlier_trim_percent`, `baseline_status`)
   - Adds index to support joins (if required)
 
 **Rollback**
@@ -197,42 +213,53 @@ The following become the canonical truth values used for ranking, labeling, and 
   - `shipping_unknown = (shipping_native IS NULL)` (do not treat this as “missing total”)
   - `total_native = price_native + shipping_native` when known
   - `total_native = price_native` when unknown
+- Assign timestamps deterministically:
+  - `snapshot_at` = observed time for the snapshot (time of fetch/observation)
+  - `ingested_at` = DB write time (time the row is persisted)
 - FX snapshot capture per listing:
   - Fetch `fx_rate_to_usd` and `fx_timestamp` together from `fx_rates` for the listing’s currency.
   - Persist both on the listing row.
 - Compute `total_usd` precisely (no `.toFixed(2)` in storage math).
-- Missing FX rate behavior:
-  - Persist the listing row but set `total_usd = NULL` and mark it as non-comparable for USD ranking, OR
-  - Skip ingestion entirely (current behavior).
-  - This must be explicitly selected and locked (see Open Questions).
+- Missing FX rate behavior (LOCKED):
+  - Ingest the listing and compute native totals (`price_native`, `shipping_native`, `shipping_unknown`, `total_native`).
+  - Set `fx_status = 'MISSING'`.
+  - Do not compute `total_usd` yet (`total_usd = NULL`, `fx_rate_to_usd = NULL`, `fx_timestamp = NULL`).
+  - Exclude the listing from global ranking surfaces until FX is available (but allow it to exist for non-ranking surfaces as appropriate).
+  - Backfill `total_usd`/FX fields and flip `fx_status = 'OK'` when FX returns.
 
 **No partial writes (listing ingestion)**
 
 - Each upsert remains atomic per listing (`INSERT ... ON CONFLICT DO UPDATE`).
-- The system must never write `total_usd` without also writing its associated `fx_rate_to_usd` and `fx_timestamp`.
+- The system must never write `total_usd` without also writing its associated `fx_rate_to_usd` and `fx_timestamp` and setting `fx_status = 'OK'`.
 
 ### FX rate ingestion (`scripts/update-fx-rates-auto.ts` + `lib/fxRates.ts`)
 
+**Provider + cadence (LOCKED)**
+
+- Primary provider: Open Exchange Rates.
+- Refresh cadence: fetch hourly (one provider call/hour) and cache the full rates table.
+- Optional future fallback: ECB daily sanity source (sanity-check only; not the primary source of truth).
+
 **Where drift validation / stale FX is enforced**
 
-- Drift + bounds validation is enforced at the FX update job boundary (not in the UI).
-- “Hold last-known” behavior means:
-  - Do not mutate `fx_rates` if validation fails.
-  - Record the failed attempt in `fx_rate_runs` with status + reason.
-  - Surface stale/failed state via `/api/health` (and any operator dashboards).
+- Drift + bounds validation is enforced at the FX update job boundary (not in the UI) using the locked thresholds:
+  - Hard validation: rate is finite, `> 0`, and within `[0.0001, 10000]`.
+  - Drift check vs previous successful snapshot (hourly):
+    - If any currency changes by `> 15%`: mark the run `FAILED`, hold last-known, and alert.
+    - Else if any currency changes by `> 5%`: mark the run `DRIFT_SUSPECT`, hold last-known, and alert.
+- “Hold last-known” means:
+  - Do not mutate `fx_rates` on `DRIFT_SUSPECT` or `FAILED`.
+  - Record the run in `fx_rate_runs` with status + reason + drift details.
+  - Surface last-success vs last-attempt status via `/api/health`.
 
 **No partial writes (FX updates)**
 
 - Update all currencies in a single DB transaction:
   - Fetch current rates
-  - Fetch new provider rates
-  - Validate (bounds + drift)
-  - If valid: write all updates and commit
-  - If invalid: rollback and exit non-zero
-
-**Paid provider**
-
-- Replace Frankfurter source with a paid provider (provider selection is a required decision; see Open Questions).
+  - Fetch new provider rates (Open Exchange Rates)
+  - Validate (hard bounds + drift thresholds)
+  - If `SUCCESS`: write all updates and commit (and update a canonical `fx_timestamp`)
+  - If `DRIFT_SUSPECT` or `FAILED`: do not write and exit non-zero (to alert operators)
 
 ### Sold listings ingestion (`scripts/update-sold-listings.ts`)
 
@@ -241,7 +268,9 @@ The following become the canonical truth values used for ranking, labeling, and 
 - Capture sold snapshot with currency and FX snapshot:
   - Derive currency from market if the API response does not include currency.
   - Apply the same `shipping_unknown` + `total_native` policy (shipping may be unavailable; treat as unknown).
-  - Persist `fx_rate_to_usd`, `fx_timestamp`, and computed precise `total_usd` on each sold row.
+  - Persist `snapshot_at` (observed time) and `ingested_at` (DB write time).
+  - If FX is available: persist `fx_status = 'OK'`, `fx_rate_to_usd`, `fx_timestamp`, and computed precise `total_usd`.
+  - If FX is missing: persist `fx_status = 'MISSING'` and leave `total_usd`/FX fields NULL (exclude from baseline computation until backfilled).
 - Title validity and eligibility filters remain enforced as today (do not broaden without explicit unlock).
 
 ---
@@ -258,11 +287,19 @@ The following become the canonical truth values used for ranking, labeling, and 
 
 - Extend `scripts/update-historical-prices.ts` to compute and upsert:
   - `historical_prices.baseline_median_usd` from `ebay_sold_listings.total_usd`
-  - Maintain existing `median_price_cad` until cleanup phase explicitly removes it.
-- Ensure the baseline query uses:
-  - The SSOT-locked lookback window (currently hardcoded in code; must be locked explicitly before implementation)
-  - The SSOT-locked minimum sample size (currently hardcoded in code; must be locked explicitly before implementation)
-  - Existing eligibility filters (non-null sold_at, positive prices, valid titles, etc.)
+  - Maintain existing `median_price_cad` as legacy/display-only until cleanup phase explicitly removes it.
+- Ensure the baseline query is locked to the following defaults:
+  - Primary lookback: 90 days.
+  - Minimum comps: 30 eligible sold rows.
+  - Outlier trim: drop top 5% and bottom 5% before computing the median.
+  - Fallback: if <30 comps in 90 days, extend to 180 days; if still <30, set `baseline_status = 'INSUFFICIENT_DATA'` and do not populate `baseline_median_usd`.
+- Eligibility filters (must remain strict):
+  - `sold_at` present and within the chosen window,
+  - `fx_status = 'OK'` and `total_usd` present and positive,
+  - title validity gate passes,
+  - condition bucket present.
+- Surface policy tie-in:
+  - Buckets with `baseline_status = 'INSUFFICIENT_DATA'` SHALL be excluded from “Top Deals” ranking surfaces but MAY still appear in “Newest” surfaces (no baseline required).
 
 ### Recompute cadence and drift expectations
 
@@ -280,6 +317,10 @@ The following become the canonical truth values used for ranking, labeling, and 
 - UI components SHALL render persisted canonical fields (`total_usd`, `baseline_median_usd`, `discount_percent`) and SHALL NOT perform FX conversion or baseline conversion client-side.
 - UI components SHALL NOT “repair” totals at render time (no fallback math from legacy CAD-named fields).
 - Display currency selection SHALL NOT affect ranking truth; it may only affect formatting.
+- Global ranking surfaces (e.g., “Top Deals”) SHALL exclude:
+  - listings with `fx_status = 'MISSING'` (until backfilled),
+  - buckets with `baseline_status = 'INSUFFICIENT_DATA'`.
+- Non-ranking surfaces (e.g., “Newest”) MAY display rows with missing FX or missing baseline, but SHALL label/behave per the audit’s degradation policy.
 
 ### SSR/CSR invariants
 
@@ -307,7 +348,11 @@ The following become the canonical truth values used for ranking, labeling, and 
 **Scope**
 
 - Add invariant checks and evidence hooks needed to safely implement and verify Option A, without changing ranking logic yet.
-- Add FX run logging (`fx_rate_runs`) and surface status through `/api/health`.
+- Lock FX ingestion behavior end-to-end (provider/cadence/validation) without changing deal ranking surfaces:
+  - Implement Open Exchange Rates as the primary provider.
+  - Run hourly (one call/hour) and cache the full rates table.
+  - Enforce hard validation + drift thresholds and record each attempt in `fx_rate_runs` (`SUCCESS` / `DRIFT_SUSPECT` / `FAILED`).
+  - Surface last-success vs last-attempt status via `/api/health`.
 
 **Expected files to change (high level)**
 
@@ -326,15 +371,16 @@ The following become the canonical truth values used for ranking, labeling, and 
 
 **Acceptance criteria**
 
-- `/api/health` reports FX freshness + last run status deterministically.
+- `/api/health` reports FX freshness + last-success timestamp + last-attempt status (`SUCCESS`/`DRIFT_SUSPECT`/`FAILED`) deterministically.
 - No changes to deal ranking or UI outputs in this phase.
 
 ### Phase 1 — Schema + ingest snapshot correctness
 
 **Scope**
 
-- Introduce `snapshot_at`, `shipping_unknown`, `fx_timestamp`, and precision widening on listings.
+- Introduce `snapshot_at`, `ingested_at`, `shipping_unknown`, `fx_status`, `fx_timestamp`, and precision widening on listings.
 - Update listing ingestion to compute deterministic totals even when shipping is unknown.
+- Lock missing-FX ingest behavior: ingest native totals, set `fx_status = 'MISSING'`, defer `total_usd`, and backfill when FX returns.
 - Store precise values; round only for display.
 
 **Expected files to change (high level)**
@@ -357,11 +403,12 @@ The following become the canonical truth values used for ranking, labeling, and 
 **Acceptance criteria**
 
 - New ingested listings always have:
-  - `snapshot_at` populated
+  - `snapshot_at` populated (observed time)
+  - `ingested_at` populated (DB write time)
   - `shipping_unknown` consistent with `shipping_native`
   - `total_native` deterministic per policy
-  - `total_usd` written without display rounding
-  - `fx_rate_to_usd` + `fx_timestamp` present whenever `total_usd` is present
+  - If `fx_status = 'OK'`: `total_usd` written without display rounding and `fx_rate_to_usd` + `fx_timestamp` present
+  - If `fx_status = 'MISSING'`: `total_usd` is NULL and the listing is excluded from global ranking surfaces until backfilled
 
 ### Phase 2 — Baseline USD recompute + backfill
 
@@ -370,6 +417,8 @@ The following become the canonical truth values used for ranking, labeling, and 
 - Extend sold ingestion to store FX snapshots and USD totals.
 - Compute and store `baseline_median_usd` in `historical_prices`.
 - Backfill `baseline_median_usd` for historical buckets where feasible.
+  - Primary window: 90 days; minimum comps: 30; outlier trim: drop top/bottom 5%.
+  - Fallback: 180 days if insufficient; else `baseline_status = 'INSUFFICIENT_DATA'`.
 
 **Expected files to change (high level)**
 
@@ -389,7 +438,8 @@ The following become the canonical truth values used for ranking, labeling, and 
 
 **Acceptance criteria**
 
-- `historical_prices.baseline_median_usd` is populated for buckets meeting SSOT-locked eligibility thresholds.
+- `historical_prices.baseline_status` is `OK` with a populated `baseline_median_usd` for buckets meeting the locked baseline requirements (90d/30 comps, or 180d fallback).
+- `historical_prices.baseline_status` is `INSUFFICIENT_DATA` (and `baseline_median_usd` is NULL) when the 180d fallback still has insufficient comps.
 - Baseline freshness timestamps are correct and observable.
 
 ### Phase 3 — UI stabilization + remove client math
@@ -457,9 +507,9 @@ The following become the canonical truth values used for ranking, labeling, and 
 
 **Evidence packet (minimum)**
 
-- DB: `SELECT * FROM fx_rates ORDER BY updated_at DESC;`
-- DB: last 5 `fx_rate_runs` rows with status and timestamps
-- UI: `/api/health` output contains FX last success vs last attempt status
+- DB: `SELECT * FROM fx_rates ORDER BY updated_at DESC;` (confirm `updated_at` reflects last `SUCCESS` snapshot)
+- DB: last 5 `fx_rate_runs` rows including `provider`, `cadence`, `status`, `max_drift_percent`, and `failure_reason`
+- UI: `/api/health` output includes provider = Open Exchange Rates, cadence = hourly, and last-success vs last-attempt status (`SUCCESS`/`DRIFT_SUSPECT`/`FAILED`)
 
 **Regression checklist**
 
@@ -470,13 +520,15 @@ The following become the canonical truth values used for ranking, labeling, and 
 **STOP if**
 
 - FX status cannot be determined deterministically (no “last success” signal).
+- A `DRIFT_SUSPECT` or `FAILED` attempt mutates `fx_rates` (violates “hold last-known”).
 
 ### Phase 1 — Evidence + gates
 
 **Evidence packet (minimum)**
 
 - DB: sample 2 listings per market (US/CA/GB/AU):
-  - show `currency`, `price_native`, `shipping_native`, `shipping_unknown`, `total_native`, `fx_rate_to_usd`, `fx_timestamp`, `total_usd`, `snapshot_at`
+  - show `currency`, `price_native`, `shipping_native`, `shipping_unknown`, `total_native`, `fx_status`, `fx_rate_to_usd`, `fx_timestamp`, `total_usd`, `snapshot_at`, `ingested_at`
+- DB: at least 1 listing with `fx_status = 'MISSING'` shows `total_usd IS NULL` and has native totals populated
 - DB: verify `shipping_unknown` matches `shipping_native IS NULL`
 - UI: “Total USD” value on a known listing matches DB `total_usd` exactly (no recompute)
 
@@ -487,15 +539,17 @@ The following become the canonical truth values used for ranking, labeling, and 
 **STOP if**
 
 - Any surface labeled “Total USD” renders a value not equal to the stored `total_usd`.
-- Any listing writes `total_usd` without `fx_rate_to_usd` + `fx_timestamp`.
+- Any listing writes `total_usd` without `fx_status = 'OK'` and `fx_rate_to_usd` + `fx_timestamp`.
+- A listing with `fx_status = 'MISSING'` appears on a global ranking surface (e.g., “Top Deals”).
 
 ### Phase 2 — Evidence + gates
 
 **Evidence packet (minimum)**
 
-- DB: sample buckets with `baseline_median_usd`, sample size, last_updated_at
-- DB: sample sold rows used for baseline show stored `total_usd` + `fx_timestamp`
+- DB: sample buckets with `baseline_median_usd`, `baseline_status`, `baseline_sample_size_usd`, `baseline_window_days`, `baseline_outlier_trim_percent`, and `last_updated_at`
+- DB: sample sold rows used for baseline show stored `fx_status`, `total_usd`, and `fx_timestamp`
 - UI: “Historic USD” renders `baseline_median_usd` and shows freshness/sample size where applicable
+- UI: a bucket with `baseline_status = 'INSUFFICIENT_DATA'` is excluded from “Top Deals” but still appears on “Newest” (no baseline required)
 
 **Regression checklist**
 
@@ -504,6 +558,7 @@ The following become the canonical truth values used for ranking, labeling, and 
 **STOP if**
 
 - Baseline recompute changes are not observable (no timestamp/sample size surfaced where expected).
+- “Top Deals” includes buckets with `baseline_status = 'INSUFFICIENT_DATA'`.
 
 ### Phase 3 — Evidence + gates
 
@@ -542,14 +597,19 @@ The following become the canonical truth values used for ranking, labeling, and 
 
 ## 8) Open Questions / Decisions Needed
 
-> Items marked **REQUIRES EXPLICIT UNLOCK** cannot proceed under current LOCKED constraints without owner approval.
+None. The following defaults are LOCKED for Option A:
 
-1. **Paid FX provider selection (REQUIRES EXPLICIT UNLOCK)**: SSOT currently references Frankfurter (free). Audit requires paid provider. Which provider is authorized, and what are the operational constraints (quota, cost ceiling, failure modes)?
-2. **FX bounds + drift thresholds (must be locked)**: The audit requires bounds + drift checks, but SSOT does not currently lock the exact thresholds. What exact bounds and drift thresholds are approved for Tier-1 locking?
-3. **Baseline USD vs SSOT CAD baseline (REQUIRES EXPLICIT UNLOCK)**: SSOT describes CAD canonical baseline storage; Option A defines `baseline_median_usd` as canonical ranking baseline. Confirm whether:
-   - We add `baseline_median_usd` while preserving CAD baselines (dual-baseline), OR
-   - We migrate canonical baselines to USD (stronger conflict with SSOT text).
-4. **Baseline lookback window + minimum sample size (must be locked)**: Code currently hardcodes values; SSOT does not lock them explicitly. What values are approved for locking under Option A?
-5. **Missing FX rate behavior for ingestion**: Should listings/sold rows be ingested as non-comparable (stored with `total_usd = NULL`) or skipped entirely? This affects completeness vs strictness.
-6. **Timestamp type and naming**: Use `snapshot_at` vs `ingested_at`, and `TIMESTAMP` vs `TIMESTAMPTZ`. Existing schema mixes both; confirm the project standard for new canonical time axes.
-7. **Design phase constraint interaction (REQUIRES EXPLICIT UNLOCK if interpreted globally)**: `docs/design/DESIGN_PHASES.md` Phase 1 prohibits functional/data behavior changes. Confirm that Option A UI changes are authorized as a separate Tier-1 correctness workstream and not subject to Phase 1 visual-only restrictions.
+- FX provider: Open Exchange Rates (primary). Optional future fallback: ECB daily sanity source (not primary).
+- FX refresh cadence: fetch hourly (one call/hour) and cache the full rates table.
+- FX validation + drift:
+  - Hard validation: each rate is finite, `> 0`, and within `[0.0001, 10000]`.
+  - Drift checks (hourly): `> 5%` → `DRIFT_SUSPECT` (hold last-known, alert); `> 15%` → `FAILED` (reject, hold last-known).
+- Missing FX at ingest:
+  - Ingest listing/sold snapshots and compute native totals.
+  - Set `fx_status = 'MISSING'`; do not compute `total_usd`; exclude from global ranking surfaces until FX is available.
+  - Backfill `total_usd` when FX returns.
+- Baseline window + samples:
+  - Primary lookback: 90 days. Minimum comps: 30. Outlier trim: drop top/bottom 5% before computing median.
+  - Fallback: extend to 180 days; if still insufficient → `baseline_status = 'INSUFFICIENT_DATA'` and exclude from Top Deals (still show in Newest).
+- Timestamps: persist both `snapshot_at` (observed time) and `ingested_at` (DB write time) on listing/sold snapshots.
+- Baseline strategy: adopt dual-baseline during migration; canonical for ranking is `baseline_median_usd`; any CAD baseline is legacy/display-only with an eventual deprecation phase after migration.

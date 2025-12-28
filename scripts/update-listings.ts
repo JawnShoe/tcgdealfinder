@@ -60,12 +60,7 @@ const detailCache = new Map<string, Promise<EbayItemDetail | null>>();
 const detailSemaphore = createSemaphore(5);
 
 const ACCESSORY_PHRASES = {
-  hard: [
-    "card not included",
-    "no card included",
-    "case only",
-    "empty case",
-  ],
+  hard: ["card not included", "no card included", "case only", "empty case"],
   contextual: [
     "toploader",
     "top loader",
@@ -87,7 +82,7 @@ const ACCESSORY_CONTEXT = [
 
 export function detectMarketCurrencyMismatch(
   listingCurrency: string | null | undefined,
-  market: MarketCode,
+  market: MarketCode
 ): string | null {
   if (!listingCurrency) return null;
   const normalized = listingCurrency.toUpperCase();
@@ -140,8 +135,7 @@ function computeIntegrityStatus(options: {
   let reason: string | null = null;
   let score: number | null = null;
 
-  const comparablePrice =
-    totalPriceUsd ?? totalPriceCad ?? null;
+  const comparablePrice = totalPriceUsd ?? totalPriceCad ?? null;
   const comparableHistoric = historicPriceCad ?? null;
 
   const eligibleForFloorCheck =
@@ -166,7 +160,7 @@ function computeIntegrityStatus(options: {
 
 export function decideCollectorNumberRejection(
   cardCollector: CollectorNumberResult,
-  listingCollector: CollectorNumberResult,
+  listingCollector: CollectorNumberResult
 ): {
   matchEligible: boolean;
   rejectReason: string | null;
@@ -195,7 +189,7 @@ async function getBlacklistedSellers(): Promise<Set<string>> {
     `
       SELECT seller_username
       FROM seller_blacklist;
-    `,
+    `
   );
   const set = new Set<string>();
   for (const row of res.rows) {
@@ -209,7 +203,7 @@ async function getBlacklistedSellers(): Promise<Set<string>> {
 async function logRejectedListing(
   listing: NormalizedListing,
   reason: string,
-  detail?: string | null,
+  detail?: string | null
 ): Promise<void> {
   const sellerUsername =
     listing.sellerUsername ?? listing.seller?.toLowerCase() ?? null;
@@ -229,7 +223,7 @@ async function logRejectedListing(
       sellerUsername,
       listing.title,
       detail ? `${reason} (${detail})` : reason,
-    ],
+    ]
   );
 }
 
@@ -253,23 +247,15 @@ async function upsertListing(
   detectedLanguage: string,
   shippingKnown: boolean,
   shippingSource: string | null,
+  snapshotAt: Date
 ) {
   // Import FX conversion here to avoid circular deps
   const { convertToUSD } = await import("../lib/fxRates");
   const { getExpectedCurrency } = await import("../lib/markets");
-  
-  const priceCad =
-    listing.priceCad ??
-    (listing as any).price ??
-    null;
-  const shippingCad =
-    listing.shippingCad ??
-    (listing as any).shipping ??
-    null;
-  let totalPriceCad =
-    listing.totalPriceCad ??
-    (listing as any).total ??
-    null;
+
+  const priceCad = listing.priceCad ?? (listing as any).price ?? null;
+  const shippingCad = listing.shippingCad ?? (listing as any).shipping ?? null;
+  let totalPriceCad = listing.totalPriceCad ?? (listing as any).total ?? null;
   const thumbnailUrl = listing.imageUrl ?? null;
 
   if (!shippingKnown) {
@@ -277,23 +263,44 @@ async function upsertListing(
   } else if (totalPriceCad == null && priceCad != null && shippingCad != null) {
     totalPriceCad = priceCad + shippingCad;
   }
-  
+
   // Currency handling: Extract from listing or use market default
-  const currency = (listing.priceCurrency ?? getExpectedCurrency(market)).toUpperCase();
-  
-  // Convert to USD for sorting/comparison
+  const currency = (
+    listing.priceCurrency ?? getExpectedCurrency(market)
+  ).toUpperCase();
+
+  // Canonical totals: deterministic even when shipping is unknown (Option A Phase 1).
   const priceNative = priceCad;
   const shippingNative = shippingCad;
-  const totalNative = totalPriceCad;
-  
-  const conversionResult = await convertToUSD(totalNative, currency);
+  const shippingUnknown = shippingNative == null;
+
+  const totalNative =
+    priceNative != null && Number.isFinite(priceNative)
+      ? priceNative + (shippingNative ?? 0)
+      : null;
+
+  const conversionResult =
+    totalNative != null ? await convertToUSD(totalNative, currency) : null;
+
+  const fxStatus =
+    conversionResult != null
+      ? "OK"
+      : totalNative != null
+        ? "MISSING"
+        : "MISSING";
   const totalUsd = conversionResult?.usd ?? null;
   const fxRateToUsd = conversionResult?.rate ?? null;
-  
-  if (totalNative != null && totalUsd == null) {
-    // Skip this listing if we can't convert to USD (missing FX rate)
-    console.warn(`⚠️  Skipping listing ${listing.listingId}: No FX rate for ${currency}`);
-    return;
+  const fxTimestamp = conversionResult?.fxTimestamp ?? null;
+
+  if (fxStatus === "MISSING" && totalNative != null) {
+    console.warn(
+      `[fx] Missing FX rate for ${currency}; ingesting listing ${listing.listingId} with fx_status=MISSING`
+    );
+  }
+
+  // Exclude non-comparable rows from legacy ranking surfaces that still key off total_price_cad.
+  if (fxStatus === "MISSING") {
+    totalPriceCad = null;
   }
 
   const normalizedCondition =
@@ -305,10 +312,8 @@ async function upsertListing(
   const normalizedDiscount = matchEligible
     ? computeDiscountPercent(totalPriceCad, effectiveHistoricPrice)
     : null;
-  const sellerFeedbackCount =
-    listing.sellerFeedbackCount ?? null;
-  const sellerPositivePercent =
-    listing.sellerPositivePercent ?? null;
+  const sellerFeedbackCount = listing.sellerFeedbackCount ?? null;
+  const sellerPositivePercent = listing.sellerPositivePercent ?? null;
   let sellerStoreName = listing.sellerStoreName ?? null;
   let sellerStoreNameSource: string | null = null;
   let sellerStoreNameCheckedAt: Date | null = null;
@@ -318,7 +323,7 @@ async function upsertListing(
       const storefront = await fetchStorefrontInfo(
         listing.listingId,
         market as MarketCode,
-        sellerUsername,
+        sellerUsername
       );
       if (storefront?.storeName) {
         sellerStoreName = storefront.storeName;
@@ -329,7 +334,7 @@ async function upsertListing(
       console.error(
         `[storefront] Failed to enrich ${listing.listingId}: ${
           (error as Error).message
-        }`,
+        }`
       );
     }
   }
@@ -384,6 +389,11 @@ async function upsertListing(
       integrity_status,
       integrity_reason,
       integrity_score,
+      snapshot_at,
+      ingested_at,
+      shipping_unknown,
+      fx_status,
+      fx_timestamp,
       created_at,
       updated_at
     )
@@ -429,6 +439,11 @@ async function upsertListing(
       $38, -- integrity_status
       $39, -- integrity_reason
       $40, -- integrity_score
+      $41, -- snapshot_at
+      NOW(), -- ingested_at
+      $42, -- shipping_unknown
+      $43, -- fx_status
+      $44, -- fx_timestamp
       NOW(),
       NOW()
     )
@@ -449,6 +464,11 @@ async function upsertListing(
       total_usd = EXCLUDED.total_usd,
       shipping_known = EXCLUDED.shipping_known,
       shipping_source = EXCLUDED.shipping_source,
+      shipping_unknown = EXCLUDED.shipping_unknown,
+      fx_status = EXCLUDED.fx_status,
+      fx_timestamp = EXCLUDED.fx_timestamp,
+      snapshot_at = EXCLUDED.snapshot_at,
+      ingested_at = NOW(),
       seller = EXCLUDED.seller,
       seller_username = EXCLUDED.seller_username,
       seller_store_name = COALESCE(
@@ -524,13 +544,17 @@ async function upsertListing(
       integrity.status,
       integrity.reason,
       integrity.score,
-    ],
+      snapshotAt,
+      shippingUnknown,
+      fxStatus,
+      fxTimestamp,
+    ]
   );
 }
 
 async function getHistoricalPrice(
   cardId: number,
-  market: MarketCode,
+  market: MarketCode
 ): Promise<number | null> {
   // TODO: historical_prices needs market column migration
   // For now, use US-only historical prices
@@ -541,7 +565,7 @@ async function getHistoricalPrice(
       WHERE card_id = $1
       LIMIT 1;
     `,
-    [cardId],
+    [cardId]
   );
 
   const value = res.rows[0]?.median_price_cad;
@@ -556,7 +580,7 @@ async function main() {
   console.log("Starting listings update...");
   const blacklistedSellers = await getBlacklistedSellers();
   console.log(
-    `Loaded ${blacklistedSellers.size} blacklisted seller(s) into memory.`,
+    `Loaded ${blacklistedSellers.size} blacklisted seller(s) into memory.`
   );
   let accessoryRejects = 0;
 
@@ -576,7 +600,7 @@ async function main() {
     FROM card_search_config cfg
     JOIN cards c ON c.id = cfg.card_id
     WHERE cfg.is_active = TRUE;
-  `,
+  `
   );
 
   const rows = res.rows;
@@ -588,199 +612,190 @@ async function main() {
 
   for (const row of rows) {
     console.log(
-      `\nProcessing card: ${row.name} (${row.condition_bucket}), query="${row.search_query}"`,
+      `\nProcessing card: ${row.name} (${row.condition_bucket}), query="${row.search_query}"`
     );
 
     // Loop through all markets for each search config
     for (const marketCode of SUPPORTED_MARKETS) {
       const market = normalizeMarketCode(marketCode);
       console.log(`  → Fetching ${market} listings...`);
-      
+
       const historicPrice = await getHistoricalPrice(row.card_id, market);
       if (historicPrice !== null) {
-        console.log(
-          `    Historic price: $${historicPrice.toFixed(2)}`,
-        );
+        console.log(`    Historic price: $${historicPrice.toFixed(2)}`);
       }
-      
-      const listings = await fetchEbayListings(
-        row.search_query,
-        market,
-      );
 
-      console.log(
-        `    Found ${listings.length} listings`,
-      );
+      const listings = await fetchEbayListings(row.search_query, market);
+      const snapshotAt = new Date();
+
+      console.log(`    Found ${listings.length} listings`);
 
       let updatedCount = 0;
-      const sellerStats = new Map<
-        string,
-        { total: number; invalid: number }
-      >();
+      const sellerStats = new Map<string, { total: number; invalid: number }>();
 
-    for (const listing of listings) {
-      const sellerUsername =
-        listing.sellerUsername ??
-        listing.seller?.toLowerCase() ??
-        null;
-      const gradeInfo = await resolveGradeInfo(listing, market);
-      const inferredBucket = inferConditionBucket(
-        listing,
-        row.condition_bucket,
-        gradeInfo,
-      );
-      const targetCardId = await getCardIdForBucket(row, inferredBucket);
-      const cardCollector: CollectorNumberResult = {
-        raw: row.collector_number_raw ?? row.card_number ?? null,
-        norm:
-          row.collector_number_norm ??
-          normalizeCollectorNumber(row.card_number ?? null),
-        confidence:
-          row.collector_number_confidence ??
-          (row.card_number ? "HIGH" : "NONE"),
-        signals: row.collector_number_norm ? ["catalog"] : [],
-      };
-
-      const bannedKeyword = findBannedTitleKeyword(listing.title ?? "");
-      let listingCollector = extractCollectorNumber({
-        title: listing.title ?? "",
-        aspects: listing.localizedAspects ?? [],
-      });
-      if (
-        listingCollector.confidence === "NONE" ||
-        listingCollector.confidence === "LOW"
-      ) {
-        const detail = await getListingDetail(listing.listingId, market);
-        const mergedAspects = [
-          ...(listing.localizedAspects ?? []),
-          ...(detail?.localizedAspects ?? []),
-        ];
-        if (mergedAspects.length > (listing.localizedAspects?.length ?? 0)) {
-          listingCollector = extractCollectorNumber({
-            title: listing.title ?? "",
-            aspects: mergedAspects,
-          });
-        }
-      }
-      const detectedCollectorNumber = listingCollector.norm;
-      const detectedLanguage = detectListingLanguage(listing.title ?? "");
-      const shippingKnownFlag =
-        listing.shippingKnown ?? (listing.shippingCad != null);
-      const shippingSource = listing.shippingSource ?? null;
-
-      let matchEligible = true;
-      let rejectReason: string | null = null;
-      let rejectSource: string | null = null;
-      let rejectDetail: string | null = null;
-
-      if (bannedKeyword) {
-        matchEligible = false;
-        rejectReason = `title_keyword:${bannedKeyword}`;
-        rejectSource = "title_filter";
-      }
-
-      if (matchEligible) {
-        const accessoryPhrase = detectAccessoryPhrase(listing.title ?? "");
-        if (accessoryPhrase) {
-          matchEligible = false;
-          rejectReason = "accessory_not_card";
-          rejectSource = `title_accessory:${accessoryPhrase}`;
-          accessoryRejects += 1;
-        }
-      }
-
-      if (matchEligible) {
-        const currencyDetail = detectMarketCurrencyMismatch(
-          listing.priceCurrency ?? null,
-          market,
-        );
-        if (currencyDetail) {
-          matchEligible = false;
-          rejectReason = "market_currency_mismatch";
-          rejectSource = "currency_guard";
-          rejectDetail = currencyDetail;
-        }
-      }
-
-      if (matchEligible && detectedLanguage === "jp") {
-        matchEligible = false;
-        rejectReason = "language_mismatch";
-        rejectSource = "language_filter";
-      } else if (matchEligible) {
-        const cnOutcome = decideCollectorNumberRejection(
-          cardCollector,
-          listingCollector,
-        );
-        if (!cnOutcome.matchEligible) {
-          matchEligible = false;
-          rejectReason = cnOutcome.rejectReason;
-          rejectSource = cnOutcome.rejectSource;
-          rejectDetail = cnOutcome.rejectDetail;
-        }
-      } else if (sellerUsername && blacklistedSellers.has(sellerUsername)) {
-        matchEligible = false;
-        rejectReason = "seller_blacklisted";
-        rejectSource = "seller_filter";
-      }
-
-      if (sellerUsername) {
-        const stats =
-          sellerStats.get(sellerUsername) ?? { total: 0, invalid: 0 };
-        stats.total += 1;
-        sellerStats.set(sellerUsername, stats);
-      }
-
-      try {
-        await upsertListing(
-          targetCardId,
-          market,
-          inferredBucket,
+      for (const listing of listings) {
+        const sellerUsername =
+          listing.sellerUsername ?? listing.seller?.toLowerCase() ?? null;
+        const gradeInfo = await resolveGradeInfo(listing, market);
+        const inferredBucket = inferConditionBucket(
           listing,
-          sellerUsername,
-          historicPrice,
-          gradeInfo,
-          matchEligible,
-          rejectReason,
-          rejectSource,
-          rejectDetail,
-          listingCollector.raw,
-          listingCollector.norm,
-          listingCollector.confidence,
-          listingCollector.signals,
-          detectedCollectorNumber,
-          detectedLanguage,
-          shippingKnownFlag,
-          shippingSource,
+          row.condition_bucket,
+          gradeInfo
         );
-        if (matchEligible) {
-          updatedCount += 1;
-        }
-      } catch (err) {
-        console.error(
-          `Failed to upsert listing ${listing.listingId} for ${row.name}:`,
-          err,
-        );
-        continue;
-      }
+        const targetCardId = await getCardIdForBucket(row, inferredBucket);
+        const cardCollector: CollectorNumberResult = {
+          raw: row.collector_number_raw ?? row.card_number ?? null,
+          norm:
+            row.collector_number_norm ??
+            normalizeCollectorNumber(row.card_number ?? null),
+          confidence:
+            row.collector_number_confidence ??
+            (row.card_number ? "HIGH" : "NONE"),
+          signals: row.collector_number_norm ? ["catalog"] : [],
+        };
 
-      if (!matchEligible) {
-        await logRejectedListing(
-          listing,
-          rejectReason ?? "match_rejected_unknown",
-          rejectDetail,
-        );
+        const bannedKeyword = findBannedTitleKeyword(listing.title ?? "");
+        let listingCollector = extractCollectorNumber({
+          title: listing.title ?? "",
+          aspects: listing.localizedAspects ?? [],
+        });
         if (
-          sellerUsername &&
-          rejectReason !== "seller_blacklisted"
+          listingCollector.confidence === "NONE" ||
+          listingCollector.confidence === "LOW"
         ) {
-          const stats =
-            sellerStats.get(sellerUsername) ?? { total: 0, invalid: 0 };
-          stats.invalid += 1;
+          const detail = await getListingDetail(listing.listingId, market);
+          const mergedAspects = [
+            ...(listing.localizedAspects ?? []),
+            ...(detail?.localizedAspects ?? []),
+          ];
+          if (mergedAspects.length > (listing.localizedAspects?.length ?? 0)) {
+            listingCollector = extractCollectorNumber({
+              title: listing.title ?? "",
+              aspects: mergedAspects,
+            });
+          }
+        }
+        const detectedCollectorNumber = listingCollector.norm;
+        const detectedLanguage = detectListingLanguage(listing.title ?? "");
+        const shippingKnownFlag =
+          listing.shippingKnown ?? listing.shippingCad != null;
+        const shippingSource = listing.shippingSource ?? null;
+
+        let matchEligible = true;
+        let rejectReason: string | null = null;
+        let rejectSource: string | null = null;
+        let rejectDetail: string | null = null;
+
+        if (bannedKeyword) {
+          matchEligible = false;
+          rejectReason = `title_keyword:${bannedKeyword}`;
+          rejectSource = "title_filter";
+        }
+
+        if (matchEligible) {
+          const accessoryPhrase = detectAccessoryPhrase(listing.title ?? "");
+          if (accessoryPhrase) {
+            matchEligible = false;
+            rejectReason = "accessory_not_card";
+            rejectSource = `title_accessory:${accessoryPhrase}`;
+            accessoryRejects += 1;
+          }
+        }
+
+        if (matchEligible) {
+          const currencyDetail = detectMarketCurrencyMismatch(
+            listing.priceCurrency ?? null,
+            market
+          );
+          if (currencyDetail) {
+            matchEligible = false;
+            rejectReason = "market_currency_mismatch";
+            rejectSource = "currency_guard";
+            rejectDetail = currencyDetail;
+          }
+        }
+
+        if (matchEligible && detectedLanguage === "jp") {
+          matchEligible = false;
+          rejectReason = "language_mismatch";
+          rejectSource = "language_filter";
+        } else if (matchEligible) {
+          const cnOutcome = decideCollectorNumberRejection(
+            cardCollector,
+            listingCollector
+          );
+          if (!cnOutcome.matchEligible) {
+            matchEligible = false;
+            rejectReason = cnOutcome.rejectReason;
+            rejectSource = cnOutcome.rejectSource;
+            rejectDetail = cnOutcome.rejectDetail;
+          }
+        } else if (sellerUsername && blacklistedSellers.has(sellerUsername)) {
+          matchEligible = false;
+          rejectReason = "seller_blacklisted";
+          rejectSource = "seller_filter";
+        }
+
+        if (sellerUsername) {
+          const stats = sellerStats.get(sellerUsername) ?? {
+            total: 0,
+            invalid: 0,
+          };
+          stats.total += 1;
           sellerStats.set(sellerUsername, stats);
         }
-        continue;
+
+        try {
+          await upsertListing(
+            targetCardId,
+            market,
+            inferredBucket,
+            listing,
+            sellerUsername,
+            historicPrice,
+            gradeInfo,
+            matchEligible,
+            rejectReason,
+            rejectSource,
+            rejectDetail,
+            listingCollector.raw,
+            listingCollector.norm,
+            listingCollector.confidence,
+            listingCollector.signals,
+            detectedCollectorNumber,
+            detectedLanguage,
+            shippingKnownFlag,
+            shippingSource,
+            snapshotAt
+          );
+          if (matchEligible) {
+            updatedCount += 1;
+          }
+        } catch (err) {
+          console.error(
+            `Failed to upsert listing ${listing.listingId} for ${row.name}:`,
+            err
+          );
+          continue;
+        }
+
+        if (!matchEligible) {
+          await logRejectedListing(
+            listing,
+            rejectReason ?? "match_rejected_unknown",
+            rejectDetail
+          );
+          if (sellerUsername && rejectReason !== "seller_blacklisted") {
+            const stats = sellerStats.get(sellerUsername) ?? {
+              total: 0,
+              invalid: 0,
+            };
+            stats.invalid += 1;
+            sellerStats.set(sellerUsername, stats);
+          }
+          continue;
+        }
       }
-    }
 
       for (const [sellerUsername, stats] of sellerStats) {
         if (
@@ -793,27 +808,25 @@ async function main() {
               VALUES ($1)
               ON CONFLICT (seller_username) DO NOTHING;
             `,
-            [sellerUsername],
+            [sellerUsername]
           );
           if (!blacklistedSellers.has(sellerUsername)) {
             blacklistedSellers.add(sellerUsername);
             console.log(
-              `    Auto-blacklisted seller ${sellerUsername}: ${stats.invalid}/${stats.total} listings invalid.`,
+              `    Auto-blacklisted seller ${sellerUsername}: ${stats.invalid}/${stats.total} listings invalid.`
             );
           }
         }
       }
 
-      console.log(
-        `    ✅ ${market}: Updated ${updatedCount} listings`,
-      );
+      console.log(`    ✅ ${market}: Updated ${updatedCount} listings`);
     } // End markets loop
   } // End rows loop
 
   console.log("Listing update complete.");
   if (accessoryRejects > 0) {
     console.log(
-      `[debug] accessory_not_card rejections this run: ${accessoryRejects}`,
+      `[debug] accessory_not_card rejections this run: ${accessoryRejects}`
     );
   }
 }
@@ -838,7 +851,7 @@ if (isCliExecution) {
 function inferConditionBucket(
   listing: NormalizedListing,
   defaultBucket: string,
-  gradeInfo: GradeInfo,
+  gradeInfo: GradeInfo
 ): string {
   if (gradeInfo.bucket) {
     return gradeInfo.bucket;
@@ -850,7 +863,9 @@ function inferConditionBucket(
   return defaultBucket;
 }
 
-function fallbackGradedBucketFromText(listing: NormalizedListing): string | null {
+function fallbackGradedBucketFromText(
+  listing: NormalizedListing
+): string | null {
   const text = `${listing.title ?? ""} ${listing.conditionRaw ?? ""}`
     .toLowerCase()
     .trim();
@@ -877,7 +892,7 @@ function fallbackGradedBucketFromText(listing: NormalizedListing): string | null
 
 async function getCardIdForBucket(
   base: SearchConfigRow,
-  targetBucket: string,
+  targetBucket: string
 ): Promise<number> {
   if (targetBucket === base.condition_bucket) {
     await ensureSearchConfig(base.card_id, base, targetBucket);
@@ -898,7 +913,7 @@ async function getCardIdForBucket(
       WHERE name = $1 AND set_name = $2 AND card_number = $3 AND condition_bucket = $4
       LIMIT 1;
     `,
-    [base.name, base.set_name, base.card_number, targetBucket],
+    [base.name, base.set_name, base.card_number, targetBucket]
   );
 
   if (existing.rows[0]) {
@@ -915,7 +930,7 @@ async function getCardIdForBucket(
       DO UPDATE SET updated_at = NOW()
       RETURNING id;
     `,
-    [base.name, base.set_name, base.card_number, targetBucket],
+    [base.name, base.set_name, base.card_number, targetBucket]
   );
 
   const newId = inserted.rows[0].id;
@@ -927,7 +942,7 @@ async function getCardIdForBucket(
 async function ensureSearchConfig(
   cardId: number,
   base: SearchConfigRow,
-  bucket: string,
+  bucket: string
 ): Promise<void> {
   const derivedQuery = deriveSearchQuery(base.search_query, bucket);
   await query(
@@ -936,7 +951,7 @@ async function ensureSearchConfig(
       VALUES ($1, $2, $3, TRUE)
       ON CONFLICT (card_id, search_query, market) DO NOTHING;
     `,
-    [cardId, derivedQuery, base.market],
+    [cardId, derivedQuery, base.market]
   );
 }
 
@@ -945,7 +960,9 @@ function deriveSearchQuery(baseQuery: string, bucket: string): string {
   if (!suffix) {
     return baseQuery;
   }
-  if (baseQuery.toLowerCase().includes(suffix.replace(/"/g, "").toLowerCase())) {
+  if (
+    baseQuery.toLowerCase().includes(suffix.replace(/"/g, "").toLowerCase())
+  ) {
     return baseQuery;
   }
   return `${baseQuery} ${suffix}`;
@@ -953,7 +970,7 @@ function deriveSearchQuery(baseQuery: string, bucket: string): string {
 
 async function resolveGradeInfo(
   listing: NormalizedListing,
-  market: string,
+  market: string
 ): Promise<GradeInfo> {
   const empty: GradeInfo = {
     grader: null,
@@ -989,13 +1006,48 @@ function detectGradeFromTitle(title: string): GradeInfo | null {
     gradeValue: string;
     bucket: string;
   }> = [
-    { regex: /\bpsa\s*10\b|\bpsa10\b/i, grader: "PSA", gradeValue: "10", bucket: "psa_10" },
-    { regex: /\bpsa\s*9\b|\bpsa9\b/i, grader: "PSA", gradeValue: "9", bucket: "psa_9" },
-    { regex: /\bbgs\s*10\b|\bbeckett\s*10\b/i, grader: "BGS", gradeValue: "10", bucket: "bgs_10" },
-    { regex: /\bbgs\s*9\.?5\b|\bbeckett\s*9\.?5\b/i, grader: "BGS", gradeValue: "9.5", bucket: "bgs_95" },
-    { regex: /\bbgs\s*9\b|\bbeckett\s*9\b/i, grader: "BGS", gradeValue: "9", bucket: "bgs_9" },
-    { regex: /\bcgc\s*10\b/i, grader: "CGC", gradeValue: "10", bucket: "cgc_10" },
-    { regex: /\bcgc\s*9\.?5\b/i, grader: "CGC", gradeValue: "9.5", bucket: "cgc_95" },
+    {
+      regex: /\bpsa\s*10\b|\bpsa10\b/i,
+      grader: "PSA",
+      gradeValue: "10",
+      bucket: "psa_10",
+    },
+    {
+      regex: /\bpsa\s*9\b|\bpsa9\b/i,
+      grader: "PSA",
+      gradeValue: "9",
+      bucket: "psa_9",
+    },
+    {
+      regex: /\bbgs\s*10\b|\bbeckett\s*10\b/i,
+      grader: "BGS",
+      gradeValue: "10",
+      bucket: "bgs_10",
+    },
+    {
+      regex: /\bbgs\s*9\.?5\b|\bbeckett\s*9\.?5\b/i,
+      grader: "BGS",
+      gradeValue: "9.5",
+      bucket: "bgs_95",
+    },
+    {
+      regex: /\bbgs\s*9\b|\bbeckett\s*9\b/i,
+      grader: "BGS",
+      gradeValue: "9",
+      bucket: "bgs_9",
+    },
+    {
+      regex: /\bcgc\s*10\b/i,
+      grader: "CGC",
+      gradeValue: "10",
+      bucket: "cgc_10",
+    },
+    {
+      regex: /\bcgc\s*9\.?5\b/i,
+      grader: "CGC",
+      gradeValue: "9.5",
+      bucket: "cgc_95",
+    },
     { regex: /\bcgc\s*9\b/i, grader: "CGC", gradeValue: "9", bucket: "cgc_9" },
   ];
   for (const pattern of patterns) {
@@ -1011,7 +1063,9 @@ function detectGradeFromTitle(title: string): GradeInfo | null {
   return null;
 }
 
-function detectAccessoryPhrase(title: string | null | undefined): string | null {
+function detectAccessoryPhrase(
+  title: string | null | undefined
+): string | null {
   if (!title) return null;
   const normalized = title.toLowerCase();
   for (const phrase of ACCESSORY_PHRASES.hard) {
@@ -1020,7 +1074,7 @@ function detectAccessoryPhrase(title: string | null | undefined): string | null 
     }
   }
   const hasContext = ACCESSORY_CONTEXT.some((context) =>
-    normalized.includes(context),
+    normalized.includes(context)
   );
   if (!hasContext) {
     return null;
@@ -1035,7 +1089,9 @@ function detectAccessoryPhrase(title: string | null | undefined): string | null 
 
 type ListingLanguage = "en" | "jp" | "unknown";
 
-function detectListingLanguage(title: string | null | undefined): ListingLanguage {
+function detectListingLanguage(
+  title: string | null | undefined
+): ListingLanguage {
   if (!title) {
     return "unknown";
   }
@@ -1061,23 +1117,27 @@ function detectListingLanguage(title: string | null | undefined): ListingLanguag
 
 async function getListingDetail(
   listingId: string | undefined,
-  market: string,
+  market: string
 ): Promise<EbayItemDetail | null> {
   if (!listingId) return null;
   if (!detailCache.has(listingId)) {
     detailCache.set(
       listingId,
-      detailSemaphore.run(() => fetchEbayItemDetail(listingId, market)),
+      detailSemaphore.run(() => fetchEbayItemDetail(listingId, market))
     );
   }
   return detailCache.get(listingId) ?? null;
 }
 
-function extractGradeFromDetail(detail: EbayItemDetail | null): GradeInfo | null {
+function extractGradeFromDetail(
+  detail: EbayItemDetail | null
+): GradeInfo | null {
   if (!detail) return null;
   const graderRaw =
-    findDescriptorValue(detail.conditionDescriptors ?? [], "professional grader") ??
-    findAspectValue(detail.localizedAspects ?? [], "professional grader");
+    findDescriptorValue(
+      detail.conditionDescriptors ?? [],
+      "professional grader"
+    ) ?? findAspectValue(detail.localizedAspects ?? [], "professional grader");
   const gradeRaw =
     findDescriptorValue(detail.conditionDescriptors ?? [], "grade") ??
     findAspectValue(detail.localizedAspects ?? [], "grade");
@@ -1098,7 +1158,7 @@ function extractGradeFromDetail(detail: EbayItemDetail | null): GradeInfo | null
 
 function findDescriptorValue(
   descriptors: Array<{ name?: string; values?: Array<{ content?: string }> }>,
-  targetName: string,
+  targetName: string
 ): string | null {
   for (const descriptor of descriptors) {
     if (!descriptor.name) continue;
@@ -1114,7 +1174,7 @@ function findDescriptorValue(
 
 function findAspectValue(
   aspects: Array<{ name?: string; value?: string }>,
-  targetName: string,
+  targetName: string
 ): string | null {
   for (const aspect of aspects) {
     if (!aspect.name) continue;
@@ -1146,7 +1206,10 @@ function normalizeGradeValue(raw: string | null): string | null {
   return cleaned;
 }
 
-function bucketFromGrade(grader: string | null, gradeValue: string | null): string | null {
+function bucketFromGrade(
+  grader: string | null,
+  gradeValue: string | null
+): string | null {
   if (!grader || !gradeValue) return null;
   const normalized = gradeValue;
   switch (grader) {

@@ -73,6 +73,29 @@ CREATE INDEX IF NOT EXISTS listings_market_idx ON listings (market);
 CREATE INDEX IF NOT EXISTS listings_market_card_id_idx ON listings (market, card_id);
 CREATE INDEX IF NOT EXISTS listings_integrity_status_idx ON listings (integrity_status);
 
+-- FX rates table (required for multi-currency totals)
+CREATE TABLE IF NOT EXISTS fx_rates (
+  id SERIAL PRIMARY KEY,
+  currency VARCHAR(3) NOT NULL UNIQUE,
+  rate_to_usd NUMERIC(10, 6) NOT NULL CHECK (rate_to_usd > 0),
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  notes TEXT
+);
+
+-- Multi-currency + Option A Phase 1 columns on listings (idempotent schema alignment)
+ALTER TABLE listings
+  ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'USD',
+  ADD COLUMN IF NOT EXISTS price_native NUMERIC(10, 2),
+  ADD COLUMN IF NOT EXISTS shipping_native NUMERIC(10, 2),
+  ADD COLUMN IF NOT EXISTS total_native NUMERIC(10, 2),
+  ADD COLUMN IF NOT EXISTS fx_rate_to_usd NUMERIC(18, 10),
+  ADD COLUMN IF NOT EXISTS total_usd NUMERIC(18, 6),
+  ADD COLUMN IF NOT EXISTS snapshot_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS ingested_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS shipping_unknown BOOLEAN,
+  ADD COLUMN IF NOT EXISTS fx_status TEXT,
+  ADD COLUMN IF NOT EXISTS fx_timestamp TIMESTAMPTZ;
+
 CREATE TABLE IF NOT EXISTS ebay_sold_listings (
   id SERIAL PRIMARY KEY,
   card_id INTEGER NOT NULL REFERENCES cards(id) ON DELETE CASCADE,

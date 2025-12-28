@@ -8,6 +8,7 @@ name: Data Pipelines
 # - DATABASE_URL: Postgres connection string (required)
 # - EBAY_APP_ID: eBay API app ID, also used as client ID (required)
 # - EBAY_CLIENT_SECRET: eBay API client secret for OAuth2 (required)
+# - OPEN_EXCHANGE_RATES_APP_ID: Open Exchange Rates app ID (required for automated FX runs)
 # - SENDGRID_API_KEY: SendGrid API key for alert emails (optional)
 #
 # First-run validation:
@@ -26,8 +27,8 @@ on:
     - cron: "0 3 * * *"
     # Update sold listings daily at 4 AM UTC
     - cron: "0 4 * * *"
-    # Update FX rates daily at 5 AM UTC (after sold listings)
-    - cron: "0 5 * * *"
+    # Update FX rates hourly (Option A Phase 0)
+    - cron: "0 * * * *"
 
   workflow_dispatch:
     inputs:
@@ -61,6 +62,7 @@ env:
   EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
   EBAY_CLIENT_ID: ${{ secrets.EBAY_APP_ID }}
   EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+  OPEN_EXCHANGE_RATES_APP_ID: ${{ secrets.OPEN_EXCHANGE_RATES_APP_ID }}
   SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
 
 jobs:
@@ -167,9 +169,9 @@ jobs:
   update-fx-rates:
     name: Update FX Rates (Automated)
     runs-on: ubuntu-latest
-    # Run on 0 5 schedule OR manual dispatch
+    # Run on hourly schedule OR manual dispatch
     if: >-
-      github.event.schedule == '0 5 * * *' ||
+      github.event.schedule == '0 * * * *' ||
       (github.event_name == 'workflow_dispatch' &&
        (github.event.inputs.job == 'update-fx-rates' || github.event.inputs.job == 'all'))
     timeout-minutes: 5
@@ -186,19 +188,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify DATABASE_URL is set
+      - name: Verify required secrets are set
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "::error::DATABASE_URL secret is not set"
             exit 1
           fi
-          echo "DATABASE_URL is set"
+          if [ -z "$OPEN_EXCHANGE_RATES_APP_ID" ]; then
+            echo "::error::OPEN_EXCHANGE_RATES_APP_ID secret is not set"
+            exit 1
+          fi
+          echo "Required secrets are set"
 
-      # Automated FX rate update from Frankfurter API
-      # - Fetches current rates (no API key required)
-      # - Validates direction (GBP > 1.0, CAD < 1.0, etc.)
-      # - Writes to DB only if all validations pass
-      # - Fails loudly if invalid (non-zero exit)
+      # Automated FX rate update (Option A Phase 0)
+      # - Provider: Open Exchange Rates (API key required)
+      # - Hard bounds validation + drift gating
+      # - Holds last-known on drift/failure
       - name: Update FX rates
         run: npx tsx scripts/update-fx-rates-auto.ts --apply
         env:

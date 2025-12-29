@@ -12,6 +12,8 @@ import {
   getDisplayDiscountPercent,
 } from "../../../lib/pricing";
 import { cookies, headers } from "next/headers";
+import { ANON_ID_COOKIE, isValidAnonId } from "../../../lib/anonId";
+import { fetchWatchedCardIdSet } from "../../../lib/watchlistDb";
 
 import { DEFAULT_MARKET, type MarketCode } from "../../../lib/markets";
 import {
@@ -748,6 +750,22 @@ export default async function SetDetailPage({
     getSetDeals(setName, marketContext),
     catalogCardsPromise,
   ]);
+  const ownerIdRaw = cookies().get(ANON_ID_COOKIE)?.value ?? null;
+  const ownerId = isValidAnonId(ownerIdRaw) ? ownerIdRaw : null;
+  const watchedIds = ownerId
+    ? await fetchWatchedCardIdSet(ownerId, [
+        ...deals.map((deal) => deal.cardId ?? 0),
+        ...hotCards.map((card) => card.id),
+      ])
+    : new Set<number>();
+
+  if (watchedIds.size > 0) {
+    for (const deal of deals) {
+      const cardId = deal.cardId ?? null;
+      if (cardId == null) continue;
+      deal.isWatched = watchedIds.has(cardId);
+    }
+  }
 
   const displayName = metadata?.name ?? setName;
   const releaseLabel = formatDate(metadata?.releaseDate ?? null) ?? "Unknown";
@@ -910,6 +928,7 @@ export default async function SetDetailPage({
                       cardId={card.id}
                       cardName={card.name}
                       setName={setName}
+                      initialIsWatched={watchedIds.has(card.id)}
                     />
                   </div>
                   <div className="text-xs text-slate-500">

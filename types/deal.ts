@@ -1,5 +1,6 @@
 export type Deal = {
   id: number;
+  isWatched?: boolean;
   title: string;
   url: string;
   priceCad: number | null;

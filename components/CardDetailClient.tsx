@@ -121,6 +121,7 @@ export type CardDetailClientProps = {
       collectorNumber: string | null;
       rarity: string | null;
       condition: string | null;
+      isWatched?: boolean;
       stockImageUrl?: string | null; // TCGplayer stock image
     };
     historicals: HistoricalPoint[];
@@ -706,6 +707,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                     cardId={card.id}
                     cardName={card.name}
                     setName={card.setName}
+                    initialIsWatched={card.isWatched ?? false}
                   />
                 </div>
               </div>
@@ -1254,6 +1256,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                             cardId={card.id}
                             cardName={card.name}
                             setName={card.setName}
+                            initialIsWatched={card.isWatched ?? false}
                           />
                           <span className="text-sm text-slate-600">
                             Watch this card

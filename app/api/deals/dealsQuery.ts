@@ -28,6 +28,8 @@ import {
   warnIfStoreNamesMissing,
   normalizeSellerStoreName,
 } from "@/lib/sellerDisplay";
+import { fetchWatchedCardIdSet } from "@/lib/watchlistDb";
+import { isValidAnonId } from "@/lib/anonId";
 
 type DealRow = {
   id: number;
@@ -109,6 +111,7 @@ export type DealsQueryOptions = {
   page?: number;
   pageSize?: number;
   market?: MarketCode | "all" | string | null;
+  ownerId?: string | null;
 };
 
 export async function runDealsQuery(
@@ -180,6 +183,19 @@ export async function runDealsQuery(
       continue;
     }
     items.push(deal);
+  }
+
+  const ownerId = isValidAnonId(options.ownerId) ? options.ownerId : null;
+  if (ownerId) {
+    const watchedIds = await fetchWatchedCardIdSet(
+      ownerId,
+      items.map((deal) => deal.cardId ?? 0)
+    );
+    for (const deal of items) {
+      const cardId = deal.cardId ?? null;
+      if (cardId == null) continue;
+      deal.isWatched = watchedIds.has(cardId);
+    }
   }
 
   const sellerUsernames = Array.from(

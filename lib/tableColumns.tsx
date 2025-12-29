@@ -20,7 +20,6 @@ import { WatchlistStarButton } from "../components/WatchlistStarButton";
 import { getSellerDisplayData } from "./sellerDisplay";
 import type { DealViewModel } from "./dealViewModel";
 import {
-  formatCurrency,
   formatUSD,
   formatDiscount,
   getEndsAtDisplay,
@@ -110,6 +109,8 @@ export type RenderOptions = {
   showListingTitle?: boolean;
   showViewCardLink?: boolean;
   isAdmin?: boolean;
+  referenceTime?: number;
+  viewerCurrency?: string;
 };
 
 /**
@@ -231,11 +232,12 @@ const TotalColumn: ColumnSpec = {
   headerClassName: `${TABLE_TH_RIGHT} ${TABLE_TH_NOWRAP}`,
   cellClassName: `${TABLE_TD_RIGHT}`,
   width: "w-[120px]",
-  renderCell: (vm) => {
+  renderCell: (vm, options) => {
     const { primary, secondary } = formatPriceWithApprox(
       vm.totalNative,
       vm.currency,
-      vm.totalUsd
+      vm.totalUsd,
+      options?.viewerCurrency ?? null
     );
     return (
       <div className="flex flex-col items-end gap-0.5 text-right">
@@ -262,7 +264,7 @@ const HistoricColumn: ColumnSpec = {
   cellClassName: `${TABLE_TD_RIGHT}`,
   width: "w-[120px]",
   renderCell: (vm) => (
-    <span className={NUM_CELL_SECONDARY}>{formatCurrency(vm.historicUsd)}</span>
+    <span className={NUM_CELL_SECONDARY}>{formatUSD(vm.historicUsd)}</span>
   ),
 };
 
@@ -435,8 +437,10 @@ const EndsColumn: ColumnSpec = {
   headerClassName: `${TABLE_TH}`,
   cellClassName: `${TABLE_TD}`,
   width: "w-[96px]",
-  renderCell: (vm) => {
-    const endsDisplay = getEndsAtDisplay(vm.deal.endsAt);
+  renderCell: (vm, options) => {
+    const endsDisplay = getEndsAtDisplay(vm.deal.endsAt, {
+      now: options?.referenceTime,
+    });
     return (
       <TooltipPopoverClientOnly
         content={endsDisplay.tooltip}

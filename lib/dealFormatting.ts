@@ -2,6 +2,7 @@ import { formatMoneyFromCad, type Currency } from "./money";
 
 type FormatEndsAtOptions = {
   short?: boolean;
+  now?: number;
 };
 
 export function formatCurrency(
@@ -203,8 +204,12 @@ function formatUtcTimestamp(date: Date): string {
   return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
 }
 
-function formatRelativeEnds(date: Date, shortLabel: boolean): string {
-  const diffMs = date.getTime() - Date.now();
+function formatRelativeEnds(
+  date: Date,
+  shortLabel: boolean,
+  now: number = Date.now()
+): string {
+  const diffMs = date.getTime() - now;
   if (diffMs <= 0) {
     return shortLabel ? "Ended" : "Ended";
   }
@@ -240,7 +245,7 @@ export function getEndsAtDisplay(
     return { label: "--", tooltip: "--" };
   }
   const tooltip = formatUtcTimestamp(date);
-  const label = formatRelativeEnds(date, Boolean(options?.short));
+  const label = formatRelativeEnds(date, Boolean(options?.short), options?.now);
   return { label, tooltip };
 }
 
@@ -381,7 +386,8 @@ export function formatPriceConfidence(
  */
 export function formatFreshness(
   updatedAt: string | null | undefined,
-  thresholdHours: number = 4
+  thresholdHours: number = 4,
+  now: number = Date.now()
 ): string | null {
   if (!updatedAt) {
     return null;
@@ -392,7 +398,7 @@ export function formatFreshness(
     return null;
   }
 
-  const diffMs = Date.now() - date.getTime();
+  const diffMs = now - date.getTime();
   if (diffMs < 0) {
     return null;
   }

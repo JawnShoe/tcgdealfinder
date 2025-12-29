@@ -73,7 +73,7 @@ export function buildDealViewModel(
   }
 ): DealViewModel {
   const totalUsd = deal.totalUsd ?? null;
-  const historicUsd = deal.historicPriceCad ?? null;
+  const historicUsd = deal.historicPriceUsd ?? null;
   const discountPercent = getDealDiscount(deal);
 
   // Native currency fields

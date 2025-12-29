@@ -60,7 +60,6 @@ import {
 import { persistMarketPreference } from "../lib/marketPreferenceClient";
 import {
   discountClass,
-  formatCurrency,
   formatUSD,
   formatDiscount,
   getEndsAtDisplay,
@@ -129,8 +128,11 @@ function dedupeDealsByListing(deals: Deal[]): Deal[] {
   return Array.from(map.values());
 }
 
-function renderEndsValue(value: string | null | undefined): JSX.Element {
-  const display = getEndsAtDisplay(value);
+function renderEndsValue(
+  value: string | null | undefined,
+  now: number | undefined
+): JSX.Element {
+  const display = getEndsAtDisplay(value, { now });
   return (
     <TooltipPopoverClientOnly
       content={display.tooltip}
@@ -183,7 +185,7 @@ const SORT_LABEL: Record<SortOption, string> = {
   "best-score": "Best score",
   "price-low-high": "Price: low to high",
   "price-high-low": "Price: high to low",
-  "historic-high-low": "Historic price",
+  "historic-high-low": "Historic USD",
   "card-name": "Card name",
   "time-left": "Ending soon",
   "confidence-first": "High confidence first",
@@ -252,6 +254,7 @@ interface DealsTableProps {
   page?: number;
   totalPages?: number;
   variant?: DealsTableVariant;
+  referenceTime?: number;
 }
 
 export default function DealsTable({
@@ -259,6 +262,7 @@ export default function DealsTable({
   isAdmin = false,
   initialApiMeta = null,
   variant = "default",
+  referenceTime: referenceTimeProp,
 }: DealsTableProps) {
   const [viewState, setViewState] = useState<DealsViewState>({
     ...defaultState,
@@ -367,10 +371,13 @@ export default function DealsTable({
   );
   const referenceTime = useMemo(
     () => ({
-      stamp: Date.now(),
+      stamp:
+        referenceTimeProp != null && Number.isFinite(referenceTimeProp)
+          ? referenceTimeProp
+          : Date.now(),
       key: referenceKey,
     }),
-    [referenceKey]
+    [referenceKey, referenceTimeProp]
   ).stamp;
 
   // Use buildDealViewModel() as the single source of truth for derived values
@@ -1091,6 +1098,11 @@ export default function DealsTable({
                             vm.deal.sellerSeenWindowDays,
                             vm.deal.sellerSeenMarket ?? viewState.marketKey
                           );
+                          const freshness = formatFreshness(
+                            vm.deal.updatedAt,
+                            4,
+                            referenceTime
+                          );
                           return (
                             <tr
                               key={vm.deal.id}
@@ -1155,9 +1167,9 @@ export default function DealsTable({
                                       className="text-xs text-slate-500"
                                     />
                                   ) : null}
-                                  {formatFreshness(vm.deal.updatedAt) && (
+                                  {freshness && (
                                     <span className="text-xs text-slate-500">
-                                      {formatFreshness(vm.deal.updatedAt)}
+                                      {freshness}
                                     </span>
                                   )}
                                 </div>
@@ -1266,7 +1278,7 @@ export default function DealsTable({
                               <td
                                 className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}
                               >
-                                {renderEndsValue(vm.deal.endsAt)}
+                                {renderEndsValue(vm.deal.endsAt, referenceTime)}
                               </td>
                               {isAdmin ? (
                                 <td className="px-3 py-4 align-middle text-sm">
@@ -1296,6 +1308,11 @@ export default function DealsTable({
               const cardName =
                 vm.deal.card?.name ?? vm.deal.cardName ?? vm.deal.title ?? null;
               const setName = vm.deal.card?.setName ?? vm.deal.setName ?? null;
+              const freshness = formatFreshness(
+                vm.deal.updatedAt,
+                4,
+                referenceTime
+              );
               const sellerSalesBadge = renderSellerSalesBadge(
                 vm.deal.sellerFeedbackCount
               );
@@ -1353,10 +1370,8 @@ export default function DealsTable({
                           className="text-xs text-slate-500"
                         />
                       ) : null}
-                      {formatFreshness(vm.deal.updatedAt) && (
-                        <p className="text-xs text-slate-500">
-                          {formatFreshness(vm.deal.updatedAt)}
-                        </p>
+                      {freshness && (
+                        <p className="text-xs text-slate-500">{freshness}</p>
                       )}
                     </div>
                     <div>

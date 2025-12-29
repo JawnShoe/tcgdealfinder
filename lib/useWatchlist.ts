@@ -31,7 +31,9 @@ const store = {
 let hydrated = false;
 
 function isBrowser(): boolean {
-  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+  return (
+    typeof window !== "undefined" && typeof window.localStorage !== "undefined"
+  );
 }
 
 function loadFromStorage(): WatchlistEntry[] {
@@ -42,7 +44,11 @@ function loadFromStorage(): WatchlistEntry[] {
       return [];
     }
     const parsed = JSON.parse(raw) as StoredPayload;
-    if (!parsed || parsed.version !== STORAGE_VERSION || !Array.isArray(parsed.entries)) {
+    if (
+      !parsed ||
+      parsed.version !== STORAGE_VERSION ||
+      !Array.isArray(parsed.entries)
+    ) {
       return [];
     }
 
@@ -80,11 +86,13 @@ function saveToStorage(entries: WatchlistEntry[]) {
   }
 }
 
-function ensureHydrated() {
-  if (!hydrated && isBrowser()) {
-    store.entries = loadFromStorage();
-    hydrated = true;
+function hydrateIfNeeded(): boolean {
+  if (hydrated || !isBrowser()) {
+    return false;
   }
+  store.entries = loadFromStorage();
+  hydrated = true;
+  return true;
 }
 
 function emit() {
@@ -100,9 +108,13 @@ function setEntries(entries: WatchlistEntry[]) {
 }
 
 function upsertEntry(entry: WatchlistEntry) {
-  ensureHydrated();
+  hydrateIfNeeded();
   const existing = store.entries.find((item) => item.id === entry.id);
-  if (existing && existing.cardName === entry.cardName && existing.setName === entry.setName) {
+  if (
+    existing &&
+    existing.cardName === entry.cardName &&
+    existing.setName === entry.setName
+  ) {
     return;
   }
   const filtered = store.entries.filter((item) => item.id !== entry.id);
@@ -110,7 +122,7 @@ function upsertEntry(entry: WatchlistEntry) {
 }
 
 function removeEntry(id: number) {
-  ensureHydrated();
+  hydrateIfNeeded();
   const next = store.entries.filter((item) => item.id !== id);
   setEntries(next);
 }
@@ -120,7 +132,7 @@ function handleStorageEvent(event: StorageEvent) {
     return;
   }
   hydrated = false;
-  ensureHydrated();
+  hydrateIfNeeded();
   emit();
 }
 
@@ -129,25 +141,27 @@ if (isBrowser()) {
 }
 
 export function useWatchlist(): WatchlistEntry[] {
-  ensureHydrated();
   return useSyncExternalStore(
     (listener) => {
       listeners.add(listener);
+      if (hydrateIfNeeded()) {
+        emit();
+      }
       return () => listeners.delete(listener);
     },
     () => store.entries,
-    () => [],
+    () => []
   );
 }
 
 export function isCardWatched(cardId: number | null | undefined): boolean {
   if (cardId == null) return false;
-  ensureHydrated();
+  hydrateIfNeeded();
   return store.entries.some((entry) => entry.id === cardId);
 }
 
 export function toggleWatchlistEntry(entry: WatchlistEntry): boolean {
-  ensureHydrated();
+  hydrateIfNeeded();
   const isWatching = store.entries.some((item) => item.id === entry.id);
   if (isWatching) {
     removeEntry(entry.id);

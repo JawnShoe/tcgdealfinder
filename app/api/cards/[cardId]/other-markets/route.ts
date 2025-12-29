@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { query } from "../../../../../lib/db";
+import { convertCad } from "../../../../../lib/money";
 import {
   ensureDealConfidenceColumn,
   ensureHistoricalMarketColumn,
@@ -10,7 +11,11 @@ import {
 } from "../../../../../lib/schema";
 import { computeDealConfidenceWeight } from "../../../../../lib/dealConfidence";
 import { shouldExcludeListingFromCardSurfaces } from "../../../../../lib/blacklist";
-import { SUPPORTED_MARKETS, type MarketCode, DEFAULT_MARKET } from "../../../../../lib/markets";
+import {
+  SUPPORTED_MARKETS,
+  type MarketCode,
+  DEFAULT_MARKET,
+} from "../../../../../lib/markets";
 
 type ListingDbRow = {
   id: number;
@@ -47,6 +52,7 @@ type ListingRow = {
   totalPriceCad: number | null;
   totalUsd: number | null;
   historicPriceCad: number | null;
+  historicPriceUsd: number | null;
   discountPercent: number | null;
   sampleSize: number | null;
   market: string;
@@ -68,7 +74,7 @@ async function getListingsForMarkets(
   cardIds: number[],
   markets: MarketCode[],
   hasListingsMarketColumn: boolean,
-  hasHistoricalMarketColumn: boolean,
+  hasHistoricalMarketColumn: boolean
 ): Promise<ListingDbRow[]> {
   if (markets.length === 0 || cardIds.length === 0) return [];
   const hasConfidenceColumn = await ensureDealConfidenceColumn();
@@ -146,7 +152,7 @@ async function getListingsForMarkets(
         )
       ORDER BY l.discount_percent ASC NULLS LAST, l.total_price_cad ASC NULLS LAST
     `,
-    params,
+    params
   );
 
   return res.rows;
@@ -172,7 +178,7 @@ async function getCardInfo(cardId: number): Promise<{
       WHERE id = $1
       LIMIT 1;
     `,
-    [cardId],
+    [cardId]
   );
   return res.rows[0] ?? null;
 }
@@ -191,7 +197,7 @@ async function getRelatedCardIds(cardInfo: {
         AND card_number = $3
       ORDER BY condition_bucket;
     `,
-    [cardInfo.name, cardInfo.set_name, cardInfo.card_number],
+    [cardInfo.name, cardInfo.set_name, cardInfo.card_number]
   );
   return res.rows.map((row) => row.id);
 }
@@ -213,6 +219,10 @@ function mapListingRow(row: ListingDbRow): ListingRow {
     row.total_usd !== null && row.total_usd !== undefined
       ? Number(row.total_usd)
       : null;
+  const historicPriceCad =
+    row.median_price_cad != null ? Number(row.median_price_cad) : null;
+  const historicPriceUsd =
+    historicPriceCad != null ? convertCad(historicPriceCad, "USD") : null;
   const sampleSize =
     row.sample_size !== null && row.sample_size !== undefined
       ? Number(row.sample_size)
@@ -233,8 +243,7 @@ function mapListingRow(row: ListingDbRow): ListingRow {
     storedWeight ??
     computeDealConfidenceWeight({
       sampleCount: sampleSize,
-      medianPrice:
-        row.median_price_cad != null ? Number(row.median_price_cad) : null,
+      medianPrice: historicPriceCad,
       stdDev: null,
       shippingPrice: shippingCad,
     });
@@ -246,8 +255,8 @@ function mapListingRow(row: ListingDbRow): ListingRow {
     url: row.url,
     totalPriceCad,
     totalUsd,
-    historicPriceCad:
-      row.median_price_cad != null ? Number(row.median_price_cad) : null,
+    historicPriceCad,
+    historicPriceUsd,
     discountPercent:
       row.discount_percent != null ? Number(row.discount_percent) : null,
     sampleSize,
@@ -264,17 +273,15 @@ function mapListingRow(row: ListingDbRow): ListingRow {
     integrityReason: row.integrity_reason ?? null,
     integrityScore:
       row.integrity_score != null ? Number(row.integrity_score) : null,
-    overrideType: (row.override_type as
-      | "ALLOW"
-      | "HARD_BLOCK"
-      | "SOFT_EXCLUDE"
-      | null) ?? null,
+    overrideType:
+      (row.override_type as "ALLOW" | "HARD_BLOCK" | "SOFT_EXCLUDE" | null) ??
+      null,
   };
 }
 
 export async function GET(
   request: Request,
-  { params }: { params: { cardId: string } },
+  { params }: { params: { cardId: string } }
 ) {
   const hasIntegrityColumns = await ensureListingsIntegrityColumns();
   if (!hasIntegrityColumns) {
@@ -290,7 +297,10 @@ export async function GET(
   const url = new URL(request.url);
   const marketsParam = url.searchParams.get("markets");
   if (!marketsParam) {
-    return NextResponse.json({ error: "markets param required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "markets param required" },
+      { status: 400 }
+    );
   }
   const markets = marketsParam
     .split(",")
@@ -315,7 +325,7 @@ export async function GET(
     cardIds,
     markets,
     hasListingsMarketColumn,
-    hasHistoricalMarketColumn,
+    hasHistoricalMarketColumn
   );
   const filtered: ListingRow[] = [];
   for (const row of listings) {
@@ -326,7 +336,7 @@ export async function GET(
         setName: cardInfo.set_name,
         number: cardInfo.card_number,
         rarity: cardInfo.rarity,
-      },
+      }
     );
     if (result.excluded) continue;
     filtered.push(mapListingRow(row));

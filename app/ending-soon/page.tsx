@@ -12,6 +12,7 @@ import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../lib/pricing";
+import { convertCad } from "../../lib/money";
 import { cookies, headers } from "next/headers";
 
 import { DEFAULT_MARKET } from "../../lib/markets";
@@ -184,6 +185,8 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
     const totalUsd = row.total_usd !== null ? Number(row.total_usd) : null;
     const historic =
       row.historic_price_cad !== null ? Number(row.historic_price_cad) : null;
+    const historicPriceUsd =
+      historic != null ? convertCad(historic, "USD") : null;
     const shippingCad =
       row.shipping_cad !== null ? Number(row.shipping_cad) : null;
     const sampleSize =
@@ -221,6 +224,7 @@ async function getEndingSoonDeals(): Promise<Deal[]> {
       totalPriceCad: total,
       totalUsd,
       historicPriceCad: historic,
+      historicPriceUsd,
       discountPercent: displayDiscount,
       sampleSize,
       market: row.market,

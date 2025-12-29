@@ -82,6 +82,7 @@ type ListingRow = {
   totalPriceCad: number | null;
   totalUsd: number | null;
   historicPriceCad: number | null;
+  historicPriceUsd: number | null;
   discountPercent: number | null;
   sampleSize: number | null;
   market: string;
@@ -189,6 +190,7 @@ function listingRowToDeal(
     totalPriceCad: listing.totalPriceCad,
     totalUsd: listing.totalUsd,
     historicPriceCad: listing.historicPriceCad,
+    historicPriceUsd: listing.historicPriceUsd,
     discountPercent: listing.discountPercent,
     sampleSize: listing.sampleSize,
     market: listing.market,

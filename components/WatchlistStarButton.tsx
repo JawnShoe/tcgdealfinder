@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  isCardWatched,
   toggleWatchlistEntry,
   useWatchlist,
   type WatchlistEntry,
@@ -38,9 +37,7 @@ export function WatchlistStarButton({
     if (!mounted) {
       return false;
     }
-    return watchlist.length
-      ? watchlist.some((entry) => entry.id === normalizedId)
-      : isCardWatched(normalizedId);
+    return watchlist.some((entry) => entry.id === normalizedId);
   }, [watchlist, normalizedId, mounted]);
 
   if (normalizedId == null || !normalizedName) {

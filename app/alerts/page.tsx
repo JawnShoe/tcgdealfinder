@@ -5,6 +5,7 @@ import DealsTable from "../../components/DealsTable";
 import type { Deal } from "../../types/deal";
 import { query } from "../../lib/db";
 import { getDisplayDiscountPercent } from "../../lib/pricing";
+import { convertCad } from "../../lib/money";
 import {
   warnIfStoreNamesMissing,
   normalizeSellerStoreName,
@@ -90,6 +91,8 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
     const totalUsd = row.total_usd != null ? Number(row.total_usd) : null;
     const historicPrice =
       row.median_price_cad != null ? Number(row.median_price_cad) : null;
+    const historicPriceUsd =
+      historicPrice != null ? convertCad(historicPrice, "USD") : null;
     const rawDiscount =
       row.discount_percent != null ? Number(row.discount_percent) : null;
     const sampleSize = row.sample_size != null ? Number(row.sample_size) : null;
@@ -120,6 +123,7 @@ async function fetchRecentAlerts(): Promise<Deal[]> {
       totalPriceCad: totalPrice,
       totalUsd,
       historicPriceCad: historicPrice,
+      historicPriceUsd,
       discountPercent: displayDiscount,
       sampleSize,
       market: row.listing_market ?? "UNKNOWN",

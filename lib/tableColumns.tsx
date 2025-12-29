@@ -110,7 +110,6 @@ export type RenderOptions = {
   showViewCardLink?: boolean;
   isAdmin?: boolean;
   referenceTime?: number;
-  viewerCurrency?: string;
 };
 
 /**
@@ -236,8 +235,7 @@ const TotalColumn: ColumnSpec = {
     const { primary, secondary } = formatPriceWithApprox(
       vm.totalNative,
       vm.currency,
-      vm.totalUsd,
-      options?.viewerCurrency ?? null
+      vm.totalUsd
     );
     return (
       <div className="flex flex-col items-end gap-0.5 text-right">

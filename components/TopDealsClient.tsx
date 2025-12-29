@@ -6,7 +6,6 @@ import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 import { TopDealsColumns } from "../lib/tableColumns";
 import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
 import type { Deal } from "../types/deal";
-import { useViewerCurrency } from "../hooks/useViewerCurrency";
 
 type ConfidenceFilterKey = "all" | "high" | "medium" | "low";
 type HeaderSortKey =
@@ -38,7 +37,6 @@ export default function TopDealsClient({
     key: "score", // Default: Score DESC
     dir: "desc",
   });
-  const viewerCurrency = useViewerCurrency();
 
   const viewModels = useMemo<DealViewModel[]>(() => {
     return deals.map((deal) =>
@@ -303,7 +301,6 @@ export default function TopDealsClient({
                         showListingTitle: true,
                         showViewCardLink: true,
                         referenceTime,
-                        viewerCurrency,
                       })}
                     </td>
                   ))}

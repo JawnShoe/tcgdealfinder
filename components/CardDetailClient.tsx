@@ -39,7 +39,6 @@ import {
   formatPriceWithApprox,
   formatNativeCurrency,
 } from "../lib/dealFormatting";
-import { useViewerCurrency } from "../hooks/useViewerCurrency";
 import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 import { ALERT_THRESHOLD_OPTIONS } from "../lib/alertsConfig";
 import { isDealTrusted } from "../lib/dealScore";
@@ -239,7 +238,6 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
     otherMarketCounts,
   } = detail;
   const router = useRouter();
-  const viewerCurrency = useViewerCurrency();
   const conditionLabel = formatConditionLabel(card.condition ?? null);
 
   const [conditionFilter, setConditionFilter] = useState<ConditionFilterKey>(
@@ -739,102 +737,105 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                           const { primary, secondary } = formatPriceWithApprox(
                             bestTrustedDeal.totalNative,
                             bestTrustedDeal.currency,
-                            bestTrustedDeal.totalUsd,
-                            viewerCurrency
+                            bestTrustedDeal.totalUsd
                           );
                           return (
-                            <div className="flex flex-col">
-                              <div className="flex items-baseline gap-2">
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                 <p className="text-2xl font-semibold text-slate-900">
                                   {primary}
                                 </p>
+                                <span
+                                  className={`text-sm font-medium ${discountClass(
+                                    bestTrustedDeal.discountPercent ?? null
+                                  )}`}
+                                >
+                                  {formatDiscount(
+                                    bestTrustedDeal.discountPercent
+                                  )}
+                                </span>
                                 {bestDealFreshness && (
                                   <span className="text-xs text-slate-500">
                                     · {bestDealFreshness}
                                   </span>
                                 )}
                               </div>
-                              {/* HYDRATION-SAFE: Always render, hide with CSS when empty */}
-                              <p
-                                className={`text-sm text-slate-500 ${secondary ? "" : "invisible"}`}
-                                aria-hidden={!secondary}
-                              >
-                                {secondary || "\u00A0"}
-                              </p>
+                              {secondary ? (
+                                <p className="text-sm text-slate-500">
+                                  {secondary}
+                                </p>
+                              ) : null}
                             </div>
                           );
                         })()}
-                        {bestTrustedPriceBreakdown &&
-                          bestTrustedPriceBreakdown.itemNative != null &&
-                          bestTrustedPriceBreakdown.currency && (
-                            <TooltipPopoverClientOnly
-                              content={
-                                <>
-                                  Item:{" "}
-                                  {formatNativeCurrency(
-                                    bestTrustedPriceBreakdown.itemNative,
-                                    bestTrustedPriceBreakdown.currency
-                                  )}
-                                  <br />
-                                  Shipping:{" "}
-                                  {bestTrustedPriceBreakdown.shippingNative !=
-                                  null
-                                    ? formatNativeCurrency(
-                                        bestTrustedPriceBreakdown.shippingNative,
+                        {bestTrustedDealUrl || bestTrustedPriceBreakdown ? (
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                            {bestTrustedPriceBreakdown &&
+                              bestTrustedPriceBreakdown.itemNative != null &&
+                              bestTrustedPriceBreakdown.currency && (
+                                <TooltipPopoverClientOnly
+                                  content={
+                                    <>
+                                      Item:{" "}
+                                      {formatNativeCurrency(
+                                        bestTrustedPriceBreakdown.itemNative,
                                         bestTrustedPriceBreakdown.currency
-                                      )
-                                    : "at checkout"}
-                                </>
-                              }
-                              className="inline"
-                              triggerClassName="text-xs text-slate-500 underline decoration-dotted cursor-help"
-                              tooltipClassName="whitespace-nowrap"
-                              size="compact"
-                              usePortal={true}
-                            >
-                              Price breakdown
-                            </TooltipPopoverClientOnly>
-                          )}
-                        <p
-                          className={`text-sm ${discountClass(
-                            bestTrustedDeal.discountPercent ?? null
-                          )}`}
-                        >
-                          {formatDiscount(bestTrustedDeal.discountPercent)}
-                        </p>
-                        {bestTrustedDealUrl && (
-                          <a
-                            href={bestTrustedDealUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-slate-700 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
-                          >
-                            <span>View listing</span>
-                            <svg
-                              viewBox="0 0 20 20"
-                              fill="none"
-                              aria-hidden="true"
-                              className="h-3.5 w-3.5 stroke-current"
-                              strokeWidth="1.5"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M11 4h5v5"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M16 4l-5.75 5.75"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 6H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3"
-                              />
-                            </svg>
-                          </a>
-                        )}
+                                      )}
+                                      <br />
+                                      Shipping:{" "}
+                                      {bestTrustedPriceBreakdown.shippingNative !=
+                                      null
+                                        ? formatNativeCurrency(
+                                            bestTrustedPriceBreakdown.shippingNative,
+                                            bestTrustedPriceBreakdown.currency
+                                          )
+                                        : "at checkout"}
+                                    </>
+                                  }
+                                  className="inline"
+                                  triggerClassName="text-xs text-slate-500 underline decoration-dotted cursor-help"
+                                  tooltipClassName="whitespace-nowrap"
+                                  size="compact"
+                                  usePortal={true}
+                                >
+                                  Price breakdown
+                                </TooltipPopoverClientOnly>
+                              )}
+                            {bestTrustedDealUrl ? (
+                              <a
+                                href={bestTrustedDealUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-slate-700 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                              >
+                                <span>View listing</span>
+                                <svg
+                                  viewBox="0 0 20 20"
+                                  fill="none"
+                                  aria-hidden="true"
+                                  className="h-3.5 w-3.5 stroke-current"
+                                  strokeWidth="1.5"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M11 4h5v5"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M16 4l-5.75 5.75"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M9 6H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3"
+                                  />
+                                </svg>
+                              </a>
+                            ) : null}
+                          </div>
+                        ) : null}
                       </div>
                       {bestTrustedDeal.deal.endsAt && (
                         <TooltipPopoverClientOnly
@@ -1315,17 +1316,26 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                                               key={listing.id}
                                               className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2"
                                             >
-                                              <a
-                                                href={buildAffiliateUrl(
-                                                  listing.url ?? ""
-                                                )}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="min-w-0 flex-1 truncate text-slate-900 hover:text-amber-600"
-                                                title={listing.title}
+                                              <TooltipPopoverClientOnly
+                                                content={listing.title}
+                                                className="min-w-0 flex-1"
+                                                fallbackClassName="min-w-0 flex-1"
+                                                tooltipClassName="tooltip-wide"
+                                                size="wide"
+                                                usePortal={true}
+                                                asChild
                                               >
-                                                {listing.title}
-                                              </a>
+                                                <a
+                                                  href={buildAffiliateUrl(
+                                                    listing.url ?? ""
+                                                  )}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="min-w-0 truncate text-slate-900 hover:text-amber-600"
+                                                >
+                                                  {listing.title}
+                                                </a>
+                                              </TooltipPopoverClientOnly>
                                               <span className="text-xs text-slate-500">
                                                 {formatUSD(listing.totalUsd)}
                                               </span>

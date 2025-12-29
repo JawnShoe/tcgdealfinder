@@ -20,7 +20,6 @@ import {
   formatPriceWithApprox,
 } from "../lib/dealFormatting";
 import { MarketFlag } from "./MarketFlag";
-import { useViewerCurrency } from "../hooks/useViewerCurrency";
 
 export type FeaturedDealView = {
   deal: Deal;
@@ -36,7 +35,6 @@ type FeaturedDealsProps = {
 
 export function FeaturedDeals({ deals }: FeaturedDealsProps) {
   const deduped = dedupeFeaturedDeals(deals);
-  const viewerCurrency = useViewerCurrency();
   return (
     <div className="panel space-y-4">
       <div>
@@ -99,29 +97,28 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                         const { primary, secondary } = formatPriceWithApprox(
                           deal.totalNative,
                           deal.currency,
-                          deal.totalUsd,
-                          viewerCurrency
+                          deal.totalUsd
                         );
                         return (
-                          <span className="flex flex-col">
-                            <span className="text-base font-semibold text-slate-900">
-                              {primary}
-                            </span>
-                            {/* HYDRATION-SAFE: Always render span, hide with CSS when empty */}
-                            <span
-                              className={`text-xs text-slate-500 ${secondary ? "" : "invisible"}`}
-                              aria-hidden={!secondary}
-                            >
-                              {secondary || "\u00A0"}
-                            </span>
-                          </span>
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex flex-wrap items-baseline gap-2">
+                              <span className="text-base font-semibold text-slate-900">
+                                {primary}
+                              </span>
+                              <span
+                                className={`font-medium ${discountClass(discount)}`}
+                              >
+                                {formatDiscount(discount)}
+                              </span>
+                            </div>
+                            {secondary ? (
+                              <span className="text-xs text-slate-500">
+                                {secondary}
+                              </span>
+                            ) : null}
+                          </div>
                         );
                       })()}
-                      <span
-                        className={`font-medium ${discountClass(discount)}`}
-                      >
-                        {formatDiscount(discount)}
-                      </span>
                     </div>
                   </div>
                 </div>

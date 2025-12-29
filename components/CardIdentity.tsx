@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { Deal } from "@/types/deal";
+import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
 
 export type CardIdentityInfo = {
   primary: string | null;
@@ -48,33 +49,39 @@ export function CardIdentityBlock({
           target={titleLinkTarget}
           rel="noopener noreferrer"
           className="line-clamp-2 break-normal text-base font-bold text-slate-900 hover:text-slate-700"
-          title={primary ?? undefined}
         >
           {primary}
         </Link>
       ) : (
-        <p
-          className="line-clamp-2 break-normal text-base font-bold text-slate-900"
-          title={primary ?? undefined}
-        >
+        <p className="line-clamp-2 break-normal text-base font-bold text-slate-900">
           {primary}
         </p>
       )}
       {setName ? (
-        <p
-          className="line-clamp-2 break-words text-xs text-slate-500 whitespace-normal"
-          title={setName}
+        <TooltipPopoverClientOnly
+          content={setName}
+          ariaLabel="Set name"
+          tooltipClassName="tooltip-wide"
+          size="wide"
+          usePortal={true}
         >
-          {setName}
-        </p>
+          <span className="line-clamp-2 break-words text-xs text-slate-500 whitespace-normal">
+            {setName}
+          </span>
+        </TooltipPopoverClientOnly>
       ) : null}
       {showListingTitle && listingTitle ? (
-        <p
-          className="line-clamp-1 text-xs text-slate-400"
-          title={listingTitle}
+        <TooltipPopoverClientOnly
+          content={listingTitle}
+          ariaLabel="Listing title"
+          tooltipClassName="tooltip-wide"
+          size="wide"
+          usePortal={true}
         >
-          {listingTitle}
-        </p>
+          <span className="line-clamp-1 text-xs text-slate-400">
+            {listingTitle}
+          </span>
+        </TooltipPopoverClientOnly>
       ) : null}
       {showViewCardLink && cardId ? (
         <Link

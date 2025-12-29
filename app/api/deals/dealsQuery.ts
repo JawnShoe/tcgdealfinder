@@ -30,6 +30,7 @@ import {
 } from "@/lib/sellerDisplay";
 import { fetchWatchedCardIdSet } from "@/lib/watchlistDb";
 import { isValidAnonId } from "@/lib/anonId";
+import { applyWatchedCardIdsToDeals } from "@/lib/watchlistEnrichment";
 
 type DealRow = {
   id: number;
@@ -191,11 +192,7 @@ export async function runDealsQuery(
       ownerId,
       items.map((deal) => deal.cardId ?? 0)
     );
-    for (const deal of items) {
-      const cardId = deal.cardId ?? null;
-      if (cardId == null) continue;
-      deal.isWatched = watchedIds.has(cardId);
-    }
+    applyWatchedCardIdsToDeals(items, watchedIds);
   }
 
   const sellerUsernames = Array.from(

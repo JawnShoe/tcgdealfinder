@@ -1,9 +1,12 @@
 "use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 import { TrustedBadge } from "./TrustedBadge";
+import { UsdBaselineToggle } from "./UsdBaselineToggle";
 import { WatchlistStarButton } from "./WatchlistStarButton";
 import { buildAffiliateUrl } from "../lib/affiliateUrl";
 import type { Deal } from "../types/deal";
@@ -31,20 +34,34 @@ export type FeaturedDealView = {
 
 type FeaturedDealsProps = {
   deals: FeaturedDealView[];
+  initialShowUsdBaseline?: boolean;
 };
 
-export function FeaturedDeals({ deals }: FeaturedDealsProps) {
+export function FeaturedDeals({
+  deals,
+  initialShowUsdBaseline = true,
+}: FeaturedDealsProps) {
   const deduped = dedupeFeaturedDeals(deals);
+  const [showUsdBaseline, setShowUsdBaseline] = useState(
+    initialShowUsdBaseline
+  );
   return (
     <div className="panel space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold text-slate-900">
-          Featured deals today
-        </h2>
-        <p className="text-sm text-slate-600">
-          Top listings ranked by our deal quality score. Discounts, seller
-          trust, and data confidence drive placement.
-        </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-xl font-semibold text-slate-900">
+            Featured deals today
+          </h2>
+          <p className="text-sm text-slate-600">
+            Top listings ranked by our deal quality score. Discounts, seller
+            trust, and data confidence drive placement.
+          </p>
+        </div>
+        <UsdBaselineToggle
+          value={showUsdBaseline}
+          onChange={setShowUsdBaseline}
+          className="sm:pt-1"
+        />
       </div>
 
       {deduped.length === 0 ? (
@@ -104,16 +121,20 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                             <span className="text-base font-semibold text-slate-900">
                               {primary}
                             </span>
-                            {/* HYDRATION-SAFE: Always render span, hide with CSS when empty */}
-                            <span
-                              className={`text-xs text-slate-500 ${secondary ? "" : "invisible"}`}
-                              aria-hidden={!secondary}
-                              data-testid={
-                                secondary ? "converted-usd" : undefined
-                              }
-                            >
-                              {secondary || "\u00A0"}
-                            </span>
+                            {showUsdBaseline ? (
+                              <>
+                                {/* HYDRATION-SAFE: Always render span, hide with CSS when empty */}
+                                <span
+                                  className={`text-xs text-slate-500 ${secondary ? "" : "invisible"}`}
+                                  aria-hidden={!secondary}
+                                  data-testid={
+                                    secondary ? "converted-usd" : undefined
+                                  }
+                                >
+                                  {secondary || "\u00A0"}
+                                </span>
+                              </>
+                            ) : null}
                           </span>
                         );
                       })()}

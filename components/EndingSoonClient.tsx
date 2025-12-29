@@ -8,13 +8,16 @@ import type { Deal } from "../types/deal";
 interface EndingSoonClientProps {
   deals: Deal[];
   isAdmin?: boolean;
+  initialShowUsdBaseline?: boolean;
 }
 
 export default function EndingSoonClient({
   deals,
   isAdmin = false,
+  initialShowUsdBaseline = true,
 }: EndingSoonClientProps) {
   const viewModels = deals.map((deal) => buildDealViewModel(deal));
+  const showUsdBaseline = initialShowUsdBaseline !== false;
 
   if (viewModels.length === 0) {
     return (
@@ -62,6 +65,7 @@ export default function EndingSoonClient({
                 {col.renderCell(vm, {
                   showListingTitle: true,
                   showViewCardLink: true,
+                  showUsdBaseline,
                 })}
               </td>
             ))}

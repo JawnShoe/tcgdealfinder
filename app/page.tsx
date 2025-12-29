@@ -17,6 +17,10 @@ import {
   getGeoCountryFromHeaders,
   resolveMarketPreference,
 } from "@/lib/marketPreference";
+import {
+  USD_BASELINE_COOKIE_NAME,
+  parseUsdBaselineCookie,
+} from "@/lib/usdBaselinePreference";
 
 async function getHomePageDeals(): Promise<DealsApiResponse> {
   const PAGE_SIZE = 50;
@@ -72,6 +76,9 @@ export default async function HomePage() {
   const deals = initial.items;
   const featuredDeals = buildFeaturedDeals(deals);
   const referenceTime = Date.now();
+  const showUsdBaseline = parseUsdBaselineCookie(
+    cookies().get(USD_BASELINE_COOKIE_NAME)?.value
+  );
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -88,7 +95,10 @@ export default async function HomePage() {
 
         {/* Featured deals */}
         <section>
-          <FeaturedDeals deals={featuredDeals} />
+          <FeaturedDeals
+            deals={featuredDeals}
+            initialShowUsdBaseline={showUsdBaseline}
+          />
         </section>
 
         {/* All live deals */}

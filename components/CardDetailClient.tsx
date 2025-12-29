@@ -11,6 +11,7 @@ import { WatchlistStarButton } from "./WatchlistStarButton";
 import { CardIdentityBlock } from "./CardIdentity";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { MarketFlag } from "./MarketFlag";
+import { UsdBaselineToggle } from "./UsdBaselineToggle";
 import {
   SellerNameWithTooltip,
   formatSellerSalesCount,
@@ -133,6 +134,7 @@ export type CardDetailClientProps = {
       cardNumber: string | null;
     }>;
   };
+  initialShowUsdBaseline?: boolean;
 };
 
 type PriceHistoryStatus = "idle" | "loading" | "ready" | "error";
@@ -228,7 +230,10 @@ function listingRowToDeal(
   };
 }
 
-export default function CardDetailClient({ detail }: CardDetailClientProps) {
+export default function CardDetailClient({
+  detail,
+  initialShowUsdBaseline = true,
+}: CardDetailClientProps) {
   const {
     card,
     historicals,
@@ -239,6 +244,9 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
   } = detail;
   const router = useRouter();
   const conditionLabel = formatConditionLabel(card.condition ?? null);
+  const [showUsdBaseline, setShowUsdBaseline] = useState(
+    initialShowUsdBaseline
+  );
 
   const [conditionFilter, setConditionFilter] = useState<ConditionFilterKey>(
     CONDITION_FILTERS[0]?.key ?? "all"
@@ -701,11 +709,15 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                   </div>
                   <p className="text-sm text-slate-600">{card.setName}</p>
                 </div>
-                <div className="sm:pt-1">
+                <div className="sm:pt-1 flex flex-col items-end gap-2">
                   <WatchlistStarButton
                     cardId={card.id}
                     cardName={card.name}
                     setName={card.setName}
+                  />
+                  <UsdBaselineToggle
+                    value={showUsdBaseline}
+                    onChange={setShowUsdBaseline}
                   />
                 </div>
               </div>
@@ -754,16 +766,20 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                                   </span>
                                 )}
                               </div>
-                              {/* HYDRATION-SAFE: Always render, hide with CSS when empty */}
-                              <p
-                                className={`text-sm text-slate-500 ${secondary ? "" : "invisible"}`}
-                                aria-hidden={!secondary}
-                                data-testid={
-                                  secondary ? "converted-usd" : undefined
-                                }
-                              >
-                                {secondary || "\u00A0"}
-                              </p>
+                              {showUsdBaseline ? (
+                                <>
+                                  {/* HYDRATION-SAFE: Always render, hide with CSS when empty */}
+                                  <p
+                                    className={`text-sm text-slate-500 ${secondary ? "" : "invisible"}`}
+                                    aria-hidden={!secondary}
+                                    data-testid={
+                                      secondary ? "converted-usd" : undefined
+                                    }
+                                  >
+                                    {secondary || "\u00A0"}
+                                  </p>
+                                </>
+                              ) : null}
                             </div>
                           );
                         })()}

@@ -111,6 +111,7 @@ export type RenderOptions = {
   isAdmin?: boolean;
   referenceTime?: number;
   viewerCurrency?: string;
+  showUsdBaseline?: boolean;
 };
 
 /**
@@ -232,16 +233,17 @@ const TotalColumn: ColumnSpec = {
   headerClassName: `${TABLE_TH_RIGHT} ${TABLE_TH_NOWRAP}`,
   cellClassName: `${TABLE_TD_RIGHT}`,
   width: "w-[120px]",
-  renderCell: (vm) => {
+  renderCell: (vm, options) => {
     const { primary, secondary } = formatPriceWithApprox(
       vm.totalNative,
       vm.currency,
       vm.totalUsd
     );
+    const showUsdBaseline = options?.showUsdBaseline !== false;
     return (
       <div className="flex flex-col items-end gap-0.5 text-right">
         <span className={NUM_CELL}>{primary}</span>
-        {secondary ? (
+        {showUsdBaseline && secondary ? (
           <span className="text-xs text-slate-500" data-testid="converted-usd">
             {secondary}
           </span>

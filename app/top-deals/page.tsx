@@ -21,6 +21,10 @@ import {
   getGeoCountryFromHeaders,
   resolveMarketPreference,
 } from "../../lib/marketPreference";
+import {
+  USD_BASELINE_COOKIE_NAME,
+  parseUsdBaselineCookie,
+} from "../../lib/usdBaselinePreference";
 import { DEFAULT_MARKET } from "../../lib/markets";
 import {
   ensureHistoricalMarketColumn,
@@ -485,6 +489,9 @@ export default async function TopDealsPage() {
 
   const deals = await getTopDeals();
   const referenceTime = Date.now();
+  const showUsdBaseline = parseUsdBaselineCookie(
+    cookies().get(USD_BASELINE_COOKIE_NAME)?.value
+  );
 
   return (
     <main className="bg-slate-50 text-slate-900">
@@ -502,6 +509,7 @@ export default async function TopDealsPage() {
             deals={deals}
             isAdmin={isAdmin}
             referenceTime={referenceTime}
+            initialShowUsdBaseline={showUsdBaseline}
           />
           <p className="mt-4 text-xs text-slate-400 text-right">
             {TCGPLAYER_ATTRIBUTION}

@@ -22,6 +22,10 @@ import {
   resolveMarketPreference,
 } from "../../lib/marketPreference";
 import {
+  USD_BASELINE_COOKIE_NAME,
+  parseUsdBaselineCookie,
+} from "../../lib/usdBaselinePreference";
+import {
   ensureHistoricalMarketColumn,
   ensureListingsMarketColumn,
   ensureListingsIntegrityColumns,
@@ -403,6 +407,9 @@ export default async function EndingSoonPage() {
   const isAdmin = Boolean(process.env.ADMIN_SECRET) && isAdminAuthenticated();
 
   const deals = await getEndingSoonDeals();
+  const showUsdBaseline = parseUsdBaselineCookie(
+    cookies().get(USD_BASELINE_COOKIE_NAME)?.value
+  );
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -415,7 +422,11 @@ export default async function EndingSoonPage() {
         </div>
 
         <div className={`${TABLE_CONTAINER} overflow-x-auto`}>
-          <EndingSoonClient deals={deals} isAdmin={isAdmin} />
+          <EndingSoonClient
+            deals={deals}
+            isAdmin={isAdmin}
+            initialShowUsdBaseline={showUsdBaseline}
+          />
         </div>
       </div>
     </main>

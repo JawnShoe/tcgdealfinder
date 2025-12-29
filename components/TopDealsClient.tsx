@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AdminDealActions } from "./AdminDealActions";
+import { UsdBaselineToggle } from "./UsdBaselineToggle";
 import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 import { TopDealsColumns } from "../lib/tableColumns";
 import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
@@ -25,12 +26,14 @@ interface TopDealsClientProps {
   deals: Deal[];
   isAdmin?: boolean;
   referenceTime: number;
+  initialShowUsdBaseline?: boolean;
 }
 
 export default function TopDealsClient({
   deals,
   isAdmin = false,
   referenceTime,
+  initialShowUsdBaseline = true,
 }: TopDealsClientProps) {
   const [priceConfFilter, setPriceConfFilter] =
     useState<ConfidenceFilterKey>("all");
@@ -38,6 +41,9 @@ export default function TopDealsClient({
     key: "score", // Default: Score DESC
     dir: "desc",
   });
+  const [showUsdBaseline, setShowUsdBaseline] = useState(
+    initialShowUsdBaseline
+  );
   const viewerCurrency = useViewerCurrency();
 
   const viewModels = useMemo<DealViewModel[]>(() => {
@@ -169,7 +175,11 @@ export default function TopDealsClient({
 
   return (
     <div>
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end sm:gap-6">
+        <UsdBaselineToggle
+          value={showUsdBaseline}
+          onChange={setShowUsdBaseline}
+        />
         <label className="flex flex-col gap-1 text-sm text-slate-600">
           <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase text-slate-500">
             <span>Data reliability</span>
@@ -304,6 +314,7 @@ export default function TopDealsClient({
                         showViewCardLink: true,
                         referenceTime,
                         viewerCurrency,
+                        showUsdBaseline,
                       })}
                     </td>
                   ))}

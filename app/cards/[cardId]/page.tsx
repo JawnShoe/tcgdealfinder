@@ -36,6 +36,10 @@ import {
   warnIfStoreNamesMissing,
   normalizeSellerStoreName,
 } from "../../../lib/sellerDisplay";
+import {
+  USD_BASELINE_COOKIE_NAME,
+  parseUsdBaselineCookie,
+} from "../../../lib/usdBaselinePreference";
 
 type CardRecord = {
   id: number;
@@ -723,11 +727,17 @@ export default async function CardPage({ params }: CardPageProps) {
   if (!detail) {
     return null;
   }
+  const showUsdBaseline = parseUsdBaselineCookie(
+    cookies().get(USD_BASELINE_COOKIE_NAME)?.value
+  );
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-7xl px-4 pt-4 pb-8 sm:px-6 lg:px-10 lg:pt-6 lg:pb-12">
-        <CardDetailClient detail={detail} />
+        <CardDetailClient
+          detail={detail}
+          initialShowUsdBaseline={showUsdBaseline}
+        />
         <p className="mt-4 text-xs text-slate-400 text-right">
           {TCGPLAYER_ATTRIBUTION}
         </p>

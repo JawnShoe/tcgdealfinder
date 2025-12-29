@@ -16,6 +16,7 @@
     "test": "npm run test:unit",
     "test:unit": "tsx --test lib/__tests__/unit/*.test.ts scripts/__tests__/unit/*.test.ts",
     "test:integration": "tsx --test lib/__tests__/integration/*.test.ts",
+    "test:e2e": "playwright test --project=chromium",
     "db:init": "tsx scripts/init-db.ts",
     "db:seed": "tsx scripts/seed-cards.ts",
     "db:debug": "tsx scripts/debug-listings.ts",
@@ -46,6 +47,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^20.11.30",
     "@types/pg": "^8.16.0",

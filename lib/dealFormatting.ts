@@ -121,45 +121,28 @@ export function getViewerCurrency(): string {
 }
 
 /**
- * Format price for display: native currency as primary, USD as secondary (approx).
+ * Format price for display: native currency as primary, ≈ USD as secondary.
  *
- * Viewer currency rule:
- * - If viewer currency matches listing currency → empty secondary (hide ≈ USD)
- * - If viewer currency differs from listing currency → show ≈ USD
- *
- * HYDRATION-SAFE: Always returns the same structure { primary, secondary }.
- * The secondary is an empty string "" when not needed, not null.
- * This ensures DOM structure is stable between SSR and CSR.
- *
- * Components should render: {secondary && <span>{secondary}</span>}
- * Empty string is falsy, so the span won't show content but structure is stable.
+ * Flicker guard: the ≈ USD line is derived only from listing data (currency + usdAmount),
+ * not viewer locale/currency, so SSR and CSR render the same output.
  */
 export function formatPriceWithApprox(
   nativeAmount: number | null | undefined,
   currency: string | null | undefined,
-  usdAmount: number | null | undefined,
-  viewerCurrency?: string | null
+  usdAmount: number | null | undefined
 ): { primary: string; secondary: string } {
   const currencyCode = (currency ?? "USD").toUpperCase();
-  const viewerCurrencyCode = (
-    viewerCurrency ?? getViewerCurrency()
-  ).toUpperCase();
 
   // If native amount is available, use it as primary
   if (nativeAmount != null && Number.isFinite(nativeAmount)) {
     const primary = formatNativeCurrency(nativeAmount, currencyCode);
-
-    // If listing currency matches viewer currency, no need for ≈ USD
-    if (currencyCode === viewerCurrencyCode) {
-      return { primary, secondary: "" };
-    }
 
     // If listing is USD, no need for ≈ USD (it IS USD)
     if (currencyCode === "USD") {
       return { primary, secondary: "" };
     }
 
-    // Viewer currency differs from listing: show ≈ USD for reference
+    // Non-USD listings: show ≈ USD for reference (if available)
     if (usdAmount != null && Number.isFinite(usdAmount)) {
       const usdFormatted = formatUSD(usdAmount);
       return { primary, secondary: `≈ ${usdFormatted}` };

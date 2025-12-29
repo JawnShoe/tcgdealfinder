@@ -20,7 +20,6 @@ import {
   formatPriceWithApprox,
 } from "../lib/dealFormatting";
 import { MarketFlag } from "./MarketFlag";
-import { useViewerCurrency } from "../hooks/useViewerCurrency";
 
 export type FeaturedDealView = {
   deal: Deal;
@@ -36,7 +35,6 @@ type FeaturedDealsProps = {
 
 export function FeaturedDeals({ deals }: FeaturedDealsProps) {
   const deduped = dedupeFeaturedDeals(deals);
-  const viewerCurrency = useViewerCurrency();
   return (
     <div className="panel space-y-4">
       <div>
@@ -99,8 +97,7 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                         const { primary, secondary } = formatPriceWithApprox(
                           deal.totalNative,
                           deal.currency,
-                          deal.totalUsd,
-                          viewerCurrency
+                          deal.totalUsd
                         );
                         return (
                           <span className="flex flex-col">
@@ -111,6 +108,9 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                             <span
                               className={`text-xs text-slate-500 ${secondary ? "" : "invisible"}`}
                               aria-hidden={!secondary}
+                              data-testid={
+                                secondary ? "converted-usd" : undefined
+                              }
                             >
                               {secondary || "\u00A0"}
                             </span>

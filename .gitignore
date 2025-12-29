@@ -32,3 +32,7 @@ _content*.txt
 # local restorepoints
 .restorepoints/
 /*.bundle
+
+# Playwright
+test-results/
+playwright-report/

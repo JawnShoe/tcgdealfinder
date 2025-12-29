@@ -1,0 +1,97 @@
+name: E2E Smoke (Playwright)
+
+on:
+  pull_request:
+    paths:
+      - app/**
+      - components/**
+      - hooks/**
+      - lib/**
+      - public/**
+      - tailwind.config.js
+      - next.config.mjs
+      - playwright.config.ts
+      - tests/e2e/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/e2e-smoke.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  playwright-smoke:
+    name: Playwright Smoke
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      E2E_BASE_URL: http://127.0.0.1:3010
+      E2E_PORT: "3010"
+      E2E_CARD_ID: "1"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Next.js build
+        uses: actions/cache@v5
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-next-cache-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-next-cache-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright browsers (Chromium only)
+        run: npx playwright install --with-deps chromium
+
+      - name: Init database schema
+        run: npm run db:init
+
+      - name: Create listing_overrides table
+        run: npx tsx scripts/run-migration.ts scripts/migrations/012_create_listing_overrides.sql
+
+      - name: Seed E2E fixtures
+        run: npx tsx scripts/seed-e2e-converted-usd.ts
+
+      - name: Run Playwright smoke
+        run: npm run test:e2e

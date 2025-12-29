@@ -39,7 +39,6 @@ import {
   formatPriceWithApprox,
   formatNativeCurrency,
 } from "../lib/dealFormatting";
-import { useViewerCurrency } from "../hooks/useViewerCurrency";
 import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 import { ALERT_THRESHOLD_OPTIONS } from "../lib/alertsConfig";
 import { isDealTrusted } from "../lib/dealScore";
@@ -239,7 +238,6 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
     otherMarketCounts,
   } = detail;
   const router = useRouter();
-  const viewerCurrency = useViewerCurrency();
   const conditionLabel = formatConditionLabel(card.condition ?? null);
 
   const [conditionFilter, setConditionFilter] = useState<ConditionFilterKey>(
@@ -730,7 +728,10 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                 {bestTrustedDeal &&
                   (bestTrustedDeal.totalNative || bestTrustedDeal.totalUsd) &&
                   bestTrustedDeal.deal.market && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                      data-testid="best-trusted-deal"
+                    >
                       <p className="text-xs uppercase text-slate-500">
                         Best trusted deal
                       </p>
@@ -739,8 +740,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                           const { primary, secondary } = formatPriceWithApprox(
                             bestTrustedDeal.totalNative,
                             bestTrustedDeal.currency,
-                            bestTrustedDeal.totalUsd,
-                            viewerCurrency
+                            bestTrustedDeal.totalUsd
                           );
                           return (
                             <div className="flex flex-col">
@@ -758,6 +758,9 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                               <p
                                 className={`text-sm text-slate-500 ${secondary ? "" : "invisible"}`}
                                 aria-hidden={!secondary}
+                                data-testid={
+                                  secondary ? "converted-usd" : undefined
+                                }
                               >
                                 {secondary || "\u00A0"}
                               </p>

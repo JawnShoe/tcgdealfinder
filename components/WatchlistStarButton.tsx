@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
 import {
   toggleWatchlistEntry,
   useWatchlist,
@@ -65,15 +66,22 @@ export function WatchlistStarButton({
     : "border-slate-300 bg-white text-slate-500 hover:border-amber-400 hover:text-amber-500";
 
   return (
-    <button
-      type="button"
-      className={`${baseClasses} ${watchingClasses} ${className}`}
-      aria-pressed={isWatching}
-      aria-label={label}
-      title={label}
-      onClick={handleClick}
+    <TooltipPopoverClientOnly
+      content={label}
+      tooltipClassName="tooltip-wide"
+      size="wide"
+      usePortal={true}
+      asChild
     >
-      <span aria-hidden="true">{isWatching ? "★" : "☆"}</span>
-    </button>
+      <button
+        type="button"
+        className={`${baseClasses} ${watchingClasses} ${className}`}
+        aria-pressed={isWatching}
+        aria-label={label}
+        onClick={handleClick}
+      >
+        <span aria-hidden="true">{isWatching ? "★" : "☆"}</span>
+      </button>
+    </TooltipPopoverClientOnly>
   );
 }

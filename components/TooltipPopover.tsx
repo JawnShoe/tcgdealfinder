@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 
 type TooltipPopoverProps = {
@@ -10,6 +18,7 @@ type TooltipPopoverProps = {
   triggerClassName?: string;
   tooltipClassName?: string;
   ariaLabel?: string;
+  asChild?: boolean;
   size?: "default" | "compact" | "medium" | "wide";
   side?: "top" | "bottom";
   usePortal?: boolean;
@@ -22,6 +31,7 @@ export function TooltipPopover({
   triggerClassName,
   tooltipClassName,
   ariaLabel,
+  asChild = false,
   size = "default",
   side = "bottom",
   usePortal = false,
@@ -31,7 +41,7 @@ export function TooltipPopover({
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
   const tooltipRef = useRef<HTMLSpanElement | null>(null);
   const tooltipId = useId();
 
@@ -84,11 +94,11 @@ export function TooltipPopover({
 
   // Update tooltip position for portal mode
   useEffect(() => {
-    if (!usePortal || !buttonRef.current) return;
+    if (!usePortal || !triggerRef.current) return;
 
     const updatePosition = () => {
-      if (!buttonRef.current) return;
-      const rect = buttonRef.current.getBoundingClientRect();
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
       const top = side === "top" ? rect.top - 8 : rect.bottom + 8;
 
       // Constrain left position to viewport bounds using measured tooltip width
@@ -190,54 +200,133 @@ export function TooltipPopover({
     </span>
   );
 
+  const baseTriggerClassName =
+    "peer inline-flex min-w-0 items-center gap-1.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60";
+
+  const mergeEventHandlers =
+    <E,>(
+      theirHandler: ((event: E) => void) | undefined,
+      ourHandler: ((event: E) => void) | undefined
+    ) =>
+    (event: E) => {
+      theirHandler?.(event);
+      if ((event as { defaultPrevented?: boolean } | null)?.defaultPrevented) {
+        return;
+      }
+      ourHandler?.(event);
+    };
+
+  const sharedTriggerProps = {
+    ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
+    "aria-haspopup": "dialog" as const,
+    "aria-expanded": isTouch ? isPinned : undefined,
+    "aria-describedby": tooltipId,
+    onMouseEnter: () => {
+      if (usePortal && isHoverCapable) {
+        setIsOpen(true);
+      }
+    },
+    onMouseLeave: () => {
+      if (usePortal && isHoverCapable) {
+        setIsOpen(false);
+      }
+    },
+    onFocus: () => {
+      if (usePortal && isHoverCapable) {
+        setIsOpen(true);
+      }
+    },
+    onBlur: () => {
+      if (usePortal && isHoverCapable) {
+        setIsOpen(false);
+      }
+    },
+    onClick: () => {
+      if (isHoverCapable) {
+        return;
+      }
+      setIsPinned((prev) => !prev);
+    },
+    onKeyDown: (event: { key: string; currentTarget: unknown }) => {
+      if (event.key === "Escape") {
+        setIsPinned(false);
+        if (event.currentTarget instanceof HTMLElement) {
+          event.currentTarget.blur();
+        }
+      }
+    },
+  };
+
+  const triggerNode =
+    asChild && Children.count(children) === 1 && isValidElement(children) ? (
+      (() => {
+        const child = Children.only(children) as React.ReactElement<any>;
+        const childRef = (child as unknown as { ref?: unknown }).ref;
+        const setRef = (node: HTMLElement | null) => {
+          triggerRef.current = node;
+          if (typeof childRef === "function") {
+            childRef(node);
+          } else if (
+            childRef &&
+            typeof childRef === "object" &&
+            "current" in childRef
+          ) {
+            (childRef as { current?: unknown }).current = node;
+          }
+        };
+
+        const mergedClassName =
+          `${baseTriggerClassName} ${child.props.className ?? ""} ${
+            triggerClassName ?? ""
+          }`.trim();
+
+        return cloneElement(child, {
+          ...sharedTriggerProps,
+          ref: setRef,
+          className: mergedClassName,
+          onMouseEnter: mergeEventHandlers(
+            child.props.onMouseEnter,
+            sharedTriggerProps.onMouseEnter
+          ),
+          onMouseLeave: mergeEventHandlers(
+            child.props.onMouseLeave,
+            sharedTriggerProps.onMouseLeave
+          ),
+          onFocus: mergeEventHandlers(
+            child.props.onFocus,
+            sharedTriggerProps.onFocus
+          ),
+          onBlur: mergeEventHandlers(
+            child.props.onBlur,
+            sharedTriggerProps.onBlur
+          ),
+          onClick: mergeEventHandlers(
+            child.props.onClick,
+            sharedTriggerProps.onClick
+          ),
+          onKeyDown: mergeEventHandlers(
+            child.props.onKeyDown,
+            sharedTriggerProps.onKeyDown
+          ),
+        } as any);
+      })()
+    ) : (
+      <button
+        ref={triggerRef as unknown as React.Ref<HTMLButtonElement>}
+        type="button"
+        className={`${baseTriggerClassName} ${triggerClassName ?? ""}`.trim()}
+        {...sharedTriggerProps}
+      >
+        {children}
+      </button>
+    );
+
   return (
     <span
       ref={wrapperRef}
       className={`relative inline-flex min-w-0 max-w-full items-center ${className ?? ""}`.trim()}
     >
-      <button
-        ref={buttonRef}
-        type="button"
-        className={`peer inline-flex min-w-0 items-center gap-1.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${triggerClassName ?? ""}`.trim()}
-        aria-label={ariaLabel}
-        aria-haspopup="dialog"
-        aria-expanded={isTouch ? isPinned : undefined}
-        aria-describedby={tooltipId}
-        onMouseEnter={() => {
-          if (usePortal && isHoverCapable) {
-            setIsOpen(true);
-          }
-        }}
-        onMouseLeave={() => {
-          if (usePortal && isHoverCapable) {
-            setIsOpen(false);
-          }
-        }}
-        onFocus={() => {
-          if (usePortal && isHoverCapable) {
-            setIsOpen(true);
-          }
-        }}
-        onBlur={() => {
-          if (usePortal && isHoverCapable) {
-            setIsOpen(false);
-          }
-        }}
-        onClick={() => {
-          if (isHoverCapable) {
-            return;
-          }
-          setIsPinned((prev) => !prev);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            setIsPinned(false);
-            (event.currentTarget as HTMLButtonElement).blur();
-          }
-        }}
-      >
-        {children}
-      </button>
+      {triggerNode}
       {usePortal && typeof document !== "undefined"
         ? createPortal(tooltipBubble, document.body)
         : tooltipBubble}

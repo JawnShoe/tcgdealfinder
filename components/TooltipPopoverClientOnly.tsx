@@ -24,6 +24,7 @@ type TooltipPopoverClientOnlyProps = {
   triggerClassName?: string;
   tooltipClassName?: string;
   ariaLabel?: string;
+  asChild?: boolean;
   size?: "default" | "compact" | "medium" | "wide";
   side?: "top" | "bottom";
   usePortal?: boolean;
@@ -41,6 +42,7 @@ export function TooltipPopoverClientOnly({
   triggerClassName,
   tooltipClassName,
   ariaLabel,
+  asChild = false,
   size = "default",
   side = "bottom",
   usePortal = false,
@@ -71,6 +73,7 @@ export function TooltipPopoverClientOnly({
       triggerClassName={triggerClassName}
       tooltipClassName={tooltipClassName}
       ariaLabel={ariaLabel}
+      asChild={asChild}
       size={size}
       side={side}
       usePortal={usePortal}

@@ -123,43 +123,29 @@ export function getViewerCurrency(): string {
 /**
  * Format price for display: native currency as primary, USD as secondary (approx).
  *
- * Viewer currency rule:
- * - If viewer currency matches listing currency → empty secondary (hide ≈ USD)
- * - If viewer currency differs from listing currency → show ≈ USD
+ * Deterministic rule:
+ * - If listing currency is non-USD and usdAmount is available, show an approx USD line.
+ * - Otherwise, secondary is an empty string.
  *
- * HYDRATION-SAFE: Always returns the same structure { primary, secondary }.
- * The secondary is an empty string "" when not needed, not null.
- * This ensures DOM structure is stable between SSR and CSR.
- *
- * Components should render: {secondary && <span>{secondary}</span>}
- * Empty string is falsy, so the span won't show content but structure is stable.
+ * Always returns the same structure { primary, secondary } where secondary is "" when absent.
  */
 export function formatPriceWithApprox(
   nativeAmount: number | null | undefined,
   currency: string | null | undefined,
-  usdAmount: number | null | undefined,
-  viewerCurrency?: string | null
+  usdAmount: number | null | undefined
 ): { primary: string; secondary: string } {
   const currencyCode = (currency ?? "USD").toUpperCase();
-  const viewerCurrencyCode = (
-    viewerCurrency ?? getViewerCurrency()
-  ).toUpperCase();
 
   // If native amount is available, use it as primary
   if (nativeAmount != null && Number.isFinite(nativeAmount)) {
     const primary = formatNativeCurrency(nativeAmount, currencyCode);
 
-    // If listing currency matches viewer currency, no need for ≈ USD
-    if (currencyCode === viewerCurrencyCode) {
-      return { primary, secondary: "" };
-    }
-
-    // If listing is USD, no need for ≈ USD (it IS USD)
+    // If listing is USD, no approx USD line is needed (it IS USD).
     if (currencyCode === "USD") {
       return { primary, secondary: "" };
     }
 
-    // Viewer currency differs from listing: show ≈ USD for reference
+    // Non-USD listing: show ≈ USD for reference
     if (usdAmount != null && Number.isFinite(usdAmount)) {
       const usdFormatted = formatUSD(usdAmount);
       return { primary, secondary: `≈ ${usdFormatted}` };

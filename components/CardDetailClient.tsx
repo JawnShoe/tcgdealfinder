@@ -755,10 +755,19 @@ export default function CardDetailClient({
                             bestTrustedDeal.totalUsd
                           );
                           return (
-                            <div className="flex flex-col">
-                              <div className="flex items-baseline gap-2">
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex flex-wrap items-baseline gap-2">
                                 <p className="text-2xl font-semibold text-slate-900">
                                   {primary}
+                                </p>
+                                <p
+                                  className={`text-sm font-semibold ${discountClass(
+                                    bestTrustedDeal.discountPercent ?? null
+                                  )}`}
+                                >
+                                  {formatDiscount(
+                                    bestTrustedDeal.discountPercent
+                                  )}
                                 </p>
                                 {bestDealFreshness && (
                                   <span className="text-xs text-slate-500">
@@ -766,19 +775,13 @@ export default function CardDetailClient({
                                   </span>
                                 )}
                               </div>
-                              {showUsdBaseline ? (
-                                <>
-                                  {/* HYDRATION-SAFE: Always render, hide with CSS when empty */}
-                                  <p
-                                    className={`text-sm text-slate-500 ${secondary ? "" : "invisible"}`}
-                                    aria-hidden={!secondary}
-                                    data-testid={
-                                      secondary ? "converted-usd" : undefined
-                                    }
-                                  >
-                                    {secondary || "\u00A0"}
-                                  </p>
-                                </>
+                              {showUsdBaseline && secondary ? (
+                                <p
+                                  className="text-sm text-slate-500"
+                                  data-testid="converted-usd"
+                                >
+                                  {secondary}
+                                </p>
                               ) : null}
                             </div>
                           );
@@ -814,13 +817,6 @@ export default function CardDetailClient({
                               Price breakdown
                             </TooltipPopoverClientOnly>
                           )}
-                        <p
-                          className={`text-sm ${discountClass(
-                            bestTrustedDeal.discountPercent ?? null
-                          )}`}
-                        >
-                          {formatDiscount(bestTrustedDeal.discountPercent)}
-                        </p>
                         {bestTrustedDealUrl && (
                           <a
                             href={bestTrustedDealUrl}

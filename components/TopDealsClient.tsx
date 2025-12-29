@@ -6,6 +6,7 @@ import { buildDealViewModel, type DealViewModel } from "../lib/dealViewModel";
 import { TopDealsColumns } from "../lib/tableColumns";
 import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
 import type { Deal } from "../types/deal";
+import { useViewerCurrency } from "../hooks/useViewerCurrency";
 
 type ConfidenceFilterKey = "all" | "high" | "medium" | "low";
 type HeaderSortKey =
@@ -23,11 +24,13 @@ type HeaderSort = {
 interface TopDealsClientProps {
   deals: Deal[];
   isAdmin?: boolean;
+  referenceTime: number;
 }
 
 export default function TopDealsClient({
   deals,
   isAdmin = false,
+  referenceTime,
 }: TopDealsClientProps) {
   const [priceConfFilter, setPriceConfFilter] =
     useState<ConfidenceFilterKey>("all");
@@ -35,15 +38,16 @@ export default function TopDealsClient({
     key: "score", // Default: Score DESC
     dir: "desc",
   });
+  const viewerCurrency = useViewerCurrency();
 
   const viewModels = useMemo<DealViewModel[]>(() => {
     return deals.map((deal) =>
       buildDealViewModel(deal, {
         computeScore: true,
-        referenceTime: Date.now(),
+        referenceTime,
       })
     );
-  }, [deals]);
+  }, [deals, referenceTime]);
 
   const filteredAndSorted = useMemo(() => {
     let filtered = viewModels;
@@ -298,6 +302,8 @@ export default function TopDealsClient({
                       {col.renderCell(vm, {
                         showListingTitle: true,
                         showViewCardLink: true,
+                        referenceTime,
+                        viewerCurrency,
                       })}
                     </td>
                   ))}

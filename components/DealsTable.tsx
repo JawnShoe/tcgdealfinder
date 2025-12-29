@@ -6,16 +6,16 @@
  * Column visibility by variant/page:
  *
  * Homepage (variant="default"):
- *   - Card (320px) | Total USD | Historic USD | Discount | Seller | Market (flag + US/CA) | Ends
+ *   - Card (320px) | Total USD | Historic | Discount | Seller | Market (flag + US/CA) | Ends
  *   - NO Score column (hidden, but used internally for sorting)
  *   - NO Confidence column (removed to reduce width and improve scanability)
  *
  * /newest page (variant="newest"):
- *   - Card (280px) | Total USD | Historic USD | Discount | Confidence (centered) | Seller (140px) | Market (flag + US/CA, 80px) | Ends
+ *   - Card (280px) | Total USD | Historic | Discount | Confidence (centered) | Seller (140px) | Market (flag + US/CA, 80px) | Ends
  *   - NO Score column (hidden on newest)
  *
  * /cards page (no variant prop, uses default):
- *   - Card | Total USD | Historic USD | Discount | Score | Confidence (left-aligned) | Seller | Market (flag + US/CA) | Ends
+ *   - Card | Total USD | Historic | Discount | Score | Confidence (left-aligned) | Seller | Market (flag + US/CA) | Ends
  *
  * Other pages (/top-deals, /ending-soon):
  *   - Use custom table implementations with flag + US/CA market display
@@ -24,7 +24,7 @@
  *   - All tables use SVG flag icons + short code (🇺🇸 US or 🇨🇦 CA)
  *   - Long seller names truncate with tooltip (truncate class + title attribute)
  *   - TrustedBadge uses flex-none to stay aligned
- *   - Headers use whitespace-nowrap on "Total USD" and "Historic USD"
+ *   - Headers use whitespace-nowrap on "Total USD" and "Historic"
  *   - No horizontal scroll on standard desktop (1280px+) for homepage and /newest
  */
 
@@ -60,7 +60,7 @@ import {
 import { persistMarketPreference } from "../lib/marketPreferenceClient";
 import {
   discountClass,
-  formatCurrency,
+  formatNativeCurrency,
   formatUSD,
   formatDiscount,
   getEndsAtDisplay,
@@ -129,8 +129,11 @@ function dedupeDealsByListing(deals: Deal[]): Deal[] {
   return Array.from(map.values());
 }
 
-function renderEndsValue(value: string | null | undefined): JSX.Element {
-  const display = getEndsAtDisplay(value);
+function renderEndsValue(
+  value: string | null | undefined,
+  now: number | undefined
+): JSX.Element {
+  const display = getEndsAtDisplay(value, { now });
   return (
     <TooltipPopoverClientOnly
       content={display.tooltip}
@@ -252,6 +255,7 @@ interface DealsTableProps {
   page?: number;
   totalPages?: number;
   variant?: DealsTableVariant;
+  referenceTime?: number;
 }
 
 export default function DealsTable({
@@ -259,6 +263,7 @@ export default function DealsTable({
   isAdmin = false,
   initialApiMeta = null,
   variant = "default",
+  referenceTime: referenceTimeProp,
 }: DealsTableProps) {
   const [viewState, setViewState] = useState<DealsViewState>({
     ...defaultState,
@@ -367,10 +372,13 @@ export default function DealsTable({
   );
   const referenceTime = useMemo(
     () => ({
-      stamp: Date.now(),
+      stamp:
+        referenceTimeProp != null && Number.isFinite(referenceTimeProp)
+          ? referenceTimeProp
+          : Date.now(),
       key: referenceKey,
     }),
-    [referenceKey]
+    [referenceKey, referenceTimeProp]
   ).stamp;
 
   // Use buildDealViewModel() as the single source of truth for derived values
@@ -946,7 +954,7 @@ export default function DealsTable({
                           }
                         }}
                         tabIndex={0}
-                        aria-label="Sort by Historic USD"
+                        aria-label="Sort by Historic"
                         aria-sort={
                           headerSort.key === "historic"
                             ? headerSort.dir === "asc"
@@ -956,9 +964,7 @@ export default function DealsTable({
                         }
                       >
                         <span className="inline-flex items-center">
-                          <span>
-                            {getHeaderLabel("historic", "Historic USD")}
-                          </span>
+                          <span>{getHeaderLabel("historic", "Historic")}</span>
                           <SortArrow colKey="historic" />
                         </span>
                       </th>
@@ -1091,6 +1097,11 @@ export default function DealsTable({
                             vm.deal.sellerSeenWindowDays,
                             vm.deal.sellerSeenMarket ?? viewState.marketKey
                           );
+                          const freshness = formatFreshness(
+                            vm.deal.updatedAt,
+                            4,
+                            referenceTime
+                          );
                           return (
                             <tr
                               key={vm.deal.id}
@@ -1155,9 +1166,9 @@ export default function DealsTable({
                                       className="text-xs text-slate-500"
                                     />
                                   ) : null}
-                                  {formatFreshness(vm.deal.updatedAt) && (
+                                  {freshness && (
                                     <span className="text-xs text-slate-500">
-                                      {formatFreshness(vm.deal.updatedAt)}
+                                      {freshness}
                                     </span>
                                   )}
                                 </div>
@@ -1165,7 +1176,7 @@ export default function DealsTable({
                               <td
                                 className={`${colClass("historic", variant)} px-3 py-4 align-middle text-right text-base text-slate-600`}
                               >
-                                {formatUSD(vm.historicUsd)}
+                                {formatNativeCurrency(vm.historicUsd, "CAD")}
                               </td>
                               <td
                                 className={`${colClass("discount", variant)} ${discountClass(
@@ -1266,7 +1277,7 @@ export default function DealsTable({
                               <td
                                 className={`${colClass("ends", variant)} whitespace-normal px-3 py-4 align-middle text-left text-sm text-slate-600`}
                               >
-                                {renderEndsValue(vm.deal.endsAt)}
+                                {renderEndsValue(vm.deal.endsAt, referenceTime)}
                               </td>
                               {isAdmin ? (
                                 <td className="px-3 py-4 align-middle text-sm">
@@ -1296,6 +1307,11 @@ export default function DealsTable({
               const cardName =
                 vm.deal.card?.name ?? vm.deal.cardName ?? vm.deal.title ?? null;
               const setName = vm.deal.card?.setName ?? vm.deal.setName ?? null;
+              const freshness = formatFreshness(
+                vm.deal.updatedAt,
+                4,
+                referenceTime
+              );
               const sellerSalesBadge = renderSellerSalesBadge(
                 vm.deal.sellerFeedbackCount
               );
@@ -1353,17 +1369,17 @@ export default function DealsTable({
                           className="text-xs text-slate-500"
                         />
                       ) : null}
-                      {formatFreshness(vm.deal.updatedAt) && (
-                        <p className="text-xs text-slate-500">
-                          {formatFreshness(vm.deal.updatedAt)}
-                        </p>
+                      {freshness && (
+                        <p className="text-xs text-slate-500">{freshness}</p>
                       )}
                     </div>
                     <div>
                       <p className="text-slate-500">
-                        {getHeaderLabel("historic", "Historic USD")}
+                        {getHeaderLabel("historic", "Historic")}
                       </p>
-                      <p className="text-base">{formatUSD(vm.historicUsd)}</p>
+                      <p className="text-base">
+                        {formatNativeCurrency(vm.historicUsd, "CAD")}
+                      </p>
                     </div>
                     <div>
                       <p className="text-slate-500">

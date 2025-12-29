@@ -1,20 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import nextDynamic from "next/dynamic";
-
-// Client-only to prevent SSR/CSR hydration mismatches
-// The table contains components that use Date.now() or browser-dependent state
-const TopDealsClient = nextDynamic(
-  () => import("../../components/TopDealsClient"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-600" />
-      </div>
-    ),
-  }
-);
+import TopDealsClient from "../../components/TopDealsClient";
 import { query } from "../../lib/db";
 import type { Deal } from "../../types/deal";
 import {
@@ -494,6 +480,7 @@ export default async function TopDealsPage() {
   const isAdmin = Boolean(process.env.ADMIN_SECRET) && isAdminAuthenticated();
 
   const deals = await getTopDeals();
+  const referenceTime = Date.now();
 
   return (
     <main className="bg-slate-50 text-slate-900">
@@ -507,7 +494,11 @@ export default async function TopDealsPage() {
         </div>
 
         <div className={TABLE_CONTAINER}>
-          <TopDealsClient deals={deals} isAdmin={isAdmin} />
+          <TopDealsClient
+            deals={deals}
+            isAdmin={isAdmin}
+            referenceTime={referenceTime}
+          />
           <p className="mt-4 text-xs text-slate-400 text-right">
             {TCGPLAYER_ATTRIBUTION}
           </p>

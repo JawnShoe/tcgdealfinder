@@ -1,6 +1,9 @@
 import Link from "next/link";
 import DealsTable from "@/components/DealsTable";
-import { FeaturedDeals, type FeaturedDealView } from "@/components/FeaturedDeals";
+import {
+  FeaturedDeals,
+  type FeaturedDealView,
+} from "@/components/FeaturedDeals";
 import ListingLookup from "@/components/ListingLookup";
 import { query } from "@/lib/db";
 import { runDealsQuery } from "./api/deals/dealsQuery";
@@ -46,15 +49,13 @@ async function getHomePageDeals(): Promise<DealsApiResponse> {
           WHERE sb.seller_username = l.seller_username
         );
     `,
-    hasMarketColumn && market !== "all" ? [market] : [],
+    hasMarketColumn && market !== "all" ? [market] : []
   );
   const totalCandidates = Number(statsRes.rows[0]?.total ?? 0);
   const excludedByMatch = Number(statsRes.rows[0]?.excluded ?? 0);
-  const excludedByShipping = Number(
-    statsRes.rows[0]?.shipping_unknown ?? 0,
-  );
+  const excludedByShipping = Number(statsRes.rows[0]?.shipping_unknown ?? 0);
   console.log(
-    `[home] deals query: total_candidates=${totalCandidates}, excluded_by_match=${excludedByMatch}, shipping_unknown=${excludedByShipping}`,
+    `[home] deals query: total_candidates=${totalCandidates}, excluded_by_match=${excludedByMatch}, shipping_unknown=${excludedByShipping}`
   );
 
   return runDealsQuery({
@@ -70,6 +71,7 @@ export default async function HomePage() {
   const initial = await getHomePageDeals();
   const deals = initial.items;
   const featuredDeals = buildFeaturedDeals(deals);
+  const referenceTime = Date.now();
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -97,9 +99,14 @@ export default async function HomePage() {
               All live deals
             </h2>
             <p className="mb-4 text-sm text-slate-600">
-              Filter by condition, region, discount, or price to focus on the safest listings for your collecting goals.
+              Filter by condition, region, discount, or price to focus on the
+              safest listings for your collecting goals.
             </p>
-            <DealsTable deals={deals} initialApiMeta={initial} />
+            <DealsTable
+              deals={deals}
+              initialApiMeta={initial}
+              referenceTime={referenceTime}
+            />
           </div>
         </section>
       </div>
@@ -107,7 +114,9 @@ export default async function HomePage() {
   );
 }
 
-function buildFeaturedDeals(deals: DealsApiResponse["items"]): FeaturedDealView[] {
+function buildFeaturedDeals(
+  deals: DealsApiResponse["items"]
+): FeaturedDealView[] {
   return deals
     .map<FeaturedDealView>((deal) => {
       const discount = deal.discountPercent ?? null;
@@ -120,13 +129,15 @@ function buildFeaturedDeals(deals: DealsApiResponse["items"]): FeaturedDealView[
         score: null,
         trustedSeller: isDealTrusted(
           deal.sellerFeedbackCount ?? null,
-          deal.sellerPositivePercent ?? null,
+          deal.sellerPositivePercent ?? null
         ),
       };
     })
     .sort((a, b) => {
-      const magA = a.discount != null ? Math.abs(a.discount) : Number.NEGATIVE_INFINITY;
-      const magB = b.discount != null ? Math.abs(b.discount) : Number.NEGATIVE_INFINITY;
+      const magA =
+        a.discount != null ? Math.abs(a.discount) : Number.NEGATIVE_INFINITY;
+      const magB =
+        b.discount != null ? Math.abs(b.discount) : Number.NEGATIVE_INFINITY;
       return magB - magA;
     })
     .slice(0, 6);

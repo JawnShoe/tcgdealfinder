@@ -1,9 +1,10 @@
-# DESIGN AUDIT — JAN 2025 (ADVISORY)
+# DESIGN AUDIT - JAN 2025 (ADVISORY)
 
-Status: Advisory (Non-executable)
-Purpose: Preserve external expert analysis to inform phased redesign decisions
-Scope: Presentation, hierarchy, trust, systemization only
-IMPORTANT: This document is NOT an instruction set. All execution must be scoped via DESIGN_PHASES.md.
+Status: Advisory  
+Canonical decisions live in: `PROJECT_SSOT.md` + `docs/WORKSTREAMS_MASTER.md`  
+Scope: Preserve external expert analysis to inform phased redesign decisions (presentation/hierarchy/trust/systemization only)  
+Last reviewed: 2025-12-29  
+Notes: Non-executable; all execution must be scoped via `docs/design/DESIGN_PHASES.md`.
 
 ---
 

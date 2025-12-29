@@ -1,7 +1,10 @@
-# DESIGN PHASES — LOCKED PLAN
+# DESIGN PHASES - LOCKED PLAN
 
-**Last Updated**: 2025-12-26
-**Status**: Phase 1 ACTIVE
+Status: LOCKED / Active (Design Phase 1)  
+Canonical decisions live in: `PROJECT_SSOT.md` + `docs/WORKSTREAMS_MASTER.md`  
+Scope: Design-only phase constraints (explicitly non-functional changes)  
+Last reviewed: 2025-12-29  
+Notes: Phase 1 is ACTIVE; functional/data/behavior changes are forbidden.
 
 ---
 

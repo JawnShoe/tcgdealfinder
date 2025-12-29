@@ -1,5 +1,11 @@
 # Sold Data Source Options (for Option A USD Baselines)
 
+Status: Active  
+Canonical decisions live in: `PROJECT_SSOT.md` + `docs/WORKSTREAMS_MASTER.md`  
+Scope: Evaluate/choose a compliant sold data source for strict USD baselines (no implementation)  
+Last reviewed: 2025-12-29  
+Notes: Active until a sold-data source decision is approved and recorded in SSOT.
+
 **Status**: DRAFT  
 **Last Updated**: 2025-12-28  
 **STOP**: USD sold baselines are blocked until an approved sold-data source is selected.

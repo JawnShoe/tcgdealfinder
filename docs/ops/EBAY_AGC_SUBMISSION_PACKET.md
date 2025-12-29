@@ -1,4 +1,10 @@
-# eBay AGC Submission Packet — Marketplace Insights API (Sold Data Access)
+# eBay AGC Submission Packet - Marketplace Insights API (Sold Data Access)
+
+Status: Active  
+Canonical decisions live in: `PROJECT_SSOT.md` + `docs/WORKSTREAMS_MASTER.md`  
+Scope: Copy/paste packet for Operator to submit AGC for Marketplace Insights API access  
+Last reviewed: 2025-12-29  
+Notes: Active until submitted; then mark Submitted/Archived with the approval reference.
 
 **Status**: READY TO SUBMIT (copy/paste)  
 **Last Updated**: 2025-12-28  

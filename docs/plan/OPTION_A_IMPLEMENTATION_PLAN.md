@@ -1,4 +1,10 @@
-# Option A Implementation Plan — Global Comparability with FX
+# Option A Implementation Plan - Global Comparability with FX
+
+Status: Blocked  
+Canonical decisions live in: `PROJECT_SSOT.md` + `docs/WORKSTREAMS_MASTER.md`  
+Scope: Planning-only phased roadmap to implement Option A safely (no implementation here)  
+Last reviewed: 2025-12-29  
+Notes: Blocked pending explicit approval + sold-data source gate(s).
 
 **Status**: DRAFT (planning only; no implementation in this workstream)  
 **Last Updated**: 2025-12-28  

@@ -1,4 +1,10 @@
-# Expert Audit Report — TCG Deal Finder
+# Expert Audit Report - TCG Deal Finder
+
+Status: Advisory  
+Canonical decisions live in: `PROJECT_SSOT.md` + `docs/WORKSTREAMS_MASTER.md`  
+Scope: External expert audit findings (non-executable; actions tracked as workstreams)  
+Last reviewed: 2025-12-29  
+Notes: Do not implement “recommendations” unless they are accepted into SSOT/workstreams.
 
 **Date**: 2025-12-25
 **Auditor**: Claude Code Expert Audit

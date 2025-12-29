@@ -3,7 +3,8 @@
 **Last Updated**: 2025-12-29
 **Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
 
-**ACTIVE WORK**: Tier 2 — Alerts + DB-backed Watchlist (MVP)
+**ACTIVE WORK**: Tier 2 - Alerts + DB-backed Watchlist (MVP)
+**Workstreams & Priorities**: `docs/WORKSTREAMS_MASTER.md`
 
 ---
 

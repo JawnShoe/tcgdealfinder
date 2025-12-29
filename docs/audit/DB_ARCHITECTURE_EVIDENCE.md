@@ -1,5 +1,11 @@
 # DB Architecture Evidence Packet
 
+Status: Evidence  
+Canonical decisions live in: `PROJECT_SSOT.md` + `docs/WORKSTREAMS_MASTER.md`  
+Scope: Evidence for CI vs production DB architecture (Neon branch model)  
+Last reviewed: 2025-12-29  
+Notes: Evidence only; do not treat as executable work.
+
 **Date**: 2025-12-26
 **Auditor**: Claude Code (automated)
 **Scope**: Confirm CI vs Production database architecture

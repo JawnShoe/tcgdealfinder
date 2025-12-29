@@ -1,4 +1,10 @@
-# Product Truth / Philosophy Audit — Option A (Global Comparability with FX)
+# Product Truth / Philosophy Audit - Option A (Global Comparability with FX)
+
+Status: Blocked (Merged but not approved)  
+Canonical decisions live in: `PROJECT_SSOT.md` + `docs/WORKSTREAMS_MASTER.md`  
+Scope: Definitions-only truths/invariants required for Option A (global comparability with FX)  
+Last reviewed: 2025-12-29  
+Notes: Do not implement until explicitly approved.
 
 **Status**: DRAFT (definitions-only; suitable for locking after explicit approval)  
 **Last Updated**: 2025-12-28  

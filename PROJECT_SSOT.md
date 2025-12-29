@@ -3,7 +3,7 @@
 **Last Updated**: 2025-12-29
 **Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
 
-**ACTIVE WORK**: Tooltip parity follow-up — deterministic "≈ USD" line + 2-row price layout restore (PR #110, OPEN — pending Operator visual PASS)
+**ACTIVE WORK**: Tier 2 — Alerts + DB-backed Watchlist (MVP)
 
 ---
 
@@ -98,8 +98,8 @@ Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
 - Option A Phase 0 ƒ?" FX run instrumentation (2025-12-28): Added `migrations/009_option_a_fx_rate_runs.sql` and updated `scripts/update-fx-rates-auto.ts` to use Open Exchange Rates (env-only `OPEN_EXCHANGE_RATES_APP_ID`) with hard bounds + 5%/15% drift gating (hold last-known). `/api/health` now surfaces provider/cadence + last-success vs last-attempt status and listing invariant rates (`total_usd` null rate, shipping unknown rate). PR: #96 (merged).
 - Option A Phase 1 ƒ?" Listing snapshot + deterministic totals (2025-12-28): Added `migrations/010_option_a_listings_snapshot_fx_precision.sql` to introduce `snapshot_at`, `ingested_at`, `shipping_unknown`, `fx_status`, `fx_timestamp` and widen `total_usd`/`fx_rate_to_usd` precision. Updated `scripts/update-listings.ts` to compute deterministic totals even when shipping is unknown and to represent missing FX as `fx_status='MISSING'` without writing `total_usd`. Updated `lib/fxRates.ts` to return precise USD values (no display rounding). No ranking or UI feature changes in this phase. PR: #98 (merged).
 - Option A Phase 2 ƒ?" USD sold baselines (2025-12-28): Added `migrations/011_option_a_sold_fx_snapshot.sql` and `migrations/012_option_a_historical_baseline_usd.sql` to extend `ebay_sold_listings` with currency + FX snapshot fields and to add `historical_prices.baseline_median_usd` + baseline metadata (`baseline_sample_size_usd`, `baseline_window_days`, `baseline_outlier_trim_percent`, `baseline_status`). Updated `scripts/update-sold-listings.ts` to persist sold snapshots with deterministic totals + FX snapshot and updated `scripts/update-historical-prices.ts` to compute/persist `baseline_median_usd` from `ebay_sold_listings.total_usd` using the locked knobs (90d/180d fallback, min 30 comps, trim 5%). No ranking or UI feature changes in this phase; `baseline_median_usd` is not read by deal surfaces yet. PR: #102 (merged).
-- Track B — UI/SSR stability pass (2025-12-29): Historic USD display preserved; made deterministic to avoid hydration mismatch on `/`, `/top-deals`, and `/watchlist` (no client-side currency conversion/repair for Historic). PR: #109 (merged).
-- Tooltip parity follow-up (2025-12-29): Candidate parity fixes (pending Operator visual PASS) for deterministic "≈ USD" rendering + 2-row price layout (price + discount pinned; optional "≈ USD" row) and tooltip standardization (remove native `title=` tooltips in user routes). PR: #110 (OPEN).
+- Track B — UI/SSR stability pass (2025-12-29): Historic USD display preserved; made deterministic to avoid hydration mismatch on `/`, `/top-deals`, and `/watchlist` (no client-side currency conversion/repair for Historic). PR: #109 (merged). Merge commit: df62aac.
+- Track B — Tooltip parity + deterministic "≈ USD" (2025-12-29): Eliminated "≈ USD" flicker (removed viewer-locale gating); restored 2-row price layout (price+discount pinned; optional "≈ USD" row); tooltip parity standardized (native `title=` removed where needed; tooltip component unified). PR: #110 (merged). Merge commit: dcb35ae.
 - **STOP**: Sold baselines blocked pending approved sold-data source. See `docs/plan/SOLD_DATA_SOURCE_OPTIONS.md`.
 - eBay update (2025-12-28): eBay DTS ticket closed; eBay directed us to submit an Application Growth Check (AGC) for Marketplace Insights API access/rate limits. AGC packet: `docs/ops/EBAY_AGC_SUBMISSION_PACKET.md`. Link: https://developer.ebay.com/my/support/tickets?tab=app-check (AGC Reference #: 251228-000007).
 
@@ -483,7 +483,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
-Tier 2: Alerts + DB-backed Watchlist (MVP)
+Tier 2 — Alerts + DB-backed Watchlist (MVP)
 
 See header for current status.
 

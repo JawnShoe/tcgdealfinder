@@ -12,6 +12,7 @@ import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../lib/pricing";
+import { convertCad } from "../../lib/money";
 import { computeDealConfidenceWeight } from "../../lib/dealConfidence";
 import { cookies, headers } from "next/headers";
 
@@ -213,6 +214,8 @@ async function getTopDeals(): Promise<Deal[]> {
       const historic = row.historic_price_cad
         ? Number(row.historic_price_cad)
         : null;
+      const historicPriceUsd =
+        historic != null ? convertCad(historic, "USD") : null;
       const sampleSize =
         row.sample_size != null ? Number(row.sample_size) : null;
       const sellerFeedbackCount =
@@ -270,6 +273,7 @@ async function getTopDeals(): Promise<Deal[]> {
         totalPriceCad: total,
         totalUsd,
         historicPriceCad: historic,
+        historicPriceUsd,
         // Native currency fields
         currency: row.currency ?? null,
         priceNative: row.price_native ? Number(row.price_native) : null,

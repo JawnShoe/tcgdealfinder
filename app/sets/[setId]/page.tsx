@@ -6,6 +6,7 @@ import { WatchlistStarButton } from "../../../components/WatchlistStarButton";
 import type { Deal } from "../../../types/deal";
 import { query } from "../../../lib/db";
 import { formatCurrency } from "../../../lib/dealFormatting";
+import { convertCad } from "../../../lib/money";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
@@ -515,6 +516,8 @@ async function getSetDeals(
     const totalUsd = row.total_usd != null ? Number(row.total_usd) : null;
     const historicPriceCad =
       row.historic_price_cad != null ? Number(row.historic_price_cad) : null;
+    const historicPriceUsd =
+      historicPriceCad != null ? convertCad(historicPriceCad, "USD") : null;
     const sampleSize = row.sample_size != null ? Number(row.sample_size) : null;
     const sellerFeedbackCount =
       row.seller_feedback_count != null
@@ -553,6 +556,7 @@ async function getSetDeals(
       totalPriceCad,
       totalUsd,
       historicPriceCad,
+      historicPriceUsd,
       discountPercent: displayDiscount,
       sampleSize,
       market: row.market,

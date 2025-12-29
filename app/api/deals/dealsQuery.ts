@@ -10,6 +10,7 @@ import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "@/lib/pricing";
+import { convertCad } from "@/lib/money";
 import type { Deal } from "@/types/deal";
 import { computeDealConfidenceWeight } from "@/lib/dealConfidence";
 import type {
@@ -465,6 +466,8 @@ function mapRowToDeal(row: DealRow): Deal {
     hasBaseline && row.historic_price_cad != null
       ? Number(row.historic_price_cad)
       : null;
+  const historicPriceUsd =
+    historicPriceCad != null ? convertCad(historicPriceCad, "USD") : null;
   const confidenceWeight =
     storedConfidenceWeight ??
     computeDealConfidenceWeight({
@@ -511,6 +514,7 @@ function mapRowToDeal(row: DealRow): Deal {
     totalPriceCad,
     totalUsd,
     historicPriceCad,
+    historicPriceUsd,
     // Native currency fields
     currency: row.currency ?? null,
     priceNative: row.price_native != null ? Number(row.price_native) : null,

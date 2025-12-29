@@ -7,6 +7,7 @@ export type Deal = {
   totalPriceCad: number | null;
   totalUsd: number | null;
   historicPriceCad: number | null;
+  historicPriceUsd?: number | null;
   // Native currency fields (for multi-market display)
   currency: string | null;
   priceNative: number | null;

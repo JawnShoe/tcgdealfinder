@@ -6,6 +6,7 @@ import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../../lib/pricing";
+import { convertCad } from "../../../lib/money";
 import { computeDealConfidenceWeight } from "../../../lib/dealConfidence";
 import {
   ensureDealConfidenceColumn,
@@ -119,6 +120,7 @@ type CardDetail = {
     totalPriceCad: number | null;
     totalUsd: number | null;
     historicPriceCad: number | null;
+    historicPriceUsd: number | null;
     discountPercent: number | null;
     sampleSize: number | null;
     market: string;
@@ -488,6 +490,8 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       hasBaseline && row.median_price_cad !== null
         ? Number(row.median_price_cad)
         : null;
+    const historicPriceUsd =
+      medianPriceCad != null ? convertCad(medianPriceCad, "USD") : null;
 
     const sellerFeedbackCount =
       row.seller_feedback_count != null
@@ -532,6 +536,7 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       totalPriceCad,
       totalUsd,
       historicPriceCad: medianPriceCad,
+      historicPriceUsd,
       discountPercent,
       sampleSize,
       market: row.market,

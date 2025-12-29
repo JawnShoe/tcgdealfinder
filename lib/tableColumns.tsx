@@ -20,7 +20,7 @@ import { WatchlistStarButton } from "../components/WatchlistStarButton";
 import { getSellerDisplayData } from "./sellerDisplay";
 import type { DealViewModel } from "./dealViewModel";
 import {
-  formatNativeCurrency,
+  formatUSD,
   formatDiscount,
   getEndsAtDisplay,
   formatCondition,
@@ -259,14 +259,12 @@ const TotalColumn: ColumnSpec = {
 
 const HistoricColumn: ColumnSpec = {
   key: "historic",
-  headerLabel: "Historic",
+  headerLabel: "Historic USD",
   headerClassName: `${TABLE_TH_RIGHT} ${TABLE_TH_NOWRAP}`,
   cellClassName: `${TABLE_TD_RIGHT}`,
   width: "w-[120px]",
   renderCell: (vm) => (
-    <span className={NUM_CELL_SECONDARY}>
-      {formatNativeCurrency(vm.historicUsd, "CAD")}
-    </span>
+    <span className={NUM_CELL_SECONDARY}>{formatUSD(vm.historicUsd)}</span>
   ),
 };
 

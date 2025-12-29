@@ -6,16 +6,16 @@
  * Column visibility by variant/page:
  *
  * Homepage (variant="default"):
- *   - Card (320px) | Total USD | Historic | Discount | Seller | Market (flag + US/CA) | Ends
+ *   - Card (320px) | Total USD | Historic USD | Discount | Seller | Market (flag + US/CA) | Ends
  *   - NO Score column (hidden, but used internally for sorting)
  *   - NO Confidence column (removed to reduce width and improve scanability)
  *
  * /newest page (variant="newest"):
- *   - Card (280px) | Total USD | Historic | Discount | Confidence (centered) | Seller (140px) | Market (flag + US/CA, 80px) | Ends
+ *   - Card (280px) | Total USD | Historic USD | Discount | Confidence (centered) | Seller (140px) | Market (flag + US/CA, 80px) | Ends
  *   - NO Score column (hidden on newest)
  *
  * /cards page (no variant prop, uses default):
- *   - Card | Total USD | Historic | Discount | Score | Confidence (left-aligned) | Seller | Market (flag + US/CA) | Ends
+ *   - Card | Total USD | Historic USD | Discount | Score | Confidence (left-aligned) | Seller | Market (flag + US/CA) | Ends
  *
  * Other pages (/top-deals, /ending-soon):
  *   - Use custom table implementations with flag + US/CA market display
@@ -24,7 +24,7 @@
  *   - All tables use SVG flag icons + short code (🇺🇸 US or 🇨🇦 CA)
  *   - Long seller names truncate with tooltip (truncate class + title attribute)
  *   - TrustedBadge uses flex-none to stay aligned
- *   - Headers use whitespace-nowrap on "Total USD" and "Historic"
+ *   - Headers use whitespace-nowrap on "Total USD" and "Historic USD"
  *   - No horizontal scroll on standard desktop (1280px+) for homepage and /newest
  */
 
@@ -60,7 +60,6 @@ import {
 import { persistMarketPreference } from "../lib/marketPreferenceClient";
 import {
   discountClass,
-  formatNativeCurrency,
   formatUSD,
   formatDiscount,
   getEndsAtDisplay,
@@ -186,7 +185,7 @@ const SORT_LABEL: Record<SortOption, string> = {
   "best-score": "Best score",
   "price-low-high": "Price: low to high",
   "price-high-low": "Price: high to low",
-  "historic-high-low": "Historic price",
+  "historic-high-low": "Historic USD",
   "card-name": "Card name",
   "time-left": "Ending soon",
   "confidence-first": "High confidence first",
@@ -954,7 +953,7 @@ export default function DealsTable({
                           }
                         }}
                         tabIndex={0}
-                        aria-label="Sort by Historic"
+                        aria-label="Sort by Historic USD"
                         aria-sort={
                           headerSort.key === "historic"
                             ? headerSort.dir === "asc"
@@ -964,7 +963,9 @@ export default function DealsTable({
                         }
                       >
                         <span className="inline-flex items-center">
-                          <span>{getHeaderLabel("historic", "Historic")}</span>
+                          <span>
+                            {getHeaderLabel("historic", "Historic USD")}
+                          </span>
                           <SortArrow colKey="historic" />
                         </span>
                       </th>
@@ -1176,7 +1177,7 @@ export default function DealsTable({
                               <td
                                 className={`${colClass("historic", variant)} px-3 py-4 align-middle text-right text-base text-slate-600`}
                               >
-                                {formatNativeCurrency(vm.historicUsd, "CAD")}
+                                {formatUSD(vm.historicUsd)}
                               </td>
                               <td
                                 className={`${colClass("discount", variant)} ${discountClass(
@@ -1375,11 +1376,9 @@ export default function DealsTable({
                     </div>
                     <div>
                       <p className="text-slate-500">
-                        {getHeaderLabel("historic", "Historic")}
+                        {getHeaderLabel("historic", "Historic USD")}
                       </p>
-                      <p className="text-base">
-                        {formatNativeCurrency(vm.historicUsd, "CAD")}
-                      </p>
+                      <p className="text-base">{formatUSD(vm.historicUsd)}</p>
                     </div>
                     <div>
                       <p className="text-slate-500">

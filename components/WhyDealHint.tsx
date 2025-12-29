@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TooltipPopover } from "./TooltipPopover";
+import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
 
 type WhyDealHintProps = {
   label: string;
@@ -39,14 +39,15 @@ export function WhyDealHint({ label, tooltip, className }: WhyDealHintProps) {
   }
 
   return (
-    <TooltipPopover
+    <TooltipPopoverClientOnly
       content={tooltip}
       ariaLabel={`${label} (more info)`}
       className="inline-flex min-w-0 max-w-full items-center whitespace-nowrap"
       triggerClassName={`min-w-0 truncate text-left ${className ?? ""}`.trim()}
-      size="compact"
+      tooltipClassName="tooltip-wide"
+      size="wide"
     >
       {label}
-    </TooltipPopover>
+    </TooltipPopoverClientOnly>
   );
 }

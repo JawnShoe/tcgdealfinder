@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
 import type { SellerDisplayData } from "@/lib/sellerDisplay";
+import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
 
 const SALES_COUNT_FORMATTER = new Intl.NumberFormat("en-US");
 
@@ -33,84 +32,10 @@ type SellerNameWithTooltipProps = {
   className?: string;
 };
 
-/**
- * Interactive seller name with tooltip
- * - Desktop: hover shows tooltip
- * - Mobile: tap toggles tooltip, tap outside closes
- * - Uses portal to escape overflow:hidden containers
- * - Repositions on scroll/resize
- * - Closes on Escape key
- */
 export function SellerNameWithTooltip({
   seller,
   className = "text-slate-600",
 }: SellerNameWithTooltipProps) {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const updatePosition = useCallback(() => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      // For position: fixed, use viewport coordinates directly (no scroll offset)
-      setTooltipPosition({
-        top: rect.bottom + 4,
-        left: rect.left,
-      });
-    }
-  }, []);
-
-  // Update position when tooltip shows, on scroll, or on resize
-  useEffect(() => {
-    if (showTooltip) {
-      updatePosition();
-      window.addEventListener("scroll", updatePosition, true);
-      window.addEventListener("resize", updatePosition);
-      return () => {
-        window.removeEventListener("scroll", updatePosition, true);
-        window.removeEventListener("resize", updatePosition);
-      };
-    }
-  }, [showTooltip, updatePosition]);
-
-  // Close on Escape key
-  useEffect(() => {
-    if (showTooltip) {
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          setShowTooltip(false);
-        }
-      };
-      window.addEventListener("keydown", handleEscape);
-      return () => window.removeEventListener("keydown", handleEscape);
-    }
-  }, [showTooltip]);
-
-  // Close on outside click (mobile)
-  useEffect(() => {
-    if (showTooltip) {
-      const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-        if (
-          buttonRef.current &&
-          !buttonRef.current.contains(e.target as Node)
-        ) {
-          setShowTooltip(false);
-        }
-      };
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("touchstart", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-        document.removeEventListener("touchstart", handleClickOutside);
-      };
-    }
-  }, [showTooltip]);
-
   // Handle missing seller data gracefully (after all hooks to follow Rules of Hooks)
   if (!seller || !seller.tooltip) {
     return (
@@ -145,50 +70,38 @@ export function SellerNameWithTooltip({
     return <span className={className}>{primaryLabel}</span>;
   }
 
-  const tooltipElement =
-    showTooltip && mounted
-      ? createPortal(
-          <div
-            className="fixed z-[9999] min-w-[200px] max-w-[300px] rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg"
-            style={{
-              top: tooltipPosition.top,
-              left: tooltipPosition.left,
-              pointerEvents: "none",
-            }}
-          >
-            <div className="text-xs font-semibold text-slate-700 mb-1.5">
-              {seller.tooltip.title}
-            </div>
-            <div className="space-y-1">
-              {tooltipRows.map((row, idx) => (
-                <div key={idx} className="flex justify-between gap-3 text-xs">
-                  <span className="text-slate-500">{row.label}:</span>
-                  <span className="text-slate-900 font-medium break-all">
-                    {row.value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>,
-          document.body
-        )
-      : null;
+  const ariaLabel = `${seller.tooltip.title}: ${tooltipRows
+    .map((row) => `${row.label} ${row.value}`)
+    .join(", ")}`;
 
   return (
-    <>
-      <button
-        ref={buttonRef}
-        type="button"
-        className={`${className} cursor-help underline decoration-dotted decoration-slate-300 hover:decoration-slate-400 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 rounded`}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-        onClick={() => setShowTooltip(!showTooltip)}
-        onBlur={() => setShowTooltip(false)}
-        aria-label={`${seller.tooltip.title}: ${tooltipRows.map((r) => `${r.label} ${r.value}`).join(", ")}`}
-      >
-        {primaryLabel}
-      </button>
-      {tooltipElement}
-    </>
+    <TooltipPopoverClientOnly
+      content={
+        <div className="space-y-1">
+          <div className="text-xs font-semibold text-slate-700">
+            {seller.tooltip.title}
+          </div>
+          <div className="space-y-1">
+            {tooltipRows.map((row, idx) => (
+              <div key={idx} className="flex justify-between gap-3 text-xs">
+                <span className="text-slate-500">{row.label}:</span>
+                <span className="break-all font-medium text-slate-900">
+                  {row.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      }
+      ariaLabel={ariaLabel}
+      className="inline-flex min-w-0 max-w-full items-center"
+      triggerClassName={`${className} min-w-0 max-w-full truncate text-left hover:text-slate-900`.trim()}
+      fallbackClassName={`${className} min-w-0 max-w-full truncate`.trim()}
+      tooltipClassName="tooltip-wide"
+      size="wide"
+      usePortal={true}
+    >
+      <span className="truncate">{primaryLabel}</span>
+    </TooltipPopoverClientOnly>
   );
 }

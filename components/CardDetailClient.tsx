@@ -786,70 +786,74 @@ export default function CardDetailClient({
                             </div>
                           );
                         })()}
-                        {bestTrustedPriceBreakdown &&
-                          bestTrustedPriceBreakdown.itemNative != null &&
-                          bestTrustedPriceBreakdown.currency && (
-                            <TooltipPopoverClientOnly
-                              content={
-                                <>
-                                  Item:{" "}
-                                  {formatNativeCurrency(
-                                    bestTrustedPriceBreakdown.itemNative,
-                                    bestTrustedPriceBreakdown.currency
-                                  )}
-                                  <br />
-                                  Shipping:{" "}
-                                  {bestTrustedPriceBreakdown.shippingNative !=
-                                  null
-                                    ? formatNativeCurrency(
-                                        bestTrustedPriceBreakdown.shippingNative,
+                        {bestTrustedPriceBreakdown || bestTrustedDealUrl ? (
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            {bestTrustedPriceBreakdown &&
+                              bestTrustedPriceBreakdown.itemNative != null &&
+                              bestTrustedPriceBreakdown.currency && (
+                                <TooltipPopoverClientOnly
+                                  content={
+                                    <>
+                                      Item:{" "}
+                                      {formatNativeCurrency(
+                                        bestTrustedPriceBreakdown.itemNative,
                                         bestTrustedPriceBreakdown.currency
-                                      )
-                                    : "at checkout"}
-                                </>
-                              }
-                              className="inline"
-                              triggerClassName="text-xs text-slate-500 underline decoration-dotted cursor-help"
-                              tooltipClassName="whitespace-nowrap"
-                              size="compact"
-                              usePortal={true}
-                            >
-                              Price breakdown
-                            </TooltipPopoverClientOnly>
-                          )}
-                        {bestTrustedDealUrl && (
-                          <a
-                            href={bestTrustedDealUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-slate-700 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
-                          >
-                            <span>View listing</span>
-                            <svg
-                              viewBox="0 0 20 20"
-                              fill="none"
-                              aria-hidden="true"
-                              className="h-3.5 w-3.5 stroke-current"
-                              strokeWidth="1.5"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M11 4h5v5"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M16 4l-5.75 5.75"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 6H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3"
-                              />
-                            </svg>
-                          </a>
-                        )}
+                                      )}
+                                      <br />
+                                      Shipping:{" "}
+                                      {bestTrustedPriceBreakdown.shippingNative !=
+                                      null
+                                        ? formatNativeCurrency(
+                                            bestTrustedPriceBreakdown.shippingNative,
+                                            bestTrustedPriceBreakdown.currency
+                                          )
+                                        : "at checkout"}
+                                    </>
+                                  }
+                                  className="inline"
+                                  triggerClassName="text-xs text-slate-500 underline decoration-dotted cursor-help"
+                                  tooltipClassName="whitespace-nowrap"
+                                  size="compact"
+                                  usePortal={true}
+                                >
+                                  Price breakdown
+                                </TooltipPopoverClientOnly>
+                              )}
+                            {bestTrustedDealUrl && (
+                              <a
+                                href={bestTrustedDealUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex cursor-pointer items-center gap-1 text-sm font-medium text-slate-700 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                              >
+                                <span>View listing</span>
+                                <svg
+                                  viewBox="0 0 20 20"
+                                  fill="none"
+                                  aria-hidden="true"
+                                  className="h-3.5 w-3.5 stroke-current"
+                                  strokeWidth="1.5"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M11 4h5v5"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M16 4l-5.75 5.75"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M9 6H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3"
+                                  />
+                                </svg>
+                              </a>
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                       {bestTrustedDeal.deal.endsAt && (
                         <TooltipPopoverClientOnly

@@ -287,3 +287,4 @@ The pricing + FX system has two independent conversion paths:
 ## 8) PR B Hardening Applied
 
 - **PR #127**: Explicit `[FX_RATE_MISSING]` warning in non-production when `getFXRate()` or `convertToUSD()` cannot find a currency. Unit tests for `getFXRate` and `convertToUSD` added via cache injection helper.
+- **PR #128**: Deduped dev log; warning now emits only from `convertToUSD()`.

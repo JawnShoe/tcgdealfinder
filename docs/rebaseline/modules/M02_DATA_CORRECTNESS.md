@@ -210,3 +210,9 @@ Recommended immediate actions (PR B candidates):
 1. Add negative price guard at API layer
 2. Add safety gate test for M01 confirmation flags
 3. Document discount clamping behavior in tests
+
+---
+
+## 8) PR B Hardening Applied
+
+- **PR #125**: Negative price guard (`lib/priceGuard.ts`) clamps negative prices to 0 at API response layer. Unit tests in `lib/__tests__/unit/clampNonNegative.test.ts`.

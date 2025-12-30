@@ -31,6 +31,7 @@ import {
 import { fetchWatchedCardIdSet } from "@/lib/watchlistDb";
 import { isValidAnonId } from "@/lib/anonId";
 import { applyWatchedCardIdsToDeals } from "@/lib/watchlistEnrichment";
+import { clampNonNegative } from "@/lib/priceGuard";
 
 type DealRow = {
   id: number;
@@ -459,12 +460,18 @@ function buildBaseFilters(
 }
 
 function mapRowToDeal(row: DealRow): Deal {
-  const priceCad = row.price_cad != null ? Number(row.price_cad) : null;
-  const shippingCad =
-    row.shipping_cad != null ? Number(row.shipping_cad) : null;
-  const totalPriceCad =
-    row.total_price_cad != null ? Number(row.total_price_cad) : null;
-  const totalUsd = row.total_usd != null ? Number(row.total_usd) : null;
+  const priceCad = clampNonNegative(
+    row.price_cad != null ? Number(row.price_cad) : null
+  );
+  const shippingCad = clampNonNegative(
+    row.shipping_cad != null ? Number(row.shipping_cad) : null
+  );
+  const totalPriceCad = clampNonNegative(
+    row.total_price_cad != null ? Number(row.total_price_cad) : null
+  );
+  const totalUsd = clampNonNegative(
+    row.total_usd != null ? Number(row.total_usd) : null
+  );
   const sampleSize = row.sample_size != null ? Number(row.sample_size) : null;
   const storedConfidenceWeight =
     row.deal_confidence_weight != null
@@ -530,10 +537,15 @@ function mapRowToDeal(row: DealRow): Deal {
     historicPriceUsd,
     // Native currency fields
     currency: row.currency ?? null,
-    priceNative: row.price_native != null ? Number(row.price_native) : null,
-    shippingNative:
-      row.shipping_native != null ? Number(row.shipping_native) : null,
-    totalNative: row.total_native != null ? Number(row.total_native) : null,
+    priceNative: clampNonNegative(
+      row.price_native != null ? Number(row.price_native) : null
+    ),
+    shippingNative: clampNonNegative(
+      row.shipping_native != null ? Number(row.shipping_native) : null
+    ),
+    totalNative: clampNonNegative(
+      row.total_native != null ? Number(row.total_native) : null
+    ),
     listingId: row.listing_id ?? null,
     historicSampleCount: sampleSize,
     historicBaselineBucketUsed: conditionBucket ?? null,

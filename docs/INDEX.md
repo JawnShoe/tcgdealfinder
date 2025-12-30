@@ -113,6 +113,18 @@ CI runs only unit tests (`npm run test:unit`) to avoid requiring DATABASE_URL se
 
 ---
 
+## Rebaseline Artifacts
+
+Baseline inventory and review plan for REBASELINE v1.
+
+| Document                                                                          | Purpose                                     | Status |
+| --------------------------------------------------------------------------------- | ------------------------------------------- | ------ |
+| [docs/rebaseline/REPO_PACKET_2025-12-29.md](rebaseline/REPO_PACKET_2025-12-29.md) | Complete repo inventory snapshot            | ACTIVE |
+| [docs/rebaseline/CRITICALITY_MAP.md](rebaseline/CRITICALITY_MAP.md)               | Folder criticality labels                   | ACTIVE |
+| [docs/rebaseline/MODULE_REVIEW_PLAN.md](rebaseline/MODULE_REVIEW_PLAN.md)         | Module review order and acceptance criteria | ACTIVE |
+
+---
+
 ## Historical Archive
 
 Completed implementation records and audits are moved to `docs/archive/` for reference.

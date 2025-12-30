@@ -51,7 +51,7 @@
 
 ### Audit Files Reference
 
-Full audit report: `C:\Users\jonat\.claude\plans\virtual-fluttering-dusk.md`
+_NOTE: Prior local-only Claude plan existed outside repo; no longer referenced. Canonical workflow lives in `docs/WORKSTREAMS_MASTER.md`._
 
 ---
 

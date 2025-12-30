@@ -1632,6 +1632,16 @@ Status Check:
 This section defines non-negotiable operating rules for planning, implementation, and delegation.
 If any instruction, proposal, or change violates these rules, work must stop until resolved.
 
+### Rule / STOP Inventory (Process)
+
+When proposing changes, the Coder must scan repo rules for blockers (keywords: LOCKED, STOP, DO NOT, NEVER, MUST) and produce a table:
+
+| Rule summary | File + line range | Scope (UI/DB/pipelines/secrets/CI/ops) | What it blocks | How to properly unlock/override (workstream/approval required) |
+| ------------ | ----------------- | -------------------------------------- | -------------- | -------------------------------------------------------------- |
+| (fill)       | (fill)            | (fill)                                 | (fill)         | (fill)                                                         |
+
+- LOCKED: Global/shared UI token changes require Inventory + Route Matrix + Operator Visual Matrix (see `SHIFT_LOCK.md` “Global / Shared UI Token Evidence Gate”). No exceptions.
+
 1. Authority & Decision Ownership
 
 - Product scope, roadmap, and prioritization → User only

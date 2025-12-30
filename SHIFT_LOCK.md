@@ -71,6 +71,18 @@ After merging any PR that changes tooling/process (CI workflows, package.json sc
 - **Shift handoff checklist for open Tier-1 bugs**: state current hypothesis, attach the evidence gathered so far, note what's ruled out, and list the next step plus acceptance criteria.
 - **Seller identity data sources**: Always document whether evidence references buyer Browse APIs or legacy/decommissioned Shopping API data before opening or closing a Tier-1 seller-identity issue.
 
+### Global / Shared UI Token Evidence Gate (LOCKED)
+
+Any change that touches shared UI primitives or global styling (examples: `app/globals.css`, shared tooltip tokens/classes, shared components used across multiple pages) is HIGH blast radius.
+
+MERGE IS FORBIDDEN unless the PR includes an Evidence Packet with:
+
+1. Inventory: repo-wide usage list (paths) for the affected token/component (ripgrep results + summarized file list).
+2. Route Matrix: which routes/surfaces are affected.
+3. Operator Visual Matrix: required checks across representative cases (at minimum: short tooltip, long help tooltip, “Seen on” badge tooltip, and card-name tooltip under card set) on at least 2 routes (e.g., `/top-deals` + a `/cards/*` page).
+
+If blast radius is unknown or inventory is incomplete: STOP.
+
 ### Operator Load Minimization Gate (LOCKED)
 
 Before requesting any Operator action, the Coder must confirm:

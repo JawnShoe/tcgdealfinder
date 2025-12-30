@@ -96,3 +96,30 @@
   - Unauthenticated `/admin` returns 404 (notFound)
   - Unauthenticated `/api/admin/*` returns 401
   - `/admin` is the canonical workflow; `/admin/exclusions` redirects to `/admin?tab=exclusions`
+
+## Core Smoke Pack (always run)
+
+- `npm run build` PASS
+- `npm run lint` PASS
+- Manual smoke:
+  - `/` homepage
+  - `/top-deals`
+  - `/newest`
+  - `/ending-soon`
+  - `/sets`
+  - `/sets/[setId]`
+  - `/cards/[cardId]`
+  - `/watchlist`
+  - `/catalog`
+  - `/catalog/sets/[catalogSetId]`
+  - `/alerts`
+  - `/search`
+
+## Admin Smoke Pack (run only when PR touches admin routes)
+
+- Manual smoke (requires auth):
+  - `/admin`
+  - `/admin/exclusions` (redirects to `/admin?tab=exclusions`)
+  - `/admin/alerts`
+  - `/admin/blacklist`
+  - `/admin/listings`

@@ -1,16 +1,16 @@
-"use client";
-
 import Link from "next/link";
+import { cookies } from "next/headers";
 
 import { WatchlistStarButton } from "../../components/WatchlistStarButton";
-import { removeWatchlistEntry, useWatchlist } from "@/lib/useWatchlist";
-import { PAGE_TITLE, PAGE_SUBTITLE } from "@/lib/typography";
+import { ANON_ID_COOKIE, isValidAnonId } from "../../lib/anonId";
+import { fetchWatchlistCards } from "../../lib/watchlistDb";
+import { PAGE_SUBTITLE, PAGE_TITLE } from "../../lib/typography";
 
-export default function WatchlistPage() {
-  const entries = useWatchlist();
-  const sorted = [...entries].sort((a, b) =>
-    a.cardName.localeCompare(b.cardName),
-  );
+export default async function WatchlistPage() {
+  const ownerIdRaw = cookies().get(ANON_ID_COOKIE)?.value ?? null;
+  const ownerId = isValidAnonId(ownerIdRaw) ? ownerIdRaw : null;
+  const items = ownerId ? await fetchWatchlistCards(ownerId) : [];
+  const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
   const isEmpty = sorted.length === 0;
 
   return (
@@ -23,54 +23,50 @@ export default function WatchlistPage() {
           </p>
         </div>
 
-      {isEmpty ? (
-        <div className="panel space-y-3 text-center">
-          <p className="text-sm text-slate-600">You haven&apos;t starred any cards yet.</p>
-          <p className="text-sm text-slate-500">
-            ☆ Star cards to track deals
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {sorted.map((entry) => (
-            <div
-              key={entry.id}
-              className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    {entry.cardName}
-                  </h2>
-                  <p className="text-sm text-slate-500">
-                    {entry.setName ?? "Pokémon card"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <WatchlistStarButton
-                    cardId={entry.id}
-                    cardName={entry.cardName}
-                    setName={entry.setName}
-                  />
-                  <Link
-                    href={`/cards/${entry.id}`}
-                    className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                  >
-                    View card
-                  </Link>
-                  <button
-                    type="button"
-                    className="rounded border border-transparent px-2 py-1 text-xs text-slate-500 transition hover:text-slate-700"
-                    onClick={() => removeWatchlistEntry(entry.id)}
-                  >
-                    Remove
-                  </button>
+        {isEmpty ? (
+          <div className="panel space-y-3 text-center">
+            <p className="text-sm text-slate-600">
+              You haven&apos;t starred any cards yet.
+            </p>
+            <p className="text-sm text-slate-500">
+              ☆ Star cards to track deals
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sorted.map((entry) => (
+              <div
+                key={entry.cardId}
+                className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      {entry.name}
+                    </h2>
+                    <p className="text-sm text-slate-500">
+                      {entry.setName ?? "Pokémon card"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <WatchlistStarButton
+                      cardId={entry.cardId}
+                      cardName={entry.name}
+                      setName={entry.setName}
+                      initialIsWatched={true}
+                    />
+                    <Link
+                      href={`/cards/${entry.cardId}`}
+                      className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      View card
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );

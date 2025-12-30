@@ -754,7 +754,7 @@ export default function DealsTable({
                 content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                 ariaLabel="Data reliability help"
                 triggerClassName="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500"
-                tooltipClassName="tooltip-wide"
+                tooltipClassName="tooltip-wide tooltip-help"
                 side="top"
                 size="wide"
               >
@@ -1148,6 +1148,9 @@ export default function DealsTable({
                                       cardId={cardId ?? undefined}
                                       cardName={cardName ?? undefined}
                                       setName={setName ?? null}
+                                      initialIsWatched={
+                                        vm.deal.isWatched ?? false
+                                      }
                                       className="flex-shrink-0"
                                     />
                                   </div>
@@ -1351,6 +1354,7 @@ export default function DealsTable({
                         cardId={cardId ?? undefined}
                         cardName={cardName ?? undefined}
                         setName={setName ?? null}
+                        initialIsWatched={vm.deal.isWatched ?? false}
                       />
                     </div>
                   </div>

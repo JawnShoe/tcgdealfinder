@@ -2,12 +2,14 @@ import { cookies, headers } from "next/headers";
 
 import CardDetailClient from "../../../components/CardDetailClient";
 import { query } from "../../../lib/db";
+import { ANON_ID_COOKIE, isValidAnonId } from "../../../lib/anonId";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,
 } from "../../../lib/pricing";
 import { convertCad } from "../../../lib/money";
 import { computeDealConfidenceWeight } from "../../../lib/dealConfidence";
+import { fetchWatchedCardIdSet } from "../../../lib/watchlistDb";
 import {
   ensureDealConfidenceColumn,
   ensureCardLanguageColumn,
@@ -431,6 +433,11 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
   const selectedMarket = resolveMarketPreference(cookieMarket, geoCountry);
   const cardRecord = await getCard(cardId, hasLanguageColumn);
   if (!cardRecord) return null;
+  const ownerIdRaw = cookies().get(ANON_ID_COOKIE)?.value ?? null;
+  const ownerId = isValidAnonId(ownerIdRaw) ? ownerIdRaw : null;
+  const isWatched = ownerId
+    ? (await fetchWatchedCardIdSet(ownerId, [cardRecord.id])).has(cardRecord.id)
+    : false;
 
   const relatedCards = await getRelatedCards(cardRecord, hasLanguageColumn);
   const cardIds = relatedCards.map((c) => c.id);
@@ -623,6 +630,7 @@ async function getCardDetail(cardId: number): Promise<CardDetail | null> {
       collectorNumber: cardRecord.card_number,
       rarity: cardRecord.rarity,
       condition: cardRecord.condition_bucket,
+      isWatched,
       stockImageUrl: stockImage?.url ?? null,
     },
     historicals,

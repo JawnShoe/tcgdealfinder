@@ -9,6 +9,7 @@ import { query } from "@/lib/db";
 import { runDealsQuery } from "./api/deals/dealsQuery";
 import type { DealsApiResponse } from "@/types/dealsApi";
 import { cookies, headers } from "next/headers";
+import { ANON_ID_COOKIE } from "@/lib/anonId";
 
 import { ensureListingsMarketColumn } from "@/lib/schema";
 import { isDealTrusted } from "@/lib/dealScore";
@@ -21,6 +22,7 @@ import {
 async function getHomePageDeals(): Promise<DealsApiResponse> {
   const PAGE_SIZE = 50;
   const cookieMarket = cookies().get(MARKET_COOKIE_NAME)?.value ?? null;
+  const ownerId = cookies().get(ANON_ID_COOKIE)?.value ?? null;
   const geoCountry = getGeoCountryFromHeaders(headers());
   const market = resolveMarketPreference(cookieMarket, geoCountry);
   const hasMarketColumn = await ensureListingsMarketColumn();
@@ -63,6 +65,7 @@ async function getHomePageDeals(): Promise<DealsApiResponse> {
     page: 1,
     pageSize: PAGE_SIZE,
     market,
+    ownerId,
   });
 }
 

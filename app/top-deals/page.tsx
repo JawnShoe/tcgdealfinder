@@ -15,6 +15,8 @@ import {
 import { convertCad } from "../../lib/money";
 import { computeDealConfidenceWeight } from "../../lib/dealConfidence";
 import { cookies, headers } from "next/headers";
+import { ANON_ID_COOKIE, isValidAnonId } from "../../lib/anonId";
+import { fetchWatchedCardIdSet } from "../../lib/watchlistDb";
 
 import {
   MARKET_COOKIE_NAME,
@@ -94,6 +96,8 @@ async function getTopDeals(): Promise<Deal[]> {
     throw new Error(LISTINGS_INTEGRITY_MISSING_MESSAGE);
   }
   const cookieMarket = cookies().get(MARKET_COOKIE_NAME)?.value ?? null;
+  const ownerIdRaw = cookies().get(ANON_ID_COOKIE)?.value ?? null;
+  const ownerId = isValidAnonId(ownerIdRaw) ? ownerIdRaw : null;
   const geoCountry = getGeoCountryFromHeaders(headers());
   const market = resolveMarketPreference(cookieMarket, geoCountry);
   const hasListingsMarketColumn = await ensureListingsMarketColumn();
@@ -382,6 +386,18 @@ async function getTopDeals(): Promise<Deal[]> {
       if (stockImage) {
         deal.stockImageUrl = stockImage.url;
       }
+    }
+  }
+
+  if (ownerId) {
+    const watchedIds = await fetchWatchedCardIdSet(
+      ownerId,
+      filteredDeals.map((deal) => deal.cardId ?? 0)
+    );
+    for (const deal of filteredDeals) {
+      const cardId = deal.cardId ?? null;
+      if (cardId == null) continue;
+      deal.isWatched = watchedIds.has(cardId);
     }
   }
 

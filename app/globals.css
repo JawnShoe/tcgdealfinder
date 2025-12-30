@@ -445,11 +445,15 @@
 
   /* Wide tooltip variant — for help text that needs more horizontal space */
   [role="tooltip"].tooltip-wide {
-    min-width: 220px;
     max-width: 320px;
     line-height: 1.5;
     white-space: normal;
     text-align: left;
+  }
+
+  /* Help-tooltip sizing: prevents tall/skinny columns on long help text */
+  [role="tooltip"].tooltip-help {
+    min-width: 240px;
   }
 
   /* ==========================================================================

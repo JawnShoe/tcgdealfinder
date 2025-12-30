@@ -121,6 +121,7 @@ export type CardDetailClientProps = {
       collectorNumber: string | null;
       rarity: string | null;
       condition: string | null;
+      isWatched?: boolean;
       stockImageUrl?: string | null; // TCGplayer stock image
     };
     historicals: HistoricalPoint[];
@@ -706,6 +707,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                     cardId={card.id}
                     cardName={card.name}
                     setName={card.setName}
+                    initialIsWatched={card.isWatched ?? false}
                   />
                 </div>
               </div>
@@ -992,7 +994,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                   content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                   ariaLabel="Data reliability help"
                   triggerClassName="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] font-semibold text-slate-500"
-                  tooltipClassName="tooltip-wide"
+                  tooltipClassName="tooltip-wide tooltip-help"
                   side="top"
                   size="wide"
                 >
@@ -1254,6 +1256,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                             cardId={card.id}
                             cardName={card.name}
                             setName={card.setName}
+                            initialIsWatched={card.isWatched ?? false}
                           />
                           <span className="text-sm text-slate-600">
                             Watch this card

@@ -121,5 +121,6 @@ Exemptions:
 
 - If testing the gate requires production-only resources (real DB, real API keys), the PR may include manual verification steps instead, but must document why CI testing is not feasible.
 - Exemption must be explicitly stated in the PR description with a reason.
+- **EXEMPT unlock path**: PR body must include `EXEMPT: <reason>` AND link evidence (test plan, logs, or rationale). Operator may merge only if exemption is explicit and evidence is present.
 
 Default: Tests are required. Manual steps are optional Coder-only supplements.

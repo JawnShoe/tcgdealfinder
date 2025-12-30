@@ -11,6 +11,18 @@ let fxCacheExpiry: number = 0;
 const FX_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 /**
+ * Inject FX rate cache for testing. Only use in tests.
+ * @internal
+ */
+export function __setFXCacheForTesting(
+  cache: Map<string, FXRate> | null,
+  expiry?: number
+): void {
+  fxRateSnapshotsCache = cache;
+  fxCacheExpiry = expiry ?? Date.now() + FX_CACHE_TTL_MS;
+}
+
+/**
  * Canonical FX definition: rate_to_usd = "USD per 1 unit of native currency"
  * Formula: native_amount × rate_to_usd = USD_amount
  */
@@ -136,7 +148,13 @@ export async function getFXRateSnapshot(
  */
 export async function getFXRate(currency: string): Promise<number | null> {
   const snapshot = await getFXRateSnapshot(currency);
-  return snapshot?.rateToUsd ?? null;
+  if (snapshot == null) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(`[FX_RATE_MISSING] currency=${currency.toUpperCase()}`);
+    }
+    return null;
+  }
+  return snapshot.rateToUsd;
 }
 
 /**
@@ -153,6 +171,11 @@ export async function convertToUSD(
 
   const snapshot = await getFXRateSnapshot(currency);
   if (snapshot == null) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[FX_RATE_MISSING] currency=${currency.toUpperCase()} in convertToUSD`
+      );
+    }
     return null;
   }
 

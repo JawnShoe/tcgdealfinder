@@ -502,6 +502,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 - **M02** Data correctness review + negative price guard — PRs: #124, #125 — doc: `docs/rebaseline/modules/M02_DATA_CORRECTNESS.md`
 - **M03** Pricing/FX review + missing-rate signal + dev log dedupe — PRs: #126, #127, #128 — doc: `docs/rebaseline/modules/M03_PRICING_FX.md`
 - **M04** Dedup + canonical IDs review — PRs: #132 — doc: `docs/rebaseline/modules/M04_DEDUP_CANONICAL_IDS.md`
+- **M05** Scoring + confidence review — PRs: #134 — doc: `docs/rebaseline/modules/M05_SCORING_CONFIDENCE.md`
 
 #### Tier 2 Status: ⏸️ PAUSED
 

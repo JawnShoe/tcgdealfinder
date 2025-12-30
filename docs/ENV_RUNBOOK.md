@@ -19,16 +19,20 @@
 | Variable                   | Required | Purpose                                 | Example                    |
 | -------------------------- | -------- | --------------------------------------- | -------------------------- |
 | `EBAY_APP_ID`              | Yes      | eBay Browse API app identifier          | `YourAppI-YourApp-PRD-...` |
+| `EBAY_CLIENT_SECRET`       | Yes      | eBay Browse API client secret           | Secret-managed             |
 | `EBAY_PARTNER_CAMPAIGN_ID` | No       | eBay Partner Network campaign ID        | `5338...`                  |
 | `EBAY_PARTNER_CUSTOM_ID`   | No       | eBay Partner Network custom tracking ID | `...`                      |
 
 ### External APIs
 
-| Variable                | Required | Purpose                                  | Example     |
-| ----------------------- | -------- | ---------------------------------------- | ----------- |
-| `POKEMONTCG_IO_API_KEY` | No\*     | PokémonTCG.io API key for catalog import | `abc123...` |
+| Variable                     | Required | Purpose                                      | Example        |
+| ---------------------------- | -------- | -------------------------------------------- | -------------- |
+| `POKEMONTCG_IO_API_KEY`      | No\*     | PokémonTCG.io API key for catalog import     | `abc123...`    |
+| `OPEN_EXCHANGE_RATES_APP_ID` | No\*\*   | Open Exchange Rates API key for automated FX | Secret-managed |
 
 \*Required only when running `npm run import:tcg-catalog` script.
+
+\*\*Required for automated FX rate updates in data pipelines. Get yours at https://openexchangerates.org.
 
 ### Admin Access
 

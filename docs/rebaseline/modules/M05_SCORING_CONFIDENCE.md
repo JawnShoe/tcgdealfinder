@@ -233,3 +233,4 @@ None identified — current implementation is correct per SSOT.
 ## 8) PR A Review Applied
 
 - **PR #134**: Docs-only review of scoring and confidence implementation. Path map, locked invariants, risk findings, and test coverage gaps documented.
+- **PR #135**: Unit tests added for `computeDealScore()`, `isDealTrusted()`, `getDealConfidence()`, all confidence sub-functions, and null-stdDev behavior documentation.

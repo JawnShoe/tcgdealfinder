@@ -20,7 +20,9 @@ export function SellerSeenBadge({
   }
   const label = `Seen on ${count} deals`;
   const days = windowDays ?? 30;
-  const marketSuffix = marketLabel ? ` (${marketLabel})` : "";
+  const marketSuffix = marketLabel
+    ? ` (${marketLabel === "All markets" ? "All\u00A0markets" : marketLabel})`
+    : "";
   const tooltip = `Seen on ${count} deals in the last ${days} days${marketSuffix}.`;
   return (
     <TooltipPopoverClientOnly

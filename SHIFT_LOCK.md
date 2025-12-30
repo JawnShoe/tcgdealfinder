@@ -106,3 +106,20 @@ Before involving the Operator, confirm:
 - Operator responsibility is clearly separated from Coder work
 
 Failure to provide explicit Operator instructions is a handoff failure.
+
+### Operator Command Policy (LOCKED)
+
+- Operator does NOT run local commands for verification.
+- Operator verification is: file list check + diff sanity check + CI green + any required UI visual check.
+- Manual "run these commands" steps are Coder-only verification; Operator is not expected to execute them.
+
+### Safety Gate Test Requirement (LOCKED)
+
+If a PR introduces or changes a safety gate (confirm flags, kill-switch, destructive guard, rate-limit guard, environment-based blocking), the PR MUST include CI-enforced tests for the gate logic.
+
+Exemptions:
+
+- If testing the gate requires production-only resources (real DB, real API keys), the PR may include manual verification steps instead, but must document why CI testing is not feasible.
+- Exemption must be explicitly stated in the PR description with a reason.
+
+Default: Tests are required. Manual steps are optional Coder-only supplements.

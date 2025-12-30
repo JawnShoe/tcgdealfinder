@@ -62,30 +62,21 @@ export function getSellerDisplayData(seller: SellerInfo): SellerDisplayData {
     storeName.toLowerCase() !== username.toLowerCase()
   );
 
-  // Track if we're showing just a username (no store name available)
-  const isUsernameOnly = !storeName && !!username;
-
   // Build tooltip rows
   const tooltipRows: Array<{ label: string; value: string | number }> = [];
+
+  // Always show the eBay username if available
+  if (username) {
+    tooltipRows.push({ label: "Username", value: username });
+  }
 
   // Only show store name row if it's different from username
   if (hasStoreName && storeName) {
     tooltipRows.push({ label: "Store", value: storeName });
   }
 
-  // Show account/username if available AND if there's either:
-  // - A different store name being shown, OR
-  // - Feedback data to supplement
-  const hasFeedbackData =
-    (seller.feedbackPercent != null && seller.feedbackPercent > 0) ||
-    (seller.feedbackCount != null && seller.feedbackCount > 0);
-
-  if (username && (hasStoreName || hasFeedbackData)) {
-    tooltipRows.push({ label: "Username", value: username });
-  }
-
-  // Add note when showing username only (store name not available)
-  if (isUsernameOnly) {
+  // Always include the store-name disclaimer when username is known
+  if (username) {
     tooltipRows.push({
       label: "Note",
       value: "Store name may differ.",
@@ -111,7 +102,7 @@ export function getSellerDisplayData(seller: SellerInfo): SellerDisplayData {
     displayName,
     hasStoreName,
     tooltip: {
-      title: isUsernameOnly ? "Seller (eBay username)" : "Seller",
+      title: username ? "Seller (eBay username)" : "Seller",
       rows: tooltipRows,
     },
   };

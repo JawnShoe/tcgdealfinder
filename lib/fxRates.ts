@@ -148,13 +148,7 @@ export async function getFXRateSnapshot(
  */
 export async function getFXRate(currency: string): Promise<number | null> {
   const snapshot = await getFXRateSnapshot(currency);
-  if (snapshot == null) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(`[FX_RATE_MISSING] currency=${currency.toUpperCase()}`);
-    }
-    return null;
-  }
-  return snapshot.rateToUsd;
+  return snapshot?.rateToUsd ?? null;
 }
 
 /**

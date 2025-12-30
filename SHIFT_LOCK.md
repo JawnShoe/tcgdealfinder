@@ -124,3 +124,20 @@ Exemptions:
 - **EXEMPT unlock path**: PR body must include `EXEMPT: <reason>` AND link evidence (test plan, logs, or rationale). Operator may merge only if exemption is explicit and evidence is present.
 
 Default: Tests are required. Manual steps are optional Coder-only supplements.
+
+### PR Closeout Checklist (LOCKED)
+
+Every coder PR response must include a CLOSEOUT section answering all items:
+
+1. **Scope/Allowlist**: Confirm only intended files changed; list files.
+2. **Rebaseline gating**: PR title/prefix includes "REBASELINE" (during rebaseline) OR PR has REBASELINE label.
+3. **SSOT hygiene**: If this PR completes a module or changes process, update PROJECT_SSOT.md with module status + PR # + doc link (or state "N/A").
+4. **SHIFT_LOCK hygiene**: If this PR adds/changes a rule/gate, confirm: scope + why + acceptance criteria + unlock/EXEMPT path exist (or state "N/A").
+5. **Deferred items**: Any "later" follow-ups are recorded in the relevant module doc under "Deferred" (or state "None").
+6. **Open PR hygiene**: No stray non-rebaseline PRs left open (or list them).
+7. **Operator simplicity**: Operator steps are PR UI only (file list + green checks + merge); no local commands.
+8. **Verification**: Prettier ran + lint/test:unit/build status reported (or "docs-only: CI green").
+9. **Secrets hygiene**: Confirm no secrets printed/committed; mention secret scan if relevant.
+10. **CI budget**: Confirm PR is minimal and avoids unnecessary CI churn.
+
+Operator merges only when Closeout is complete and checks are green.

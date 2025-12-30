@@ -3,7 +3,7 @@
 **Last Updated**: 2025-12-29
 **Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
 
-**ACTIVE WORK**: Tier 2 - Alerts + DB-backed Watchlist (MVP)
+**ACTIVE WORK**: REBASELINE v1 (Start-from-scratch review)
 **Workstreams & Priorities**: `docs/WORKSTREAMS_MASTER.md`
 
 ---
@@ -484,9 +484,20 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
-Tier 2 — Alerts + DB-backed Watchlist (MVP)
+### REBASELINE v1 (Start-from-scratch review)
 
-See header for current status.
+**Status**: ACTIVE — Inventory/hardening/governance PRs only.
+
+#### Rebaseline Rules
+
+1. **No feature work during Rebaseline** — Tier 2 and all other feature workstreams are PAUSED.
+2. **Only inventory/hardening/governance PRs allowed** — No new functionality until rebaseline completes.
+3. **Every rule must have**: scope + unlock path + acceptance criteria.
+4. **SHIFT_LOCK re-affirmed**: No shared/global UI token changes without Inventory + Route Matrix + Operator Visual Matrix (see `SHIFT_LOCK.md` "Global / Shared UI Token Evidence Gate").
+
+#### Tier 2 Status: ⏸️ PAUSED
+
+Tier 2 — Alerts + DB-backed Watchlist (MVP) is PAUSED during REBASELINE. See header for prior status. Work will resume after REBASELINE v1 completes.
 
 ---
 
@@ -1451,9 +1462,9 @@ Show deal frequency (e.g., "appears 2-3x per week").
 
 Provide CTA to watchlist the card for future tracking.
 
-Tier 2 — Engagement & Explainability
+Tier 2 — Engagement & Explainability ⏸️ PAUSED
 
-Good ROI, moderate scope.
+**Status**: PAUSED during REBASELINE v1. Good ROI, moderate scope.
 
 ### Alerts + DB-backed Watchlist (Post-Audit Priority)
 
@@ -1588,7 +1599,7 @@ Status Check:
 
 ✅ Tier 1.5: Focus for next sprint, with Full Pokémon Set Coverage as the first item.
 
-⏳ Tier 2: Later stage ideas; will be revisited for further enhancement.
+⏸️ Tier 2: PAUSED during REBASELINE v1. Will resume after rebaseline completes.
 
 ⏳ Tier 3: Deferred for now, to avoid riskier and more resource-heavy features.
 

@@ -453,7 +453,7 @@
 
   /* Help-tooltip sizing: prevents tall/skinny columns on long help text */
   [role="tooltip"].tooltip-help {
-    width: max-content;
+    width: fit-content;
     max-width: 320px;
   }
 

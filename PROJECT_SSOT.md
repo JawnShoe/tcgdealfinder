@@ -487,7 +487,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ### REBASELINE v1 (Start-from-scratch review)
 
-**Status**: ACTIVE — Inventory/hardening/governance PRs only.
+**Status**: ✅ COMPLETE — M01–M10 finished (latest: M10 PR #152; SSOT hygiene #153; placeholder cleanup #154). Tier-2 may resume.
 
 #### Rebaseline Rules
 
@@ -510,9 +510,9 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 - **M09** Docs review + governance inventory/deprecation pass — PRs: #151 — doc: `docs/rebaseline/modules/M09_DOCS_REVIEW.md`
 - **M10** Dead code candidates review — PRs: #152 — doc: `docs/rebaseline/modules/M10_DEAD_CODE_CANDIDATES.md`
 
-#### Tier 2 Status: ⏸️ PAUSED
+#### Tier 2 Status: ▶️ MAY RESUME
 
-Tier 2 — Alerts + DB-backed Watchlist (MVP) is PAUSED during REBASELINE. See header for prior status. Work will resume after REBASELINE v1 completes.
+Tier 2 — Alerts + DB-backed Watchlist (MVP) may resume now that REBASELINE v1 is complete.
 
 ---
 

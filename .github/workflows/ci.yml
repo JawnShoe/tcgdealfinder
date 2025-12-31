@@ -15,6 +15,7 @@ jobs:
   lint-and-build:
     name: Lint & Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Detect docs-only change

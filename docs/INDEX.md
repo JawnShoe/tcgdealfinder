@@ -2,7 +2,7 @@
 
 **Purpose**: Map of all documentation files and their authoritative status.
 
-**Last Updated**: 2025-12-26
+**Last Updated**: 2025-12-31
 
 ---
 
@@ -122,6 +122,7 @@ Baseline inventory and review plan for REBASELINE v1.
 | [docs/rebaseline/REPO_PACKET_2025-12-29.md](rebaseline/REPO_PACKET_2025-12-29.md) | Complete repo inventory snapshot            | ACTIVE |
 | [docs/rebaseline/CRITICALITY_MAP.md](rebaseline/CRITICALITY_MAP.md)               | Folder criticality labels                   | ACTIVE |
 | [docs/rebaseline/MODULE_REVIEW_PLAN.md](rebaseline/MODULE_REVIEW_PLAN.md)         | Module review order and acceptance criteria | ACTIVE |
+| [docs/rebaseline/modules/](rebaseline/modules/)                                   | Module review docs (M01–M09)                | ACTIVE |
 
 ---
 

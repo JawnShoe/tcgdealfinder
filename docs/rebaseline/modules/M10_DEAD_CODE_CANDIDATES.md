@@ -248,4 +248,6 @@ This M10 module is **docs-only** — inventory and decisions documented, no dele
 
 ## 7) PR(s)
 
-_Docs-only PR to be opened after this document is complete._
+Docs-only PR merged: #152 (module doc + SSOT progress line).
+
+SSOT hygiene follow-up PR #153 updated the M10 PR reference (TBD → #152).

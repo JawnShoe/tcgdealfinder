@@ -145,6 +145,16 @@ Default: Tests are required. Manual steps are optional Coder-only supplements.
   - REGRESSION_CHECKLIST.md
   - Plus any touched module docs
 
+Exception (SSOT PRs):
+
+- If the PR being reviewed modifies PROJECT_SSOT.md, Operator cannot attach the post-merge SSOT yet.
+- For merge decisions on SSOT PRs, Operator must instead paste the exact "Files changed" diff snippet for the SSOT lines being modified (before and after), plus:
+  - diffstat
+  - files touched allowlist confirmation (PROJECT_SSOT.md only)
+  - CI status (green)
+  - completed Closeout checklist
+- Merge is allowed if allowlist is SSOT-only, checks are green, and Closeout is complete.
+
 ### PR Closeout Checklist (LOCKED)
 
 Every coder PR response must include a CLOSEOUT section answering all items:

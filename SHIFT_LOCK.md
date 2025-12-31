@@ -125,6 +125,26 @@ Exemptions:
 
 Default: Tests are required. Manual steps are optional Coder-only supplements.
 
+### Merge Gates (LOCKED)
+
+**Gate 1 — Coder Response Format (LOCKED)**
+
+- Every coder PR response must include: Evidence Packet + Verification + full CLOSEOUT checklist.
+- If missing, coder must repost in correct format before merge.
+
+**Gate 2 — Operator Merge Rule (LOCKED)**
+
+- Operator merges only if: (a) PR file list matches allowlist, (b) checks are green, (c) Closeout is complete.
+- Operator steps are PR UI only (no local commands).
+
+**Gate 3 — Decision Attachments (LOCKED)**
+
+- If your message asks for a merge/decision that depends on SSOT/SHIFT_LOCK/REGRESSION_CHECKLIST or module docs, Operator must attach the latest from main when posting the coder response:
+  - PROJECT_SSOT.md
+  - SHIFT_LOCK.md
+  - REGRESSION_CHECKLIST.md
+  - Plus any touched module docs
+
 ### PR Closeout Checklist (LOCKED)
 
 Every coder PR response must include a CLOSEOUT section answering all items:

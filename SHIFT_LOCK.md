@@ -162,6 +162,16 @@ Every coder PR response must include a CLOSEOUT section answering all items:
 1. **Scope/Allowlist**: Confirm only intended files changed; list files.
 2. **Rebaseline gating**: PR title/prefix includes "REBASELINE" (during rebaseline) OR PR has REBASELINE label.
 3. **SSOT hygiene**: If this PR completes a module or changes process, update PROJECT_SSOT.md with module status + PR # + doc link (or state "N/A").
+
+   Default (module completion PRs):
+   - If a PR completes a module, it MUST include both:
+     - the module doc (docs/rebaseline/modules/Mxx\_\*.md)
+     - the SSOT progress line update in PROJECT_SSOT.md
+       in the SAME PR (single PR per module).
+
+   Exception (recovery only):
+   - A follow-up SSOT-only PR is allowed only if the module PR was already merged without the SSOT line, or if the PR was explicitly scoped to SSOT-only hygiene.
+
 4. **SHIFT_LOCK hygiene**: If this PR adds/changes a rule/gate, confirm: scope + why + acceptance criteria + unlock/EXEMPT path exist (or state "N/A").
 5. **Deferred items**: Any "later" follow-ups are recorded in the relevant module doc under "Deferred" (or state "None").
 6. **Open PR hygiene**: No stray non-rebaseline PRs left open (or list them).

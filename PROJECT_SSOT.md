@@ -260,6 +260,7 @@ _NOTE: Prior local-only Claude plan existed outside repo; no longer referenced. 
 3. Verify auto-merge is working (check workflow runs)
 4. Audit `npm outdated` for major updates requiring planning
 5. Document any deferred major updates with rationale
+   - Next.js v16 upgrade deferred until after REBASELINE v1; will be handled as a planned migration PR.
 
 **Policy Rationale**: Automated patch/minor updates reduce maintenance burden while major updates receive proper testing and migration planning to prevent breaking changes.
 

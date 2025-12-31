@@ -504,6 +504,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 - **M04** Dedup + canonical IDs review — PRs: #132 — doc: `docs/rebaseline/modules/M04_DEDUP_CANONICAL_IDS.md`
 - **M05** Scoring + confidence review — PRs: #134, #135 — doc: `docs/rebaseline/modules/M05_SCORING_CONFIDENCE.md`
 - **M06** Blacklist + overrides review — PRs: #136 — doc: `docs/rebaseline/modules/M06_BLACKLIST_OVERRIDES.md`
+- **M07** DB architecture + migrations review — PRs: #139 — doc: `docs/rebaseline/modules/M07_DB_ARCHITECTURE_MIGRATIONS.md`
 
 #### Tier 2 Status: ⏸️ PAUSED
 

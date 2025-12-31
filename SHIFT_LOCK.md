@@ -139,7 +139,7 @@ Default: Tests are required. Manual steps are optional Coder-only supplements.
 
 **Gate 3 — Decision Attachments (LOCKED)**
 
-- If a decision depends on SSOT/SHIFT_LOCK/REGRESSION_CHECKLIST or module docs, Operator must attach the latest versions from main when posting the coder's response:
+- If your message asks for a merge/decision that depends on SSOT/SHIFT_LOCK/REGRESSION_CHECKLIST or module docs, Operator must attach the latest from main when posting the coder response:
   - PROJECT_SSOT.md
   - SHIFT_LOCK.md
   - REGRESSION_CHECKLIST.md

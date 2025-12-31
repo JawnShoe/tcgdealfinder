@@ -226,4 +226,4 @@ None identified — governance structure is sound.
 
 ## 7) PR(s)
 
-_To be updated after hardening PR is opened._
+M09 completed via PR #151 (module doc + docs/INDEX.md update).

@@ -508,7 +508,7 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 - **M07** DB architecture + migrations review — PRs: #139 — doc: `docs/rebaseline/modules/M07_DB_ARCHITECTURE_MIGRATIONS.md`
 - **M08** GitHub workflows review + timeout hardening — PRs: #148 — doc: `docs/rebaseline/modules/M08_GITHUB_WORKFLOWS.md`
 - **M09** Docs review + governance inventory/deprecation pass — PRs: #151 — doc: `docs/rebaseline/modules/M09_DOCS_REVIEW.md`
-- **M10** Dead code candidates review — PRs: TBD — doc: `docs/rebaseline/modules/M10_DEAD_CODE_CANDIDATES.md`
+- **M10** Dead code candidates review — PRs: #152 — doc: `docs/rebaseline/modules/M10_DEAD_CODE_CANDIDATES.md`
 
 #### Tier 2 Status: ⏸️ PAUSED
 

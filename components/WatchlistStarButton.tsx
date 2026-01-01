@@ -15,15 +15,14 @@ type WatchlistStarButtonProps = {
   setName?: string | null;
   initialIsWatched?: boolean;
   className?: string;
+  /** When true, persist to /api/watchlist. When false (default), use localStorage. */
+  useApi?: boolean;
 };
 
 type Listener = () => void;
 
 const listeners = new Set<Listener>();
 const watchedByCardId = new Map<number, boolean>();
-
-// Session-level flag: if API returns 501, fall back to localStorage for this session
-let useLocalStorageFallback = false;
 
 function emit() {
   for (const listener of listeners) {
@@ -36,11 +35,16 @@ function subscribe(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
-function getWatched(cardId: number, fallback: boolean): boolean {
-  // If using localStorage fallback, check localStorage state
-  if (useLocalStorageFallback) {
+function getWatched(
+  cardId: number,
+  fallback: boolean,
+  useApi: boolean
+): boolean {
+  // If using localStorage mode, check localStorage state
+  if (!useApi) {
     return isOnWatchlist(cardId);
   }
+  // API mode: use in-memory cache with SSR fallback
   const stored = watchedByCardId.get(cardId);
   if (stored == null) {
     return fallback;
@@ -101,6 +105,7 @@ export function WatchlistStarButton({
   cardName,
   initialIsWatched = false,
   className = "",
+  useApi = false,
 }: WatchlistStarButtonProps) {
   const normalizedId = typeof cardId === "number" ? cardId : null;
   const normalizedName = cardName ?? null;
@@ -109,7 +114,9 @@ export function WatchlistStarButton({
   const watched = useSyncExternalStore(
     subscribe,
     () =>
-      normalizedId == null ? false : getWatched(normalizedId, initialIsWatched),
+      normalizedId == null
+        ? false
+        : getWatched(normalizedId, initialIsWatched, useApi),
     () => (normalizedId == null ? false : initialIsWatched)
   );
 
@@ -127,13 +134,13 @@ export function WatchlistStarButton({
     setSaving(true);
 
     try {
-      // If already in localStorage fallback mode, use localStorage directly
-      if (useLocalStorageFallback) {
+      // localStorage mode: persist locally, no API call
+      if (!useApi) {
         persistWatchlistLocal(normalizedId, next);
         return;
       }
 
-      // Try API first
+      // API mode: persist to database
       const result = await persistWatchlistApi(normalizedId, next);
 
       if (result.ok === true) {
@@ -141,16 +148,7 @@ export function WatchlistStarButton({
         return;
       }
 
-      // Handle 501: API disabled, fall back to localStorage for this session
-      if (result.status === 501) {
-        console.info("[watchlist] API disabled, using localStorage fallback");
-        useLocalStorageFallback = true;
-        persistWatchlistLocal(normalizedId, next);
-        emit(); // Re-emit to update any listeners with localStorage state
-        return;
-      }
-
-      // Handle other errors: revert optimistic update
+      // Handle errors: revert optimistic update
       console.error("[watchlist] toggle failed:", result.message);
       setWatched(normalizedId, prev);
     } finally {

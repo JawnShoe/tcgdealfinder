@@ -46,6 +46,7 @@ function WatchlistCardRow({ entry }: { entry: WatchlistCard }) {
             cardName={entry.name}
             setName={entry.setName}
             initialIsWatched={true}
+            useApi={true}
           />
           <Link
             href={`/cards/${entry.cardId}`}

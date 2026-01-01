@@ -3,6 +3,11 @@
 import { useState, useSyncExternalStore } from "react";
 
 import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
+import {
+  addToWatchlist,
+  removeFromWatchlist,
+  isOnWatchlist,
+} from "../lib/watchlistStorage";
 
 type WatchlistStarButtonProps = {
   cardId?: number | null;
@@ -17,6 +22,9 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 const watchedByCardId = new Map<number, boolean>();
 
+// Session-level flag: if API returns 501, fall back to localStorage for this session
+let useLocalStorageFallback = false;
+
 function emit() {
   for (const listener of listeners) {
     listener();
@@ -29,6 +37,10 @@ function subscribe(listener: Listener): () => void {
 }
 
 function getWatched(cardId: number, fallback: boolean): boolean {
+  // If using localStorage fallback, check localStorage state
+  if (useLocalStorageFallback) {
+    return isOnWatchlist(cardId);
+  }
   const stored = watchedByCardId.get(cardId);
   if (stored == null) {
     return fallback;
@@ -41,20 +53,46 @@ function setWatched(cardId: number, next: boolean) {
   emit();
 }
 
-async function persistWatchlist(
+type PersistResult =
+  | { ok: true }
+  | { ok: false; status: number; message: string };
+
+async function persistWatchlistApi(
   cardId: number,
   watched: boolean
-): Promise<void> {
-  const res = await fetch("/api/watchlist", {
-    method: watched ? "POST" : "DELETE",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ cardId }),
-    cache: "no-store",
-  });
+): Promise<PersistResult> {
+  try {
+    const res = await fetch("/api/watchlist", {
+      method: watched ? "POST" : "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ cardId }),
+      cache: "no-store",
+    });
 
-  if (!res.ok) {
-    const message = await res.text().catch(() => "");
-    throw new Error(message || `Request failed (${res.status})`);
+    if (!res.ok) {
+      const message = await res.text().catch(() => "");
+      return {
+        ok: false,
+        status: res.status,
+        message: message || `Request failed (${res.status})`,
+      };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : "Network error",
+    };
+  }
+}
+
+function persistWatchlistLocal(cardId: number, watched: boolean): void {
+  if (watched) {
+    addToWatchlist(cardId);
+  } else {
+    removeFromWatchlist(cardId);
   }
 }
 
@@ -84,12 +122,36 @@ export function WatchlistStarButton({
     const prev = watched;
     const next = !prev;
 
+    // Optimistic update
     setWatched(normalizedId, next);
     setSaving(true);
+
     try {
-      await persistWatchlist(normalizedId, next);
-    } catch (error) {
-      console.error("[watchlist] toggle failed", error);
+      // If already in localStorage fallback mode, use localStorage directly
+      if (useLocalStorageFallback) {
+        persistWatchlistLocal(normalizedId, next);
+        return;
+      }
+
+      // Try API first
+      const result = await persistWatchlistApi(normalizedId, next);
+
+      if (result.ok === true) {
+        // API succeeded
+        return;
+      }
+
+      // Handle 501: API disabled, fall back to localStorage for this session
+      if (result.status === 501) {
+        console.info("[watchlist] API disabled, using localStorage fallback");
+        useLocalStorageFallback = true;
+        persistWatchlistLocal(normalizedId, next);
+        emit(); // Re-emit to update any listeners with localStorage state
+        return;
+      }
+
+      // Handle other errors: revert optimistic update
+      console.error("[watchlist] toggle failed:", result.message);
       setWatched(normalizedId, prev);
     } finally {
       setSaving(false);

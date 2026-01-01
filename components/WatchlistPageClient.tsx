@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { WatchlistStarButton } from "./WatchlistStarButton";
 import { useWatchlistContext } from "../lib/WatchlistContext";
-import { getWatchlistIds } from "../lib/watchlistStorage";
+import {
+  getWatchlistIds,
+  WATCHLIST_STORAGE_KEY,
+  WATCHLIST_CHANGE_EVENT,
+} from "../lib/watchlistStorage";
 
 type CardDetails = {
   id: number;
@@ -23,13 +27,39 @@ export function WatchlistPageClient() {
   const [state, setState] = useState<FetchState>({ status: "idle" });
   const [watchedIds, setWatchedIds] = useState<number[]>([]);
 
-  // Read watched IDs from localStorage (same key as WatchlistContext)
-  useEffect(() => {
+  // Helper to read and update watched IDs
+  const refreshWatchedIds = useCallback(() => {
     const ids = getWatchlistIds()
       .map((id) => Number(id))
       .filter((n) => !isNaN(n) && n > 0);
     setWatchedIds(ids);
   }, []);
+
+  // Read watched IDs from localStorage on mount + listen for changes
+  useEffect(() => {
+    // Initial read
+    refreshWatchedIds();
+
+    // Handler for same-tab updates (custom event)
+    const handleSameTabUpdate = () => {
+      refreshWatchedIds();
+    };
+
+    // Handler for cross-tab updates (storage event)
+    const handleStorageEvent = (event: StorageEvent) => {
+      if (event.key === WATCHLIST_STORAGE_KEY || event.key === null) {
+        refreshWatchedIds();
+      }
+    };
+
+    window.addEventListener(WATCHLIST_CHANGE_EVENT, handleSameTabUpdate);
+    window.addEventListener("storage", handleStorageEvent);
+
+    return () => {
+      window.removeEventListener(WATCHLIST_CHANGE_EVENT, handleSameTabUpdate);
+      window.removeEventListener("storage", handleStorageEvent);
+    };
+  }, [refreshWatchedIds]);
 
   // Fetch card details when we have IDs
   useEffect(() => {

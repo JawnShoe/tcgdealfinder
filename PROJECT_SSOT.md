@@ -1,9 +1,9 @@
 # PROJECT SSOT — TCG Deal Finder
 
-**Last Updated**: 2025-12-29
-**Status**: Layout parity complete; header typography unified; PokAcmon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
+**Last Updated**: 2025-12-31
+**Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
 
-**ACTIVE WORK**: REBASELINE v1 (Start-from-scratch review)
+**ACTIVE WORK**: Tier 2 — Alerts + DB-backed Watchlist (MVP)
 **Workstreams & Priorities**: `docs/WORKSTREAMS_MASTER.md`
 
 ---

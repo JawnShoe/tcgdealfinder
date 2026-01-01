@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { WatchlistStarButton } from "./WatchlistStarButton";
+import { useWatchlistContext } from "../lib/WatchlistContext";
 
 type WatchlistItem = {
   cardId: number;
@@ -17,6 +18,7 @@ type FetchState =
 
 export function WatchlistPageApi() {
   const [state, setState] = useState<FetchState>({ status: "loading" });
+  const { isWatched, loading: contextLoading } = useWatchlistContext();
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +67,11 @@ export function WatchlistPageApi() {
     );
   }
 
-  const sorted = [...state.items].sort((a, b) => a.name.localeCompare(b.name));
+  // Filter items by context state (handles removals during session)
+  const activeItems = contextLoading
+    ? state.items
+    : state.items.filter((item) => isWatched(item.cardId));
+  const sorted = [...activeItems].sort((a, b) => a.name.localeCompare(b.name));
   const isEmpty = sorted.length === 0;
 
   if (isEmpty) {
@@ -101,7 +107,6 @@ export function WatchlistPageApi() {
                 cardName={entry.name}
                 setName={entry.setName}
                 initialIsWatched={true}
-                useApi={true}
               />
               <Link
                 href={`/cards/${entry.cardId}`}

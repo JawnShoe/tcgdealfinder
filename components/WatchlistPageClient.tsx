@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useWatchlist, removeWatchlistEntry } from "../lib/useWatchlist";
+import { useWatchlist } from "../lib/useWatchlist";
+import { WatchlistStarButton } from "./WatchlistStarButton";
+import { useWatchlistContext } from "../lib/WatchlistContext";
 
 export function WatchlistPageClient() {
   const entries = useWatchlist();
-  const sorted = [...entries].sort((a, b) =>
+  const { isWatched, loading } = useWatchlistContext();
+
+  // Filter by context state to handle removals during session
+  const activeEntries = loading
+    ? entries
+    : entries.filter((entry) => isWatched(entry.id));
+  const sorted = [...activeEntries].sort((a, b) =>
     a.cardName.localeCompare(b.cardName)
   );
   const isEmpty = sorted.length === 0;
@@ -38,14 +46,12 @@ export function WatchlistPageClient() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => removeWatchlistEntry(entry.id)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-amber-500 bg-amber-50 text-amber-600 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 focus-visible:ring-offset-2"
-                aria-label="Remove from watchlist"
-              >
-                <span aria-hidden="true">★</span>
-              </button>
+              <WatchlistStarButton
+                cardId={entry.id}
+                cardName={entry.cardName}
+                setName={entry.setName}
+                initialIsWatched={true}
+              />
               <Link
                 href={`/cards/${entry.id}`}
                 className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"

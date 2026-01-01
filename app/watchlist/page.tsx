@@ -53,7 +53,6 @@ export default async function WatchlistPage() {
                       cardId={entry.cardId}
                       cardName={entry.name}
                       setName={entry.setName}
-                      initialIsWatched={true}
                     />
                     <Link
                       href={`/cards/${entry.cardId}`}

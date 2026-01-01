@@ -1148,9 +1148,6 @@ export default function DealsTable({
                                       cardId={cardId ?? undefined}
                                       cardName={cardName ?? undefined}
                                       setName={setName ?? null}
-                                      initialIsWatched={
-                                        vm.deal.isWatched ?? false
-                                      }
                                       className="flex-shrink-0"
                                     />
                                   </div>
@@ -1354,7 +1351,6 @@ export default function DealsTable({
                         cardId={cardId ?? undefined}
                         cardName={cardName ?? undefined}
                         setName={setName ?? null}
-                        initialIsWatched={vm.deal.isWatched ?? false}
                       />
                     </div>
                   </div>

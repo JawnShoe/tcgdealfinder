@@ -162,7 +162,6 @@ const CardColumn: ColumnSpec = {
             cardId={cardId ?? undefined}
             cardName={cardName ?? undefined}
             setName={setName ?? null}
-            initialIsWatched={vm.deal.isWatched ?? false}
             className="flex-shrink-0"
           />
         </div>

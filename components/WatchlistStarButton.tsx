@@ -1,79 +1,28 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 
+import { useIsWatched, useWatchlist } from "../lib/WatchlistContext";
 import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
 
 type WatchlistStarButtonProps = {
   cardId?: number | null;
   cardName?: string | null;
   setName?: string | null;
-  initialIsWatched?: boolean;
   className?: string;
 };
-
-type Listener = () => void;
-
-const listeners = new Set<Listener>();
-const watchedByCardId = new Map<number, boolean>();
-
-function emit() {
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-function subscribe(listener: Listener): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-function getWatched(cardId: number, fallback: boolean): boolean {
-  const stored = watchedByCardId.get(cardId);
-  if (stored == null) {
-    return fallback;
-  }
-  return stored;
-}
-
-function setWatched(cardId: number, next: boolean) {
-  watchedByCardId.set(cardId, next);
-  emit();
-}
-
-async function persistWatchlist(
-  cardId: number,
-  watched: boolean
-): Promise<void> {
-  const res = await fetch("/api/watchlist", {
-    method: watched ? "POST" : "DELETE",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ cardId }),
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    const message = await res.text().catch(() => "");
-    throw new Error(message || `Request failed (${res.status})`);
-  }
-}
 
 export function WatchlistStarButton({
   cardId,
   cardName,
-  initialIsWatched = false,
   className = "",
 }: WatchlistStarButtonProps) {
   const normalizedId = typeof cardId === "number" ? cardId : null;
   const normalizedName = cardName ?? null;
   const [saving, setSaving] = useState(false);
 
-  const watched = useSyncExternalStore(
-    subscribe,
-    () =>
-      normalizedId == null ? false : getWatched(normalizedId, initialIsWatched),
-    () => (normalizedId == null ? false : initialIsWatched)
-  );
+  const { toggle } = useWatchlist();
+  const watched = useIsWatched(normalizedId);
 
   if (normalizedId == null || !normalizedName) {
     return null;
@@ -81,16 +30,11 @@ export function WatchlistStarButton({
 
   const handleClick = async () => {
     if (saving) return;
-    const prev = watched;
-    const next = !prev;
-
-    setWatched(normalizedId, next);
     setSaving(true);
     try {
-      await persistWatchlist(normalizedId, next);
+      await toggle(normalizedId);
     } catch (error) {
       console.error("[watchlist] toggle failed", error);
-      setWatched(normalizedId, prev);
     } finally {
       setSaving(false);
     }

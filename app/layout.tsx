@@ -2,6 +2,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { WatchlistProvider } from "@/lib/WatchlistContext";
+import { isWatchlistDbEnabled } from "@/lib/featureFlags";
 
 const SITE_TITLE =
   "TCG Deal Finder \u2013 Real-time undervalued Pok\u00e9mon card deals";
@@ -40,6 +42,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Read feature flag on server and pass to client via prop
+  const dbEnabled = isWatchlistDbEnabled();
+
   return (
     <html lang="en">
       <head>
@@ -51,9 +56,11 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased min-h-screen flex flex-col">
-        <SiteHeader />
-        {children}
-        <SiteFooter />
+        <WatchlistProvider initialUseApi={dbEnabled}>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+        </WatchlistProvider>
       </body>
     </html>
   );

@@ -90,7 +90,6 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                           deal.card?.name ?? deal.cardName ?? deal.title ?? null
                         }
                         setName={deal.card?.setName ?? deal.setName ?? null}
-                        initialIsWatched={deal.isWatched ?? false}
                       />
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">

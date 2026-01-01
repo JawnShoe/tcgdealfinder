@@ -707,7 +707,6 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                     cardId={card.id}
                     cardName={card.name}
                     setName={card.setName}
-                    initialIsWatched={card.isWatched ?? false}
                   />
                 </div>
               </div>
@@ -1256,7 +1255,6 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                             cardId={card.id}
                             cardName={card.name}
                             setName={card.setName}
-                            initialIsWatched={card.isWatched ?? false}
                           />
                           <span className="text-sm text-slate-600">
                             Watch this card

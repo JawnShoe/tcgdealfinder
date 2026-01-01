@@ -928,7 +928,6 @@ export default async function SetDetailPage({
                       cardId={card.id}
                       cardName={card.name}
                       setName={setName}
-                      initialIsWatched={watchedIds.has(card.id)}
                     />
                   </div>
                   <div className="text-xs text-slate-500">

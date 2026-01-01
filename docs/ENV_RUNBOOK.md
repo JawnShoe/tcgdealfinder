@@ -2,7 +2,7 @@
 
 **Purpose**: Document required environment variables and `.env.example` alignment policy.
 
-**Last Updated**: 2025-12-25
+**Last Updated**: 2025-12-31
 
 ---
 
@@ -46,6 +46,25 @@
 | Variable     | Required | Purpose                                      | Example                     |
 | ------------ | -------- | -------------------------------------------- | --------------------------- |
 | `SENTRY_DSN` | No       | Sentry error tracking DSN (server-side only) | `https://...@sentry.io/...` |
+
+### Tier 2 Feature Flags
+
+| Variable               | Required | Default | Purpose                                            |
+| ---------------------- | -------- | ------- | -------------------------------------------------- |
+| `WATCHLIST_DB_ENABLED` | No       | `false` | Enable DB-backed watchlist (replaces localStorage) |
+| `ALERTS_ENABLED`       | No       | `false` | Enable email alerts system                         |
+
+**Behavior when OFF**:
+
+- `WATCHLIST_DB_ENABLED=false`: Watchlist API returns 501 Not Implemented
+- `ALERTS_ENABLED=false`: Alert subscription endpoints return 501 Not Implemented
+
+**When to enable**:
+
+- Set `WATCHLIST_DB_ENABLED=true` after migration 013 is applied and watchlist UI is ready
+- Set `ALERTS_ENABLED=true` after SENDGRID_API_KEY is configured and email infrastructure tested
+
+See `docs/TIER2_ARCHITECTURE.md` for full Tier 2 architecture documentation.
 
 ### Email Alerts
 

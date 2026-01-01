@@ -26,6 +26,7 @@ export function WatchlistPageClient() {
   const { isWatched, loading: contextLoading } = useWatchlistContext();
   const [state, setState] = useState<FetchState>({ status: "idle" });
   const [watchedIds, setWatchedIds] = useState<number[]>([]);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   // Helper to read and update watched IDs
   const refreshWatchedIds = useCallback(() => {
@@ -33,6 +34,8 @@ export function WatchlistPageClient() {
       .map((id) => Number(id))
       .filter((n) => !isNaN(n) && n > 0);
     setWatchedIds(ids);
+    // Increment counter to force refetch even if IDs haven't changed (shouldn't happen, but ensures reliability)
+    setRefreshCounter((c) => c + 1);
   }, []);
 
   // Read watched IDs from localStorage on mount + listen for changes
@@ -61,7 +64,7 @@ export function WatchlistPageClient() {
     };
   }, [refreshWatchedIds]);
 
-  // Fetch card details when we have IDs
+  // Fetch card details when we have IDs or when refresh is triggered
   useEffect(() => {
     if (watchedIds.length === 0) {
       setState({ status: "success", cards: [] });
@@ -105,7 +108,8 @@ export function WatchlistPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [watchedIds]);
+    // refreshCounter ensures refetch on every localStorage change event
+  }, [watchedIds, refreshCounter]);
 
   if (state.status === "idle" || state.status === "loading") {
     return (

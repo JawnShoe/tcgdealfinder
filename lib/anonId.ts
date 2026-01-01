@@ -21,7 +21,7 @@ export function createAnonId(): string {
 export function setAnonIdCookie(response: NextResponse, anonId: string) {
   response.cookies.set(ANON_ID_COOKIE, anonId, {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: ANON_COOKIE_MAX_AGE,

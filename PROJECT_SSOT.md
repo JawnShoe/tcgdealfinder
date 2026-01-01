@@ -1477,9 +1477,9 @@ Show deal frequency (e.g., "appears 2-3x per week").
 
 Provide CTA to watchlist the card for future tracking.
 
-Tier 2 — Engagement & Explainability ⏸️ PAUSED
+Tier 2 — Engagement & Explainability ▶️ ACTIVE
 
-**Status**: PAUSED during REBASELINE v1. Good ROI, moderate scope.
+**Status**: ACTIVE. Scope: Alerts + DB-backed Watchlist (MVP). Good ROI, moderate scope.
 
 ### Alerts + DB-backed Watchlist (Post-Audit Priority)
 
@@ -1614,7 +1614,7 @@ Status Check:
 
 ✅ Tier 1.5: Focus for next sprint, with Full Pokémon Set Coverage as the first item.
 
-⏸️ Tier 2: PAUSED during REBASELINE v1. Will resume after rebaseline completes.
+▶️ Tier 2: ACTIVE. Scope: Alerts + DB-backed Watchlist (MVP).
 
 ⏳ Tier 3: Deferred for now, to avoid riskier and more resource-heavy features.
 

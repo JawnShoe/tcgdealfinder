@@ -6,11 +6,23 @@ import {
   isValidAnonId,
   setAnonIdCookie,
 } from "../../../lib/anonId";
+import { isWatchlistDbEnabled } from "../../../lib/featureFlags";
 import {
   deleteWatchlistEntry,
   fetchWatchlistCards,
   upsertWatchlistEntry,
 } from "../../../lib/watchlistDb";
+
+function featureDisabledResponse() {
+  return NextResponse.json(
+    {
+      error: "Watchlist feature is not enabled",
+      message:
+        "The database-backed watchlist is currently disabled. Set WATCHLIST_DB_ENABLED=true to enable.",
+    },
+    { status: 501 }
+  );
+}
 
 function parseCardId(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -34,6 +46,10 @@ async function readJsonBody(request: NextRequest): Promise<any> {
 }
 
 export async function GET(request: NextRequest) {
+  if (!isWatchlistDbEnabled()) {
+    return featureDisabledResponse();
+  }
+
   const cookieAnonId = request.cookies.get(ANON_ID_COOKIE)?.value ?? null;
   const existingAnonId = isValidAnonId(cookieAnonId) ? cookieAnonId : null;
   const ownerId = existingAnonId ?? createAnonId();
@@ -47,6 +63,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isWatchlistDbEnabled()) {
+    return featureDisabledResponse();
+  }
+
   const body = await readJsonBody(request);
   if (!body) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -80,6 +100,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  if (!isWatchlistDbEnabled()) {
+    return featureDisabledResponse();
+  }
+
   const body = await readJsonBody(request);
   if (!body) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });

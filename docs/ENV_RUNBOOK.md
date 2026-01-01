@@ -2,7 +2,7 @@
 
 **Purpose**: Document required environment variables and `.env.example` alignment policy.
 
-**Last Updated**: 2025-12-25
+**Last Updated**: 2025-12-31
 
 ---
 
@@ -46,6 +46,17 @@
 | Variable     | Required | Purpose                                      | Example                     |
 | ------------ | -------- | -------------------------------------------- | --------------------------- |
 | `SENTRY_DSN` | No       | Sentry error tracking DSN (server-side only) | `https://...@sentry.io/...` |
+
+### Feature Flags — Tier 2 MVP
+
+| Variable               | Required | Default | Purpose                                            |
+| ---------------------- | -------- | ------- | -------------------------------------------------- |
+| `WATCHLIST_DB_ENABLED` | No       | `false` | Enable DB-backed watchlist (replaces localStorage) |
+| `ALERTS_ENABLED`       | No       | `false` | Enable email alerts system                         |
+
+**Usage**: Set to `"true"` to enable. Any other value (including unset) = disabled.
+
+**Note**: These flags control Tier 2 features (Alerts + DB-backed Watchlist MVP). Both default to OFF for zero behavior change until explicitly enabled.
 
 ### Email Alerts
 

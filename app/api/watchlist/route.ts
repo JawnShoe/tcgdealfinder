@@ -25,16 +25,23 @@ function featureDisabledResponse() {
 }
 
 function parseCardId(value: unknown): number | null {
+  let num: number | null = null;
+
   if (typeof value === "number" && Number.isFinite(value)) {
-    return Math.floor(value);
-  }
-  if (typeof value === "string" && value.trim()) {
+    num = Math.floor(value);
+  } else if (typeof value === "string" && value.trim()) {
     const parsed = Number(value);
     if (Number.isFinite(parsed)) {
-      return Math.floor(parsed);
+      num = Math.floor(parsed);
     }
   }
-  return null;
+
+  // Reject non-positive integers (must be >= 1)
+  if (num === null || num < 1) {
+    return null;
+  }
+
+  return num;
 }
 
 async function readJsonBody(request: NextRequest): Promise<any> {
@@ -73,7 +80,7 @@ export async function POST(request: NextRequest) {
   }
 
   const cardId = parseCardId(body.cardId);
-  if (!cardId || cardId <= 0) {
+  if (cardId === null) {
     return NextResponse.json(
       { error: "cardId must be a positive integer" },
       { status: 400 }
@@ -110,7 +117,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   const cardId = parseCardId(body.cardId);
-  if (!cardId || cardId <= 0) {
+  if (cardId === null) {
     return NextResponse.json(
       { error: "cardId must be a positive integer" },
       { status: 400 }

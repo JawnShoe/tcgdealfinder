@@ -86,6 +86,12 @@ When flag is ON:
 
 ---
 
+## UI Rollout Strategy
+
+**Progressive rollout**: When `WATCHLIST_DB_ENABLED=true`, only the `/watchlist` page uses the DB-backed API. Star buttons on other pages (`/`, `/cards/*`, `/top-deals`, etc.) continue using localStorage. This allows incremental validation of the DB backend before full migration.
+
+---
+
 ## Implementation Files
 
 | File                         | Purpose                               |

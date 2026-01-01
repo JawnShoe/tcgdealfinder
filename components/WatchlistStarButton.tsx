@@ -3,6 +3,11 @@
 import { useState, useSyncExternalStore } from "react";
 
 import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
+import {
+  addToWatchlist,
+  removeFromWatchlist,
+  isOnWatchlist,
+} from "../lib/watchlistStorage";
 
 type WatchlistStarButtonProps = {
   cardId?: number | null;
@@ -10,6 +15,8 @@ type WatchlistStarButtonProps = {
   setName?: string | null;
   initialIsWatched?: boolean;
   className?: string;
+  /** When true, persist to /api/watchlist. When false (default), use localStorage. */
+  useApi?: boolean;
 };
 
 type Listener = () => void;
@@ -28,7 +35,16 @@ function subscribe(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
-function getWatched(cardId: number, fallback: boolean): boolean {
+function getWatched(
+  cardId: number,
+  fallback: boolean,
+  useApi: boolean
+): boolean {
+  // If using localStorage mode, check localStorage state
+  if (!useApi) {
+    return isOnWatchlist(cardId);
+  }
+  // API mode: use in-memory cache with SSR fallback
   const stored = watchedByCardId.get(cardId);
   if (stored == null) {
     return fallback;
@@ -41,20 +57,46 @@ function setWatched(cardId: number, next: boolean) {
   emit();
 }
 
-async function persistWatchlist(
+type PersistResult =
+  | { ok: true }
+  | { ok: false; status: number; message: string };
+
+async function persistWatchlistApi(
   cardId: number,
   watched: boolean
-): Promise<void> {
-  const res = await fetch("/api/watchlist", {
-    method: watched ? "POST" : "DELETE",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ cardId }),
-    cache: "no-store",
-  });
+): Promise<PersistResult> {
+  try {
+    const res = await fetch("/api/watchlist", {
+      method: watched ? "POST" : "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ cardId }),
+      cache: "no-store",
+    });
 
-  if (!res.ok) {
-    const message = await res.text().catch(() => "");
-    throw new Error(message || `Request failed (${res.status})`);
+    if (!res.ok) {
+      const message = await res.text().catch(() => "");
+      return {
+        ok: false,
+        status: res.status,
+        message: message || `Request failed (${res.status})`,
+      };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : "Network error",
+    };
+  }
+}
+
+function persistWatchlistLocal(cardId: number, watched: boolean): void {
+  if (watched) {
+    addToWatchlist(cardId);
+  } else {
+    removeFromWatchlist(cardId);
   }
 }
 
@@ -63,6 +105,7 @@ export function WatchlistStarButton({
   cardName,
   initialIsWatched = false,
   className = "",
+  useApi = false,
 }: WatchlistStarButtonProps) {
   const normalizedId = typeof cardId === "number" ? cardId : null;
   const normalizedName = cardName ?? null;
@@ -71,7 +114,9 @@ export function WatchlistStarButton({
   const watched = useSyncExternalStore(
     subscribe,
     () =>
-      normalizedId == null ? false : getWatched(normalizedId, initialIsWatched),
+      normalizedId == null
+        ? false
+        : getWatched(normalizedId, initialIsWatched, useApi),
     () => (normalizedId == null ? false : initialIsWatched)
   );
 
@@ -84,12 +129,27 @@ export function WatchlistStarButton({
     const prev = watched;
     const next = !prev;
 
+    // Optimistic update
     setWatched(normalizedId, next);
     setSaving(true);
+
     try {
-      await persistWatchlist(normalizedId, next);
-    } catch (error) {
-      console.error("[watchlist] toggle failed", error);
+      // localStorage mode: persist locally, no API call
+      if (!useApi) {
+        persistWatchlistLocal(normalizedId, next);
+        return;
+      }
+
+      // API mode: persist to database
+      const result = await persistWatchlistApi(normalizedId, next);
+
+      if (result.ok === true) {
+        // API succeeded
+        return;
+      }
+
+      // Handle errors: revert optimistic update
+      console.error("[watchlist] toggle failed:", result.message);
       setWatched(normalizedId, prev);
     } finally {
       setSaving(false);

@@ -88,7 +88,11 @@ When flag is ON:
 
 ## UI Rollout Strategy
 
-**Progressive rollout**: When `WATCHLIST_DB_ENABLED=true`, only the `/watchlist` page uses the DB-backed API. Star buttons on other pages (`/`, `/cards/*`, `/top-deals`, etc.) continue using localStorage. This allows incremental validation of the DB backend before full migration.
+**Global DB mode (Option A complete)**: When `WATCHLIST_DB_ENABLED=true`, all star buttons across the entire site use the DB-backed API via `WatchlistProvider`. The provider hydrates watched IDs once via `GET /api/watchlist` on initial load, then all toggle operations use `POST/DELETE /api/watchlist`.
+
+**Fallback behavior**: If the API returns 501 (feature disabled) or encounters network/server errors, the provider automatically falls back to localStorage for the remainder of the session. This ensures UX remains functional even if the DB backend is misconfigured or unavailable.
+
+**Flag OFF (default)**: All star buttons use localStorage directly. No API calls are made.
 
 ---
 
@@ -97,6 +101,7 @@ When flag is ON:
 | File                         | Purpose                               |
 | ---------------------------- | ------------------------------------- |
 | `lib/featureFlags.ts`        | Feature flag utility functions        |
+| `lib/WatchlistContext.tsx`   | Unified watchlist state provider      |
 | `lib/watchlistDb.ts`         | Watchlist DB query functions          |
 | `lib/anonId.ts`              | Anonymous user ID cookie handling     |
 | `lib/emailSubscriptions.ts`  | Email subscription DB query functions |

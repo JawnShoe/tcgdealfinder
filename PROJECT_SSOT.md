@@ -531,6 +531,9 @@ Tier 2 — Alerts + DB-backed Watchlist (MVP) is now active.
 - **#168** T2-5e: Fix same-tab live sync for ADD in localStorage mode
 - **#169** T2-5f: Sync WatchlistContext with storage events (Flag OFF)
 - **#170** T2-5f: Micro-hardening - enforce positive IDs in syncFromStorage
+- **#175** T2-6: Alerts MVP E2E (Subscribe + Unsubscribe UX + APIs, flag-gated)
+- **#177** T2-7: Alerts sending go-live gating (operator-safe, default-safe)
+- **#178** T2-8: Alerts idempotency — one email per listing (per subscriber)
 
 Architecture doc: `docs/TIER2_ARCHITECTURE.md`
 
@@ -538,7 +541,8 @@ Architecture doc: `docs/TIER2_ARCHITECTURE.md`
 
 - [x] Watchlist: dual-mode works (flag OFF → localStorage, flag ON → DB) — T2-5 done
 - [x] Alerts: subscribe/unsubscribe UX works (T2-6) — PR #175 merged
-- [x] Alerts sending is operator-safe (manual or strictly gated) and default-safe in production — T2-7
+- [x] Alerts sending is operator-safe (manual or strictly gated) and default-safe in production — T2-7 (PR #177)
+- [x] Alerts idempotency: one email per listing per subscriber — T2-8 (PR #178)
 - [x] Docs synced with implementation (SSOT, SHIFT_LOCK, REGRESSION_CHECKLIST updated)
 
 **Deferred (non-blocking for MVP):**

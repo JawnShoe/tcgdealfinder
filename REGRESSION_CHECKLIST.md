@@ -172,6 +172,21 @@
 - No time-based cooldown suppression:
   - Subscriber can receive multiple emails in quick succession if for different listings
 
+## Health Endpoint Verification (P2.1)
+
+- `/api/health` returns JSON with:
+  - `ok`: boolean (true if critical jobs are healthy)
+  - `timestamp`: ISO string
+  - `jobs`: object with job statuses for:
+    - `listings`: { status: "OK"|"STALE"|"UNKNOWN", lastSuccessAt, ageHours, staleThresholdHours: 2 }
+    - `historicalPrices`: { status, lastSuccessAt, ageHours, staleThresholdHours: 26 }
+    - `soldListings`: { status, lastSuccessAt, ageHours, staleThresholdHours: 26 }
+    - `fxRates`: { status, lastSuccessAt, ageHours, staleThresholdHours: 2 }
+    - `alertsSending`: { status: "OK"|"DISABLED"|"UNKNOWN", configured: boolean }
+  - `freshness`: detailed data per job (same as before, preserved for backward compat)
+- Verify `ok: false` when listings or fxRates are STALE
+- Verify `alertsSending.status` is "DISABLED" when env vars not configured
+
 ## Admin Smoke Pack (run only when PR touches admin routes)
 
 - Manual smoke (requires auth):

@@ -15,6 +15,44 @@ async function getQuery() {
   }
 }
 
+// ============================================================================
+// JOB STATUS THRESHOLDS (for OK/STALE/FAIL signals)
+// ============================================================================
+
+/** Listings are STALE if older than 2 hours */
+const LISTINGS_STALE_THRESHOLD_HOURS = 2;
+/** Historical prices are STALE if older than 26 hours (daily job + buffer) */
+const HISTORICAL_STALE_THRESHOLD_HOURS = 26;
+/** Sold listings are STALE if older than 26 hours (daily job + buffer) */
+const SOLD_STALE_THRESHOLD_HOURS = 26;
+/** FX rates are STALE if older than 2 hours (hourly job + buffer) */
+const FX_STALE_THRESHOLD_HOURS = 2;
+/** Alerts check is STALE if never run or env not configured (informational) */
+
+type JobStatus = "OK" | "STALE" | "FAIL" | "DISABLED" | "UNKNOWN";
+
+/**
+ * Compute job status based on last success timestamp and threshold.
+ * Returns UNKNOWN if timestamp is null (never ran or DB unavailable).
+ */
+function computeJobStatus(
+  lastSuccessAt: string | null,
+  staleThresholdHours: number
+): JobStatus {
+  if (!lastSuccessAt) return "UNKNOWN";
+  const lastSuccess = new Date(lastSuccessAt).getTime();
+  const ageHours = (Date.now() - lastSuccess) / (1000 * 60 * 60);
+  if (ageHours > staleThresholdHours) return "STALE";
+  return "OK";
+}
+
+type JobStatusEntry = {
+  status: JobStatus;
+  lastSuccessAt: string | null;
+  ageHours: number | null;
+  staleThresholdHours: number;
+};
+
 type FreshnessData = {
   listings: {
     lastUpdated: string | null;
@@ -30,6 +68,10 @@ type FreshnessData = {
     lastUpdated: string | null;
     cardsCovered: number | null;
   };
+  soldListings: {
+    lastUpdated: string | null;
+    totalCount: number | null;
+  };
   fxRates: {
     provider: string;
     cadence: string;
@@ -41,6 +83,19 @@ type FreshnessData = {
     lastUpdated: string | null;
     rates: Record<string, number> | null;
   };
+  alertsSending: {
+    configured: boolean;
+    lastSentAt: string | null;
+    totalSent: number | null;
+  };
+};
+
+type JobStatuses = {
+  listings: JobStatusEntry;
+  historicalPrices: JobStatusEntry;
+  soldListings: JobStatusEntry;
+  fxRates: JobStatusEntry;
+  alertsSending: JobStatusEntry & { configured: boolean };
 };
 
 async function getFreshnessData(): Promise<FreshnessData | null> {
@@ -79,6 +134,55 @@ async function getFreshnessData(): Promise<FreshnessData | null> {
         COUNT(DISTINCT card_id) as cards_covered
       FROM historical_prices
     `);
+
+    // Get sold listings freshness
+    let soldLastUpdated: string | null = null;
+    let soldTotalCount: number | null = null;
+    try {
+      const soldResult = await query<{
+        last_updated: string | null;
+        total_count: string;
+      }>(`
+        SELECT
+          MAX(created_at) as last_updated,
+          COUNT(*) as total_count
+        FROM ebay_sold_listings
+      `);
+      soldLastUpdated = soldResult.rows[0]?.last_updated ?? null;
+      soldTotalCount = soldResult.rows[0]
+        ? parseInt(soldResult.rows[0].total_count, 10)
+        : null;
+    } catch {
+      // ebay_sold_listings table not present - omit sold data
+    }
+
+    // Get alerts sending freshness
+    let alertsConfigured = false;
+    let alertsLastSentAt: string | null = null;
+    let alertsTotalSent: number | null = null;
+    try {
+      // Check if email_sends table exists and has data
+      const alertsResult = await query<{
+        last_sent: string | null;
+        total_sent: string;
+      }>(`
+        SELECT
+          MAX(sent_at) as last_sent,
+          COUNT(*) FILTER (WHERE status = 'sent') as total_sent
+        FROM email_sends
+      `);
+      alertsLastSentAt = alertsResult.rows[0]?.last_sent ?? null;
+      alertsTotalSent = alertsResult.rows[0]
+        ? parseInt(alertsResult.rows[0].total_sent, 10)
+        : null;
+      // Alerts are "configured" if ALERTS_ENABLED + SENDGRID_API_KEY are set
+      alertsConfigured =
+        process.env.ALERTS_ENABLED === "true" &&
+        !!process.env.SENDGRID_API_KEY &&
+        !!process.env.SITE_BASE_URL;
+    } catch {
+      // email_sends table not present - alerts not configured
+    }
 
     // Get FX rates freshness
     const fxResult = await query<{
@@ -189,6 +293,10 @@ async function getFreshnessData(): Promise<FreshnessData | null> {
           ? parseInt(historicalRow.cards_covered, 10)
           : null,
       },
+      soldListings: {
+        lastUpdated: soldLastUpdated,
+        totalCount: soldTotalCount,
+      },
       fxRates: {
         provider: fxProvider,
         cadence: fxCadence,
@@ -200,6 +308,11 @@ async function getFreshnessData(): Promise<FreshnessData | null> {
         lastUpdated: fxLastUpdated,
         rates: Object.keys(rates).length > 0 ? rates : null,
       },
+      alertsSending: {
+        configured: alertsConfigured,
+        lastSentAt: alertsLastSentAt,
+        totalSent: alertsTotalSent,
+      },
     };
   } catch (error) {
     // Database query failed - return null freshness data
@@ -208,16 +321,119 @@ async function getFreshnessData(): Promise<FreshnessData | null> {
   }
 }
 
+/**
+ * Compute age in hours from a timestamp string.
+ */
+function computeAgeHours(timestamp: string | null): number | null {
+  if (!timestamp) return null;
+  const ts = new Date(timestamp).getTime();
+  return (Date.now() - ts) / (1000 * 60 * 60);
+}
+
+/**
+ * Build job statuses from freshness data.
+ * Returns deterministic OK/STALE/UNKNOWN signals for each pipeline job.
+ */
+function buildJobStatuses(freshness: FreshnessData | null): JobStatuses | null {
+  if (!freshness) return null;
+
+  const listingsLastSuccess = freshness.listings.lastUpdated;
+  const listingsAge = computeAgeHours(listingsLastSuccess);
+
+  const historicalLastSuccess = freshness.historicalPrices.lastUpdated;
+  const historicalAge = computeAgeHours(historicalLastSuccess);
+
+  const soldLastSuccess = freshness.soldListings.lastUpdated;
+  const soldAge = computeAgeHours(soldLastSuccess);
+
+  const fxLastSuccess = freshness.fxRates.lastSuccessAt;
+  const fxAge = computeAgeHours(fxLastSuccess);
+
+  // Alerts sending is "configured" if env vars are set, "disabled" otherwise
+  const alertsConfigured = freshness.alertsSending.configured;
+  const alertsLastSent = freshness.alertsSending.lastSentAt;
+  // We don't apply a staleness threshold to alerts — they only run when there are deals
+
+  return {
+    listings: {
+      status: computeJobStatus(
+        listingsLastSuccess,
+        LISTINGS_STALE_THRESHOLD_HOURS
+      ),
+      lastSuccessAt: listingsLastSuccess,
+      ageHours:
+        listingsAge !== null ? Math.round(listingsAge * 100) / 100 : null,
+      staleThresholdHours: LISTINGS_STALE_THRESHOLD_HOURS,
+    },
+    historicalPrices: {
+      status: computeJobStatus(
+        historicalLastSuccess,
+        HISTORICAL_STALE_THRESHOLD_HOURS
+      ),
+      lastSuccessAt: historicalLastSuccess,
+      ageHours:
+        historicalAge !== null ? Math.round(historicalAge * 100) / 100 : null,
+      staleThresholdHours: HISTORICAL_STALE_THRESHOLD_HOURS,
+    },
+    soldListings: {
+      status: computeJobStatus(soldLastSuccess, SOLD_STALE_THRESHOLD_HOURS),
+      lastSuccessAt: soldLastSuccess,
+      ageHours: soldAge !== null ? Math.round(soldAge * 100) / 100 : null,
+      staleThresholdHours: SOLD_STALE_THRESHOLD_HOURS,
+    },
+    fxRates: {
+      status: computeJobStatus(fxLastSuccess, FX_STALE_THRESHOLD_HOURS),
+      lastSuccessAt: fxLastSuccess,
+      ageHours: fxAge !== null ? Math.round(fxAge * 100) / 100 : null,
+      staleThresholdHours: FX_STALE_THRESHOLD_HOURS,
+    },
+    alertsSending: {
+      status: alertsConfigured
+        ? alertsLastSent
+          ? "OK"
+          : "UNKNOWN"
+        : "DISABLED",
+      configured: alertsConfigured,
+      lastSuccessAt: alertsLastSent,
+      ageHours: alertsLastSent
+        ? Math.round(computeAgeHours(alertsLastSent)! * 100) / 100
+        : null,
+      // No staleness threshold for alerts — they run on-demand
+      staleThresholdHours: 0,
+    },
+  };
+}
+
+/**
+ * Compute overall health status based on job statuses.
+ * Returns false if any critical job is STALE or FAIL.
+ */
+function computeOverallHealth(jobStatuses: JobStatuses | null): boolean {
+  if (!jobStatuses) return true; // No DB = assume ok (health endpoint works)
+  // Critical jobs: listings, fxRates (most time-sensitive)
+  const criticalJobs = [jobStatuses.listings, jobStatuses.fxRates];
+  for (const job of criticalJobs) {
+    if (job.status === "STALE" || job.status === "FAIL") {
+      return false;
+    }
+  }
+  return true;
+}
+
 export async function GET() {
   const freshness = await getFreshnessData();
+  const jobStatuses = buildJobStatuses(freshness);
+  const overallOk = computeOverallHealth(jobStatuses);
 
   const healthData = {
-    ok: true,
+    ok: overallOk,
     timestamp: new Date().toISOString(),
     service: "tcg-deal-finder",
     version: process.env.npm_package_version || "unknown",
     node: process.version,
-    // Freshness data (null if DB unavailable)
+    // Job statuses with OK/STALE/FAIL signals (null if DB unavailable)
+    jobs: jobStatuses,
+    // Detailed freshness data (null if DB unavailable)
     freshness,
   };
 

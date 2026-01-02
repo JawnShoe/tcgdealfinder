@@ -2,7 +2,7 @@
 
 Status: Active (Backlog + prioritization index)  
 Canonical rule: `PROJECT_SSOT.md` is the current truth; `docs/WORKSTREAMS_MASTER.md` is the canonical backlog/prioritization list; audits/plans are appendices.  
-Last reviewed: 2025-12-29  
+Last reviewed: 2026-01-02  
 Notes: If any doc conflicts with SSOT, SSOT wins. Do not execute advisory docs without an SSOT/workstreams entry.
 Note: Any global UI token / tooltip system rework must satisfy SHIFT_LOCK’s Global / Shared UI Token Evidence Gate.
 
@@ -18,7 +18,7 @@ Note: Any global UI token / tooltip system rework must satisfy SHIFT_LOCK’s Gl
 
 ## Active Work Item (must match SSOT)
 
-P2.1 — Health job status + go-live schedule gate
+P2.2 — Index Audit + Targeted Index Adds (pending next workstream start)
 
 ---
 
@@ -63,8 +63,9 @@ P2.1 — Health job status + go-live schedule gate
 
 - Objective: Make job freshness and failure modes visible and gate go-live on green health.
 - Dependencies: `/api/health` contract; workflow scheduling plan (pre-launch paused workflows remain paused until explicit go-live unlock).
-- Acceptance criteria: Health shows freshness and last-success; go-live checklist includes “re-enable schedules”; no silent failures.
+- Acceptance criteria: Health shows freshness and last-success; go-live checklist includes "re-enable schedules"; no silent failures.
 - Operator verification: Confirm `/api/health` shows green + fresh timestamps; confirm schedule workflows remain paused until go-live decision.
+- **✅ COMPLETE**: 2026-01-02 — PR #181. `/api/health` now exposes job status signals (OK/STALE/UNKNOWN) with timestamps and thresholds. Go-live gate documented in `docs/ENV_RUNBOOK.md`.
 
 #### P2.2 Index Audit + Targeted Index Adds
 

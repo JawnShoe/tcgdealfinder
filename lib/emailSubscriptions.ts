@@ -27,8 +27,8 @@ type DbRow = {
   last_emailed_at: string | null;
 };
 
-/** Cooldown period between emails to the same subscriber (hours) */
-const EMAIL_COOLDOWN_HOURS = 6;
+// NOTE: Cooldown-based idempotency removed in T2-8.
+// Idempotency is now enforced via email_sends table UNIQUE(subscription_id, listing_id).
 
 function mapRow(row: DbRow): EmailSubscription {
   return {
@@ -139,7 +139,8 @@ export async function getActiveSubscriptionsForCard(
   cardId: number,
   minDiscountPercent: number
 ): Promise<EmailSubscription[]> {
-  // Filter out subscriptions that were emailed within the cooldown period
+  // T2-8: Removed cooldown-based filtering.
+  // Idempotency is now enforced per-listing via email_sends table.
   const res = await query<DbRow>(
     `
       SELECT *
@@ -147,8 +148,7 @@ export async function getActiveSubscriptionsForCard(
       WHERE card_id = $1
         AND unsubscribed_at IS NULL
         AND confirmed_at IS NOT NULL
-        AND min_discount_percent <= $2
-        AND (last_emailed_at IS NULL OR last_emailed_at < NOW() - INTERVAL '${EMAIL_COOLDOWN_HOURS} hours');
+        AND min_discount_percent <= $2;
     `,
     [cardId, clampAlertThreshold(minDiscountPercent)]
   );
@@ -158,7 +158,8 @@ export async function getActiveSubscriptionsForCard(
 
 /**
  * Mark a subscription as having received an email.
- * This updates last_emailed_at to enforce the cooldown period.
+ * This updates last_emailed_at for telemetry purposes.
+ * NOTE: This does NOT enforce idempotency — that's done via reserveEmailSend().
  */
 export async function markSubscriptionEmailed(
   subscriptionId: number
@@ -171,4 +172,75 @@ export async function markSubscriptionEmailed(
     `,
     [subscriptionId]
   );
+}
+
+/**
+ * T2-8: Reserve an email send for idempotency.
+ * Uses INSERT ... ON CONFLICT DO NOTHING to atomically check & reserve.
+ * Inserts with status='reserved'. Call finalizeEmailSend() after successful send.
+ *
+ * @returns true if reservation succeeded (we should send), false if already reserved/sent
+ */
+export async function reserveEmailSend(
+  subscriptionId: number,
+  listingId: number
+): Promise<boolean> {
+  const res = await query<{ id: number }>(
+    `
+      INSERT INTO email_sends (subscription_id, listing_id, status)
+      VALUES ($1, $2, 'reserved')
+      ON CONFLICT (subscription_id, listing_id) DO NOTHING
+      RETURNING id;
+    `,
+    [subscriptionId, listingId]
+  );
+
+  // If we got a row back, the insert succeeded (not a duplicate)
+  return res.rowCount > 0;
+}
+
+/**
+ * T2-8: Finalize an email send after successful delivery.
+ * Updates status to 'sent' and sets sent_at timestamp.
+ */
+export async function finalizeEmailSend(
+  subscriptionId: number,
+  listingId: number
+): Promise<void> {
+  await query(
+    `
+      UPDATE email_sends
+      SET status = 'sent', sent_at = NOW()
+      WHERE subscription_id = $1 AND listing_id = $2;
+    `,
+    [subscriptionId, listingId]
+  );
+}
+
+/**
+ * T2-8: Release an email reservation on send failure.
+ * Deletes the row so the next run can retry sending.
+ */
+export async function releaseEmailReservation(
+  subscriptionId: number,
+  listingId: number
+): Promise<void> {
+  await query(
+    `
+      DELETE FROM email_sends
+      WHERE subscription_id = $1 AND listing_id = $2;
+    `,
+    [subscriptionId, listingId]
+  );
+}
+
+/**
+ * T2-8: Check if email_sends table exists.
+ * Returns true if the table is present, false otherwise.
+ */
+export async function emailSendsTableExists(): Promise<boolean> {
+  const res = await query<{ exists: boolean }>(
+    `SELECT to_regclass('public.email_sends') IS NOT NULL AS exists;`
+  );
+  return res.rows[0]?.exists ?? false;
 }

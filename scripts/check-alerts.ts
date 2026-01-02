@@ -1,5 +1,5 @@
 /**
- * check-alerts.ts — Alerts Sending Script (T2-7 Go-Live Gating)
+ * check-alerts.ts — Alerts Sending Script (T2-7 Go-Live Gating + T2-8 Per-Listing Idempotency)
  *
  * This script checks active watches against listings and optionally sends email alerts.
  * It implements multi-layer safety gates to prevent accidental production sends.
@@ -17,7 +17,7 @@
  *
  * SAFETY CONTROLS:
  *   - MAX_EMAILS_PER_RUN: Hard cap on emails sent per run (default 25)
- *   - Idempotency: Uses subscription last_emailed_at cooldown to prevent duplicates
+ *   - Idempotency: One email per listing per subscriber (via email_sends table)
  *   - PII hygiene: Emails redacted in logs (a***@domain.com)
  */
 
@@ -30,6 +30,10 @@ import {
 import {
   getActiveSubscriptionsForCard,
   markSubscriptionEmailed,
+  reserveEmailSend,
+  finalizeEmailSend,
+  releaseEmailReservation,
+  emailSendsTableExists,
 } from "../lib/emailSubscriptions";
 import { isAlertsEnabled } from "../lib/featureFlags";
 
@@ -39,7 +43,8 @@ import { isAlertsEnabled } from "../lib/featureFlags";
 
 const SELLER_MIN_FEEDBACK = 20;
 const SELLER_MIN_POSITIVE_PERCENT = 98;
-const COOLDOWN_HOURS = 6;
+// T2-8: Watch cooldown retained for rate-limiting watch triggers (not email idempotency)
+const WATCH_COOLDOWN_HOURS = 6;
 
 /** Maximum emails to send per run (hard cap for safety) */
 const MAX_EMAILS_PER_RUN = parseInt(process.env.MAX_EMAILS_PER_RUN || "25", 10);
@@ -308,7 +313,7 @@ function withinCooldown(lastTriggeredAt: string | null): boolean {
   if (!lastTriggeredAt) return false;
   const last = new Date(lastTriggeredAt).getTime();
   const elapsedHours = (Date.now() - last) / (1000 * 60 * 60);
-  return elapsedHours < COOLDOWN_HOURS;
+  return elapsedHours < WATCH_COOLDOWN_HOURS;
 }
 
 function formatCurrency(value: number | null): string {
@@ -335,14 +340,13 @@ type EmailStats = {
 };
 
 /**
- * Idempotency is enforced via email_subscriptions.last_emailed_at:
- * - getActiveSubscriptionsForCard() already filters out subscriptions emailed within COOLDOWN_HOURS
- * - markSubscriptionEmailed() updates last_emailed_at after each send
- * - This prevents the same subscriber from receiving multiple emails within the cooldown window
- * - Different subscribers can each receive emails for the same listing (correct behavior)
+ * T2-8: Idempotency is enforced via email_sends table UNIQUE(subscription_id, listing_id):
+ * - reserveEmailSend() attempts INSERT ... ON CONFLICT DO NOTHING
+ * - If insert succeeds (row returned), we send the email
+ * - If insert fails (conflict), the subscriber already received this listing — skip
+ * - Different listings can each generate emails (no cooldown suppression)
  *
- * Schema: email_subscriptions.last_emailed_at (TIMESTAMPTZ, nullable)
- * Query filter: last_emailed_at IS NULL OR last_emailed_at < NOW() - INTERVAL '6 hours'
+ * Schema: email_sends (subscription_id, listing_id) UNIQUE constraint
  */
 async function notifyEmailSubscribers(args: {
   cardId: number;
@@ -365,9 +369,8 @@ async function notifyEmailSubscribers(args: {
     return stats;
   }
 
-  // getActiveSubscriptionsForCard() enforces idempotency:
-  // - Only returns subscriptions where last_emailed_at IS NULL or older than COOLDOWN_HOURS
-  // - This means each subscriber gets at most one email per cooldown window
+  // T2-8: getActiveSubscriptionsForCard() returns all eligible subscriptions.
+  // Idempotency (one email per listing) is enforced via reserveEmailSend() below.
   const subscriptions = await getActiveSubscriptionsForCard(
     args.cardId,
     absoluteDiscount
@@ -401,6 +404,22 @@ async function notifyEmailSubscribers(args: {
       break;
     }
 
+    const redactedEmail = redactEmail(sub.email);
+
+    // T2-8: Reserve email send for idempotency (one email per listing per subscriber)
+    // In dry-run mode, skip the reservation check to show what WOULD be sent
+    if (args.mode !== "dry-run") {
+      const reserved = await reserveEmailSend(sub.id, args.listing.listing_id);
+      if (!reserved) {
+        // Already sent this listing to this subscriber — skip
+        console.log(
+          `    [SKIP] ${redactedEmail} (sub #${sub.id}) — already sent for listing ${args.listing.listing_id}`
+        );
+        stats.skipped++;
+        continue;
+      }
+    }
+
     const unsubscribeLink = `${siteUrl}/api/alerts/unsubscribe?token=${encodeURIComponent(sub.unsubscribeToken)}`;
     const text = `Good news! ${card.name} (${card.set_name}) is now ${discountText}.
 Price: ${formatCurrency(args.totalPrice)}
@@ -428,28 +447,39 @@ Unsubscribe: ${unsubscribeLink}`;
       </p>
     `;
 
-    const redactedEmail = redactEmail(sub.email);
-
     if (args.mode === "dry-run") {
       console.log(
         `    [DRY-RUN] Would send to ${redactedEmail} (sub #${sub.id})`
       );
       stats.sent++;
     } else {
-      // Actually send
-      await queueAlertEmail({
-        to: sub.email,
-        subject,
-        text,
-        html,
-        unsubscribeUrl: unsubscribeLink,
-      });
+      // T2-8: Reserve -> Send -> Finalize/Release pattern
+      // Reservation already done above; now attempt send
+      try {
+        await queueAlertEmail({
+          to: sub.email,
+          subject,
+          text,
+          html,
+          unsubscribeUrl: unsubscribeLink,
+        });
 
-      // Mark subscription as emailed to enforce cooldown period
-      // This is the idempotency mechanism: sets last_emailed_at = NOW()
-      await markSubscriptionEmailed(sub.id);
-      console.log(`    [SENT] Alert to ${redactedEmail} (sub #${sub.id})`);
-      stats.sent++;
+        // Success: finalize the reservation (status='sent', sent_at=NOW())
+        await finalizeEmailSend(sub.id, args.listing.listing_id);
+
+        // Update last_emailed_at for telemetry
+        await markSubscriptionEmailed(sub.id);
+        console.log(`    [SENT] Alert to ${redactedEmail} (sub #${sub.id})`);
+        stats.sent++;
+      } catch (err) {
+        // Failure: release the reservation so next run can retry
+        await releaseEmailReservation(sub.id, args.listing.listing_id);
+        const errMsg = err instanceof Error ? err.message : "Unknown error";
+        console.error(
+          `    [FAIL] Email to ${redactedEmail} (sub #${sub.id}) failed: ${errMsg}`
+        );
+        // Don't increment sent; this will be retried on next run
+      }
     }
   }
 
@@ -485,6 +515,22 @@ async function main() {
     console.log("(Continuing in dry-run mode — gates would block send mode)");
   } else {
     console.log("[GATES] All send gates satisfied");
+  }
+
+  // T2-8: Check email_sends table exists (required for idempotency)
+  const tableExists = await emailSendsTableExists();
+  if (!tableExists) {
+    console.log(
+      "\n[ERROR] email_sends table not found. Run migration 014_add_email_sends.sql first."
+    );
+    if (mode === "send") {
+      console.log(
+        "Exiting with error — cannot send without idempotency table."
+      );
+      process.exit(1);
+    }
+    // In dry-run mode, warn but continue
+    console.log("[WARN] Continuing dry-run without idempotency table...");
   }
 
   console.log("");
@@ -641,7 +687,7 @@ async function main() {
     `Emails ${mode === "dry-run" ? "would send" : "sent"}: ${totalEmailsSent}`
   );
   if (totalEmailsSkipped > 0) {
-    console.log(`Emails skipped (cooldown): ${totalEmailsSkipped}`);
+    console.log(`Emails skipped (already sent): ${totalEmailsSkipped}`);
   }
   if (capReached) {
     console.log(`[CAP] Email limit (${MAX_EMAILS_PER_RUN}) was reached`);

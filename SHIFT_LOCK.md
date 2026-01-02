@@ -181,3 +181,19 @@ Every coder PR response must include a CLOSEOUT section answering all items:
 10. **CI budget**: Confirm PR is minimal and avoids unnecessary CI churn.
 
 Operator merges only when Closeout is complete and checks are green.
+
+### Docs Rollup Cadence (LOCKED)
+
+**Purpose**: keep PROJECT_SSOT.md and docs/INDEX.md in sync during rapid development.
+
+**Trigger**: After any rapid sequence of merges (3+ PRs in a work session) OR at end of a work session/day where meaningful work merged.
+
+**Required rollup actions** (docs-only PR is OK):
+
+1. Update PROJECT_SSOT.md "Last Updated".
+2. Add or extend a short "Recent progress" bullet list under the ACTIVE WORK section (include merged PR numbers + one-line summaries).
+3. Update docs/INDEX.md "Last Updated" and add any new docs created (or links to the relevant doc).
+
+**Applies to ALL workstreams** (not Tier 2 only). Tier 2 is an example, not a special case.
+
+**Exception**: If a single implementation PR already updates SSOT/INDEX appropriately, a separate rollup PR is not required.

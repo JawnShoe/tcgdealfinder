@@ -11,7 +11,7 @@
   - Dev-only: `/admin/login` loads in dev; returns 404 in production
   - `/ending-soon` deferral placeholder (no listings fetched)
 
-## Watchlist v1
+## Watchlist v1 (Legacy — localStorage only)
 
 - `npm run build`
 - `npm run lint`
@@ -24,6 +24,19 @@
   - `/sets/lost-origin` hot-card stars add/remove entries
 - `/cards/5` hero star syncs with watchlist
 - `/watchlist` reflects saved cards and links to `/cards/[cardId]`
+
+## Watchlist (Flag-based — Tier 2)
+
+- `npm run lint`
+- `npm run build`
+- Flag OFF smoke (`WATCHLIST_DB_ENABLED=false` or unset):
+  - Star toggle on `/` persists after reload
+  - `/watchlist` shows starred cards from localStorage
+  - DevTools Network: no `/api/watchlist` calls
+- Flag ON smoke (`WATCHLIST_DB_ENABLED=true`):
+  - Star toggle on `/` persists after reload
+  - `/watchlist` shows starred cards from DB
+  - DevTools Network: `/api/watchlist` calls succeed
 
 ## Featured deals card polish
 

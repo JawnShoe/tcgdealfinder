@@ -6,7 +6,7 @@
 
 ### Current Locks
 
-- Watchlist v1 is client-only/localStorage; ⭐ renders on homepage table, `/newest`, `/top-deals`, featured deals, and card detail listings. No backend/ingestion/scoring work exists for watchlist.
+- Watchlist is dual-mode (localStorage default; DB when `WATCHLIST_DB_ENABLED=true`); ⭐ renders on homepage table, `/newest`, `/top-deals`, featured deals, and card detail listings. `/api/watchlist` exists (returns 501 when flag OFF). No ingestion/scoring work exists for watchlist.
 - Seller trust layout is fixed: seller name + shield on line one and a muted `⭐ X+ sales` line two (sales badge only when feedback ≥ 100).
 - Top Deals columns intentionally stay lean (Card, Total, Historic, Discount, Seller, Market, Ends). Hidden columns still exist in data but remain off UI.
 - Global UI scale baseline already increased (~8–10%) via global CSS; treat this as the new reference.

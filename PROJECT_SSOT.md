@@ -33,9 +33,11 @@
 
 **Impact**: Listings become stale, discounts calculated against outdated historical prices, FX rates drift, alerts never fire. Users lose trust when deals are already sold.
 
+**Reality now (2026-01-01)**: Data Pipelines workflow exists (`.github/workflows/data-pipelines.yml`) but scheduled runs remain disabled. `check-alerts` is implemented but requires SendGrid configuration for email delivery. Manual runs are allowed; scheduled automation is gated behind go-live requirements (verified secrets, operator approval).
+
 ### Must-Check Features Missing (for "must-check" status)
 
-1. **Real email alerts** — Current watchlist is localStorage only; no push/email for new deals
+1. **Real email alerts** — Watchlist now supports DB mode (flag-gated); email alerts pending T2-6
 2. **Data freshness indicator** — No visible "last updated" timestamp on UI
 3. **BIN vs. Auction distinction** — Users can't tell if a deal is fixed-price or auction about to spike
 4. **Seller feedback trend** — No velocity signal (recent feedback changes)
@@ -343,7 +345,7 @@ Job Silence Watchdog is merged but currently blocked until we have a public doma
 | `/top-deals`                   | ✅ BASELINE           | `max-w-7xl px-4 sm:px-6 lg:px-10` | `PAGE_TITLE` + `PAGE_SUBTITLE` | Lean columns (7 visible)                                                           |
 | `/newest`                      | ✅ BASELINE           | `max-w-7xl px-4 sm:px-6 lg:px-10` | `PAGE_TITLE` + `PAGE_SUBTITLE` | Newest listings                                                                    |
 | `/ending-soon`                 | ✅ BASELINE           | `max-w-7xl px-4 sm:px-6 lg:px-10` | `PAGE_TITLE` + `PAGE_SUBTITLE` | Deferred implementation                                                            |
-| `/watchlist`                   | ✅ FIXED              | `max-w-7xl px-4 sm:px-6 lg:px-10` | `PAGE_TITLE` + `PAGE_SUBTITLE` | Client-only localStorage                                                           |
+| `/watchlist`                   | ✅ FIXED              | `max-w-7xl px-4 sm:px-6 lg:px-10` | `PAGE_TITLE` + `PAGE_SUBTITLE` | Flag-gated: localStorage (default) or DB-backed                                    |
 | `/sets`                        | ✅ FIXED              | `max-w-7xl px-4 sm:px-6 lg:px-10` | `PAGE_TITLE` + `PAGE_SUBTITLE` | Catalog set browser                                                                |
 | `/sets/[setId]`                | ✅ FIXED              | `max-w-7xl px-4 sm:px-6 lg:px-10` | Custom (detail page)           | Hero + hot cards + deals + catalog                                                 |
 | `/cards/[cardId]`              | ⚠️ CUSTOM DETAIL PAGE | Custom hero + detail shell        | Custom detail typography       | Best Trusted Deal block + "More from this set" navigation (intentional divergence) |
@@ -383,15 +385,17 @@ Job Silence Watchdog is merged but currently blocked until we have a public doma
 
 ## LOCKED SYSTEMS (DO NOT TOUCH)
 
-### Watchlist v1 (LOCKED ✅)
+### Watchlist (LOCKED ✅)
 
-- **Storage**: Client-only `localStorage` under `tcgdf_watchlist_v1`
-- **Schema**: `{ version: 1, entries: [{ id, cardName, setName }] }` - entries store id/cardName/setName so `/watchlist` renders purely from local data (no API calls or DB lookups)
-- **UI**: `WatchlistStarButton` component on all deal surfaces
-- **Surfaces**: Homepage featured + table, `/newest`, `/top-deals`, set detail hot cards, card detail
-- **Page**: `/watchlist` is client-only, simply links back to `/cards/[cardId]`; removing entry never touches server
-- **Backend**: NONE - no server-side watchlist logic exists
-- **Allowlist note**: `components/FeaturedDeals.tsx` explicitly approved for Watchlist V1 so homepage "featured deals" module can host shared ⭐ control
+- **Storage**: Dual-mode, controlled by `WATCHLIST_DB_ENABLED` flag
+  - **Flag OFF (default)**: Client-only `localStorage` under `tcg_watchlist` (auto-migrated from legacy `tcgdf_watchlist_v1`)
+  - **Flag ON**: DB-backed via `watchlist_entries` table, keyed by `anon_id` cookie
+- **UI**: `WatchlistStarButton` component via `WatchlistContext` provider
+- **Surfaces**: Homepage featured + table, `/newest`, `/top-deals`, set detail hot cards, card detail, `/watchlist`
+- **API**: `/api/watchlist` (GET/POST/DELETE) — returns 501 when flag OFF
+- **Fallback**: If API returns 501 or errors, context auto-falls back to localStorage for session
+- **Migration**: Legacy format (`tcgdf_watchlist_v1`) auto-migrates to new format on first read (idempotent, legacy key preserved)
+- **Architecture doc**: `docs/TIER2_ARCHITECTURE.md`
 
 ### Seller Trust Display (LOCKED ✅)
 
@@ -528,6 +532,17 @@ Tier 2 — Alerts + DB-backed Watchlist (MVP) is now active.
 - **#170** T2-5f: Micro-hardening - enforce positive IDs in syncFromStorage
 
 Architecture doc: `docs/TIER2_ARCHITECTURE.md`
+
+**Tier 2 MVP "Done" Checklist:**
+
+- [ ] Watchlist: dual-mode works (flag OFF → localStorage, flag ON → DB)
+- [ ] Alerts: subscribe/unsubscribe UX works (T2-6)
+- [ ] Alerts sending is operator-safe (manual or strictly gated) and default-safe in production
+- [ ] Docs synced with implementation (SSOT, SHIFT_LOCK, REGRESSION_CHECKLIST updated)
+
+**Deferred (non-blocking for MVP):**
+
+- Add rate limiting to `/api/watchlist` (currently none; acceptable for anonymous-user MVP)
 
 ---
 
@@ -1117,7 +1132,8 @@ Tooltip work is complete and locked. All regressions addressed across 6 commits:
 
 - `lib/typography.ts` - Shared typography constants (`PAGE_TITLE`, `PAGE_SUBTITLE`, `TABLE_CONTAINER`)
 - `lib/dealFormatting.ts` - Deal display formatting (`formatCurrency`, `getEndsAtDisplay`)
-- `lib/useWatchlist.ts` - Watchlist localStorage hook
+- `lib/WatchlistContext.tsx` - Watchlist state provider (flag-gated localStorage/DB)
+- `lib/useWatchlist.ts` - Legacy watchlist hook (deprecated, kept for migration reference)
 - `components/WatchlistStarButton.tsx` - Watchlist toggle component
 - `components/SellerNameWithTooltip.tsx` - Seller trust display with sales badge
 - `components/DealsTable.tsx` - Main deals table component

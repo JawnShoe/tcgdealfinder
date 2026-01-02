@@ -2,7 +2,7 @@
 
 **Purpose**: Document required environment variables and `.env.example` alignment policy.
 
-**Last Updated**: 2025-12-31
+**Last Updated**: 2026-01-02
 
 ---
 
@@ -60,13 +60,16 @@
 
 ### Email Alerts
 
-| Variable            | Required | Purpose                                       | Example                     |
-| ------------------- | -------- | --------------------------------------------- | --------------------------- |
-| `SENDGRID_API_KEY`  | No\*     | SendGrid API key for alert emails             | `SG.xxxxx...`               |
-| `ALERTS_EMAIL_FROM` | No\*     | Verified sender address for alert emails      | `alerts@yourdomain.com`     |
-| `SITE_BASE_URL`     | No\*     | Base URL for email links (unsubscribe, cards) | `https://tcgdealfinder.com` |
+| Variable                 | Required | Purpose                                         | Example                     |
+| ------------------------ | -------- | ----------------------------------------------- | --------------------------- |
+| `SENDGRID_API_KEY`       | No\*     | SendGrid API key for alert emails               | `SG.xxxxx...`               |
+| `ALERTS_EMAIL_FROM`      | No\*     | Verified sender address for alert emails        | `alerts@yourdomain.com`     |
+| `SITE_BASE_URL`          | No\*     | Base URL for email links (unsubscribe, cards)   | `https://tcgdealfinder.com` |
+| `ALERTS_SENDING_ENABLED` | No\*\*   | Explicit gate for email sending (go-live guard) | `true`                      |
 
 \*Required only when email alerts are enabled. The `check-alerts` script gracefully skips email sending when `SENDGRID_API_KEY` is not set.
+
+\*\*Required in addition to `ALERTS_ENABLED` to actually send emails. This is the go-live gate — even with all other secrets configured, emails won't send unless this is explicitly set to `true`.
 
 **Email Alert Architecture**:
 
@@ -333,6 +336,107 @@ If email notifications are unreliable, monitor scheduled job health via:
 ### Why Sentry Can't Alert on Workflow Failures
 
 The existing Sentry integration captures **application runtime errors** (errors in Next.js server/edge runtime). GitHub Actions workflow failures occur in isolated CI environments before the application runs, so Sentry cannot observe them. GitHub-native notifications are the appropriate mechanism for workflow failure alerting.
+
+---
+
+## Go-Live Schedule Gate (Operator Checklist)
+
+**Purpose**: Ensure scheduled data pipeline automation is only enabled after explicit operator verification. Schedules are disabled by default and require manual enablement.
+
+### Current State (Default-Safe)
+
+The data pipelines workflow (`.github/workflows/data-pipelines.yml`) has schedule triggers defined, but:
+
+1. **Listings, FX rates, historical prices, sold listings**: Schedules are active, but safe (they only update data, no external effects)
+2. **Alerts sending (check-alerts)**: Schedule trigger exists but job `if:` condition blocks it — runs only on manual dispatch
+
+**IMPORTANT**: No email alerts will be sent automatically until the operator explicitly enables the alerts sending job.
+
+### Pre-Go-Live Health Verification
+
+Before enabling any automation, verify `/api/health` shows healthy status:
+
+1. Visit `/api/health` on your production deployment
+2. Check the response for job statuses:
+   ```json
+   {
+     "ok": true,
+     "jobs": {
+       "listings": {
+         "status": "OK",
+         "ageHours": 0.5,
+         "staleThresholdHours": 2
+       },
+       "historicalPrices": {
+         "status": "OK",
+         "ageHours": 12.3,
+         "staleThresholdHours": 26
+       },
+       "soldListings": {
+         "status": "OK",
+         "ageHours": 15.1,
+         "staleThresholdHours": 26
+       },
+       "fxRates": { "status": "OK", "ageHours": 0.8, "staleThresholdHours": 2 },
+       "alertsSending": { "status": "DISABLED", "configured": false }
+     }
+   }
+   ```
+3. Confirm `ok: true` and no `STALE` or `FAIL` statuses on critical jobs (listings, fxRates)
+
+### Go-Live Checklist: Enable Scheduled Alerts
+
+**Prerequisites** (all must be true):
+
+- [ ] `/api/health` shows `ok: true`
+- [ ] Listings job shows `status: "OK"` (data is fresh)
+- [ ] FX rates job shows `status: "OK"` (currency conversion works)
+- [ ] SendGrid account created and API key obtained
+- [ ] Sender address verified in SendGrid
+- [ ] GitHub secrets configured:
+  - `SENDGRID_API_KEY` — SendGrid API key with "Mail Send" permission
+  - `ALERTS_EMAIL_FROM` — Verified sender address
+  - `SITE_BASE_URL` — Production URL (no localhost)
+  - `ALERTS_ENABLED` — Set to `true`
+  - `ALERTS_SENDING_ENABLED` — Set to `true`
+- [ ] E2E email test passed (see "Operator Enablement — Email Alerts" section above)
+
+**Steps to Enable Scheduled Alerts**:
+
+1. Open `.github/workflows/data-pipelines.yml`
+2. Find the `check-alerts` job's `if:` condition (around line 118-120)
+3. Change from:
+   ```yaml
+   if: >-
+     github.event_name == 'workflow_dispatch' &&
+     (github.event.inputs.job == 'check-alerts' || github.event.inputs.job == 'all')
+   ```
+4. Change to:
+   ```yaml
+   if: >-
+     github.event.schedule == '*/15 * * * *' ||
+     (github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.job == 'check-alerts' || github.event.inputs.job == 'all'))
+   ```
+5. Commit and push the change
+6. Monitor the first scheduled run in GitHub Actions
+
+### Rollback: Disable Scheduled Alerts
+
+If alerts need to be disabled:
+
+1. Revert the `if:` condition change in `.github/workflows/data-pipelines.yml`
+2. OR remove `ALERTS_SENDING_ENABLED` secret from GitHub (blocks sending even with schedule)
+3. OR set `ALERTS_ENABLED=false` in GitHub secrets (disables entire alerts feature)
+
+### Post-Go-Live Monitoring
+
+After enabling scheduled alerts:
+
+1. Monitor `/api/health` for job statuses
+2. Check SendGrid Activity for email delivery status
+3. Watch GitHub Actions for workflow failures
+4. Review `email_sends` table for send records
 
 ---
 

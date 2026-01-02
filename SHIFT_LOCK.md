@@ -32,6 +32,27 @@
 - No secrets in tracked files (configs, docs, samples).
 - Evidence Packet or CI must include a secret scan check.
 
+### Repo Sync Proof (LOCKED)
+
+**Single Source of Truth:** `origin/main` (GitHub main). Local working copies are not authoritative.
+
+**Before attaching docs or making merge/next-step decisions:**
+
+1. `git fetch origin`
+2. `git checkout main`
+3. `git pull --ff-only`
+
+**Required proof in every coder Evidence Packet:**
+
+- `git rev-parse --show-toplevel`
+- `git remote -v`
+- `git branch -vv`
+- `git status -sb`
+- `git rev-parse HEAD`
+- `git rev-parse origin/main`
+
+**Rule:** Never treat "local file says X" as true unless it matches `origin/main` or a PR diff.
+
 ### Pre-commit Formatting Gate (LOCKED)
 
 - Husky pre-commit runs: `npm run format:staged` (lint-staged → prettier --write on staged files) then `npm run lint`

@@ -109,4 +109,96 @@ When flag is ON:
 
 ---
 
+## Alerts Sending — Go-Live Gates (T2-7)
+
+The `check-alerts.ts` script implements multi-layer safety gates to prevent accidental production sends.
+
+### Usage
+
+```bash
+# Dry-run mode (default) — computes alerts, sends nothing
+npx tsx scripts/check-alerts.ts
+
+# Explicit dry-run
+npx tsx scripts/check-alerts.ts --dry-run
+
+# Send mode — actually sends emails (requires all gates)
+npx tsx scripts/check-alerts.ts --send
+```
+
+### Required Environment Variables (for --send mode)
+
+| Variable                 | Required | Default | Purpose                                         |
+| ------------------------ | -------- | ------- | ----------------------------------------------- |
+| `ALERTS_ENABLED`         | Yes      | `false` | Feature flag for alerts system                  |
+| `SENDGRID_API_KEY`       | Yes      | —       | SendGrid API key                                |
+| `SITE_BASE_URL`          | Yes      | —       | Base URL for email links (no localhost in prod) |
+| `ALERTS_SENDING_ENABLED` | Yes      | `false` | Explicit send gate (required even with --send)  |
+| `MAX_EMAILS_PER_RUN`     | No       | `25`    | Hard cap on emails per run                      |
+
+### Gate Validation Order
+
+1. **Feature flag**: `ALERTS_ENABLED=true`
+2. **Provider key**: `SENDGRID_API_KEY` must be set
+3. **Base URL**: `SITE_BASE_URL` must be set (localhost blocked in production)
+4. **Explicit send gate**: `ALERTS_SENDING_ENABLED=true` (only checked in --send mode)
+
+If any gate fails in --send mode, the script exits with code 1 and prints the missing requirement.
+
+### Safety Controls
+
+| Control       | Description                                                       |
+| ------------- | ----------------------------------------------------------------- |
+| Rate limit    | `MAX_EMAILS_PER_RUN` hard cap (default 25); logs when cap reached |
+| Idempotency   | Uses `email_subscriptions.last_emailed_at` cooldown (see below)   |
+| PII redaction | Emails logged as `u***@domain.com`; no tokens in logs             |
+| Cooldown      | 6-hour cooldown per subscription prevents email spam              |
+
+### Idempotency Mechanism
+
+Idempotency is enforced via `email_subscriptions.last_emailed_at`:
+
+- `getActiveSubscriptionsForCard()` filters out subscriptions emailed within 6 hours
+- `markSubscriptionEmailed()` updates `last_emailed_at` after each send
+- Each subscriber gets at most one email per cooldown window
+- Different subscribers can each receive emails for the same listing (correct behavior)
+
+**Schema**: `email_subscriptions.last_emailed_at` (TIMESTAMPTZ, nullable)
+**Query filter**: `last_emailed_at IS NULL OR last_emailed_at < NOW() - INTERVAL '6 hours'`
+
+### Dry-run vs Send Mode
+
+| Mode        | Alerts logged | Emails sent | Gates required                     |
+| ----------- | ------------- | ----------- | ---------------------------------- |
+| `--dry-run` | Yes           | No          | Gates 1-3 (warns if fail)          |
+| `--send`    | Yes           | Yes         | All 4 gates (fails if any missing) |
+
+### Example Output
+
+```
+============================================================
+TCG Deal Finder — Alerts Check
+Mode: DRY-RUN
+MAX_EMAILS_PER_RUN: 25
+============================================================
+[GATES] All send gates satisfied
+
+Found 2 active watch(es)
+
+Checking watch #1 → card 42 (Near Mint)
+    [DRY-RUN] Would send to j***@example.com (sub #5)
+  [ALERT] Watch #1 fired → discount 15.2% off >= 10.0% → listing 12345
+
+============================================================
+SUMMARY
+============================================================
+Mode: DRY-RUN
+Watches checked: 2
+Alerts triggered: 1
+Emails would send: 1
+============================================================
+```
+
+---
+
 **Governance**: This document is maintained as part of Tier 2 MVP implementation.

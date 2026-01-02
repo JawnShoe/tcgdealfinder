@@ -1,7 +1,7 @@
 # PROJECT SSOT — TCG Deal Finder
 
-**Last Updated**: 2026-01-01
-**Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
+**Last Updated**: 2026-01-02
+**Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080). **T2-6 merged (PR #175)**: Alerts subscribe/unsubscribe UX + APIs complete (flag-gated).
 
 **ACTIVE WORK**: Tier 2 — Alerts + DB-backed Watchlist (MVP)
 **Workstreams & Priorities**: `docs/WORKSTREAMS_MASTER.md`
@@ -37,7 +37,7 @@
 
 ### Must-Check Features Missing (for "must-check" status)
 
-1. **Real email alerts** — Watchlist now supports DB mode (flag-gated); email alerts pending T2-6
+1. **Real email alerts** — T2-6 UX/API complete (subscribe/unsubscribe); sending still pending (SendGrid/go-live gating)
 2. **Data freshness indicator** — No visible "last updated" timestamp on UI
 3. **BIN vs. Auction distinction** — Users can't tell if a deal is fixed-price or auction about to spike
 4. **Seller feedback trend** — No velocity signal (recent feedback changes)
@@ -180,7 +180,7 @@ _NOTE: Prior local-only Claude plan existed outside repo; no longer referenced. 
 - **Cleanup**: Opportunistic 1% chance per request deletes entries older than 1 hour; also provides `cleanup_old_rate_limits()` SQL function.
 - **FRAGILE**: Relies on reverse proxy headers for IP. Direct connections without proxy will group under `"unknown"`.
 - **Regression**: Normal subscribe flow unchanged under limit; only blocked when exceeding 5 requests in 5 minutes.
-- **Unsubscribe route**: NOT rate-limited (GET with token, low abuse potential, returns HTML).
+- **Unsubscribe route**: Rate-limited (5 req / 5 min per IP) as of T2-6 (PR #175) for parity with subscribe.
 - **Migration 007 applied**: 2025-12-26 to Neon DB `ep-rapid-cake-afiy0ttd` / `neondb`.
 - **Prod verification** (2025-12-26):
   - Requests 1-5: HTTP 200, `X-RateLimit-Remaining` decremented 4→3→2→1→0
@@ -352,7 +352,8 @@ Job Silence Watchdog is merged but currently blocked until we have a public doma
 | `/search`                      | ⚠️ CUSTOM             | TBD                               | TBD                            | Card search                                                                        |
 | `/catalog`                     | ⚠️ CUSTOM             | TBD                               | TBD                            | Catalog browser                                                                    |
 | `/catalog/sets/[catalogSetId]` | ⚠️ CUSTOM             | TBD                               | TBD                            | Catalog set detail                                                                 |
-| `/alerts`                      | ⚠️ CUSTOM             | TBD                               | TBD                            | Public alerts page                                                                 |
+| `/alerts`                      | ✅ FLAG-GATED         | `page-shell max-w-lg`             | Standard                       | Subscribe form (flag ON) or disabled state (flag OFF); accepts `?cardId=` prefill  |
+| `/alerts/unsubscribe`          | ✅ FLAG-GATED         | `page-shell max-w-md`             | Standard                       | Token-based unsubscribe landing page                                               |
 
 **/sets/[setId] surfacing definitions**
 
@@ -535,10 +536,10 @@ Architecture doc: `docs/TIER2_ARCHITECTURE.md`
 
 **Tier 2 MVP "Done" Checklist:**
 
-- [ ] Watchlist: dual-mode works (flag OFF → localStorage, flag ON → DB)
-- [ ] Alerts: subscribe/unsubscribe UX works (T2-6)
+- [x] Watchlist: dual-mode works (flag OFF → localStorage, flag ON → DB) — T2-5 done
+- [x] Alerts: subscribe/unsubscribe UX works (T2-6) — PR #175 merged
 - [ ] Alerts sending is operator-safe (manual or strictly gated) and default-safe in production
-- [ ] Docs synced with implementation (SSOT, SHIFT_LOCK, REGRESSION_CHECKLIST updated)
+- [x] Docs synced with implementation (SSOT, SHIFT_LOCK, REGRESSION_CHECKLIST updated)
 
 **Deferred (non-blocking for MVP):**
 

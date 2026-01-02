@@ -157,11 +157,19 @@ If any gate fails in --send mode, the script exits with code 1 and prints the mi
 
 Idempotency is enforced via `email_sends` table with UNIQUE(subscription_id, listing_id):
 
-- `reserveEmailSend()` attempts `INSERT ... ON CONFLICT DO NOTHING`
-- If insert succeeds (row returned), we send the email
-- If insert fails (conflict), the subscriber already received this listing — skip
-- Different listings can each generate emails (no time-based cooldown suppression)
-- Multiple subscribers can each receive emails for the same listing
+**Reserve/Send Pattern**:
+
+1. `reserveEmailSend()` inserts with `status='reserved'` using `INSERT ... ON CONFLICT DO NOTHING`
+2. If insert succeeds (row returned), proceed to send the email
+3. If insert fails (conflict), the subscriber already received or reserved this listing — skip
+4. On successful send: `finalizeEmailSend()` updates to `status='sent'` + `sent_at=NOW()`
+5. On failure: `releaseEmailReservation()` DELETEs the row so next run can retry
+
+**Missing Table Safety**:
+
+- `emailSendsTableExists()` checks if the table is present
+- In `--send` mode: exits non-zero if table missing
+- In dry-run mode: warns but continues
 
 **Schema**: `email_sends` table
 
@@ -170,13 +178,16 @@ CREATE TABLE email_sends (
   id SERIAL PRIMARY KEY,
   subscription_id INTEGER NOT NULL REFERENCES email_subscriptions(id) ON DELETE CASCADE,
   listing_id INTEGER NOT NULL,
-  status TEXT NOT NULL DEFAULT 'sent',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  status TEXT NOT NULL DEFAULT 'reserved',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  sent_at TIMESTAMPTZ
 );
 CREATE UNIQUE INDEX email_sends_subscription_listing_idx ON email_sends (subscription_id, listing_id);
 ```
 
 **Idempotency guarantee**: Each (subscription_id, listing_id) pair can only have one row.
+
+**Failure retry**: On send failure, the reservation is deleted allowing retry on next run.
 
 ### Dry-run vs Send Mode
 

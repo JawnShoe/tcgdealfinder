@@ -179,7 +179,7 @@ export function WatchlistProvider({
     const syncFromStorage = () => {
       const ids = getWatchlistIds()
         .map((id) => Number(id))
-        .filter((n) => !isNaN(n));
+        .filter((n) => !isNaN(n) && n > 0);
       setWatchedIds(new Set(ids));
     };
 

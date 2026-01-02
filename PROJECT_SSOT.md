@@ -1,6 +1,6 @@
 # PROJECT SSOT — TCG Deal Finder
 
-**Last Updated**: 2025-12-31
+**Last Updated**: 2026-01-01
 **Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080).
 
 **ACTIVE WORK**: Tier 2 — Alerts + DB-backed Watchlist (MVP)
@@ -510,9 +510,24 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 - **M09** Docs review + governance inventory/deprecation pass — PRs: #151 — doc: `docs/rebaseline/modules/M09_DOCS_REVIEW.md`
 - **M10** Dead code candidates review — PRs: #152 — doc: `docs/rebaseline/modules/M10_DEAD_CODE_CANDIDATES.md`
 
-#### Tier 2 Status: ▶️ MAY RESUME
+#### Tier 2 Status: ▶️ ACTIVE
 
-Tier 2 — Alerts + DB-backed Watchlist (MVP) may resume now that REBASELINE v1 is complete.
+Tier 2 — Alerts + DB-backed Watchlist (MVP) is now active.
+
+**Recent Tier 2 Progress (Merged PRs):**
+
+- **#159** T2-1: Add Tier 2 feature flags (watchlist DB + alerts)
+- **#161** T2-2: Add Watchlist API feature flag guard + architecture docs
+- **#162** T2-3a: Watchlist API hardening (cookie secure + cardId validation)
+- **#163** T2-4: Watchlist UI wiring with flag-based localStorage/API branching
+- **#164** T2-5: Global watchlist migration (flag ON => API/DB everywhere)
+- **#166** T2-5c: Fix /watchlist to reflect localStorage when flag OFF
+- **#167** T2-5d: localStorage watchlist migration + live sync (Flag OFF)
+- **#168** T2-5e: Fix same-tab live sync for ADD in localStorage mode
+- **#169** T2-5f: Sync WatchlistContext with storage events (Flag OFF)
+- **#170** T2-5f: Micro-hardening - enforce positive IDs in syncFromStorage
+
+Architecture doc: `docs/TIER2_ARCHITECTURE.md`
 
 ---
 

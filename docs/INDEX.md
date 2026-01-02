@@ -2,7 +2,7 @@
 
 **Purpose**: Map of all documentation files and their authoritative status.
 
-**Last Updated**: 2025-12-31
+**Last Updated**: 2026-01-01
 
 ---
 
@@ -16,6 +16,7 @@ These are the active, maintained source-of-truth files.
 | [SHIFT_LOCK.md](../SHIFT_LOCK.md)                                   | Process gates and rules (DONE gate, SHIFT gate, Evidence gate, Secret hygiene)     | All contributors      |
 | [REGRESSION_CHECKLIST.md](../REGRESSION_CHECKLIST.md)               | Manual testing checklist for each release                                          | QA / Contributors     |
 | [docs/ui/UI_CONSISTENCY_CONTRACT.md](ui/UI_CONSISTENCY_CONTRACT.md) | UI tooltip/sizing governance (LOCKED)                                              | Frontend contributors |
+| [docs/TIER2_ARCHITECTURE.md](TIER2_ARCHITECTURE.md)                 | Tier 2 architecture: Alerts + DB-backed Watchlist (MVP)                            | All contributors      |
 
 ---
 

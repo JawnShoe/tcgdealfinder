@@ -18,7 +18,7 @@ Note: Any global UI token / tooltip system rework must satisfy SHIFT_LOCK’s Gl
 
 ## Active Work Item (must match SSOT)
 
-Tier 2 — Alerts + DB-backed Watchlist (MVP)
+P2.1 — Health job status + go-live schedule gate
 
 ---
 
@@ -55,6 +55,7 @@ Tier 2 — Alerts + DB-backed Watchlist (MVP)
 - Dependencies: Schema + admin/auth boundaries; operator-safe migrations; email/notification channel decision.
 - Acceptance criteria: Watchlist persists across devices; alert creation/update/delete works; evidence packet includes DB + route smoke; no ranking/query changes unless explicitly unlocked.
 - Operator verification: Follow regression checklist; validate watchlist persists after hard refresh/sign-out; validate alert triggers on a known new listing.
+- **✅ COMPLETE**: 2026-01-02 — PRs #159–#170 (Watchlist), #175 (T2-6), #177 (T2-7), #178 (T2-8). See PROJECT_SSOT.md for full PR list.
 
 ### P2 — Ops / Scale (stability / cost / correctness)
 

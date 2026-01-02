@@ -201,6 +201,21 @@ CREATE UNIQUE INDEX IF NOT EXISTS email_subscriptions_active_idx
   ON email_subscriptions (card_id, lower(email))
   WHERE unsubscribed_at IS NULL;
 
+-- T2-8: Email sends table for per-listing idempotency
+CREATE TABLE IF NOT EXISTS email_sends (
+  id SERIAL PRIMARY KEY,
+  subscription_id INTEGER NOT NULL REFERENCES email_subscriptions(id) ON DELETE CASCADE,
+  listing_id INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'sent',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS email_sends_subscription_listing_idx
+  ON email_sends (subscription_id, listing_id);
+
+CREATE INDEX IF NOT EXISTS email_sends_created_at_idx
+  ON email_sends (created_at);
+
 ALTER TABLE listings
   ADD COLUMN IF NOT EXISTS seller_feedback_count INTEGER;
 

@@ -160,6 +160,18 @@
   - Respects `MAX_EMAILS_PER_RUN` cap (default 25)
   - Logs show redacted emails (e.g., `j***@example.com`), no raw emails or tokens
 
+## Alerts Idempotency Smoke (T2-8)
+
+- Per-listing idempotency:
+  - Same subscriber + same listing: second run shows `[SKIP] ... already sent for listing`
+  - Same subscriber + different listing: both are eligible in same run (until cap)
+  - Different subscribers + same listing: each subscriber can receive the email
+- Database constraint:
+  - `email_sends` table has UNIQUE(subscription_id, listing_id)
+  - INSERT ... ON CONFLICT DO NOTHING prevents duplicates atomically
+- No time-based cooldown suppression:
+  - Subscriber can receive multiple emails in quick succession if for different listings
+
 ## Admin Smoke Pack (run only when PR touches admin routes)
 
 - Manual smoke (requires auth):

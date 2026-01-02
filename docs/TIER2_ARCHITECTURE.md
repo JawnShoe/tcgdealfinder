@@ -150,21 +150,33 @@ If any gate fails in --send mode, the script exits with code 1 and prints the mi
 | Control       | Description                                                       |
 | ------------- | ----------------------------------------------------------------- |
 | Rate limit    | `MAX_EMAILS_PER_RUN` hard cap (default 25); logs when cap reached |
-| Idempotency   | Uses `email_subscriptions.last_emailed_at` cooldown (see below)   |
+| Idempotency   | One email per listing per subscriber (via `email_sends` table)    |
 | PII redaction | Emails logged as `u***@domain.com`; no tokens in logs             |
-| Cooldown      | 6-hour cooldown per subscription prevents email spam              |
 
-### Idempotency Mechanism
+### Idempotency Mechanism (T2-8)
 
-Idempotency is enforced via `email_subscriptions.last_emailed_at`:
+Idempotency is enforced via `email_sends` table with UNIQUE(subscription_id, listing_id):
 
-- `getActiveSubscriptionsForCard()` filters out subscriptions emailed within 6 hours
-- `markSubscriptionEmailed()` updates `last_emailed_at` after each send
-- Each subscriber gets at most one email per cooldown window
-- Different subscribers can each receive emails for the same listing (correct behavior)
+- `reserveEmailSend()` attempts `INSERT ... ON CONFLICT DO NOTHING`
+- If insert succeeds (row returned), we send the email
+- If insert fails (conflict), the subscriber already received this listing — skip
+- Different listings can each generate emails (no time-based cooldown suppression)
+- Multiple subscribers can each receive emails for the same listing
 
-**Schema**: `email_subscriptions.last_emailed_at` (TIMESTAMPTZ, nullable)
-**Query filter**: `last_emailed_at IS NULL OR last_emailed_at < NOW() - INTERVAL '6 hours'`
+**Schema**: `email_sends` table
+
+```sql
+CREATE TABLE email_sends (
+  id SERIAL PRIMARY KEY,
+  subscription_id INTEGER NOT NULL REFERENCES email_subscriptions(id) ON DELETE CASCADE,
+  listing_id INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'sent',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX email_sends_subscription_listing_idx ON email_sends (subscription_id, listing_id);
+```
+
+**Idempotency guarantee**: Each (subscription_id, listing_id) pair can only have one row.
 
 ### Dry-run vs Send Mode
 

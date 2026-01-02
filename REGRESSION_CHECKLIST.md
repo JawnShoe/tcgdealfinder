@@ -143,6 +143,23 @@
   - `/alerts/unsubscribe?token=...` works and is idempotent
   - Rate limiting applies to both endpoints (5 requests per 5 minutes per IP)
 
+## Alerts Sending Gate Smoke (T2-7)
+
+- Dry-run works with safe defaults:
+  - `npx tsx scripts/check-alerts.ts` (no --send) runs without error
+  - Output shows "[BLOCKED]" if any gate missing, or "[GATES] All send gates satisfied"
+  - Output shows "Mode: DRY-RUN" and "Emails would send: N"
+  - No actual emails sent (verify in SendGrid dashboard or logs)
+- Send refuses without explicit env/flag:
+  - With `ALERTS_ENABLED=false`: `--send` prints "ALERTS_ENABLED is not set to 'true'" and exits 1
+  - With missing `SENDGRID_API_KEY`: prints "SENDGRID_API_KEY is not configured" and exits 1
+  - With missing `SITE_BASE_URL`: prints "SITE_BASE_URL is not configured" and exits 1
+  - With all above set but `ALERTS_SENDING_ENABLED` not set: prints "ALERTS_SENDING_ENABLED is not set to 'true'" and exits 1
+- With all gates satisfied (all 4 env vars set):
+  - `--send` mode sends emails (verify in SendGrid dashboard)
+  - Respects `MAX_EMAILS_PER_RUN` cap (default 25)
+  - Logs show redacted emails (e.g., `j***@example.com`), no raw emails or tokens
+
 ## Admin Smoke Pack (run only when PR touches admin routes)
 
 - Manual smoke (requires auth):

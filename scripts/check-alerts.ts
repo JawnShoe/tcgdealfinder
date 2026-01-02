@@ -1,3 +1,26 @@
+/**
+ * check-alerts.ts — Alerts Sending Script (T2-7 Go-Live Gating)
+ *
+ * This script checks active watches against listings and optionally sends email alerts.
+ * It implements multi-layer safety gates to prevent accidental production sends.
+ *
+ * USAGE:
+ *   npx tsx scripts/check-alerts.ts              # Dry-run mode (default)
+ *   npx tsx scripts/check-alerts.ts --dry-run    # Explicit dry-run
+ *   npx tsx scripts/check-alerts.ts --send       # Actually send emails (requires all gates)
+ *
+ * REQUIRED ENV VARS (for --send mode):
+ *   ALERTS_ENABLED=true              Feature flag
+ *   SENDGRID_API_KEY=...             SendGrid API key
+ *   SITE_BASE_URL=https://...        Base URL for email links (no localhost in prod)
+ *   ALERTS_SENDING_ENABLED=true      Explicit send gate (required even with --send flag)
+ *
+ * SAFETY CONTROLS:
+ *   - MAX_EMAILS_PER_RUN: Hard cap on emails sent per run (default 25)
+ *   - Idempotency: Uses subscription last_emailed_at cooldown to prevent duplicates
+ *   - PII hygiene: Emails redacted in logs (a***@domain.com)
+ */
+
 import { query } from "../lib/db";
 import { queueAlertEmail } from "../lib/emailQueue";
 import {
@@ -8,12 +31,114 @@ import {
   getActiveSubscriptionsForCard,
   markSubscriptionEmailed,
 } from "../lib/emailSubscriptions";
+import { isAlertsEnabled } from "../lib/featureFlags";
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
 
 const SELLER_MIN_FEEDBACK = 20;
 const SELLER_MIN_POSITIVE_PERCENT = 98;
 const COOLDOWN_HOURS = 6;
 
-const ALERT_EMAIL_ENABLED = Boolean(process.env.SENDGRID_API_KEY);
+/** Maximum emails to send per run (hard cap for safety) */
+const MAX_EMAILS_PER_RUN = parseInt(process.env.MAX_EMAILS_PER_RUN || "25", 10);
+
+// ============================================================================
+// CLI ARGUMENT PARSING
+// ============================================================================
+
+type RunMode = "dry-run" | "send";
+
+function parseArgs(): RunMode {
+  const args = process.argv.slice(2);
+  if (args.includes("--send")) {
+    return "send";
+  }
+  // Default to dry-run (safe default)
+  return "dry-run";
+}
+
+// ============================================================================
+// SEND GATE VALIDATION
+// ============================================================================
+
+type GateCheckResult = {
+  ok: boolean;
+  reason?: string;
+};
+
+function validateSendGates(mode: RunMode): GateCheckResult {
+  // Gate 1: Feature flag
+  if (!isAlertsEnabled()) {
+    return { ok: false, reason: "ALERTS_ENABLED is not set to 'true'" };
+  }
+
+  // Gate 2: SendGrid API key
+  const sendgridKey = process.env.SENDGRID_API_KEY;
+  if (!sendgridKey) {
+    return { ok: false, reason: "SENDGRID_API_KEY is not configured" };
+  }
+
+  // Gate 3: Site base URL (must exist and not be localhost in production)
+  const siteBaseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || process.env.SITE_BASE_URL;
+  if (!siteBaseUrl) {
+    return { ok: false, reason: "SITE_BASE_URL is not configured" };
+  }
+
+  // Check for localhost URLs (warning in dry-run, error in send mode)
+  const isLocalhost =
+    siteBaseUrl.includes("localhost") || siteBaseUrl.includes("127.0.0.1");
+  if (isLocalhost && mode === "send") {
+    const nodeEnv = process.env.NODE_ENV;
+    // Allow localhost in development, block in production
+    if (nodeEnv === "production") {
+      return {
+        ok: false,
+        reason: `SITE_BASE_URL contains localhost (${siteBaseUrl}) which is invalid in production`,
+      };
+    }
+    // In non-production, warn but allow
+    console.warn(
+      `[WARN] SITE_BASE_URL is localhost (${siteBaseUrl}) — allowed in non-production mode`
+    );
+  }
+
+  // Gate 4: Explicit send gate (only required in send mode)
+  if (mode === "send") {
+    const sendingEnabled = process.env.ALERTS_SENDING_ENABLED;
+    if (sendingEnabled !== "true") {
+      return {
+        ok: false,
+        reason:
+          "ALERTS_SENDING_ENABLED is not set to 'true' (explicit send gate required)",
+      };
+    }
+  }
+
+  return { ok: true };
+}
+
+// ============================================================================
+// PII REDACTION
+// ============================================================================
+
+/**
+ * Redact email for logging: "user@domain.com" -> "u***@domain.com"
+ */
+function redactEmail(email: string): string {
+  const atIndex = email.indexOf("@");
+  if (atIndex <= 0) return "***@***";
+  const local = email.substring(0, atIndex);
+  const domain = email.substring(atIndex);
+  if (local.length <= 1) return "*" + domain;
+  return local[0] + "***" + domain;
+}
+
+// ============================================================================
+// DATABASE TYPES & QUERIES
+// ============================================================================
 
 type WatchRow = {
   id: number;
@@ -199,6 +324,26 @@ function getSiteBaseUrl(): string {
   );
 }
 
+// ============================================================================
+// EMAIL SENDING (with safety controls)
+// ============================================================================
+
+type EmailStats = {
+  sent: number;
+  skipped: number;
+  capped: boolean;
+};
+
+/**
+ * Idempotency is enforced via email_subscriptions.last_emailed_at:
+ * - getActiveSubscriptionsForCard() already filters out subscriptions emailed within COOLDOWN_HOURS
+ * - markSubscriptionEmailed() updates last_emailed_at after each send
+ * - This prevents the same subscriber from receiving multiple emails within the cooldown window
+ * - Different subscribers can each receive emails for the same listing (correct behavior)
+ *
+ * Schema: email_subscriptions.last_emailed_at (TIMESTAMPTZ, nullable)
+ * Query filter: last_emailed_at IS NULL OR last_emailed_at < NOW() - INTERVAL '6 hours'
+ */
 async function notifyEmailSubscribers(args: {
   cardId: number;
   cardInfo: CardInfo | null;
@@ -206,26 +351,29 @@ async function notifyEmailSubscribers(args: {
   totalPrice: number | null;
   historicPrice: number | null;
   discountPercent: number | null;
-}) {
-  if (!ALERT_EMAIL_ENABLED) {
-    return;
-  }
+  mode: RunMode;
+  emailsSentSoFar: number;
+}): Promise<EmailStats> {
+  const stats: EmailStats = { sent: 0, skipped: 0, capped: false };
 
   const discount = args.discountPercent;
   if (discount == null || !Number.isFinite(discount)) {
-    return;
+    return stats;
   }
   const absoluteDiscount = Math.abs(discount);
   if (!Number.isFinite(absoluteDiscount) || absoluteDiscount <= 0) {
-    return;
+    return stats;
   }
 
+  // getActiveSubscriptionsForCard() enforces idempotency:
+  // - Only returns subscriptions where last_emailed_at IS NULL or older than COOLDOWN_HOURS
+  // - This means each subscriber gets at most one email per cooldown window
   const subscriptions = await getActiveSubscriptionsForCard(
     args.cardId,
     absoluteDiscount
   );
   if (subscriptions.length === 0) {
-    return;
+    return stats;
   }
 
   const card = args.cardInfo ??
@@ -243,6 +391,16 @@ async function notifyEmailSubscribers(args: {
   const subject = `[TCG Deal Finder] ${card.name} is ${discountText}`;
 
   for (const sub of subscriptions) {
+    // Check rate limit
+    const totalSent = args.emailsSentSoFar + stats.sent;
+    if (totalSent >= MAX_EMAILS_PER_RUN) {
+      console.log(
+        `    [CAP] MAX_EMAILS_PER_RUN (${MAX_EMAILS_PER_RUN}) reached. Stopping.`
+      );
+      stats.capped = true;
+      break;
+    }
+
     const unsubscribeLink = `${siteUrl}/api/alerts/unsubscribe?token=${encodeURIComponent(sub.unsubscribeToken)}`;
     const text = `Good news! ${card.name} (${card.set_name}) is now ${discountText}.
 Price: ${formatCurrency(args.totalPrice)}
@@ -261,7 +419,7 @@ Unsubscribe: ${unsubscribeLink}`;
         <li>Market: ${args.listing.market}</li>
       </ul>
       <p>
-        <a href="${listingLink}" target="_blank">View listing</a> �
+        <a href="${listingLink}" target="_blank">View listing</a> ·
         <a href="${cardLink}" target="_blank">Card page</a>
       </p>
       <p style="font-size:12px;color:#475569;">
@@ -270,41 +428,102 @@ Unsubscribe: ${unsubscribeLink}`;
       </p>
     `;
 
-    await queueAlertEmail({
-      to: sub.email,
-      subject,
-      text,
-      html,
-      unsubscribeUrl: unsubscribeLink,
-    });
+    const redactedEmail = redactEmail(sub.email);
 
-    // Mark subscription as emailed to enforce cooldown period
-    await markSubscriptionEmailed(sub.id);
-    console.log(`    [EMAIL] Sent alert to ${sub.email} (sub #${sub.id})`);
+    if (args.mode === "dry-run") {
+      console.log(
+        `    [DRY-RUN] Would send to ${redactedEmail} (sub #${sub.id})`
+      );
+      stats.sent++;
+    } else {
+      // Actually send
+      await queueAlertEmail({
+        to: sub.email,
+        subject,
+        text,
+        html,
+        unsubscribeUrl: unsubscribeLink,
+      });
+
+      // Mark subscription as emailed to enforce cooldown period
+      // This is the idempotency mechanism: sets last_emailed_at = NOW()
+      await markSubscriptionEmailed(sub.id);
+      console.log(`    [SENT] Alert to ${redactedEmail} (sub #${sub.id})`);
+      stats.sent++;
+    }
   }
+
+  return stats;
 }
 
+// ============================================================================
+// MAIN
+// ============================================================================
+
 async function main() {
+  const mode = parseArgs();
+
+  console.log("=".repeat(60));
+  console.log(`TCG Deal Finder — Alerts Check`);
+  console.log(`Mode: ${mode.toUpperCase()}`);
+  console.log(`MAX_EMAILS_PER_RUN: ${MAX_EMAILS_PER_RUN}`);
+  console.log("=".repeat(60));
+
+  // Validate send gates
+  const gateResult = validateSendGates(mode);
+  if (!gateResult.ok) {
+    console.log(`\n[BLOCKED] ${gateResult.reason}`);
+    if (mode === "send") {
+      console.log("\nTo enable sending, ensure all gates are satisfied:");
+      console.log("  1. ALERTS_ENABLED=true");
+      console.log("  2. SENDGRID_API_KEY=<your-key>");
+      console.log("  3. SITE_BASE_URL=https://<your-domain>");
+      console.log("  4. ALERTS_SENDING_ENABLED=true");
+      process.exit(1);
+    }
+    // In dry-run mode, continue but note the missing gates
+    console.log("(Continuing in dry-run mode — gates would block send mode)");
+  } else {
+    console.log("[GATES] All send gates satisfied");
+  }
+
+  console.log("");
+
   const watches = await fetchActiveWatches();
   if (watches.length === 0) {
     console.log("No active alerts_watchlist entries.");
+    console.log("\n" + "=".repeat(60));
+    console.log("SUMMARY: 0 watches, 0 alerts, 0 emails");
+    console.log("=".repeat(60));
     return;
   }
 
+  console.log(`Found ${watches.length} active watch(es)\n`);
+
+  let totalAlerts = 0;
+  let totalEmailsSent = 0;
+  let totalEmailsSkipped = 0;
+  let capReached = false;
+
   for (const watch of watches) {
+    if (capReached) {
+      console.log(`[CAP] Skipping remaining watches — email cap reached`);
+      break;
+    }
+
     const thresholdRaw = watch.threshold_value;
     const threshold =
       typeof thresholdRaw === "number" ? thresholdRaw : Number(thresholdRaw);
     if (!Number.isFinite(threshold)) {
       console.warn(
-        `[ALERTS] Skipping watch #${watch.id} due to invalid threshold_value:`,
+        `[WARN] Skipping watch #${watch.id} — invalid threshold_value:`,
         watch.threshold_value
       );
       continue;
     }
 
     console.log(
-      `Checking watch #${watch.id} -> card ${watch.card_id} (${watch.condition || "any"})`
+      `Checking watch #${watch.id} → card ${watch.card_id} (${watch.condition || "any"})`
     );
 
     const listing = await fetchBestListing(watch.card_id, watch.condition);
@@ -379,16 +598,27 @@ async function main() {
           : rawDiscount
       );
       await updateWatchChecked(watch.id, true);
-      await notifyEmailSubscribers({
+
+      const emailStats = await notifyEmailSubscribers({
         cardId: watch.card_id,
         cardInfo: await fetchCardInfo(watch.card_id),
         listing,
         totalPrice,
         historicPrice,
         discountPercent: discountForSubscribers,
+        mode,
+        emailsSentSoFar: totalEmailsSent,
       });
+
+      totalEmailsSent += emailStats.sent;
+      totalEmailsSkipped += emailStats.skipped;
+      if (emailStats.capped) {
+        capReached = true;
+      }
+
+      totalAlerts++;
       console.log(
-        `  [ALERT] Watch #${watch.id} fired -> ${reason} -> listing ${listing.listing_id}`
+        `  [ALERT] Watch #${watch.id} fired → ${reason} → listing ${listing.listing_id}`
       );
     } else {
       console.log(
@@ -399,6 +629,24 @@ async function main() {
       await updateWatchChecked(watch.id, false);
     }
   }
+
+  // Summary
+  console.log("\n" + "=".repeat(60));
+  console.log("SUMMARY");
+  console.log("=".repeat(60));
+  console.log(`Mode: ${mode.toUpperCase()}`);
+  console.log(`Watches checked: ${watches.length}`);
+  console.log(`Alerts triggered: ${totalAlerts}`);
+  console.log(
+    `Emails ${mode === "dry-run" ? "would send" : "sent"}: ${totalEmailsSent}`
+  );
+  if (totalEmailsSkipped > 0) {
+    console.log(`Emails skipped (cooldown): ${totalEmailsSkipped}`);
+  }
+  if (capReached) {
+    console.log(`[CAP] Email limit (${MAX_EMAILS_PER_RUN}) was reached`);
+  }
+  console.log("=".repeat(60));
 }
 
 main().catch((err) => {

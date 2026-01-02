@@ -3,7 +3,7 @@
 **Last Updated**: 2026-01-02
 **Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080). **T2-6 merged (PR #175)**: Alerts subscribe/unsubscribe UX + APIs complete (flag-gated). **T2-7**: Alerts sending go-live gating complete (operator-safe, default-safe). **T2-8**: Alerts idempotency updated to one-email-per-listing.
 
-**ACTIVE WORK**: Tier 2 — Alerts + DB-backed Watchlist (MVP)
+**ACTIVE WORK**: P2.1 — Health job status + go-live schedule gate
 **Workstreams & Priorities**: `docs/WORKSTREAMS_MASTER.md`
 
 ---
@@ -515,9 +515,9 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 - **M09** Docs review + governance inventory/deprecation pass — PRs: #151 — doc: `docs/rebaseline/modules/M09_DOCS_REVIEW.md`
 - **M10** Dead code candidates review — PRs: #152 — doc: `docs/rebaseline/modules/M10_DEAD_CODE_CANDIDATES.md`
 
-#### Tier 2 Status: ▶️ ACTIVE
+#### Tier 2 Status: ✅ COMPLETE (MVP)
 
-Tier 2 — Alerts + DB-backed Watchlist (MVP) is now active.
+Tier 2 — Alerts + DB-backed Watchlist (MVP) is complete.
 
 **Recent Tier 2 Progress (Merged PRs):**
 

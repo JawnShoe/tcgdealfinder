@@ -1,184 +1,92 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+import { isAlertsEnabled } from "../../lib/featureFlags";
+import { AlertsSubscribeClient } from "../../components/AlertsSubscribeClient";
+import { query } from "../../lib/db";
+
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
-import DealsTable from "../../components/DealsTable";
-import type { Deal } from "../../types/deal";
-import { query } from "../../lib/db";
-import { getDisplayDiscountPercent } from "../../lib/pricing";
-import { convertCad } from "../../lib/money";
-import {
-  warnIfStoreNamesMissing,
-  normalizeSellerStoreName,
-} from "../../lib/sellerDisplay";
-
-const WINDOW_HOURS = 36;
-const ALERT_LIMIT = 150;
-
-type AlertRow = {
-  id: number;
-  created_at: string;
-  card_id: number;
-  card_name: string;
-  card_set_name: string;
-  card_number: string | null;
-  total_price_cad: string | null;
-  total_usd: string | null;
-  median_price_cad: string | null;
-  discount_percent: string | null;
-  listing_id: number | null;
-  listing_title: string | null;
-  listing_url: string | null;
-  listing_market: string | null;
-  listing_thumbnail_url: string | null;
-  listing_ends_at: string | null;
-  listing_updated_at: string | null;
-  seller_username: string | null;
-  seller_store_name: string | null;
-  seller_feedback_count: number | null;
-  seller_positive_percent: string | null;
-  sample_size: number | null;
-  // Native currency fields
-  currency: string | null;
-  price_native: string | null;
-  shipping_native: string | null;
-  total_native: string | null;
+export const metadata: Metadata = {
+  title: "Email Alerts | TCG Deal Finder",
+  description: "Get email alerts when cards hit your target discount.",
 };
 
-async function fetchRecentAlerts(): Promise<Deal[]> {
-  const res = await query<AlertRow>(
-    `
-      SELECT
-        al.id,
-        al.created_at,
-        al.card_id,
-        c.name AS card_name,
-        c.set_name AS card_set_name,
-        c.card_number,
-        al.total_price_cad,
-        l.total_usd,
-        al.median_price_cad,
-        al.discount_percent,
-        al.listing_id,
-        l.title AS listing_title,
-        l.url AS listing_url,
-        l.market AS listing_market,
-        l.thumbnail_url AS listing_thumbnail_url,
-        l.ends_at AS listing_ends_at,
-        l.updated_at AS listing_updated_at,
-        l.seller_username,
-        l.seller_store_name,
-        l.seller_feedback_count,
-        l.seller_positive_percent,
-        hp.sample_size,
-        l.currency,
-        l.price_native,
-        l.shipping_native,
-        l.total_native
-      FROM alerts_log al
-      JOIN cards c ON c.id = al.card_id
-      LEFT JOIN listings l ON l.id = al.listing_id
-      LEFT JOIN historical_prices hp ON hp.card_id = al.card_id
-      WHERE al.created_at >= NOW() - INTERVAL '${WINDOW_HOURS} hours'
-      ORDER BY al.discount_percent ASC NULLS LAST, al.created_at DESC
-      LIMIT $1;
-    `,
-    [ALERT_LIMIT]
-  );
+type CardRow = {
+  id: number;
+  name: string;
+};
 
-  const deals = res.rows.map((row) => {
-    const totalPrice =
-      row.total_price_cad != null ? Number(row.total_price_cad) : null;
-    const totalUsd = row.total_usd != null ? Number(row.total_usd) : null;
-    const historicPrice =
-      row.median_price_cad != null ? Number(row.median_price_cad) : null;
-    const historicPriceUsd =
-      historicPrice != null ? convertCad(historicPrice, "USD") : null;
-    const rawDiscount =
-      row.discount_percent != null ? Number(row.discount_percent) : null;
-    const sampleSize = row.sample_size != null ? Number(row.sample_size) : null;
-    const sellerFeedbackCount =
-      row.seller_feedback_count != null
-        ? Number(row.seller_feedback_count)
-        : null;
-    const sellerPositivePercent =
-      row.seller_positive_percent != null
-        ? Number(row.seller_positive_percent)
-        : null;
+async function getCardInfo(
+  cardId: number | null
+): Promise<{ id: number; name: string } | null> {
+  if (!cardId || cardId <= 0) return null;
 
-    const displayDiscount =
-      sampleSize !== null && sampleSize < 5
-        ? null
-        : getDisplayDiscountPercent({
-            discount_percent: rawDiscount,
-            seller_feedback_count: sellerFeedbackCount,
-            seller_positive_percent: sellerPositivePercent,
-          });
-
-    return {
-      id: row.listing_id ?? row.id,
-      title: row.listing_title ?? row.card_name,
-      url: row.listing_url ?? `/cards/${row.card_id}`,
-      priceCad: totalPrice,
-      shippingCad: null,
-      totalPriceCad: totalPrice,
-      totalUsd,
-      historicPriceCad: historicPrice,
-      historicPriceUsd,
-      discountPercent: displayDiscount,
-      sampleSize,
-      market: row.listing_market ?? "UNKNOWN",
-      endsAt: row.listing_ends_at,
-      updatedAt: row.listing_updated_at,
-      thumbnailUrl: row.listing_thumbnail_url,
-      sellerUsername: row.seller_username,
-      sellerStoreName: normalizeSellerStoreName(row.seller_store_name),
-      sellerFeedbackCount,
-      sellerPositivePercent,
-      card: {
-        id: row.card_id,
-        name: row.card_name,
-        setName: row.card_set_name,
-        cardNumber: row.card_number,
-        conditionBucket: null,
-      },
-      condition: null,
-      setName: row.card_set_name,
-      cardName: row.card_name,
-      cardId: row.card_id,
-      // Native currency fields
-      currency: row.currency ?? null,
-      priceNative: row.price_native != null ? Number(row.price_native) : null,
-      shippingNative:
-        row.shipping_native != null ? Number(row.shipping_native) : null,
-      totalNative: row.total_native != null ? Number(row.total_native) : null,
-    } satisfies Deal;
-  });
-  warnIfStoreNamesMissing(deals, "alerts");
-  return deals;
+  try {
+    const res = await query<CardRow>(
+      `SELECT id, name FROM cards WHERE id = $1 LIMIT 1`,
+      [cardId]
+    );
+    if (res.rows.length === 0) return null;
+    return { id: res.rows[0].id, name: res.rows[0].name };
+  } catch {
+    return null;
+  }
 }
 
-export default async function AlertsPage() {
-  const deals = await fetchRecentAlerts();
-  return (
-    <main className="page-shell space-y-6 py-6">
-      <div className="panel space-y-3">
-        <h1 className="text-3xl font-bold text-slate-900">Recent Alerts</h1>
-        <p className="text-base text-slate-600">
-          Latest under-historic deals detected in the last {WINDOW_HOURS} hours.
-          Alerts are snapshots; listings may change or end.
-        </p>
-      </div>
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
-      {deals.length === 0 ? (
-        <div className="panel space-y-3 text-center text-sm text-slate-600">
-          <p>No alerts found in the last {WINDOW_HOURS} hours.</p>
+export default async function AlertsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const cardIdParam = params.cardId;
+  const cardIdNum =
+    typeof cardIdParam === "string" ? Number(cardIdParam) : null;
+  const validCardId =
+    cardIdNum && Number.isFinite(cardIdNum) && cardIdNum > 0 ? cardIdNum : null;
+
+  // Feature flag check
+  const alertsEnabled = isAlertsEnabled();
+
+  if (!alertsEnabled) {
+    return (
+      <main className="page-shell space-y-6 py-6">
+        <div className="panel space-y-4 text-center">
+          <h1 className="text-2xl font-bold text-slate-900">
+            Alerts Not Enabled
+          </h1>
+          <p className="text-sm text-slate-600">
+            Email alerts are not enabled yet. Check back soon!
+          </p>
           <Link href="/" className="inline-link">
             Browse current deals
           </Link>
         </div>
-      ) : (
-        <DealsTable deals={deals} page={1} totalPages={1} />
-      )}
+      </main>
+    );
+  }
+
+  // Fetch card info if cardId provided
+  const cardInfo = await getCardInfo(validCardId);
+
+  return (
+    <main className="page-shell space-y-6 py-6">
+      <div className="mx-auto max-w-lg">
+        <div className="space-y-2 pb-4">
+          <h1 className="text-2xl font-bold text-slate-900">
+            Subscribe to Alerts
+          </h1>
+          <p className="text-sm text-slate-600">
+            Get notified by email when a card hits your target discount.
+          </p>
+        </div>
+
+        <AlertsSubscribeClient
+          initialCardId={cardInfo?.id ?? validCardId}
+          initialCardName={cardInfo?.name ?? null}
+        />
+      </div>
     </main>
   );
 }

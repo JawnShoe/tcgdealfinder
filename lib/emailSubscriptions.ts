@@ -177,8 +177,9 @@ export async function markSubscriptionEmailed(
 /**
  * T2-8: Reserve an email send for idempotency.
  * Uses INSERT ... ON CONFLICT DO NOTHING to atomically check & reserve.
+ * Inserts with status='reserved'. Call finalizeEmailSend() after successful send.
  *
- * @returns true if reservation succeeded (we should send), false if already sent
+ * @returns true if reservation succeeded (we should send), false if already reserved/sent
  */
 export async function reserveEmailSend(
   subscriptionId: number,
@@ -187,7 +188,7 @@ export async function reserveEmailSend(
   const res = await query<{ id: number }>(
     `
       INSERT INTO email_sends (subscription_id, listing_id, status)
-      VALUES ($1, $2, 'sent')
+      VALUES ($1, $2, 'reserved')
       ON CONFLICT (subscription_id, listing_id) DO NOTHING
       RETURNING id;
     `,
@@ -199,19 +200,47 @@ export async function reserveEmailSend(
 }
 
 /**
- * T2-8: Mark an email send as failed (for cleanup/retry logic if needed).
- * Currently not used but available for future reliability improvements.
+ * T2-8: Finalize an email send after successful delivery.
+ * Updates status to 'sent' and sets sent_at timestamp.
  */
-export async function markEmailSendFailed(
+export async function finalizeEmailSend(
   subscriptionId: number,
   listingId: number
 ): Promise<void> {
   await query(
     `
       UPDATE email_sends
-      SET status = 'failed'
+      SET status = 'sent', sent_at = NOW()
       WHERE subscription_id = $1 AND listing_id = $2;
     `,
     [subscriptionId, listingId]
   );
+}
+
+/**
+ * T2-8: Release an email reservation on send failure.
+ * Deletes the row so the next run can retry sending.
+ */
+export async function releaseEmailReservation(
+  subscriptionId: number,
+  listingId: number
+): Promise<void> {
+  await query(
+    `
+      DELETE FROM email_sends
+      WHERE subscription_id = $1 AND listing_id = $2;
+    `,
+    [subscriptionId, listingId]
+  );
+}
+
+/**
+ * T2-8: Check if email_sends table exists.
+ * Returns true if the table is present, false otherwise.
+ */
+export async function emailSendsTableExists(): Promise<boolean> {
+  const res = await query<{ exists: boolean }>(
+    `SELECT to_regclass('public.email_sends') IS NOT NULL AS exists;`
+  );
+  return res.rows[0]?.exists ?? false;
 }

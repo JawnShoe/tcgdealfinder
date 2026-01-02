@@ -31,6 +31,9 @@ import {
   getActiveSubscriptionsForCard,
   markSubscriptionEmailed,
   reserveEmailSend,
+  finalizeEmailSend,
+  releaseEmailReservation,
+  emailSendsTableExists,
 } from "../lib/emailSubscriptions";
 import { isAlertsEnabled } from "../lib/featureFlags";
 
@@ -450,19 +453,33 @@ Unsubscribe: ${unsubscribeLink}`;
       );
       stats.sent++;
     } else {
-      // Actually send
-      await queueAlertEmail({
-        to: sub.email,
-        subject,
-        text,
-        html,
-        unsubscribeUrl: unsubscribeLink,
-      });
+      // T2-8: Reserve -> Send -> Finalize/Release pattern
+      // Reservation already done above; now attempt send
+      try {
+        await queueAlertEmail({
+          to: sub.email,
+          subject,
+          text,
+          html,
+          unsubscribeUrl: unsubscribeLink,
+        });
 
-      // Update last_emailed_at for telemetry (idempotency enforced by reserveEmailSend above)
-      await markSubscriptionEmailed(sub.id);
-      console.log(`    [SENT] Alert to ${redactedEmail} (sub #${sub.id})`);
-      stats.sent++;
+        // Success: finalize the reservation (status='sent', sent_at=NOW())
+        await finalizeEmailSend(sub.id, args.listing.listing_id);
+
+        // Update last_emailed_at for telemetry
+        await markSubscriptionEmailed(sub.id);
+        console.log(`    [SENT] Alert to ${redactedEmail} (sub #${sub.id})`);
+        stats.sent++;
+      } catch (err) {
+        // Failure: release the reservation so next run can retry
+        await releaseEmailReservation(sub.id, args.listing.listing_id);
+        const errMsg = err instanceof Error ? err.message : "Unknown error";
+        console.error(
+          `    [FAIL] Email to ${redactedEmail} (sub #${sub.id}) failed: ${errMsg}`
+        );
+        // Don't increment sent; this will be retried on next run
+      }
     }
   }
 
@@ -498,6 +515,22 @@ async function main() {
     console.log("(Continuing in dry-run mode — gates would block send mode)");
   } else {
     console.log("[GATES] All send gates satisfied");
+  }
+
+  // T2-8: Check email_sends table exists (required for idempotency)
+  const tableExists = await emailSendsTableExists();
+  if (!tableExists) {
+    console.log(
+      "\n[ERROR] email_sends table not found. Run migration 014_add_email_sends.sql first."
+    );
+    if (mode === "send") {
+      console.log(
+        "Exiting with error — cannot send without idempotency table."
+      );
+      process.exit(1);
+    }
+    // In dry-run mode, warn but continue
+    console.log("[WARN] Continuing dry-run without idempotency table...");
   }
 
   console.log("");

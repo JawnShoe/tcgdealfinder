@@ -14,6 +14,8 @@ import {
   removeFromWatchlist as removeFromLocalStorage,
   isOnWatchlist as isOnLocalStorage,
   getWatchlistIds,
+  WATCHLIST_STORAGE_KEY,
+  WATCHLIST_CHANGE_EVENT,
 } from "./watchlistStorage";
 
 type WatchlistContextValue = {
@@ -165,6 +167,42 @@ export function WatchlistProvider({
       cancelled = true;
     };
   }, [useApi]);
+
+  // Subscribe to localStorage changes when in localStorage mode (Flag OFF)
+  useEffect(() => {
+    // Only subscribe when using localStorage mode
+    if (effectiveUseApi || loading) {
+      return;
+    }
+
+    // Handler to sync context with localStorage
+    const syncFromStorage = () => {
+      const ids = getWatchlistIds()
+        .map((id) => Number(id))
+        .filter((n) => !isNaN(n));
+      setWatchedIds(new Set(ids));
+    };
+
+    // Same-tab updates (custom event from watchlistStorage)
+    const handleCustomEvent = () => {
+      syncFromStorage();
+    };
+
+    // Cross-tab updates (storage event)
+    const handleStorageEvent = (event: StorageEvent) => {
+      if (event.key === WATCHLIST_STORAGE_KEY || event.key === null) {
+        syncFromStorage();
+      }
+    };
+
+    window.addEventListener(WATCHLIST_CHANGE_EVENT, handleCustomEvent);
+    window.addEventListener("storage", handleStorageEvent);
+
+    return () => {
+      window.removeEventListener(WATCHLIST_CHANGE_EVENT, handleCustomEvent);
+      window.removeEventListener("storage", handleStorageEvent);
+    };
+  }, [effectiveUseApi, loading]);
 
   const isWatched = useCallback(
     (cardId: number): boolean => {

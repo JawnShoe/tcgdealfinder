@@ -1,8 +1,44 @@
 import { NextResponse } from "next/server";
 
 import { unsubscribeByToken } from "../../../../lib/emailSubscriptions";
+import { isAlertsEnabled } from "../../../../lib/featureFlags";
+import {
+  checkRateLimit,
+  getClientIp,
+  RATE_LIMIT_CONFIG,
+} from "../../../../lib/rateLimit";
+
+const ROUTE_ID = "/api/alerts/unsubscribe";
 
 export async function GET(request: Request) {
+  // Feature flag gate: if alerts are disabled, return 501 and do NOT write to DB
+  if (!isAlertsEnabled()) {
+    return new NextResponse(renderHtml("Alerts are not enabled."), {
+      status: 501,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+  }
+
+  // Rate limiting: enforce before any processing
+  const clientIp = getClientIp(request);
+  const rateCheck = await checkRateLimit(ROUTE_ID, clientIp);
+
+  if (!rateCheck.allowed) {
+    const response = new NextResponse(
+      renderHtml("Too many requests. Please try again later."),
+      { status: 429, headers: { "Content-Type": "text/html; charset=utf-8" } }
+    );
+    if (rateCheck.retryAfterSeconds) {
+      response.headers.set("Retry-After", String(rateCheck.retryAfterSeconds));
+    }
+    response.headers.set(
+      "X-RateLimit-Limit",
+      String(RATE_LIMIT_CONFIG.maxRequests)
+    );
+    response.headers.set("X-RateLimit-Remaining", "0");
+    return response;
+  }
+
   const { searchParams } = new URL(request.url);
   const token = searchParams.get("token");
 
@@ -18,12 +54,12 @@ export async function GET(request: Request) {
     renderHtml(
       success
         ? "You have been unsubscribed from alerts for this card."
-        : "This unsubscribe link is invalid or has already been used.",
+        : "This unsubscribe link is invalid or has already been used."
     ),
     {
       status: success ? 200 : 400,
       headers: { "Content-Type": "text/html; charset=utf-8" },
-    },
+    }
   );
 }
 

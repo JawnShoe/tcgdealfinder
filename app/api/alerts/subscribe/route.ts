@@ -5,6 +5,7 @@ import {
   MIN_ALERT_THRESHOLD,
 } from "../../../../lib/alertsConfig";
 import { createOrUpdateSubscription } from "../../../../lib/emailSubscriptions";
+import { isAlertsEnabled } from "../../../../lib/featureFlags";
 import {
   checkRateLimit,
   getClientIp,
@@ -14,6 +15,14 @@ import {
 const ROUTE_ID = "/api/alerts/subscribe";
 
 export async function POST(request: Request) {
+  // Feature flag gate: if alerts are disabled, return 501 and do NOT write to DB
+  if (!isAlertsEnabled()) {
+    return NextResponse.json(
+      { ok: false, error: "Alerts are not enabled." },
+      { status: 501 }
+    );
+  }
+
   try {
     // Rate limiting: enforce before any processing
     const clientIp = getClientIp(request);

@@ -128,6 +128,21 @@
   - `/alerts`
   - `/search`
 
+## Alerts (Tier 2)
+
+- Flag OFF (`ALERTS_ENABLED=false` or unset):
+  - `/alerts` shows disabled state ("Alerts Not Enabled")
+  - `POST /api/alerts/subscribe` returns 501 and does not write to DB
+  - `GET /api/alerts/unsubscribe?token=...` returns 501 and does not write to DB
+  - `/alerts/unsubscribe?token=...` shows disabled state
+- Flag ON (`ALERTS_ENABLED=true`):
+  - `/alerts` shows subscribe form
+  - `/alerts?cardId=123` pre-fills card ID and shows card name
+  - Subscribe creates active subscription row (verify in DB)
+  - Duplicate subscribe is idempotent (no 500s, updates existing)
+  - `/alerts/unsubscribe?token=...` works and is idempotent
+  - Rate limiting applies to both endpoints (5 requests per 5 minutes per IP)
+
 ## Admin Smoke Pack (run only when PR touches admin routes)
 
 - Manual smoke (requires auth):

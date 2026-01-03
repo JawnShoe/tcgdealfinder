@@ -550,6 +550,12 @@ Architecture doc: `docs/TIER2_ARCHITECTURE.md`
 
 - Add rate limiting to `/api/watchlist` (currently none; acceptable for anonymous-user MVP)
 
+#### Recent progress:
+
+- PR #190 — Executable `/merge-decision-packet` Claude command (replaces manual packet assembly)
+- PR #191 — Repo-wide cleanup inventory added (`docs/CLEANUP_INVENTORY.md`)
+- PR #192 — Low-risk cleanup executed (2 deletions + 2 archive moves per inventory)
+
 ---
 
 ## COMPLETED (2025-12-22)

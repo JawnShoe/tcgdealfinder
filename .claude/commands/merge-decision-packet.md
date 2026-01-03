@@ -35,7 +35,7 @@ Execute and include full outputs (no ellipses, no truncated SHAs):
 
 ## 2. PR Link
 
-https://github.com/JawnShoe/tcgdealfinder/pull/$2
+Paste full PR URL here: `https://github.com/<owner>/<repo>/pull/$2`
 
 ---
 

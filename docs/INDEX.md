@@ -128,18 +128,16 @@ Baseline inventory and review plan for REBASELINE v1.
 
 ---
 
-## Historical Archive
+## Historical Archive (Non-Executable)
 
-Completed implementation records and audits are moved to `docs/archive/` for reference.
+Completed implementation records and audits are preserved in `docs/archive/` for reference only. These documents are **not actionable** — they represent past work, superseded plans, or closed audits.
 
-### Archive Structure
+| Folder                                  | Contents                                                 |
+| --------------------------------------- | -------------------------------------------------------- |
+| [docs/archive/](archive/)               | Historical implementation records (13 files)             |
+| [docs/archive/audits/](archive/audits/) | Closed audit artifacts (2 superseded + 2025 full system) |
 
-| Folder                                  | Contents                                     |
-| --------------------------------------- | -------------------------------------------- |
-| [docs/archive/](archive/)               | Historical implementation records (14 files) |
-| [docs/archive/audits/](archive/audits/) | Audit artifacts (archived after closeout)    |
-
-**Recent Audit**: The Full System Audit (December 2025) has been completed and archived to `docs/archive/audits/2025-full-system/`. See the [audit README](archive/audits/2025-full-system/README.md) for details.
+See the [archive README](archive/README.md) for navigation.
 
 ---
 

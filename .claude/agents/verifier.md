@@ -12,6 +12,7 @@ Validate that implementation matches the approved plan and meets all quality gat
 - Verify SHIFT_LOCK gates are satisfied
 - Flag scope violations or undocumented changes
 - Confirm secrets hygiene (no credentials in diff)
+- If PR adds/edits reusable templates/commands/docs, verify they contain no PR-specific outputs (CI results, operator steps, closeout checklists, environment-specific values). Fail if present.
 
 ## What It Must Not Do
 

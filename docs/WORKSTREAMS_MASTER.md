@@ -18,7 +18,7 @@ Note: Any global UI token / tooltip system rework must satisfy SHIFT_LOCK’s Gl
 
 ## Active Work Item (must match SSOT)
 
-P2.2 — Index Audit + Targeted Index Adds (pending next workstream start)
+P2.3 — N+1 Query Fixes (high-impact paths)
 
 ---
 
@@ -68,6 +68,8 @@ P2.2 — Index Audit + Targeted Index Adds (pending next workstream start)
 - **✅ COMPLETE**: 2026-01-02 — PR #181. `/api/health` now exposes job status signals (OK/STALE/UNKNOWN) with timestamps and thresholds. Go-live gate documented in `docs/ENV_RUNBOOK.md`.
 
 #### P2.2 Index Audit + Targeted Index Adds
+
+- **✅ COMPLETE**: 2026-01-02 — PR #182, #183. No index adds needed at current scale (listings=1,264, cards=27, historical_prices=5). See `docs/db/INDEX_AUDIT_P2.2.md`. Re-run when listings > 50k or /top-deals p95 > 500ms.
 
 - Objective: Reduce query latency and DB load with targeted indexes for the highest-traffic routes.
 - Dependencies: Query plan evidence (EXPLAIN); production query patterns; Neon constraints.

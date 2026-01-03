@@ -558,6 +558,8 @@ Architecture doc: `docs/TIER2_ARCHITECTURE.md`
 - PR #193 — SSOT rollup with recent progress
 - PR #194 — Verifier governance gate (blocks archiving gated docs without supersession proof)
 - PR #195 — Cleanup inventory status rollup (LOW-risk done, MED-risk docs explicitly KEEP)
+- PR #196 — Docs rollup after PR #195
+- PR #197 — Claude framework background verification session completed; CLAUDE.md updated with locked checklist + closure entry
 
 ---
 

@@ -53,3 +53,30 @@ Every coder PR response MUST include the **FULL Merge Decision Packet**:
 3. Forgetting to run `git fetch origin` before making merge decisions
 4. Providing partial Evidence Packets (missing diffstat, CI status, or Closeout)
 5. Asking Operator to run local commands (Operator steps are PR UI only)
+
+## Background Verification Sessions (LOCKED)
+
+**Purpose**: Periodic audit to confirm the Claude framework (entrypoint, process gates, evidence packets, operator handoff) is working as documented and identify any drift.
+
+**Checklist** (max 10 items):
+
+1. Sync to `origin/main` and read CLAUDE.md, SHIFT_LOCK.md, PROJECT_SSOT.md, REGRESSION_CHECKLIST.md
+2. Confirm CLAUDE.md states single source of truth and conflict resolution rules
+3. Confirm SHIFT_LOCK.md documents all active gates (Repo Sync Proof, Merge Gates, Closeout Checklist, etc.)
+4. Spot-check 2–3 recent merged PRs for Evidence Packet compliance (Repo Sync Proof, diffstat, files list, CI status, operator steps, closeout)
+5. Confirm Operator steps are PR-UI-only (no local commands required)
+6. Note any ambiguity or drift found (e.g., inventory docs misread as action queues)
+7. Record gaps found (or "None")
+8. Record follow-ups needed (or "None")
+9. Update this section with session date and result
+10. Add a single "Recent progress" bullet to PROJECT_SSOT.md noting the session
+
+**Most recent session**:
+
+| Field      | Value                                                                                                                                                                                                 |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Date       | 2026-01-03                                                                                                                                                                                            |
+| Scope      | Entrypoint + authority chain, Evidence Packet compliance, STOP rules + gates, session closure                                                                                                         |
+| Result     | **PASS**                                                                                                                                                                                              |
+| Gaps       | PR bodies in GitHub contain Evidence Packets but abbreviated (full packets in coder chat); PR #194/#195/#196 bodies lack explicit Repo Sync Proof section (packets were in conversation, not PR body) |
+| Follow-ups | Consider adding guidance that PR body should include Repo Sync Proof excerpt or link to conversation                                                                                                  |

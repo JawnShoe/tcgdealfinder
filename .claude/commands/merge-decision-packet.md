@@ -1,69 +1,69 @@
-# Merge Decision Packet Generator
+---
+allowed-tools: Bash(git fetch:*), Bash(git checkout:*), Bash(git pull:*), Bash(git rev-parse:*), Bash(git remote:*), Bash(git branch:*), Bash(git status:*), Bash(git diff:*), Bash(gh pr checks:*)
+argument-hint: <branch-name> <pr-number>
+description: Generate a complete Merge Decision Packet with Repo Sync Proof
+---
 
 Generate a **complete Merge Decision Packet** as required by CLAUDE.md.
+
+Use branch name: $1
+Use PR number: $2
 
 ---
 
 ## 1. Repo Sync Proof (LOCKED)
 
-Run these commands and include **full outputs** (no ellipses, no truncated SHAs):
+Execute and include full outputs (no ellipses, no truncated SHAs):
 
-```bash
-git fetch origin
-git checkout main
-git pull --ff-only
-git rev-parse --show-toplevel
-git remote -v
-git checkout <your-feature-branch>
-git branch -vv
-git status -sb
-git rev-parse HEAD
-git rev-parse origin/main
-```
+**Sync main:**
+!`git fetch origin`
+!`git checkout main`
+!`git pull --ff-only`
+
+**Repo info:**
+!`git rev-parse --show-toplevel`
+!`git remote -v`
+
+**Switch to feature branch and verify:**
+!`git checkout $1`
+!`git branch -vv | grep -E "^\*|main "`
+!`git status -sb`
+!`git rev-parse HEAD`
+!`git rev-parse origin/main`
 
 ---
 
 ## 2. PR Link
 
-Paste the full GitHub PR URL.
+Paste full PR URL here: `https://github.com/<owner>/<repo>/pull/$2`
 
 ---
 
 ## 3. Diffstat
 
-```bash
-git diff --stat origin/main...HEAD
-```
+!`git diff --stat origin/main...HEAD`
 
 ---
 
 ## 4. Files Changed List
 
-Run and include full output, with a brief explanation of why each file changed:
+!`git diff --name-only origin/main...HEAD`
 
-```bash
-git diff --name-only origin/main...HEAD
-```
+Provide a brief explanation of why each file changed.
 
 ---
 
 ## 5. Key Diff Snippet(s)
 
-Include the critical diff sections. For small files, include the entire file:
+!`git diff origin/main...HEAD`
 
-```bash
-git diff origin/main...HEAD -- <file>
-```
+For large diffs, summarize and include critical sections only.
 
 ---
 
 ## 6. Checks/CI Status
 
-```bash
-gh pr checks <pr-number>
-```
-
-Paste actual GitHub checks status here.
+!`gh pr checks $2`
 
 ---
 

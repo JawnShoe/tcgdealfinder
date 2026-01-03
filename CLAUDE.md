@@ -30,6 +30,8 @@ Every coder PR response MUST include the **FULL Merge Decision Packet**:
    - `git rev-parse HEAD`
    - `git rev-parse origin/main`
 
+   Use full outputs (no ellipses). Do not truncate SHAs.
+
 2. **PR link**
 
 3. **diffstat**

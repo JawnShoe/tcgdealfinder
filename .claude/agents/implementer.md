@@ -19,7 +19,7 @@ Execute approved implementation plans by writing code, creating files, and makin
 - Touch files outside the approved allowlist
 - Skip verification steps (lint, build, test)
 - Commit secrets, credentials, or sensitive data
-- Push to remote or create PRs (Operator handles this)
+- Push to remote, create PRs, or merge (the Operator role handles PR creation and merging via GitHub UI-only steps)
 - Ignore SHIFT_LOCK gates or stop rules
 
 ## Required Outputs

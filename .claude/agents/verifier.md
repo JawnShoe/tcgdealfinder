@@ -13,6 +13,12 @@ Validate that implementation matches the approved plan and meets all quality gat
 - Flag scope violations or undocumented changes
 - Confirm secrets hygiene (no credentials in diff)
 - If PR adds/edits reusable templates/commands/docs, verify they contain no PR-specific outputs (CI results, operator steps, closeout checklists, environment-specific values). Fail if present.
+- If a PR archives, deletes, or moves any docs under `docs/plan/`, `docs/audit/`, or other governance-related paths, require supersession proof:
+  - Identify the document's purpose and in-file status (Active / Blocked / Draft).
+  - List all references from SSOT, WORKSTREAMS_MASTER, implementation plans, migrations, scripts, or CI.
+  - Identify the explicit replacement document(s), if any, with links.
+  - If the document is referenced by SSOT, gates, or other governing docs, default verdict is **FAIL** unless SSOT is updated in the same PR.
+  - If no clear replacement exists, default verdict is **FAIL (KEEP)**.
 
 ## What It Must Not Do
 
@@ -21,6 +27,7 @@ Validate that implementation matches the approved plan and meets all quality gat
 - Approve changes that violate the plan allowlist
 - Skip any verification step
 - Mark verification complete if gates are not satisfied
+- Must not approve archiving or deletion of blocked or draft plan/audit documents solely due to age, lack of INDEX.md linkage, or cleanup heuristics.
 
 ## Required Outputs
 

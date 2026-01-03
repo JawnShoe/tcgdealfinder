@@ -1,9 +1,9 @@
 # PROJECT SSOT — TCG Deal Finder
 
 **Last Updated**: 2026-01-02
-**Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080). **T2-6 merged (PR #175)**: Alerts subscribe/unsubscribe UX + APIs complete (flag-gated). **T2-7**: Alerts sending go-live gating complete (operator-safe, default-safe). **T2-8**: Alerts idempotency updated to one-email-per-listing. **P2.1**: Health job status + go-live schedule gate complete — `/api/health` exposes job freshness with OK/STALE signals; go-live gate documented in `docs/ENV_RUNBOOK.md`.
+**Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080). **T2-6 merged (PR #175)**: Alerts subscribe/unsubscribe UX + APIs complete (flag-gated). **T2-7**: Alerts sending go-live gating complete (operator-safe, default-safe). **T2-8**: Alerts idempotency updated to one-email-per-listing. **P2.1**: Health job status + go-live schedule gate complete — `/api/health` exposes job freshness with OK/STALE signals; go-live gate documented in `docs/ENV_RUNBOOK.md`. **P2.2**: Index audit complete — no index changes needed at current scale (see `docs/db/INDEX_AUDIT_P2.2.md`). Re-run P2.2 when listings > 50k or /top-deals p95 > 500ms.
 
-**ACTIVE WORK**: P2.2 — Index Audit + Targeted Index Adds (pending next workstream start)
+**ACTIVE WORK**: P2.3 — N+1 Query Fixes (high-impact paths)
 **Workstreams & Priorities**: `docs/WORKSTREAMS_MASTER.md`
 
 ---

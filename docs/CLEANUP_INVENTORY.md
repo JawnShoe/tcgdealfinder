@@ -2,42 +2,42 @@
 
 **Created**: 2026-01-02
 **PR**: #191 (REBASELINE)
-**Status**: INVENTORY ONLY (no deletions, moves, or renames)
+**Last Updated**: 2026-01-03 (status rollup after PRs #191–#194)
+**Status**: CURRENT — LOW-risk cleanup complete; MED-risk docs explicitly KEEP (gated)
 
 ---
 
 ## A) Summary
 
-- **Main clutter source**: `docs/audit/` folder contains 3 audit docs that overlap with archived 2025 full-system audit and current rebaseline work
-- **Scripts cruft**: `scripts/one-off/` (37 files) and scattered `tmp-*`/`debug-*`/`check-*` scripts in main scripts folder are historical dev artifacts
-- **Stray temp file**: `scripts/tmp-top-home.ts` is an orphaned debug script with no references
-- **Archive placeholders**: `docs/archive/baseline-README.md` references non-existent screenshot folder and obsolete workflow
-- **Docs consolidation opportunity**: Several advisory/plan docs reference blocked work (Option A, sold data) that may remain indefinitely blocked
+- **LOW-risk cleanup complete (PR #192)**: Deleted orphaned temp script and obsolete placeholder; moved superseded audit docs to archive
+- **MED-risk docs explicitly KEEP**: Option A plan/audit docs are gated (P3.1/P3.2) and must not be archived until gates resolve
+- **Scripts cruft**: `scripts/one-off/` (37 files) and scattered `tmp-*`/`debug-*`/`check-*` scripts remain deferred (needs dedicated verification)
 - **Claude tooling**: Well-organized, no cleanup needed - 4 agents + 1 command + settings example
+- **Verifier gate added (PR #194)**: Governance doc archiving now requires supersession proof and fails by default if referenced
 
 ---
 
 ## B) Inventory Table
 
-| Path                                                    | Type    | Status  | Why                                                              | Evidence                                                       | Risk | Proposed Action                                          |
-| ------------------------------------------------------- | ------- | ------- | ---------------------------------------------------------------- | -------------------------------------------------------------- | ---- | -------------------------------------------------------- |
-| `docs/audit/EXPERT_AUDIT_2025-12-25.md`                 | doc     | ARCHIVE | Superseded by 2025 full-system audit closeout and rebaseline M09 | Referenced only by archived audit docs; not in INDEX.md        | LOW  | Move to `docs/archive/audits/`                           |
-| `docs/audit/DB_ARCHITECTURE_EVIDENCE.md`                | doc     | ARCHIVE | Historical evidence packet, work complete                        | Not referenced by INDEX.md; superseded by P2.2 and M07         | LOW  | Move to `docs/archive/audits/`                           |
-| `docs/audit/PRODUCT_TRUTH_PHILOSOPHY_AUDIT_OPTION_A.md` | doc     | ARCHIVE | Blocked pending sold data approval (P3.1); advisory only         | Referenced by SSOT as blocked; not active work                 | MED  | Move to `docs/archive/plan/` or keep until P3.1 resolves |
-| `docs/plan/OPTION_A_IMPLEMENTATION_PLAN.md`             | doc     | ARCHIVE | Blocked pending sold data approval (P3.1)                        | Referenced by SSOT as blocked; WORKSTREAMS_MASTER P3.2 gate    | MED  | Move to `docs/archive/plan/` or keep until P3.1 resolves |
-| `docs/plan/SOLD_DATA_SOURCE_OPTIONS.md`                 | doc     | ARCHIVE | Blocked pending eBay AGC (P3.1)                                  | Referenced by PROJECT_SSOT.md and M09_DOCS_REVIEW.md           | MED  | Move to `docs/archive/plan/` or keep until P3.1 resolves |
-| `docs/archive/baseline-README.md`                       | doc     | DELETE  | References non-existent screenshot folder; obsolete workflow     | ui-baseline.md superseded by REGRESSION_CHECKLIST.md           | LOW  | Delete (no active use)                                   |
-| `scripts/tmp-top-home.ts`                               | script  | DELETE  | Orphaned temp debug script                                       | Not referenced anywhere; `tmp-` prefix indicates temporary     | LOW  | Delete                                                   |
-| `scripts/one-off/` (37 files)                           | scripts | KEEP    | Historical dev scripts with documented purpose                   | README.md explains archive status; may be useful for reference | LOW  | Keep archived as-is                                      |
-| `scripts/migrations/archive/`                           | sql     | KEEP    | Historical migration duplicates with README                      | README.md explains archive status                              | LOW  | Keep archived as-is                                      |
-| `docs/archive/` (14 files)                              | docs    | KEEP    | Properly archived historical docs                                | Has README.md explaining archive contents                      | LOW  | Keep archived as-is                                      |
-| `docs/archive/audits/2025-full-system/` (14 files)      | docs    | KEEP    | Closed audit with README                                         | AUDIT_CLOSEOUT.md confirms closed status                       | LOW  | Keep archived as-is                                      |
-| `docs/rebaseline/` (13 files)                           | docs    | KEEP    | Active rebaseline work (M01-M10)                                 | Referenced by INDEX.md; modules active                         | HIGH | Do not touch - active work                               |
-| `docs/ops/EBAY_AGC_SUBMISSION_PACKET.md`                | doc     | KEEP    | Pending external submission (P3.1 blocker)                       | Referenced by SSOT; awaiting operator action                   | HIGH | Do not touch - awaiting external approval                |
-| `docs/db/INDEX_AUDIT_P2.2.md`                           | doc     | KEEP    | Recent P2.2 work product                                         | Part of completed P2.2 workstream                              | LOW  | Keep as reference                                        |
-| `.claude/agents/` (4 files)                             | config  | KEEP    | Active Claude agent definitions                                  | Well-documented, actively used                                 | LOW  | Keep as-is                                               |
-| `.claude/commands/merge-decision-packet.md`             | config  | KEEP    | Active Claude command                                            | Referenced by CLAUDE.md workflow                               | LOW  | Keep as-is                                               |
-| `.claude/settings.example.json`                         | config  | KEEP    | Example settings template                                        | Useful for onboarding                                          | LOW  | Keep as-is                                               |
+| Path                                                    | Type    | Status   | Why                                                        | Evidence                                                       | Risk | Proposed Action                           |
+| ------------------------------------------------------- | ------- | -------- | ---------------------------------------------------------- | -------------------------------------------------------------- | ---- | ----------------------------------------- |
+| `docs/audit/EXPERT_AUDIT_2025-12-25.md`                 | doc     | **DONE** | MOVED to `docs/archive/audits/` (PR #192)                  | R100 rename; refs only in archive/historical docs              | LOW  | ~~Move to `docs/archive/audits/`~~ DONE   |
+| `docs/audit/DB_ARCHITECTURE_EVIDENCE.md`                | doc     | **DONE** | MOVED to `docs/archive/audits/` (PR #192)                  | R100 rename; refs only in archive/historical docs              | LOW  | ~~Move to `docs/archive/audits/`~~ DONE   |
+| `docs/audit/PRODUCT_TRUTH_PHILOSOPHY_AUDIT_OPTION_A.md` | doc     | **KEEP** | Governing invariants for Option A; referenced by IMPL_PLAN | OPTION_A_IMPLEMENTATION_PLAN.md:15 lists as governing doc      | MED  | **DO NOT ARCHIVE** — gated by P3.1/P3.2   |
+| `docs/plan/OPTION_A_IMPLEMENTATION_PLAN.md`             | doc     | **KEEP** | Canonical plan; Phase 0 executed; Phases 1–4 gated         | WORKSTREAMS_MASTER P3.2 gate; M09 review marks "Blocked"       | MED  | **DO NOT ARCHIVE** — gated by P3.1/P3.2   |
+| `docs/plan/SOLD_DATA_SOURCE_OPTIONS.md`                 | doc     | **KEEP** | Referenced by SSOT STOP rule (line 107)                    | PROJECT_SSOT.md:107 explicit reference; AGC checklist inside   | MED  | **DO NOT ARCHIVE** — gated by P3.1/P3.2   |
+| `docs/archive/baseline-README.md`                       | doc     | **DONE** | DELETED (PR #192)                                          | Reference scan confirmed no active uses                        | LOW  | ~~Delete~~ DONE                           |
+| `scripts/tmp-top-home.ts`                               | script  | **DONE** | DELETED (PR #192)                                          | Reference scan confirmed no active uses                        | LOW  | ~~Delete~~ DONE                           |
+| `scripts/one-off/` (37 files)                           | scripts | KEEP     | Historical dev scripts with documented purpose             | README.md explains archive status; may be useful for reference | LOW  | Keep archived as-is                       |
+| `scripts/migrations/archive/`                           | sql     | KEEP     | Historical migration duplicates with README                | README.md explains archive status                              | LOW  | Keep archived as-is                       |
+| `docs/archive/` (14 files)                              | docs    | KEEP     | Properly archived historical docs                          | Has README.md explaining archive contents                      | LOW  | Keep archived as-is                       |
+| `docs/archive/audits/2025-full-system/` (14 files)      | docs    | KEEP     | Closed audit with README                                   | AUDIT_CLOSEOUT.md confirms closed status                       | LOW  | Keep archived as-is                       |
+| `docs/rebaseline/` (13 files)                           | docs    | KEEP     | Active rebaseline work (M01-M10)                           | Referenced by INDEX.md; modules active                         | HIGH | Do not touch - active work                |
+| `docs/ops/EBAY_AGC_SUBMISSION_PACKET.md`                | doc     | KEEP     | Pending external submission (P3.1 blocker)                 | Referenced by SSOT; awaiting operator action                   | HIGH | Do not touch - awaiting external approval |
+| `docs/db/INDEX_AUDIT_P2.2.md`                           | doc     | KEEP     | Recent P2.2 work product                                   | Part of completed P2.2 workstream                              | LOW  | Keep as reference                         |
+| `.claude/agents/` (4 files)                             | config  | KEEP     | Active Claude agent definitions                            | Well-documented, actively used                                 | LOW  | Keep as-is                                |
+| `.claude/commands/merge-decision-packet.md`             | config  | KEEP     | Active Claude command                                      | Referenced by CLAUDE.md workflow                               | LOW  | Keep as-is                                |
+| `.claude/settings.example.json`                         | config  | KEEP     | Example settings template                                  | Useful for onboarding                                          | LOW  | Keep as-is                                |
 
 ---
 
@@ -75,42 +75,56 @@
 
 ---
 
-## D) Proposed Cleanup Plan (PR Sequence)
+## D) Cleanup Progress (PR Sequence)
 
-### PR #192: Low-Risk Archive Moves + Deletions
+### ✅ PR #191: Inventory Created (DONE)
 
-**Files to change**:
+- Created this `docs/CLEANUP_INVENTORY.md` file
+- Added link in `docs/INDEX.md`
 
-- DELETE: `scripts/tmp-top-home.ts` (orphaned temp script)
-- DELETE: `docs/archive/baseline-README.md` (obsolete placeholder)
-- MOVE: `docs/audit/EXPERT_AUDIT_2025-12-25.md` -> `docs/archive/audits/`
-- MOVE: `docs/audit/DB_ARCHITECTURE_EVIDENCE.md` -> `docs/archive/audits/`
-- Update `docs/INDEX.md` if needed
+### ✅ PR #192: Low-Risk Cleanup Executed (DONE)
 
-**Risk**: LOW
-**Verification**: Grep for references before deletion; update any broken links
+**Completed**:
 
-### PR #193: Medium-Risk Blocked Work Archive (DEFER until P3.1 decision)
+- DELETED: `scripts/tmp-top-home.ts` (orphaned temp script)
+- DELETED: `docs/archive/baseline-README.md` (obsolete placeholder)
+- MOVED: `docs/audit/EXPERT_AUDIT_2025-12-25.md` → `docs/archive/audits/` (R100)
+- MOVED: `docs/audit/DB_ARCHITECTURE_EVIDENCE.md` → `docs/archive/audits/` (R100)
 
-**Files to change (pending approval)**:
+**Verification**: Reference scan confirmed no active uses before deletion/move.
 
-- MOVE: `docs/audit/PRODUCT_TRUTH_PHILOSOPHY_AUDIT_OPTION_A.md` -> `docs/archive/plan/`
-- MOVE: `docs/plan/OPTION_A_IMPLEMENTATION_PLAN.md` -> `docs/archive/plan/`
-- MOVE: `docs/plan/SOLD_DATA_SOURCE_OPTIONS.md` -> `docs/archive/plan/`
-- Update PROJECT_SSOT.md blocked work references
+### ✅ PR #193: SSOT Rollup (DONE)
 
-**Risk**: MED
-**Gate**: Only proceed after explicit operator decision on P3.1/P3.2 status
+- Added "Recent progress:" section to PROJECT_SSOT.md ACTIVE WORK area
+- Documented PRs #190, #191, #192 progress
 
-### PR #194: Scripts Cleanup (DEFER - not urgent)
+### ✅ PR #194: Verifier Governance Gate (DONE)
 
-**Potential candidates**:
+- Added supersession proof requirement to `.claude/agents/verifier.md`
+- Blocks archiving/moving `docs/plan/` and `docs/audit/` without explicit replacement
+- Default verdict is FAIL (KEEP) for referenced or blocked docs
+
+### 🚫 MED-Risk Doc Archiving: CANCELLED
+
+The following docs were previously marked as archive candidates but are now **explicitly KEEP**:
+
+| Doc                                                     | Why KEEP                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------------- |
+| `docs/plan/SOLD_DATA_SOURCE_OPTIONS.md`                 | Referenced by SSOT STOP rule (line 107)                       |
+| `docs/plan/OPTION_A_IMPLEMENTATION_PLAN.md`             | Canonical plan; Phase 0 executed; Phases 1–4 gated by P3.2    |
+| `docs/audit/PRODUCT_TRUTH_PHILOSOPHY_AUDIT_OPTION_A.md` | Governing invariants; referenced by IMPL_PLAN as prerequisite |
+
+**Gate**: These docs cannot be archived until P3.1/P3.2 gates resolve (see WORKSTREAMS_MASTER.md).
+
+### 🔜 Scripts Cleanup: DEFERRED
+
+**Potential candidates** (not urgent):
 
 - Consolidate `scripts/check-*` and `scripts/debug-*` into `scripts/one-off/`
 - Review `scripts/test-*` for one-off vs reusable tests
 
 **Risk**: MED (scripts may have undocumented uses)
-**Gate**: Require explicit operator confirmation of each script's obsolescence
+**Gate**: Requires dedicated plan + per-script verification before any changes
 
 ---
 
@@ -120,11 +134,22 @@
 | ---------------------------------------- | ---- | ------------------------------------------------------------ |
 | `docs/rebaseline/*`                      | HIGH | Active module review work (M01-M10 in progress)              |
 | `docs/ops/EBAY_AGC_SUBMISSION_PACKET.md` | HIGH | Awaiting external eBay AGC approval; critical blocker        |
-| `docs/plan/OPTION_A_*` + `SOLD_DATA_*`   | MED  | Blocked pending P3.1 decision; may become active if approved |
+| `docs/plan/OPTION_A_*` + `SOLD_DATA_*`   | HIGH | **KEEP (GATED)** — P3.1/P3.2 blocked; SSOT references active |
+| `docs/audit/PRODUCT_TRUTH_*`             | HIGH | **KEEP (GATED)** — Governing doc for Option A                |
 | `scripts/check-alerts.ts`                | MED  | Large script (22KB); may be production-critical for alerting |
 | `scripts/e2e-test-alerts.ts`             | MED  | E2E test script; may be needed for T2 alerting verification  |
 | All `lib/__tests__/*`                    | HIGH | Active test suite; do not touch                              |
 | All `scripts/__tests__/*`                | HIGH | Active test suite; do not touch                              |
+
+---
+
+## F) Guardrails
+
+**Verifier gate (PR #194)**: Governance doc archiving/moving under `docs/plan/` and `docs/audit/` now requires supersession proof and will **FAIL** verification if:
+
+- The doc is referenced by SSOT, WORKSTREAMS_MASTER, or other governing docs
+- No explicit replacement document exists
+- The doc is marked Blocked or Draft (cleanup heuristics alone are insufficient)
 
 ---
 
@@ -160,8 +185,10 @@ git ls-files | grep -iE "tmp|temp|test" | head -30
 
 ## LOCKED / VERIFIED Footer
 
-- [x] **Allowlist matched exactly**: Only created `docs/CLEANUP_INVENTORY.md` (this file)
-- [x] **Inventory-only**: No deletions, moves, renames, or content changes to existing files
-- [x] **Repo-wide scan performed**: 382 files scanned via git ls-files; key patterns searched via rg/grep
-- [x] **No scope creep**: Inventory categories match task specification exactly
-- [x] **HIGH-risk items flagged**: All HIGH-risk items listed in Section E with deferral reasons
+- [x] **PR #191**: Inventory created (this file)
+- [x] **PR #192**: LOW-risk cleanup executed (2 deletions + 2 archive moves)
+- [x] **PR #193**: SSOT rollup with recent progress
+- [x] **PR #194**: Verifier governance gate added
+- [x] **PR #195**: Status rollup (this update) — syncs inventory with reality
+- [x] **MED-risk docs explicitly KEEP**: Option A docs gated by P3.1/P3.2
+- [x] **Scripts cleanup DEFERRED**: Requires dedicated verification plan

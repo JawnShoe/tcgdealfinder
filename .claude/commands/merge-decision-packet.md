@@ -10,41 +10,14 @@ Run these commands and include **full outputs** (no ellipses, no truncated SHAs)
 
 ```bash
 git fetch origin
-```
-
-```bash
 git checkout main
-```
-
-```bash
 git pull --ff-only
-```
-
-```bash
 git rev-parse --show-toplevel
-```
-
-```bash
 git remote -v
-```
-
-```bash
 git checkout <your-feature-branch>
-```
-
-```bash
 git branch -vv
-```
-
-```bash
 git status -sb
-```
-
-```bash
 git rev-parse HEAD
-```
-
-```bash
 git rev-parse origin/main
 ```
 
@@ -86,20 +59,20 @@ git diff origin/main...HEAD -- <file>
 
 ## 6. Checks/CI Status
 
-Report the **actual** GitHub CI status (not "expected"):
-
 ```bash
 gh pr checks <pr-number>
 ```
+
+Paste actual GitHub checks status here.
 
 ---
 
 ## 7. Operator PR-UI-only Steps
 
-List the steps the Operator must perform **in the GitHub PR UI only**. Operator does NOT run local commands.
+List Operator UI-only steps here. Operator does NOT run local commands.
 
 ---
 
 ## 8. Closeout Checklist
 
-Include the completed CLOSEOUT checklist from SHIFT_LOCK.md.
+Paste completed CLOSEOUT checklist from SHIFT_LOCK.md here.

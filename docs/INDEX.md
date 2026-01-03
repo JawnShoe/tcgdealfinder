@@ -124,6 +124,7 @@ Baseline inventory and review plan for REBASELINE v1.
 | [docs/rebaseline/CRITICALITY_MAP.md](rebaseline/CRITICALITY_MAP.md)               | Folder criticality labels                   | ACTIVE |
 | [docs/rebaseline/MODULE_REVIEW_PLAN.md](rebaseline/MODULE_REVIEW_PLAN.md)         | Module review order and acceptance criteria | ACTIVE |
 | [docs/rebaseline/modules/](rebaseline/modules/)                                   | Module review docs (M01–M09)                | ACTIVE |
+| [docs/CLEANUP_INVENTORY.md](CLEANUP_INVENTORY.md)                                 | Repo-wide cleanup candidates (inventory)    | ACTIVE |
 
 ---
 

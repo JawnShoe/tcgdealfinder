@@ -15,7 +15,7 @@ export function TrustedBadge({ className }: { className?: string }) {
       ariaLabel="Trusted seller"
       triggerClassName={`inline-flex items-center justify-center text-emerald-500 ${className ?? ""}`.trim()}
       tooltipClassName="tooltip-wide"
-      size="wide"
+      size="medium"
       usePortal={true}
     >
       <svg

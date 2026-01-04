@@ -61,7 +61,7 @@ export function WatchlistStarButton({
     <TooltipPopoverClientOnly
       content={label}
       tooltipClassName="tooltip-wide"
-      size="wide"
+      size="compact"
       usePortal={true}
       asChild
     >

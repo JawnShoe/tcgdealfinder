@@ -112,8 +112,8 @@ export default function FeaturedDealsStrip({ deals }: FeaturedDealsStripProps) {
                   <TooltipPopoverClientOnly
                     content="Indicates how reliable recent pricing data is based on sales volume and consistency"
                     triggerClassName="text-slate-600"
-                    tooltipClassName="tooltip-wide tooltip-help"
-                    size="wide"
+                    tooltipClassName="tooltip-wide"
+                    size="medium"
                   >
                     Data reliability
                   </TooltipPopoverClientOnly>

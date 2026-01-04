@@ -62,7 +62,7 @@ export function CardIdentityBlock({
           content={setName}
           ariaLabel="Set name"
           tooltipClassName="tooltip-wide"
-          size="wide"
+          size="medium"
           usePortal={true}
         >
           <span className="line-clamp-2 break-words text-xs text-slate-500 whitespace-normal">
@@ -75,7 +75,7 @@ export function CardIdentityBlock({
           content={listingTitle}
           ariaLabel="Listing title"
           tooltipClassName="tooltip-wide"
-          size="wide"
+          size="medium"
           usePortal={true}
         >
           <span className="line-clamp-1 text-xs text-slate-400">

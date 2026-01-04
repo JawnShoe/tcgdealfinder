@@ -451,10 +451,7 @@
     text-align: left;
   }
 
-  /* Help-tooltip sizing: prevents tall/skinny columns on long help text */
-  [role="tooltip"].tooltip-help {
-    min-width: 240px;
-  }
+  /* tooltip-help: min-width removed in P4.1 — sizing now handled by size prop (compact/medium/wide) */
 
   /* ==========================================================================
      BUTTON SYSTEM — Phase 1: Visual Legitimacy

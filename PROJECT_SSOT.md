@@ -491,6 +491,10 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 ## ACTIVE WORK
 
+### Blocked / External Dependencies
+
+- Marketplace Insights API — Access denied (partner-only). Revisit after site is live + eBay Partner Network (EPN) approval.
+
 ### REBASELINE v1 (Start-from-scratch review)
 
 **Status**: ✅ COMPLETE — M01–M10 finished (latest: M10 PR #152; SSOT hygiene #153; placeholder cleanup #154). Tier-2 may resume.

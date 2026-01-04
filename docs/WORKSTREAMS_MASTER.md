@@ -88,6 +88,7 @@ P2.3 — N+1 Query Fixes (high-impact paths)
 #### P3.1 eBay AGC + Sold Data Source Approval (Marketplace Insights)
 
 - Objective: Obtain compliant sold/completed data access with stable quotas to support baselines.
+- Note: Marketplace Insights API access is externally blocked (partner-only). Dependency: live site + eBay Partner Network (EPN) approval.
 - Dependencies: AGC submission, eBay approval, OAuth scope enablement.
 - Acceptance criteria: Approval granted; access verified with a minimal compliant call; quotas documented; SSOT updated with approval + constraints.
 - Operator verification: Submit AGC; confirm approval response; confirm a controlled data pull succeeds without quota errors.

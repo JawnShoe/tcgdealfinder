@@ -36,7 +36,7 @@ import {
   getCardStockImageUrls,
   TCGPLAYER_ATTRIBUTION,
 } from "../../lib/stockImages";
-import { shouldExcludeListingFromCardSurfaces } from "../../lib/blacklist";
+import { shouldExcludeListingsBatch } from "../../lib/blacklist";
 import {
   warnIfStoreNamesMissing,
   normalizeSellerStoreName,
@@ -319,27 +319,35 @@ async function getTopDeals(): Promise<Deal[]> {
     .filter((deal: Deal | null): deal is Deal => deal !== null);
 
   // Safety net: filter out any blacklisted/excluded items that slipped through ingestion
-  const filteredDeals: Deal[] = [];
-  for (const deal of deals) {
-    const result = await shouldExcludeListingFromCardSurfaces(
-      { title: deal.title ?? "", listingId: String(deal.id) }, // listingId must be stable for overrides/backfill (use DB listing id)
-      deal.card
-        ? {
-            name: deal.card.name,
-            setName: deal.card.setName,
-            number: deal.card.cardNumber,
-            rarity: null, // rarity not yet in cards table
-          }
-        : undefined
-    );
-    if (result.excluded) {
-      continue;
-    }
-    if (deal.integrityStatus === "REVIEW" && result.overrideType !== "ALLOW") {
-      continue;
-    }
-    filteredDeals.push(deal);
-  }
+  // Uses batch exclusion to avoid N+1 override lookups (P2.3-1)
+  const batchInput = deals.map((deal) => ({
+    title: deal.title ?? "",
+    listingId: String(deal.id), // listingId must be stable for overrides/backfill (use DB listing id)
+    card: deal.card
+      ? {
+          name: deal.card.name,
+          setName: deal.card.setName,
+          number: deal.card.cardNumber,
+          rarity: null, // rarity not yet in cards table
+        }
+      : undefined,
+    // Attach original deal for post-filter access
+    _deal: deal,
+  }));
+  const batchResults = await shouldExcludeListingsBatch(batchInput);
+  const filteredDeals: Deal[] = batchResults
+    .filter(({ listing, result }) => {
+      if (result.excluded) return false;
+      // REVIEW items require explicit ALLOW override
+      if (
+        listing._deal.integrityStatus === "REVIEW" &&
+        result.overrideType !== "ALLOW"
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .map(({ listing }) => listing._deal);
   warnIfStoreNamesMissing(filteredDeals, "topDeals");
 
   const sellerUsernames = Array.from(

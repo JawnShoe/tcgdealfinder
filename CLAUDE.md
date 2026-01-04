@@ -80,3 +80,23 @@ Every coder PR response MUST include the **FULL Merge Decision Packet**:
 | Result     | **PASS**                                                                                                                                                                                              |
 | Gaps       | PR bodies in GitHub contain Evidence Packets but abbreviated (full packets in coder chat); PR #194/#195/#196 bodies lack explicit Repo Sync Proof section (packets were in conversation, not PR body) |
 | Follow-ups | Consider adding guidance that PR body should include Repo Sync Proof excerpt or link to conversation                                                                                                  |
+
+## Task Routing: Required Reference Docs (LOCKED)
+
+**Baseline** (always consult):
+
+- PROJECT_SSOT.md
+- SHIFT_LOCK.md
+- REGRESSION_CHECKLIST.md
+- docs/INDEX.md (map only; not required reading)
+
+**Trigger → Required doc**:
+
+- Tier 2 / P2.x performance work (N+1, batching, query count) → docs/TIER2_ARCHITECTURE.md
+- DB schema / migrations / Prisma / indexes / backfills → docs/DB_MIGRATIONS_RUNBOOK.md
+- Release / deploy / tagging / versioning → docs/RELEASES.md
+- Env vars / ops configuration → docs/ENV_RUNBOOK.md
+- "Start work" / readiness / gating questions → docs/DEFINITION_OF_READY.md
+- Shared / global UI behavior changes → docs/ui/UI_CONSISTENCY_CONTRACT.md
+
+Coders are only required to consult additional documents when a trigger applies or when explicitly referenced in the task prompt.

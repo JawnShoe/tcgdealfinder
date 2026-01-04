@@ -2,7 +2,7 @@
 
 Status: Active (Backlog + prioritization index)  
 Canonical rule: `PROJECT_SSOT.md` is the current truth; `docs/WORKSTREAMS_MASTER.md` is the canonical backlog/prioritization list; audits/plans are appendices.  
-Last reviewed: 2026-01-02  
+Last reviewed: 2026-01-04  
 Notes: If any doc conflicts with SSOT, SSOT wins. Do not execute advisory docs without an SSOT/workstreams entry.
 Note: Any global UI token / tooltip system rework must satisfy SHIFT_LOCK’s Global / Shared UI Token Evidence Gate.
 
@@ -18,7 +18,7 @@ Note: Any global UI token / tooltip system rework must satisfy SHIFT_LOCK’s Gl
 
 ## Active Work Item (must match SSOT)
 
-P2.3 — N+1 Query Fixes (high-impact paths)
+P4.1 — Design Phase 1 (visual legitimacy, strictly non-functional)
 
 ---
 

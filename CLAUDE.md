@@ -46,6 +46,19 @@ Every coder PR response MUST include the **FULL Merge Decision Packet**:
 
 8. **Completed CLOSEOUT checklist** (from SHIFT_LOCK.md)
 
+### Plan-First (LOCKED)
+
+Most sessions start with a plan. For PR work, write a plan first, then implement.
+
+**Non-trivial PRs** (touches >1 file OR any code change OR behavior-sensitive area) require a Plan block:
+
+- **Goal**: What we're trying to achieve
+- **Constraints**: e.g., "no behavior change", "docs-only", scope limits
+- **Steps**: 3–7 bullets describing the implementation sequence
+- **Verification**: Tests to run + any UI/manual checks
+
+Small docs-only edits (single file, no code, no behavior impact) may skip the Plan block.
+
 ## Common Mistakes to Avoid (append-only)
 
 1. Treating local files as authoritative without syncing to `origin/main`

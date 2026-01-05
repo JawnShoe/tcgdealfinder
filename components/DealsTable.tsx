@@ -757,6 +757,7 @@ export default function DealsTable({
                 tooltipClassName="tooltip-wide"
                 side="top"
                 size="medium"
+                usePortal={true}
               >
                 <span aria-hidden="true">?</span>
               </TooltipPopoverClientOnly>
@@ -1205,6 +1206,7 @@ export default function DealsTable({
                                         vm.priceConfidenceLabel
                                       )}`}
                                       size="compact"
+                                      usePortal={true}
                                     >
                                       {getConfidenceDisplayText(
                                         vm.priceConfidenceLabel

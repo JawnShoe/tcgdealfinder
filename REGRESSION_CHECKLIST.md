@@ -128,6 +128,16 @@
   - `/alerts`
   - `/search`
 
+## Rebuild Smoke Pack (LOCKED)
+
+Applies once rebuild code exists. PR-UI-only verifiable where possible. The exact rebuild route path is TBD until ADR_LOG records it.
+
+- Rebuild lane route renders (when introduced).
+- Trust metadata visible at first render (not hover-only).
+- SSR-stable layout on rebuild surface (no obvious shift on hydration).
+- No legacy imports into rebuild (attach grep evidence in Evidence Packet for rebuild code PRs).
+- If/when E2E exists: Playwright smoke for rebuild route.
+
 ## Alerts (Tier 2)
 
 - Flag OFF (`ALERTS_ENABLED=false` or unset):

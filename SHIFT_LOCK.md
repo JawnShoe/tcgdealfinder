@@ -176,6 +176,13 @@ Exception (SSOT PRs):
   - completed Closeout checklist
 - Merge is allowed if allowlist is SSOT-only, checks are green, and Closeout is complete.
 
+### Championship Rebuild Governance Overlay (LOCKED)
+
+1. **Rebuild authority**: For rebuild PRs, product/contract authority is `docs/rebuild/PRD_LITE.md`, `docs/rebuild/TRUST_METRICS.md`, `docs/rebuild/NON_NEGOTIABLES.md`. `PROJECT_SSOT.md` is historical context only for rebuild scope until a Rebuild SSOT exists.
+2. **Gate 3 still applies**: Any merge/decision request MUST include/attach rebuild governance docs from `origin/main` when relevant. Docs-only PRs can be high impact and still require full Merge Decision Packets.
+3. **Rebuild attachment list**: For rebuild PRs, Operator must attach latest from main: `SHIFT_LOCK.md`, `REGRESSION_CHECKLIST.md`, `docs/rebuild/PRD_LITE.md`, `docs/rebuild/TRUST_METRICS.md`, `docs/rebuild/NON_NEGOTIABLES.md`, plus any touched `skills/**` docs if the PR references/changes skills, plus any touched rebuild module docs (if any exist later).
+4. **Rebuild isolation reminder**: Rebuild must live in its own namespace; no legacy imports into rebuild paths; cutover by route ownership, not blended flags.
+
 ### PR Closeout Checklist (LOCKED)
 
 Every coder PR response must include a CLOSEOUT section answering all items:

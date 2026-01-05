@@ -137,6 +137,7 @@ function renderEndsValue(
     <TooltipPopoverClientOnly
       content={display.tooltip}
       tooltipClassName="whitespace-nowrap"
+      size="compact"
       usePortal={true}
     >
       {display.label}
@@ -1461,6 +1462,7 @@ export default function DealsTable({
                         <TooltipPopoverClientOnly
                           content={endsDisplay.tooltip}
                           tooltipClassName="whitespace-nowrap"
+                          size="compact"
                           usePortal={true}
                         >
                           Ends {endsDisplay.label}

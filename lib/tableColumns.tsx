@@ -445,6 +445,7 @@ const EndsColumn: ColumnSpec = {
         content={endsDisplay.tooltip}
         triggerClassName="whitespace-normal text-sm text-slate-600"
         tooltipClassName="whitespace-nowrap"
+        size="compact"
         usePortal={true}
       >
         {endsDisplay.label}

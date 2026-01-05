@@ -114,6 +114,7 @@ export default function FeaturedDealsStrip({ deals }: FeaturedDealsStripProps) {
                     triggerClassName="text-slate-600"
                     tooltipClassName="tooltip-wide"
                     size="medium"
+                    usePortal={true}
                   >
                     Data reliability
                   </TooltipPopoverClientOnly>

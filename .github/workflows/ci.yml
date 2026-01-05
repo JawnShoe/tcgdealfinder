@@ -21,6 +21,7 @@ jobs:
     steps:
       - name: Detect docs-only change
         id: changes
+        if: github.event_name == 'pull_request'
         uses: dorny/paths-filter@v3
         with:
           predicate-quantifier: "every"
@@ -30,20 +31,28 @@ jobs:
               - "!**/*.md"
               - "!docs/**"
 
+      - name: Set non-docs flag
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "NON_DOCS=${{ steps.changes.outputs.non_docs }}" >> $GITHUB_ENV
+          else
+            echo "NON_DOCS=true" >> $GITHUB_ENV
+          fi
+
       - name: Docs-only fast path
-        if: steps.changes.outputs.non_docs != 'true'
+        if: env.NON_DOCS != 'true'
         run: |
           echo "Docs-only PR detected (only *.md and/or docs/** changes)."
           echo "Skipping formatting, lint, tests, and build to reduce Actions minutes."
 
       - name: Checkout code
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: "20"
@@ -51,11 +60,11 @@ jobs:
           cache-dependency-path: "package-lock.json"
 
       - name: Install dependencies
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         run: npm ci
 
       - name: Cache Next.js build
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         uses: actions/cache@v5
         with:
           path: .next/cache
@@ -64,7 +73,7 @@ jobs:
             ${{ runner.os }}-next-cache-
 
       - name: Check formatting (changed files only)
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         run: |
           # Get base branch for comparison
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -86,19 +95,19 @@ jobs:
           echo "$CHANGED_FILES" | xargs npx prettier --check
 
       - name: Run lint
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         run: npm run lint
 
       - name: Run typecheck
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         run: npx tsc --noEmit
 
       - name: Run unit tests
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         run: npm run test:unit
 
       - name: Run build
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         run: npm run build
 
   e2e-smoke:

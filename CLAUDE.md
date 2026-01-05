@@ -10,6 +10,18 @@
 | [SHIFT_LOCK.md](SHIFT_LOCK.md)                     | Process gates, locks, stop rules         |
 | [REGRESSION_CHECKLIST.md](REGRESSION_CHECKLIST.md) | Smoke test checklists per feature area   |
 
+## Rebuild Binder (Week 0)
+
+- docs/rebuild/PRD_LITE.md
+- docs/rebuild/TRUST_METRICS.md
+- docs/rebuild/NON_NEGOTIABLES.md
+- docs/rebuild/CONTRACTS.md
+- docs/rebuild/RELEASE_CHECKLIST.md
+- docs/rebuild/ADR_LOG.md
+- skills/primitive-enforcer/SKILL.md
+- skills/rebuild-contract-guard/SKILL.md
+- skills/pr-impact-declaration/SKILL.md
+
 **Conflict resolution:**
 
 - **Process conflicts:** SHIFT_LOCK.md wins (gates, locks, stop rules)

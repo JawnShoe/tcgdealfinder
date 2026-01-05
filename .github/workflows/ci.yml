@@ -88,6 +88,10 @@ jobs:
         if: steps.changes.outputs.non_docs == 'true'
         run: npm run lint
 
+      - name: Run typecheck
+        if: steps.changes.outputs.non_docs == 'true'
+        run: npx tsc --noEmit
+
       - name: Run unit tests
         if: steps.changes.outputs.non_docs == 'true'
         run: npm run test:unit
@@ -95,3 +99,55 @@ jobs:
       - name: Run build
         if: steps.changes.outputs.non_docs == 'true'
         run: npm run build
+
+  e2e-smoke:
+    name: E2E Smoke (EXEMPT TEMP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: EXEMPT (TEMP) - E2E smoke not wired
+        continue-on-error: true
+        run: |
+          echo "EXEMPT (TEMP): E2E smoke not wired."
+          echo "Unblock: add Playwright config + rebuild route smoke."
+          exit 1
+
+  visual-regression:
+    name: Visual Regression / CLS (EXEMPT TEMP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: EXEMPT (TEMP) - Visual regression not wired
+        continue-on-error: true
+        run: |
+          echo "EXEMPT (TEMP): Visual regression/CLS not wired."
+          echo "Unblock: baseline capture + CLS thresholds."
+          exit 1
+
+  a11y-smoke:
+    name: A11y Smoke (EXEMPT TEMP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: EXEMPT (TEMP) - A11y smoke not wired
+        continue-on-error: true
+        run: |
+          echo "EXEMPT (TEMP): A11y smoke not wired."
+          echo "Unblock: a11y runner + baseline."
+          exit 1
+
+  perf-budget:
+    name: Perf Budget (EXEMPT TEMP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: EXEMPT (TEMP) - Perf budget not wired
+        continue-on-error: true
+        run: |
+          echo "EXEMPT (TEMP): Perf budget not wired."
+          echo "Unblock: budget definition + measurement harness."
+          exit 1

@@ -997,6 +997,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                   tooltipClassName="tooltip-wide"
                   side="top"
                   size="medium"
+                  usePortal={true}
                 >
                   <span aria-hidden="true">?</span>
                 </TooltipPopoverClientOnly>
@@ -1414,6 +1415,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                                 }
                                 triggerClassName="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800"
                                 size="compact"
+                                usePortal={true}
                               >
                                 Review
                               </TooltipPopoverClientOnly>

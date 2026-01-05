@@ -1205,6 +1205,7 @@ export default function DealsTable({
                                         vm.priceConfidenceLabel
                                       )}`}
                                       size="compact"
+                                      usePortal={true}
                                     >
                                       {getConfidenceDisplayText(
                                         vm.priceConfidenceLabel

@@ -46,6 +46,7 @@ export function WhyDealHint({ label, tooltip, className }: WhyDealHintProps) {
       triggerClassName={`min-w-0 truncate text-left ${className ?? ""}`.trim()}
       tooltipClassName="tooltip-wide"
       size="compact"
+      usePortal={true}
     >
       {label}
     </TooltipPopoverClientOnly>

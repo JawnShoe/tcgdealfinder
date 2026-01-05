@@ -187,6 +187,14 @@
 - Verify `ok: false` when listings or fxRates are STALE
 - Verify `alertsSending.status` is "DISABLED" when env vars not configured
 
+## UI/Tooltips
+
+- TooltipV2 contract must pass hover/focus/Escape on `/`, `/top-deals`, `/newest`, `/cards/1`
+  - Tooltip appears on hover (not off-screen)
+  - Tooltip appears on keyboard focus (Tab)
+  - Tooltip closes on Escape
+  - Tooltip is within viewport bounds
+
 ## Admin Smoke Pack (run only when PR touches admin routes)
 
 - Manual smoke (requires auth):

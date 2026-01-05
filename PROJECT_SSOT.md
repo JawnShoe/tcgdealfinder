@@ -1,6 +1,6 @@
 # PROJECT SSOT — TCG Deal Finder
 
-**Last Updated**: 2026-01-04
+**Last Updated**: 2026-01-05
 **Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080). **T2-6 merged (PR #175)**: Alerts subscribe/unsubscribe UX + APIs complete (flag-gated). **T2-7**: Alerts sending go-live gating complete (operator-safe, default-safe). **T2-8**: Alerts idempotency updated to one-email-per-listing. **P2.1**: Health job status + go-live schedule gate complete — `/api/health` exposes job freshness with OK/STALE signals; go-live gate documented in `docs/ENV_RUNBOOK.md`. **P2.2**: Index audit complete — no index changes needed at current scale (see `docs/db/INDEX_AUDIT_P2.2.md`). Re-run P2.2 when listings > 50k or /top-deals p95 > 500ms. **P2.3**: Closed — no true N+1 DB query patterns found; 60s cache + batching already prevents N+1 at DB level (evidence: cold-run DB logs on `/`, `/top-deals`, `/cards/[id]`, `/ending-soon`).
 
 **ACTIVE WORK**: P4.1 — Design Phase 1 (visual legitimacy, strictly non-functional)
@@ -569,6 +569,7 @@ Architecture doc: `docs/TIER2_ARCHITECTURE.md`
 - PR #200 — CLAUDE.md task routing (compounding fix)
 - PR #201 — CLAUDE.md plan-first norm
 - P2.3 closed — No true N+1 DB query patterns found (evidence: cold-run DB logs on all high-impact routes; 60s cache + batching already prevents N+1)
+- Rejected PR #219 (TooltipPopover portal Data Reliability hover bug not resolved); decision: rebuild tooltip system (TooltipV2)
 
 ---
 

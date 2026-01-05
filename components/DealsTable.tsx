@@ -757,6 +757,7 @@ export default function DealsTable({
                 tooltipClassName="tooltip-wide"
                 side="top"
                 size="medium"
+                usePortal={true}
               >
                 <span aria-hidden="true">?</span>
               </TooltipPopoverClientOnly>

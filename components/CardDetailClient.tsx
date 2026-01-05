@@ -997,6 +997,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                   tooltipClassName="tooltip-wide"
                   side="top"
                   size="medium"
+                  usePortal={true}
                 >
                   <span aria-hidden="true">?</span>
                 </TooltipPopoverClientOnly>

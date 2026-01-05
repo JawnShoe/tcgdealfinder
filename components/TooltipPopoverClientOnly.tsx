@@ -110,13 +110,10 @@ export function TooltipPopoverClientOnly({
         </button>
       );
 
-    return (
-      <span
-        className={`relative inline-flex min-w-0 max-w-full items-center ${className ?? ""}`.trim()}
-      >
-        {triggerNode}
-      </span>
-    );
+    const wrapperClassName =
+      `relative inline-flex min-w-0 max-w-full items-center ${className ?? ""}`.trim();
+
+    return <span className={wrapperClassName}>{triggerNode}</span>;
   }
 
   // After hydration: full interactive tooltip

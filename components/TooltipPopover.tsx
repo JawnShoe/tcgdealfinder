@@ -4,6 +4,7 @@ import {
   Children,
   cloneElement,
   isValidElement,
+  useCallback,
   useEffect,
   useId,
   useRef,
@@ -40,10 +41,13 @@ export function TooltipPopover({
   const [isHoverCapable, setIsHoverCapable] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [isOpen, setIsOpen] = useState(false);
+  // Track whether position has been computed for current open state
+  const [isPositioned, setIsPositioned] = useState(false);
   const wrapperRef = useRef<HTMLSpanElement | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const tooltipRef = useRef<HTMLSpanElement | null>(null);
   const tooltipId = useId();
+  const rafIdRef = useRef<number | null>(null);
 
   const isTouch = !isHoverCapable;
 
@@ -92,63 +96,127 @@ export function TooltipPopover({
     };
   }, [isPinned]);
 
-  // Update tooltip position for portal mode
+  // Compute tooltip position - called after tooltip is measurable
+  const computePosition = useCallback(() => {
+    if (!triggerRef.current || !tooltipRef.current) return;
+
+    const triggerRect = triggerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+
+    // For side="top", position tooltip above trigger (need tooltip height)
+    // For side="bottom", position tooltip below trigger
+    const tooltipHeight = tooltipRect.height || 40; // fallback if still 0
+    const top =
+      side === "top"
+        ? triggerRect.top - tooltipHeight - 8
+        : triggerRect.bottom + 8;
+
+    // Constrain left position to viewport bounds using measured tooltip width
+    const viewportWidth = window.innerWidth;
+    let left = triggerRect.left;
+
+    const tooltipWidth =
+      tooltipRect.width ||
+      (size === "wide"
+        ? 320
+        : size === "medium"
+          ? 280
+          : size === "compact"
+            ? 240
+            : 384);
+
+    // Prevent tooltip from extending beyond right edge
+    if (left + tooltipWidth > viewportWidth) {
+      left = Math.max(0, viewportWidth - tooltipWidth);
+    }
+
+    // Prevent tooltip from extending beyond left edge
+    if (left < 0) {
+      left = 0;
+    }
+
+    setTooltipPosition({ top, left });
+    setIsPositioned(true);
+  }, [side, size]);
+
+  // Reset positioned state when tooltip closes
   useEffect(() => {
-    if (!usePortal || !triggerRef.current) return;
+    if (!isOpen) {
+      setIsPositioned(false);
+    }
+  }, [isOpen]);
 
-    const updatePosition = () => {
-      if (!triggerRef.current) return;
-      const rect = triggerRef.current.getBoundingClientRect();
-      const top = side === "top" ? rect.top - 8 : rect.bottom + 8;
+  // Position tooltip after it becomes visible and measurable
+  // Uses requestAnimationFrame to wait for browser paint
+  useEffect(() => {
+    if (!usePortal || !isOpen) return;
 
-      // Constrain left position to viewport bounds using measured tooltip width
-      const viewportWidth = window.innerWidth;
-      let left = rect.left;
+    // Cancel any pending RAF
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+    }
 
-      // Measure actual tooltip width if available, otherwise use fallback based on size
-      const tooltipWidth = tooltipRef.current
-        ? tooltipRef.current.getBoundingClientRect().width
-        : size === "wide"
-          ? 320
-          : size === "medium"
-            ? 280
-            : size === "compact"
-              ? 240
-              : 384; // default max-w-sm
-
-      // Prevent tooltip from extending beyond right edge
-      if (left + tooltipWidth > viewportWidth) {
-        left = Math.max(0, viewportWidth - tooltipWidth);
-      }
-
-      // Prevent tooltip from extending beyond left edge
-      if (left < 0) {
-        left = 0;
-      }
-
-      setTooltipPosition({
-        top,
-        left,
+    // Wait for next frame when tooltip is rendered and measurable
+    rafIdRef.current = requestAnimationFrame(() => {
+      // Double RAF ensures paint has occurred
+      rafIdRef.current = requestAnimationFrame(() => {
+        computePosition();
       });
+    });
+
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
     };
+  }, [usePortal, isOpen, computePosition]);
+
+  // Handle scroll (dismiss), resize (reposition), and visibility changes
+  useEffect(() => {
+    if (!usePortal || !isOpen) return;
 
     const handleScroll = () => {
-      // Dismiss tooltip on scroll instead of repositioning
       setIsOpen(false);
     };
 
-    updatePosition();
+    const handleResize = () => {
+      computePosition();
+    };
+
+    // Recompute position when tab/window regains focus (fixes "tab away/back" symptom)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && isOpen) {
+        // Use RAF to ensure DOM is ready after visibility change
+        requestAnimationFrame(() => {
+          computePosition();
+        });
+      }
+    };
+
+    const handleWindowFocus = () => {
+      if (isOpen) {
+        requestAnimationFrame(() => {
+          computePosition();
+        });
+      }
+    };
 
     // Dismiss on scroll (capture phase to catch all scroll containers)
     window.addEventListener("scroll", handleScroll, true);
-    // Reposition (not dismiss) on window resize
-    window.addEventListener("resize", updatePosition);
+    // Reposition on window resize
+    window.addEventListener("resize", handleResize);
+    // Recompute on visibility/focus changes
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleWindowFocus);
 
     return () => {
       window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("resize", handleResize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleWindowFocus);
     };
-  }, [usePortal, side, isOpen, size]);
+  }, [usePortal, isOpen, computePosition]);
 
   // Phase 1: Removed w-max to prevent blank space; width: fit-content applied via CSS
   const sizeHoverClasses =
@@ -169,9 +237,15 @@ export function TooltipPopover({
           ? "max-w-[240px]"
           : "max-w-xs";
 
+  // Portal tooltip states:
+  // - closed: invisible, collapsed (max-h-0 max-w-0), no pointer events
+  // - open but not positioned: visible for measurement, full size, but opacity-0 (invisible to user)
+  // - open and positioned: visible, full size, opacity-100 (user can see it)
   const bubbleClasses = usePortal
     ? isOpen
-      ? `visible max-h-96 overflow-visible opacity-100 pointer-events-auto ${sizeOpenClasses}`
+      ? isPositioned
+        ? `visible max-h-96 overflow-visible opacity-100 pointer-events-auto ${sizeOpenClasses}`
+        : `visible max-h-96 overflow-visible opacity-0 pointer-events-none ${sizeOpenClasses}` // measurable but invisible
       : "invisible max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none"
     : isHoverCapable
       ? `invisible max-h-0 max-w-0 overflow-hidden opacity-0 pointer-events-none peer-hover:visible peer-hover:max-h-96 peer-hover:overflow-visible peer-hover:opacity-100 peer-focus-visible:visible peer-focus-visible:max-h-96 peer-focus-visible:overflow-visible peer-focus-visible:opacity-100 ${sizeHoverClasses}`

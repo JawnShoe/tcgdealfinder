@@ -848,6 +848,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                           className="block text-xs text-slate-500"
                           triggerClassName="text-xs text-slate-500"
                           tooltipClassName="whitespace-nowrap"
+                          size="default"
                           usePortal={true}
                         >
                           {bestTrustedDeal.marketCode} /{" "}
@@ -1515,6 +1516,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                           <TooltipPopoverClientOnly
                             content={getEndsAtDisplay(listing.endsAt).tooltip}
                             tooltipClassName="whitespace-nowrap"
+                            size="default"
                             usePortal={true}
                           >
                             {getEndsAtDisplay(listing.endsAt).label}

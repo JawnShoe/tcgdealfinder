@@ -2,7 +2,7 @@
 
 **Audit Date**: 2026-01-04
 **Contract Reference**: [UI_CONSISTENCY_CONTRACT.md](./UI_CONSISTENCY_CONTRACT.md)
-**Status**: Inventory complete, fixes NOT applied
+**Status**: All fixes applied (PRs #211, #212, #213)
 
 ---
 
@@ -11,9 +11,9 @@
 | Metric                          | Count          |
 | ------------------------------- | -------------- |
 | **Total tooltip callsites**     | 27             |
-| **Compliant**                   | 15             |
-| **Portal-required but missing** | 5              |
-| **Missing size prop**           | 6              |
+| **Compliant**                   | 26             |
+| **Portal-required but missing** | 0              |
+| **Missing size prop**           | 0              |
 | **Width-forcing violations**    | 0              |
 | **Native title tooltips**       | 1 (admin-only) |
 
@@ -27,36 +27,36 @@ All tooltip surfaces use `TooltipPopoverClientOnly` (SSR-safe wrapper around `To
 
 #### Dedicated Tooltip Components
 
-| File:Line                                                                      | Component                        | usePortal   | size      | tooltipClassName | Overflow Context | Compliance        | Fix Category    |
-| ------------------------------------------------------------------------------ | -------------------------------- | ----------- | --------- | ---------------- | ---------------- | ----------------- | --------------- |
-| [TrustedBadge.tsx:13](../../components/TrustedBadge.tsx#L13)                   | TrustedBadge                     | `true`      | `medium`  | `tooltip-wide`   | Table cells      | **Compliant**     | —               |
-| [SellerSeenBadge.tsx:26](../../components/SellerSeenBadge.tsx#L26)             | SellerSeenBadge                  | **missing** | `medium`  | `tooltip-wide`   | Table cells      | **Non-compliant** | portal-required |
-| [WhyDealHint.tsx:42](../../components/WhyDealHint.tsx#L42)                     | WhyDealHint                      | **missing** | `compact` | `tooltip-wide`   | Table cells      | **Non-compliant** | portal-required |
-| [SellerNameWithTooltip.tsx:78](../../components/SellerNameWithTooltip.tsx#L78) | SellerNameWithTooltip            | `true`      | `wide`    | `tooltip-wide`   | Table cells      | **Compliant**     | —               |
-| [WatchlistStarButton.tsx:61](../../components/WatchlistStarButton.tsx#L61)     | WatchlistStarButton              | `true`      | `compact` | `tooltip-wide`   | Normal           | **Compliant**     | —               |
-| [CardIdentity.tsx:61](../../components/CardIdentity.tsx#L61)                   | CardIdentityBlock (setName)      | `true`      | `medium`  | `tooltip-wide`   | Normal           | **Compliant**     | —               |
-| [CardIdentity.tsx:74](../../components/CardIdentity.tsx#L74)                   | CardIdentityBlock (listingTitle) | `true`      | `medium`  | `tooltip-wide`   | Normal           | **Compliant**     | —               |
+| File:Line                                                                      | Component                        | usePortal | size      | tooltipClassName | Overflow Context | Compliance    | Fix Category |
+| ------------------------------------------------------------------------------ | -------------------------------- | --------- | --------- | ---------------- | ---------------- | ------------- | ------------ |
+| [TrustedBadge.tsx:13](../../components/TrustedBadge.tsx#L13)                   | TrustedBadge                     | `true`    | `medium`  | `tooltip-wide`   | Table cells      | **Compliant** | —            |
+| [SellerSeenBadge.tsx:26](../../components/SellerSeenBadge.tsx#L26)             | SellerSeenBadge                  | `true`    | `medium`  | `tooltip-wide`   | Table cells      | **Compliant** | —            |
+| [WhyDealHint.tsx:42](../../components/WhyDealHint.tsx#L42)                     | WhyDealHint                      | `true`    | `compact` | `tooltip-wide`   | Table cells      | **Compliant** | —            |
+| [SellerNameWithTooltip.tsx:78](../../components/SellerNameWithTooltip.tsx#L78) | SellerNameWithTooltip            | `true`    | `wide`    | `tooltip-wide`   | Table cells      | **Compliant** | —            |
+| [WatchlistStarButton.tsx:61](../../components/WatchlistStarButton.tsx#L61)     | WatchlistStarButton              | `true`    | `compact` | `tooltip-wide`   | Normal           | **Compliant** | —            |
+| [CardIdentity.tsx:61](../../components/CardIdentity.tsx#L61)                   | CardIdentityBlock (setName)      | `true`    | `medium`  | `tooltip-wide`   | Normal           | **Compliant** | —            |
+| [CardIdentity.tsx:74](../../components/CardIdentity.tsx#L74)                   | CardIdentityBlock (listingTitle) | `true`    | `medium`  | `tooltip-wide`   | Normal           | **Compliant** | —            |
 
 #### DealsTable.tsx Inline Tooltips
 
-| File:Line                                                    | Purpose                 | usePortal   | size        | tooltipClassName    | Overflow Context        | Compliance        | Fix Category    |
-| ------------------------------------------------------------ | ----------------------- | ----------- | ----------- | ------------------- | ----------------------- | ----------------- | --------------- |
-| [DealsTable.tsx:137](../../components/DealsTable.tsx#L137)   | renderEndsValue         | `true`      | **missing** | `whitespace-nowrap` | Table (overflow-x-clip) | **Non-compliant** | missing-size    |
-| [DealsTable.tsx:753](../../components/DealsTable.tsx#L753)   | Data Reliability help   | **missing** | `medium`    | `tooltip-wide`      | Filter area (normal)    | **Compliant**     | —               |
-| [DealsTable.tsx:1202](../../components/DealsTable.tsx#L1202) | Confidence badge        | **missing** | `compact`   | —                   | Table (overflow-x-clip) | **Non-compliant** | portal-required |
-| [DealsTable.tsx:1404](../../components/DealsTable.tsx#L1404) | Mobile confidence badge | **missing** | `compact`   | —                   | Mobile card (normal)    | **Compliant**     | —               |
-| [DealsTable.tsx:1459](../../components/DealsTable.tsx#L1459) | Mobile Ends tooltip     | `true`      | **missing** | `whitespace-nowrap` | Mobile card (normal)    | **Non-compliant** | missing-size    |
+| File:Line                                                    | Purpose                 | usePortal   | size      | tooltipClassName    | Overflow Context        | Compliance    | Fix Category |
+| ------------------------------------------------------------ | ----------------------- | ----------- | --------- | ------------------- | ----------------------- | ------------- | ------------ |
+| [DealsTable.tsx:137](../../components/DealsTable.tsx#L137)   | renderEndsValue         | `true`      | `default` | `whitespace-nowrap` | Table (overflow-x-clip) | **Compliant** | —            |
+| [DealsTable.tsx:753](../../components/DealsTable.tsx#L753)   | Data Reliability help   | `true`      | `medium`  | `tooltip-wide`      | Filter area (normal)    | **Compliant** | —            |
+| [DealsTable.tsx:1202](../../components/DealsTable.tsx#L1202) | Confidence badge        | `true`      | `compact` | —                   | Table (overflow-x-clip) | **Compliant** | —            |
+| [DealsTable.tsx:1404](../../components/DealsTable.tsx#L1404) | Mobile confidence badge | **missing** | `compact` | —                   | Mobile card (normal)    | **Compliant** | —            |
+| [DealsTable.tsx:1459](../../components/DealsTable.tsx#L1459) | Mobile Ends tooltip     | `true`      | `default` | `whitespace-nowrap` | Mobile card (normal)    | **Compliant** | —            |
 
 #### CardDetailClient.tsx Inline Tooltips
 
-| File:Line                                                                | Purpose                | usePortal   | size        | tooltipClassName    | Overflow Context        | Compliance        | Fix Category    |
-| ------------------------------------------------------------------------ | ---------------------- | ----------- | ----------- | ------------------- | ----------------------- | ----------------- | --------------- |
-| [CardDetailClient.tsx:778](../../components/CardDetailClient.tsx#L778)   | Price breakdown        | `true`      | `compact`   | `whitespace-nowrap` | Normal                  | **Compliant**     | —               |
-| [CardDetailClient.tsx:843](../../components/CardDetailClient.tsx#L843)   | Best trusted deal ends | `true`      | **missing** | `whitespace-nowrap` | Normal                  | **Non-compliant** | missing-size    |
-| [CardDetailClient.tsx:993](../../components/CardDetailClient.tsx#L993)   | Data Reliability help  | **missing** | `medium`    | `tooltip-wide`      | Filter area (normal)    | **Compliant**     | —               |
-| [CardDetailClient.tsx:1322](../../components/CardDetailClient.tsx#L1322) | Listing title tooltip  | `true`      | `wide`      | `tooltip-wide`      | Table (overflow-x-clip) | **Compliant**     | —               |
-| [CardDetailClient.tsx:1410](../../components/CardDetailClient.tsx#L1410) | Review badge           | **missing** | `compact`   | —                   | Table (overflow-x-clip) | **Non-compliant** | portal-required |
-| [CardDetailClient.tsx:1515](../../components/CardDetailClient.tsx#L1515) | Listings table Ends    | `true`      | **missing** | `whitespace-nowrap` | Table (overflow-x-clip) | **Non-compliant** | missing-size    |
+| File:Line                                                                | Purpose                | usePortal | size      | tooltipClassName    | Overflow Context        | Compliance    | Fix Category |
+| ------------------------------------------------------------------------ | ---------------------- | --------- | --------- | ------------------- | ----------------------- | ------------- | ------------ |
+| [CardDetailClient.tsx:778](../../components/CardDetailClient.tsx#L778)   | Price breakdown        | `true`    | `compact` | `whitespace-nowrap` | Normal                  | **Compliant** | —            |
+| [CardDetailClient.tsx:843](../../components/CardDetailClient.tsx#L843)   | Best trusted deal ends | `true`    | `default` | `whitespace-nowrap` | Normal                  | **Compliant** | —            |
+| [CardDetailClient.tsx:993](../../components/CardDetailClient.tsx#L993)   | Data Reliability help  | `true`    | `medium`  | `tooltip-wide`      | Filter area (normal)    | **Compliant** | —            |
+| [CardDetailClient.tsx:1322](../../components/CardDetailClient.tsx#L1322) | Listing title tooltip  | `true`    | `wide`    | `tooltip-wide`      | Table (overflow-x-clip) | **Compliant** | —            |
+| [CardDetailClient.tsx:1410](../../components/CardDetailClient.tsx#L1410) | Review badge           | `true`    | `compact` | —                   | Table (overflow-x-clip) | **Compliant** | —            |
+| [CardDetailClient.tsx:1515](../../components/CardDetailClient.tsx#L1515) | Listings table Ends    | `true`    | `default` | `whitespace-nowrap` | Table (overflow-x-clip) | **Compliant** | —            |
 
 #### FeaturedDealsStrip.tsx Inline Tooltips
 
@@ -66,15 +66,15 @@ All tooltip surfaces use `TooltipPopoverClientOnly` (SSR-safe wrapper around `To
 
 #### TopDealsClient.tsx Inline Tooltips
 
-| File:Line                                                          | Purpose               | usePortal   | size     | tooltipClassName | Overflow Context     | Compliance    | Fix Category |
-| ------------------------------------------------------------------ | --------------------- | ----------- | -------- | ---------------- | -------------------- | ------------- | ------------ |
-| [TopDealsClient.tsx:174](../../components/TopDealsClient.tsx#L174) | Data Reliability help | **missing** | `medium` | `tooltip-wide`   | Filter area (normal) | **Compliant** | —            |
+| File:Line                                                          | Purpose               | usePortal | size     | tooltipClassName | Overflow Context     | Compliance    | Fix Category |
+| ------------------------------------------------------------------ | --------------------- | --------- | -------- | ---------------- | -------------------- | ------------- | ------------ |
+| [TopDealsClient.tsx:174](../../components/TopDealsClient.tsx#L174) | Data Reliability help | `true`    | `medium` | `tooltip-wide`   | Filter area (normal) | **Compliant** | —            |
 
 #### tableColumns.tsx (Shared Column Definitions)
 
-| File:Line                                               | Purpose    | usePortal | size        | tooltipClassName    | Overflow Context           | Compliance        | Fix Category |
-| ------------------------------------------------------- | ---------- | --------- | ----------- | ------------------- | -------------------------- | ----------------- | ------------ |
-| [tableColumns.tsx:444](../../lib/tableColumns.tsx#L444) | EndsColumn | `true`    | **missing** | `whitespace-nowrap` | Table (varies by consumer) | **Non-compliant** | missing-size |
+| File:Line                                               | Purpose    | usePortal | size      | tooltipClassName    | Overflow Context           | Compliance    | Fix Category |
+| ------------------------------------------------------- | ---------- | --------- | --------- | ------------------- | -------------------------- | ------------- | ------------ |
+| [tableColumns.tsx:444](../../lib/tableColumns.tsx#L444) | EndsColumn | `true`    | `default` | `whitespace-nowrap` | Table (varies by consumer) | **Compliant** | —            |
 
 ### 2. Native `title=""` Attributes
 
@@ -96,29 +96,30 @@ All tooltip surfaces use `TooltipPopoverClientOnly` (SSR-safe wrapper around `To
 
 Per contract: "Any tooltip that can appear inside a scroll/overflow container MUST use `usePortal={true}`."
 
-**Violations (5)**:
+**Violations**: None (fixed in PR #212)
 
-1. `SellerSeenBadge.tsx:26` — appears in table cells with overflow-x-clip
-2. `WhyDealHint.tsx:42` — appears in table cells with overflow-x-clip
-3. `DealsTable.tsx:1202` — confidence badge in table
-4. `CardDetailClient.tsx:1410` — review badge in listings table
-5. `DealsTable.tsx:753`, `CardDetailClient.tsx:993`, `TopDealsClient.tsx:174`, `FeaturedDealsStrip.tsx:112` — filter area tooltips (NOT in overflow container, so these are acceptable)
+Previously non-compliant callsites (now fixed):
 
-**Actually non-compliant**: 4 callsites (SellerSeenBadge, WhyDealHint, DealsTable:1202, CardDetailClient:1410)
+- `SellerSeenBadge.tsx:26` — added `usePortal={true}`
+- `WhyDealHint.tsx:42` — added `usePortal={true}`
+- `DealsTable.tsx:1202` — added `usePortal={true}`
+- `CardDetailClient.tsx:1410` — added `usePortal={true}`
 
 ### Size Policy (§2)
 
 Per contract: "Use 3 standardized sizes only. Avoid per-callsite `tooltipClassName` width overrides."
 
-**Missing size prop (6)**:
+**Violations**: None (fixed in PR #213)
 
-1. `DealsTable.tsx:137` — renderEndsValue (uses `whitespace-nowrap`)
-2. `DealsTable.tsx:1459` — Mobile Ends tooltip
-3. `CardDetailClient.tsx:843` — Best trusted deal ends
-4. `CardDetailClient.tsx:1515` — Listings table Ends
-5. `tableColumns.tsx:444` — EndsColumn
+Previously missing explicit size prop (now fixed):
 
-**Analysis**: All 5 "missing size" callsites are Ends tooltips that use `whitespace-nowrap` for single-line timestamps (~160px). This is an intentional pattern documented in the contract (§2 Current Assignments: "Ends tooltips | `default` (inherited) | Single-line timestamp, ~160px actual width"). These are **technically non-compliant** (no explicit size prop) but functionally correct.
+- `DealsTable.tsx:137` — added `size="default"`
+- `DealsTable.tsx:1459` — added `size="default"`
+- `CardDetailClient.tsx:843` — added `size="default"`
+- `CardDetailClient.tsx:1515` — added `size="default"`
+- `tableColumns.tsx:444` — added `size="default"`
+
+All Ends tooltips now have explicit `size="default"` for contract compliance.
 
 ### Width Policy (§4)
 
@@ -126,39 +127,34 @@ Per contract: "Use 3 standardized sizes only. Avoid per-callsite `tooltipClassNa
 
 ---
 
-## Recommended Fix Sequence
+## Fix History
 
-If fixes are authorized, recommend the following sequenced PRs:
+### PR #211: Data Reliability Hover Regression Fix
 
-### PR 1: Portal Enforcement (4 callsites)
+Added `usePortal={true}` to Data Reliability help tooltips to fix hover gap issue with `side="top"`:
 
-Add `usePortal={true}` to:
+- `TopDealsClient.tsx:174`
+- `DealsTable.tsx:753`
+- `CardDetailClient.tsx:993`
+
+### PR #212: Portal Enforcement (4 callsites)
+
+Added `usePortal={true}` to tooltips in overflow containers:
 
 - `SellerSeenBadge.tsx:26`
 - `WhyDealHint.tsx:42`
 - `DealsTable.tsx:1202` (confidence badge)
 - `CardDetailClient.tsx:1410` (review badge)
 
-**Risk**: Low — adds portal mode to existing tooltips, no visual change expected.
+### PR #213: Size Prop Normalization (5 callsites)
 
-### PR 2: Size Prop Normalization (5 callsites)
-
-Add explicit `size="default"` to Ends tooltips:
+Added explicit `size="default"` to Ends tooltips:
 
 - `DealsTable.tsx:137`
 - `DealsTable.tsx:1459`
 - `CardDetailClient.tsx:843`
 - `CardDetailClient.tsx:1515`
 - `tableColumns.tsx:444`
-
-**Risk**: Low — makes implicit default explicit, no visual change expected.
-
-### PR 3: Contract Documentation Update
-
-Update `UI_CONSISTENCY_CONTRACT.md` §2 to clarify:
-
-- Ends tooltips use `whitespace-nowrap` + implicit `default` size
-- Document this as an intentional pattern or recommend explicit `size="compact"` with `whitespace-nowrap`
 
 ---
 
@@ -175,4 +171,4 @@ Update `UI_CONSISTENCY_CONTRACT.md` §2 to clarify:
 ---
 
 **Audit completed by**: Claude Code
-**Next action**: Operator review, then sequenced fix PRs if authorized
+**Status**: All fixes applied — 26/27 callsites compliant (1 admin-only native title)

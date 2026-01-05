@@ -14,7 +14,14 @@
  * need to be interactive after hydration.
  */
 
-import { useState, useEffect, type ReactNode } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { TooltipPopover } from "./TooltipPopover";
 
 type TooltipPopoverClientOnlyProps = {
@@ -54,15 +61,59 @@ export function TooltipPopoverClientOnly({
     setIsMounted(true);
   }, []);
 
-  // SSR / initial client render: plain span matching triggerClassName styling
+  const baseTriggerClassName =
+    "peer inline-flex min-w-0 items-center gap-1.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60";
+
+  const fallbackTriggerClassName = fallbackClassName ?? triggerClassName ?? "";
+
+  // SSR / initial client render: render layout-identical (but non-interactive) trigger markup
   if (!isMounted) {
-    return (
-      <span
-        className={`inline-flex min-w-0 items-center gap-1.5 ${fallbackClassName ?? triggerClassName ?? ""}`.trim()}
-      >
-        {children}
-      </span>
-    );
+    const inertTriggerProps = {
+      ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
+      "aria-disabled": true as const,
+      tabIndex: -1,
+      onMouseDown: (event: {
+        preventDefault: () => void;
+        stopPropagation: () => void;
+      }) => {
+        event.preventDefault();
+        event.stopPropagation();
+      },
+      onClick: (event: {
+        preventDefault: () => void;
+        stopPropagation: () => void;
+      }) => {
+        event.preventDefault();
+        event.stopPropagation();
+      },
+    };
+
+    let triggerNode: ReactNode;
+    if (asChild && Children.count(children) === 1 && isValidElement(children)) {
+      const child = Children.only(children) as React.ReactElement<any>;
+      const mergedClassName =
+        `${baseTriggerClassName} ${child.props.className ?? ""} ${fallbackTriggerClassName}`.trim();
+
+      triggerNode = cloneElement(child, {
+        ...inertTriggerProps,
+        className: mergedClassName,
+      } as any);
+    } else {
+      triggerNode = (
+        <button
+          type="button"
+          className={`${baseTriggerClassName} ${fallbackTriggerClassName}`.trim()}
+          {...inertTriggerProps}
+        >
+          {children}
+        </button>
+      );
+    }
+
+    const wrapperClassName =
+      `relative inline-flex min-w-0 max-w-full items-center ${className ?? ""}`.trim();
+
+    return <span className={wrapperClassName}>{triggerNode}</span>;
   }
 
   // After hydration: full interactive tooltip

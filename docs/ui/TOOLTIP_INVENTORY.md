@@ -3,6 +3,7 @@
 **Audit Date**: 2026-01-04
 **Contract Reference**: [UI_CONSISTENCY_CONTRACT.md](./UI_CONSISTENCY_CONTRACT.md)
 **Status**: All fixes applied (PRs #214, #215)
+Observed bubble width mode: shrink-to-content up to max-width
 
 ---
 
@@ -27,60 +28,60 @@ All tooltip surfaces use `TooltipPopoverClientOnly` (SSR-safe wrapper around `To
 
 #### Dedicated Tooltip Components
 
-| File:Line                                                                      | Component                        | usePortal | size      | tooltipClassName | Overflow Context | Compliance    | Fix Category |
-| ------------------------------------------------------------------------------ | -------------------------------- | --------- | --------- | ---------------- | ---------------- | ------------- | ------------ |
-| [TrustedBadge.tsx:13](../../components/TrustedBadge.tsx#L13)                   | TrustedBadge                     | `true`    | `medium`  | `tooltip-wide`   | Table cells      | **Compliant** | —            |
-| [SellerSeenBadge.tsx:26](../../components/SellerSeenBadge.tsx#L26)             | SellerSeenBadge                  | `true`    | `medium`  | `tooltip-wide`   | Table cells      | **Compliant** | —            |
-| [WhyDealHint.tsx:42](../../components/WhyDealHint.tsx#L42)                     | WhyDealHint                      | `true`    | `compact` | `tooltip-wide`   | Table cells      | **Compliant** | —            |
-| [SellerNameWithTooltip.tsx:78](../../components/SellerNameWithTooltip.tsx#L78) | SellerNameWithTooltip            | `true`    | `wide`    | `tooltip-wide`   | Table cells      | **Compliant** | —            |
-| [WatchlistStarButton.tsx:61](../../components/WatchlistStarButton.tsx#L61)     | WatchlistStarButton              | `true`    | `compact` | `tooltip-wide`   | Normal           | **Compliant** | —            |
-| [CardIdentity.tsx:61](../../components/CardIdentity.tsx#L61)                   | CardIdentityBlock (setName)      | `true`    | `medium`  | `tooltip-wide`   | Normal           | **Compliant** | —            |
-| [CardIdentity.tsx:74](../../components/CardIdentity.tsx#L74)                   | CardIdentityBlock (listingTitle) | `true`    | `medium`  | `tooltip-wide`   | Normal           | **Compliant** | —            |
+| File:Line                                                                      | Component                        | usePortal | size      | tooltipClassName | Content shape | Wrap source  | Overflow Context | Compliance    | Fix Category |
+| ------------------------------------------------------------------------------ | -------------------------------- | --------- | --------- | ---------------- | ------------- | ------------ | ---------------- | ------------- | ------------ |
+| [TrustedBadge.tsx:13](../../components/TrustedBadge.tsx#L13)                   | TrustedBadge                     | `true`    | `medium`  | `tooltip-wide`   | string        | natural      | Table cells      | **Compliant** | —            |
+| [SellerSeenBadge.tsx:26](../../components/SellerSeenBadge.tsx#L26)             | SellerSeenBadge                  | `true`    | `medium`  | `tooltip-wide`   | string        | natural      | Table cells      | **Compliant** | —            |
+| [WhyDealHint.tsx:42](../../components/WhyDealHint.tsx#L42)                     | WhyDealHint                      | `true`    | `compact` | `tooltip-wide`   | string        | natural      | Table cells      | **Compliant** | —            |
+| [SellerNameWithTooltip.tsx:78](../../components/SellerNameWithTooltip.tsx#L78) | SellerNameWithTooltip            | `true`    | `wide`    | `tooltip-wide`   | multiline     | forced-break | Table cells      | **Compliant** | —            |
+| [WatchlistStarButton.tsx:61](../../components/WatchlistStarButton.tsx#L61)     | WatchlistStarButton              | `true`    | `compact` | `tooltip-wide`   | string        | natural      | Normal           | **Compliant** | —            |
+| [CardIdentity.tsx:61](../../components/CardIdentity.tsx#L61)                   | CardIdentityBlock (setName)      | `true`    | `medium`  | `tooltip-wide`   | string        | natural      | Normal           | **Compliant** | —            |
+| [CardIdentity.tsx:74](../../components/CardIdentity.tsx#L74)                   | CardIdentityBlock (listingTitle) | `true`    | `medium`  | `tooltip-wide`   | string        | natural      | Normal           | **Compliant** | —            |
 
 #### DealsTable.tsx Inline Tooltips
 
-| File:Line                                                    | Purpose                 | usePortal   | size      | tooltipClassName    | Overflow Context        | Compliance    | Fix Category |
-| ------------------------------------------------------------ | ----------------------- | ----------- | --------- | ------------------- | ----------------------- | ------------- | ------------ |
-| [DealsTable.tsx:137](../../components/DealsTable.tsx#L137)   | renderEndsValue         | `true`      | `compact` | `whitespace-nowrap` | Table (overflow-x-clip) | **Compliant** | —            |
-| [DealsTable.tsx:753](../../components/DealsTable.tsx#L753)   | Data Reliability help   | `true`      | `medium`  | `tooltip-wide`      | Filter area (normal)    | **Compliant** | —            |
-| [DealsTable.tsx:1202](../../components/DealsTable.tsx#L1202) | Confidence badge        | `true`      | `compact` | —                   | Table (overflow-x-clip) | **Compliant** | —            |
-| [DealsTable.tsx:1404](../../components/DealsTable.tsx#L1404) | Mobile confidence badge | **missing** | `compact` | —                   | Mobile card (normal)    | **Compliant** | —            |
-| [DealsTable.tsx:1459](../../components/DealsTable.tsx#L1459) | Mobile Ends tooltip     | `true`      | `compact` | `whitespace-nowrap` | Mobile card (normal)    | **Compliant** | —            |
+| File:Line                                                    | Purpose                 | usePortal   | size      | tooltipClassName    | Content shape | Wrap source | Overflow Context        | Compliance    | Fix Category |
+| ------------------------------------------------------------ | ----------------------- | ----------- | --------- | ------------------- | ------------- | ----------- | ----------------------- | ------------- | ------------ |
+| [DealsTable.tsx:137](../../components/DealsTable.tsx#L137)   | renderEndsValue         | `true`      | `compact` | `whitespace-nowrap` | string        | natural     | Table (overflow-x-clip) | **Compliant** | —            |
+| [DealsTable.tsx:753](../../components/DealsTable.tsx#L753)   | Data Reliability help   | `true`      | `medium`  | `tooltip-wide`      | string        | natural     | Filter area (normal)    | **Compliant** | —            |
+| [DealsTable.tsx:1202](../../components/DealsTable.tsx#L1202) | Confidence badge        | `true`      | `compact` | —                   | string        | natural     | Table (overflow-x-clip) | **Compliant** | —            |
+| [DealsTable.tsx:1404](../../components/DealsTable.tsx#L1404) | Mobile confidence badge | **missing** | `compact` | —                   | string        | natural     | Mobile card (normal)    | **Compliant** | —            |
+| [DealsTable.tsx:1459](../../components/DealsTable.tsx#L1459) | Mobile Ends tooltip     | `true`      | `compact` | `whitespace-nowrap` | string        | natural     | Mobile card (normal)    | **Compliant** | —            |
 
 #### CardDetailClient.tsx Inline Tooltips
 
-| File:Line                                                                | Purpose                | usePortal | size      | tooltipClassName    | Overflow Context        | Compliance    | Fix Category |
-| ------------------------------------------------------------------------ | ---------------------- | --------- | --------- | ------------------- | ----------------------- | ------------- | ------------ |
-| [CardDetailClient.tsx:778](../../components/CardDetailClient.tsx#L778)   | Price breakdown        | `true`    | `compact` | `whitespace-nowrap` | Normal                  | **Compliant** | —            |
-| [CardDetailClient.tsx:843](../../components/CardDetailClient.tsx#L843)   | Best trusted deal ends | `true`    | `compact` | `whitespace-nowrap` | Normal                  | **Compliant** | —            |
-| [CardDetailClient.tsx:993](../../components/CardDetailClient.tsx#L993)   | Data Reliability help  | `true`    | `medium`  | `tooltip-wide`      | Filter area (normal)    | **Compliant** | —            |
-| [CardDetailClient.tsx:1322](../../components/CardDetailClient.tsx#L1322) | Listing title tooltip  | `true`    | `wide`    | `tooltip-wide`      | Table (overflow-x-clip) | **Compliant** | —            |
-| [CardDetailClient.tsx:1410](../../components/CardDetailClient.tsx#L1410) | Review badge           | `true`    | `compact` | —                   | Table (overflow-x-clip) | **Compliant** | —            |
-| [CardDetailClient.tsx:1515](../../components/CardDetailClient.tsx#L1515) | Listings table Ends    | `true`    | `compact` | `whitespace-nowrap` | Table (overflow-x-clip) | **Compliant** | —            |
+| File:Line                                                                | Purpose                | usePortal | size      | tooltipClassName    | Content shape | Wrap source  | Overflow Context        | Compliance    | Fix Category |
+| ------------------------------------------------------------------------ | ---------------------- | --------- | --------- | ------------------- | ------------- | ------------ | ----------------------- | ------------- | ------------ |
+| [CardDetailClient.tsx:778](../../components/CardDetailClient.tsx#L778)   | Price breakdown        | `true`    | `compact` | `whitespace-nowrap` | multiline     | forced-break | Normal                  | **Compliant** | —            |
+| [CardDetailClient.tsx:843](../../components/CardDetailClient.tsx#L843)   | Best trusted deal ends | `true`    | `compact` | `whitespace-nowrap` | string        | natural      | Normal                  | **Compliant** | —            |
+| [CardDetailClient.tsx:993](../../components/CardDetailClient.tsx#L993)   | Data Reliability help  | `true`    | `medium`  | `tooltip-wide`      | string        | natural      | Filter area (normal)    | **Compliant** | —            |
+| [CardDetailClient.tsx:1322](../../components/CardDetailClient.tsx#L1322) | Listing title tooltip  | `true`    | `wide`    | `tooltip-wide`      | string        | natural      | Table (overflow-x-clip) | **Compliant** | —            |
+| [CardDetailClient.tsx:1410](../../components/CardDetailClient.tsx#L1410) | Review badge           | `true`    | `compact` | —                   | string        | natural      | Table (overflow-x-clip) | **Compliant** | —            |
+| [CardDetailClient.tsx:1515](../../components/CardDetailClient.tsx#L1515) | Listings table Ends    | `true`    | `compact` | `whitespace-nowrap` | string        | natural      | Table (overflow-x-clip) | **Compliant** | —            |
 
 #### FeaturedDealsStrip.tsx Inline Tooltips
 
-| File:Line                                                                  | Purpose                | usePortal   | size     | tooltipClassName | Overflow Context       | Compliance    | Fix Category |
-| -------------------------------------------------------------------------- | ---------------------- | ----------- | -------- | ---------------- | ---------------------- | ------------- | ------------ |
-| [FeaturedDealsStrip.tsx:112](../../components/FeaturedDealsStrip.tsx#L112) | Data reliability label | **missing** | `medium` | `tooltip-wide`   | Card (overflow-x-auto) | **Compliant** | —            |
+| File:Line                                                                  | Purpose                | usePortal   | size     | tooltipClassName | Content shape | Wrap source | Overflow Context       | Compliance    | Fix Category |
+| -------------------------------------------------------------------------- | ---------------------- | ----------- | -------- | ---------------- | ------------- | ----------- | ---------------------- | ------------- | ------------ |
+| [FeaturedDealsStrip.tsx:112](../../components/FeaturedDealsStrip.tsx#L112) | Data reliability label | **missing** | `medium` | `tooltip-wide`   | string        | natural     | Card (overflow-x-auto) | **Compliant** | —            |
 
 #### TopDealsClient.tsx Inline Tooltips
 
-| File:Line                                                          | Purpose               | usePortal | size     | tooltipClassName | Overflow Context     | Compliance    | Fix Category |
-| ------------------------------------------------------------------ | --------------------- | --------- | -------- | ---------------- | -------------------- | ------------- | ------------ |
-| [TopDealsClient.tsx:174](../../components/TopDealsClient.tsx#L174) | Data Reliability help | `true`    | `medium` | `tooltip-wide`   | Filter area (normal) | **Compliant** | —            |
+| File:Line                                                          | Purpose               | usePortal | size     | tooltipClassName | Content shape | Wrap source | Overflow Context     | Compliance    | Fix Category |
+| ------------------------------------------------------------------ | --------------------- | --------- | -------- | ---------------- | ------------- | ----------- | -------------------- | ------------- | ------------ |
+| [TopDealsClient.tsx:174](../../components/TopDealsClient.tsx#L174) | Data Reliability help | `true`    | `medium` | `tooltip-wide`   | string        | natural     | Filter area (normal) | **Compliant** | —            |
 
 #### tableColumns.tsx (Shared Column Definitions)
 
-| File:Line                                               | Purpose    | usePortal | size      | tooltipClassName    | Overflow Context           | Compliance    | Fix Category |
-| ------------------------------------------------------- | ---------- | --------- | --------- | ------------------- | -------------------------- | ------------- | ------------ |
-| [tableColumns.tsx:444](../../lib/tableColumns.tsx#L444) | EndsColumn | `true`    | `compact` | `whitespace-nowrap` | Table (varies by consumer) | **Compliant** | —            |
+| File:Line                                               | Purpose    | usePortal | size      | tooltipClassName    | Content shape | Wrap source | Overflow Context           | Compliance    | Fix Category |
+| ------------------------------------------------------- | ---------- | --------- | --------- | ------------------- | ------------- | ----------- | -------------------------- | ------------- | ------------ |
+| [tableColumns.tsx:444](../../lib/tableColumns.tsx#L444) | EndsColumn | `true`    | `compact` | `whitespace-nowrap` | string        | natural     | Table (varies by consumer) | **Compliant** | —            |
 
 ### 2. Native `title=""` Attributes
 
-| File:Line                                                                      | Purpose             | Context         | Compliance     | Fix Category   |
-| ------------------------------------------------------------------------------ | ------------------- | --------------- | -------------- | -------------- |
-| [AdminBlacklistClient.tsx:423](../../components/AdminBlacklistClient.tsx#L423) | Re-blacklist button | Admin-only page | **Acceptable** | — (admin-only) |
+| File:Line                                                                      | Purpose             | Context         | Content shape | Wrap source | Compliance     | Fix Category   |
+| ------------------------------------------------------------------------------ | ------------------- | --------------- | ------------- | ----------- | -------------- | -------------- |
+| [AdminBlacklistClient.tsx:423](../../components/AdminBlacklistClient.tsx#L423) | Re-blacklist button | Admin-only page | string        | natural     | **Acceptable** | — (admin-only) |
 
 **Note**: Native `title` attributes provide browser-native tooltips. The Admin Blacklist page is internal-only and does not require visual consistency with public-facing tooltips.
 

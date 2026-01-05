@@ -1204,6 +1204,7 @@ export default function DealsTable({
                                       triggerClassName={`rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
                                         vm.priceConfidenceLabel
                                       )}`}
+                                      size="compact"
                                     >
                                       {getConfidenceDisplayText(
                                         vm.priceConfidenceLabel
@@ -1405,6 +1406,7 @@ export default function DealsTable({
                           triggerClassName={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${getConfidenceBadgeClass(
                             vm.priceConfidenceLabel
                           )}`}
+                          size="compact"
                         >
                           {getConfidenceDisplayText(vm.priceConfidenceLabel)}
                         </TooltipPopoverClientOnly>

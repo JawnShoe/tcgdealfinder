@@ -88,19 +88,18 @@ export function TooltipPopoverClientOnly({
       },
     };
 
-    const triggerNode =
-      asChild && Children.count(children) === 1 && isValidElement(children) ? (
-        (() => {
-          const child = Children.only(children) as React.ReactElement<any>;
-          const mergedClassName =
-            `${baseTriggerClassName} ${child.props.className ?? ""} ${fallbackTriggerClassName}`.trim();
+    let triggerNode: ReactNode;
+    if (asChild && Children.count(children) === 1 && isValidElement(children)) {
+      const child = Children.only(children) as React.ReactElement<any>;
+      const mergedClassName =
+        `${baseTriggerClassName} ${child.props.className ?? ""} ${fallbackTriggerClassName}`.trim();
 
-          return cloneElement(child, {
-            ...inertTriggerProps,
-            className: mergedClassName,
-          } as any);
-        })()
-      ) : (
+      triggerNode = cloneElement(child, {
+        ...inertTriggerProps,
+        className: mergedClassName,
+      } as any);
+    } else {
+      triggerNode = (
         <button
           type="button"
           className={`${baseTriggerClassName} ${fallbackTriggerClassName}`.trim()}
@@ -109,6 +108,7 @@ export function TooltipPopoverClientOnly({
           {children}
         </button>
       );
+    }
 
     const wrapperClassName =
       `relative inline-flex min-w-0 max-w-full items-center ${className ?? ""}`.trim();

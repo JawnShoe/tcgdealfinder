@@ -150,7 +150,7 @@ rg -n 'from\s+["'']\.\./' app/rebuild
 ```tsx
 <dt>Confidence</dt>
 <dd data-testid="trust-confidence">
-  {trustDisplay.confidence}
+  {rebuildListing.trust.confidence}
 </dd>
 ```
 
@@ -198,10 +198,14 @@ await expect(page.getByTestId("trust-data-age")).toBeVisible();
 - SSR response proof (values asserted in HTML):
 
 ```ts
-expect(body).toContain("72 / 100 (placeholder)");
-expect(body).toContain("placeholder-source");
-expect(body).toContain("2026-01-05T12:00:00Z");
-expect(body).toContain("5m");
+expect(body).toContain('data-testid="trust-confidence"');
+expect(body).toContain('data-testid="trust-source"');
+expect(body).toContain('data-testid="trust-fetched-at"');
+expect(body).toContain('data-testid="trust-data-age"');
+expect(body).toContain('data-testid="transparency-panel"');
+expect(body).toContain('data-testid="transparency-sources"');
+expect(body).toContain('data-testid="transparency-pipeline-version"');
+expect(body).toContain('data-testid="explainability-inputs"');
 ```
 
 - No-mutation comparison proof:
@@ -212,6 +216,15 @@ const before = {
   source: (await source.textContent())?.trim() ?? "",
   fetchedAt: (await fetchedAt.textContent())?.trim() ?? "",
   dataAge: (await dataAge.textContent())?.trim() ?? "",
+  transparencySources: (await transparencySources.textContent())?.trim() ?? "",
+  transparencyFetchedAt:
+    (await transparencyFetchedAt.textContent())?.trim() ?? "",
+  transparencyComputedAt:
+    (await transparencyComputedAt.textContent())?.trim() ?? "",
+  transparencyPipelineVersion:
+    (await transparencyPipelineVersion.textContent())?.trim() ?? "",
+  explainabilityInputs:
+    (await explainabilityInputs.textContent())?.trim() ?? "",
 };
 await page.waitForLoadState("domcontentloaded");
 await page.waitForTimeout(250);
@@ -220,6 +233,15 @@ const after = {
   source: (await source.textContent())?.trim() ?? "",
   fetchedAt: (await fetchedAt.textContent())?.trim() ?? "",
   dataAge: (await dataAge.textContent())?.trim() ?? "",
+  transparencySources: (await transparencySources.textContent())?.trim() ?? "",
+  transparencyFetchedAt:
+    (await transparencyFetchedAt.textContent())?.trim() ?? "",
+  transparencyComputedAt:
+    (await transparencyComputedAt.textContent())?.trim() ?? "",
+  transparencyPipelineVersion:
+    (await transparencyPipelineVersion.textContent())?.trim() ?? "",
+  explainabilityInputs:
+    (await explainabilityInputs.textContent())?.trim() ?? "",
 };
 expect(after).toEqual(before);
 ```

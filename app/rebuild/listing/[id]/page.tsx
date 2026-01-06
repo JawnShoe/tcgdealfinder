@@ -1,34 +1,17 @@
+import { getRebuildListing } from "@/rebuild/pipeline/getRebuildListing";
+
 type PageProps = {
   params: { id: string };
 };
 
-const placeholderDeal = {
-  id: "placeholder",
-  title: "Placeholder Listing",
-  price: "$199.00",
-  priceDelta: "-12%",
-  condition: "NM",
-  availability: "In stock",
-  seller: "Placeholder Seller",
-  source: "placeholder-source",
-  fetchedAt: "2026-01-05T12:00:00Z",
-  parserVersion: "v0-placeholder",
-  confidence: 72,
-  confidenceInputsHash: "placeholder-hash",
-  dataAgeMinutes: 5,
-};
-
-export default function RebuildListingPage({ params }: PageProps) {
-  const trustDisplay = {
-    confidence: `${placeholderDeal.confidence} / 100 (placeholder)`,
-    dataAge: `${placeholderDeal.dataAgeMinutes}m`,
-  };
+export default async function RebuildListingPage({ params }: PageProps) {
+  const rebuildListing = await getRebuildListing({ id: params.id });
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-          Rebuild lane - placeholder data
+          Rebuild lane - pipeline data (stub)
         </div>
 
         <header className="rounded-lg border border-slate-200 bg-white p-6">
@@ -36,7 +19,7 @@ export default function RebuildListingPage({ params }: PageProps) {
             Rebuild listing
           </p>
           <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-            {placeholderDeal.title}
+            {rebuildListing.listing.title}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
             Listing ID: <span className="font-mono">{params.id}</span>
@@ -49,16 +32,16 @@ export default function RebuildListingPage({ params }: PageProps) {
               Price
             </p>
             <p className="mt-2 text-2xl font-semibold text-slate-900">
-              {placeholderDeal.price}
+              {rebuildListing.listing.price} {rebuildListing.listing.currency}
             </p>
             <p className="mt-1 text-sm text-emerald-700">
-              Deal delta: {placeholderDeal.priceDelta}
+              Deal delta: {rebuildListing.listing.priceDelta}
             </p>
             <p className="mt-3 text-sm text-slate-600">
-              Condition: {placeholderDeal.condition}
+              Condition: {rebuildListing.listing.condition}
             </p>
             <p className="text-sm text-slate-600">
-              Availability: {placeholderDeal.availability}
+              Availability: {rebuildListing.listing.availability}
             </p>
           </div>
 
@@ -76,7 +59,7 @@ export default function RebuildListingPage({ params }: PageProps) {
                   className="font-mono font-semibold text-slate-900"
                   data-testid="trust-confidence"
                 >
-                  {trustDisplay.confidence}
+                  {rebuildListing.trust.confidence}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
@@ -85,7 +68,7 @@ export default function RebuildListingPage({ params }: PageProps) {
                   className="font-mono text-slate-900"
                   data-testid="trust-source"
                 >
-                  {placeholderDeal.source}
+                  {rebuildListing.trust.source}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
@@ -94,7 +77,7 @@ export default function RebuildListingPage({ params }: PageProps) {
                   className="font-mono text-slate-900"
                   data-testid="trust-fetched-at"
                 >
-                  {placeholderDeal.fetchedAt}
+                  {rebuildListing.trust.fetchedAtISO}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
@@ -103,65 +86,89 @@ export default function RebuildListingPage({ params }: PageProps) {
                   className="font-mono text-slate-900"
                   data-testid="trust-data-age"
                 >
-                  {trustDisplay.dataAge}
+                  {rebuildListing.trust.dataAge}
                 </dd>
               </div>
             </dl>
             <p className="mt-3 text-sm text-slate-600">
-              Seller: {placeholderDeal.seller}
+              Seller: {rebuildListing.listing.seller}
             </p>
           </div>
         </section>
 
-        <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+        <section
+          className="mt-6 rounded-lg border border-slate-200 bg-white p-6"
+          data-testid="explainability-panel"
+        >
           <h2 className="text-lg font-semibold text-slate-900">
-            Why this is a deal (placeholder)
+            Explainability (pipeline)
           </h2>
-          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">
-            <li>Price is below recent median for the same condition.</li>
-            <li>Seller meets baseline trust thresholds.</li>
-            <li>Listing includes clear condition and direct outbound link.</li>
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Confidence inputs
+          </p>
+          <ul
+            className="mt-2 list-disc space-y-2 pl-5 text-sm text-slate-700"
+            data-testid="explainability-inputs"
+          >
+            {rebuildListing.transparency.inputs.map((input) => (
+              <li key={input}>{input}</li>
+            ))}
           </ul>
           <p className="mt-3 text-xs text-slate-500">
-            Placeholder data only - no scoring or ingestion logic wired.
+            Pipeline stub: output is deterministic and rebuild-only.
           </p>
         </section>
 
-        <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+        <section
+          className="mt-6 rounded-lg border border-slate-200 bg-white p-6"
+          data-testid="transparency-panel"
+        >
           <h2 className="text-lg font-semibold text-slate-900">
-            Transparency log (placeholder)
+            Transparency log (pipeline)
           </h2>
           <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
             <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
               <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Source
+                Data sources
               </dt>
-              <dd className="mt-1 font-mono text-slate-900">
-                {placeholderDeal.source}
+              <dd
+                className="mt-1 font-mono text-slate-900"
+                data-testid="transparency-sources"
+              >
+                {rebuildListing.transparency.sources.join(", ")}
               </dd>
             </div>
             <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
               <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Fetched at
               </dt>
-              <dd className="mt-1 font-mono text-slate-900">
-                {placeholderDeal.fetchedAt}
+              <dd
+                className="mt-1 font-mono text-slate-900"
+                data-testid="transparency-fetched-at"
+              >
+                {rebuildListing.trust.fetchedAtISO}
               </dd>
             </div>
             <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
               <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Parser version
+                Computed at
               </dt>
-              <dd className="mt-1 font-mono text-slate-900">
-                {placeholderDeal.parserVersion}
+              <dd
+                className="mt-1 font-mono text-slate-900"
+                data-testid="transparency-computed-at"
+              >
+                {rebuildListing.transparency.computedAtISO}
               </dd>
             </div>
             <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
               <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Confidence inputs hash
+                Pipeline version
               </dt>
-              <dd className="mt-1 font-mono text-slate-900">
-                {placeholderDeal.confidenceInputsHash}
+              <dd
+                className="mt-1 font-mono text-slate-900"
+                data-testid="transparency-pipeline-version"
+              >
+                {rebuildListing.transparency.pipelineVersion}
               </dd>
             </div>
           </dl>

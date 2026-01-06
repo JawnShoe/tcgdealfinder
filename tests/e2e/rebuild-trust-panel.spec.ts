@@ -20,30 +20,58 @@ test("rebuild trust panel is SSR-visible and stable", async ({
   expect(body).toContain('data-testid="trust-source"');
   expect(body).toContain('data-testid="trust-fetched-at"');
   expect(body).toContain('data-testid="trust-data-age"');
-  expect(body).toContain("72 / 100 (placeholder)");
-  expect(body).toContain("placeholder-source");
-  expect(body).toContain("2026-01-05T12:00:00Z");
-  expect(body).toContain("5m");
+  expect(body).toContain("Transparency log");
+  expect(body).toContain("Confidence inputs");
+  expect(body).toContain('data-testid="transparency-panel"');
+  expect(body).toContain('data-testid="transparency-sources"');
+  expect(body).toContain('data-testid="transparency-pipeline-version"');
+  expect(body).toContain('data-testid="explainability-inputs"');
 
   await page.goto(routeUrl);
 
   const trustPanel = page.getByTestId("trust-panel");
+  const transparencyPanel = page.getByTestId("transparency-panel");
+  const explainabilityPanel = page.getByTestId("explainability-panel");
   const confidence = page.getByTestId("trust-confidence");
   const source = page.getByTestId("trust-source");
   const fetchedAt = page.getByTestId("trust-fetched-at");
   const dataAge = page.getByTestId("trust-data-age");
+  const transparencySources = page.getByTestId("transparency-sources");
+  const transparencyFetchedAt = page.getByTestId("transparency-fetched-at");
+  const transparencyComputedAt = page.getByTestId("transparency-computed-at");
+  const transparencyPipelineVersion = page.getByTestId(
+    "transparency-pipeline-version"
+  );
+  const explainabilityInputs = page.getByTestId("explainability-inputs");
 
   await expect(trustPanel).toBeVisible();
+  await expect(transparencyPanel).toBeVisible();
+  await expect(explainabilityPanel).toBeVisible();
   await expect(confidence).toBeVisible();
   await expect(source).toBeVisible();
   await expect(fetchedAt).toBeVisible();
   await expect(dataAge).toBeVisible();
+  await expect(transparencySources).toBeVisible();
+  await expect(transparencyFetchedAt).toBeVisible();
+  await expect(transparencyComputedAt).toBeVisible();
+  await expect(transparencyPipelineVersion).toBeVisible();
+  await expect(explainabilityInputs).toBeVisible();
 
   const before = {
     confidence: (await confidence.textContent())?.trim() ?? "",
     source: (await source.textContent())?.trim() ?? "",
     fetchedAt: (await fetchedAt.textContent())?.trim() ?? "",
     dataAge: (await dataAge.textContent())?.trim() ?? "",
+    transparencySources:
+      (await transparencySources.textContent())?.trim() ?? "",
+    transparencyFetchedAt:
+      (await transparencyFetchedAt.textContent())?.trim() ?? "",
+    transparencyComputedAt:
+      (await transparencyComputedAt.textContent())?.trim() ?? "",
+    transparencyPipelineVersion:
+      (await transparencyPipelineVersion.textContent())?.trim() ?? "",
+    explainabilityInputs:
+      (await explainabilityInputs.textContent())?.trim() ?? "",
   };
 
   await page.waitForLoadState("domcontentloaded");
@@ -54,6 +82,16 @@ test("rebuild trust panel is SSR-visible and stable", async ({
     source: (await source.textContent())?.trim() ?? "",
     fetchedAt: (await fetchedAt.textContent())?.trim() ?? "",
     dataAge: (await dataAge.textContent())?.trim() ?? "",
+    transparencySources:
+      (await transparencySources.textContent())?.trim() ?? "",
+    transparencyFetchedAt:
+      (await transparencyFetchedAt.textContent())?.trim() ?? "",
+    transparencyComputedAt:
+      (await transparencyComputedAt.textContent())?.trim() ?? "",
+    transparencyPipelineVersion:
+      (await transparencyPipelineVersion.textContent())?.trim() ?? "",
+    explainabilityInputs:
+      (await explainabilityInputs.textContent())?.trim() ?? "",
   };
 
   expect(after).toEqual(before);

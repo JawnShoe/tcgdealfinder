@@ -3,6 +3,8 @@ name: CI
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches:
       - main
@@ -25,7 +27,7 @@ jobs:
     steps:
       - name: Detect docs-only change
         id: changes
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         uses: dorny/paths-filter@v3
         with:
           predicate-quantifier: "every"
@@ -37,7 +39,7 @@ jobs:
 
       - name: Set non-docs flag
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.event_name }}" = "pull_request_target" ]; then
             echo "NON_DOCS=${{ steps.changes.outputs.non_docs }}" >> $GITHUB_ENV
           else
             echo "NON_DOCS=true" >> $GITHUB_ENV
@@ -53,6 +55,7 @@ jobs:
         if: env.NON_DOCS == 'true'
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Setup Node.js

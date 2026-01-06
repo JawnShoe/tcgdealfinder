@@ -12,7 +12,7 @@ export default function Loading() {
           <div className="mt-3 h-4 w-40 rounded bg-slate-200" />
         </header>
 
-        <section className="mt-6 grid gap-4 md:grid-cols-3">
+        <section className="mt-6 grid gap-4 md:grid-cols-2">
           <div className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="h-3 w-16 rounded bg-slate-200" />
             <div className="mt-3 h-7 w-24 rounded bg-slate-200" />
@@ -23,17 +23,13 @@ export default function Loading() {
 
           <div className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="h-3 w-32 rounded bg-slate-200" />
-            <div className="mt-3 h-8 w-32 rounded bg-slate-200" />
-            <div className="mt-4 h-4 w-32 rounded bg-slate-200" />
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <div className="h-3 w-28 rounded bg-slate-200" />
             <div className="mt-3 space-y-3">
               <div className="h-4 w-full rounded bg-slate-200" />
               <div className="h-4 w-full rounded bg-slate-200" />
               <div className="h-4 w-full rounded bg-slate-200" />
+              <div className="h-4 w-full rounded bg-slate-200" />
             </div>
+            <div className="mt-4 h-4 w-32 rounded bg-slate-200" />
           </div>
         </section>
 

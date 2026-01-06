@@ -19,6 +19,11 @@ const placeholderDeal = {
 };
 
 export default function RebuildListingPage({ params }: PageProps) {
+  const trustDisplay = {
+    confidence: `${placeholderDeal.confidence} / 100 (placeholder)`,
+    dataAge: `${placeholderDeal.dataAgeMinutes}m`,
+  };
+
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
@@ -38,7 +43,7 @@ export default function RebuildListingPage({ params }: PageProps) {
           </p>
         </header>
 
-        <section className="mt-6 grid gap-4 md:grid-cols-3">
+        <section className="mt-6 grid gap-4 md:grid-cols-2">
           <div className="rounded-lg border border-slate-200 bg-white p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Price
@@ -57,42 +62,54 @@ export default function RebuildListingPage({ params }: PageProps) {
             </p>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <div
+            className="rounded-lg border border-slate-200 bg-white p-4"
+            data-testid="trust-panel"
+          >
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Confidence (SSR)
+              Trust panel
             </p>
-            <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
-              {placeholderDeal.confidence} / 100 (placeholder)
-            </div>
-            <p className="mt-3 text-sm text-slate-600">
-              Seller: {placeholderDeal.seller}
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Trust metadata
-            </p>
-            <dl className="mt-3 space-y-2 text-sm text-slate-700">
+            <dl className="mt-3 space-y-3 text-sm text-slate-700">
+              <div className="flex items-center justify-between">
+                <dt>Confidence</dt>
+                <dd
+                  className="font-mono font-semibold text-slate-900"
+                  data-testid="trust-confidence"
+                >
+                  {trustDisplay.confidence}
+                </dd>
+              </div>
               <div className="flex items-center justify-between">
                 <dt>Source</dt>
-                <dd className="font-mono text-slate-900">
+                <dd
+                  className="font-mono text-slate-900"
+                  data-testid="trust-source"
+                >
                   {placeholderDeal.source}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
                 <dt>Fetched at</dt>
-                <dd className="font-mono text-slate-900">
+                <dd
+                  className="font-mono text-slate-900"
+                  data-testid="trust-fetched-at"
+                >
                   {placeholderDeal.fetchedAt}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
                 <dt>Data age</dt>
-                <dd className="font-mono text-slate-900">
-                  {placeholderDeal.dataAgeMinutes}m
+                <dd
+                  className="font-mono text-slate-900"
+                  data-testid="trust-data-age"
+                >
+                  {trustDisplay.dataAge}
                 </dd>
               </div>
             </dl>
+            <p className="mt-3 text-sm text-slate-600">
+              Seller: {placeholderDeal.seller}
+            </p>
           </div>
         </section>
 

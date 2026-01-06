@@ -133,137 +133,95 @@ perf-budget:
 
 - PR: #228
 - Route: `/rebuild/listing/[id]`
+- Playwright config: `tests/e2e/playwright.config.ts`
+- Playwright test: `tests/e2e/rebuild-trust-panel.spec.ts`
 - Import scan proof:
 
 ```bash
-rg -n 'from "(app|components)/' app/rebuild
+rg -n 'from\s+["'']@/(app|components|lib|server|pages)/' app/rebuild
 (no matches)
 
-rg -n '(from|require\()' app/rebuild
+rg -n 'from\s+["'']\.\./' app/rebuild
 (no matches)
 ```
 
 - SSR proof snippet:
 
 ```tsx
-<p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-  Confidence (SSR)
-</p>
-<div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
-  {placeholderDeal.confidence} / 100 (placeholder)
-</div>
+<dt>Confidence</dt>
+<dd data-testid="trust-confidence">
+  {trustDisplay.confidence}
+</dd>
 ```
 
-- Initial render visibility (no hover) description: Trust metadata renders directly in the page markup.
-- DOM snippet:
+- SSR response assertions (HTML response):
 
-```tsx
-<p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-  Trust metadata
-</p>
-<dl className="mt-3 space-y-2 text-sm text-slate-700">
-  <div className="flex items-center justify-between">
-    <dt>Source</dt>
-    <dd className="font-mono text-slate-900">
-      {placeholderDeal.source}
-    </dd>
-  </div>
-  <div className="flex items-center justify-between">
-    <dt>Fetched at</dt>
-    <dd className="font-mono text-slate-900">
-      {placeholderDeal.fetchedAt}
-    </dd>
-  </div>
-  <div className="flex items-center justify-between">
-    <dt>Data age</dt>
-    <dd className="font-mono text-slate-900">
-      {placeholderDeal.dataAgeMinutes}m
-    </dd>
-  </div>
-</dl>
+```ts
+const response = await request.get(routeUrl);
+const body = await response.text();
+expect(body).toContain("Confidence");
+expect(body).toContain('data-testid="trust-confidence"');
 ```
 
 ### Trust metadata visible at first render (no hover-only meaning)
 
 - PR: #228
 - Route: `/rebuild/listing/[id]`
-- Import scan proof:
+- Playwright test: `tests/e2e/rebuild-trust-panel.spec.ts`
+- SSR response assertions (HTML response):
 
-```bash
-rg -n 'from "(app|components)/' app/rebuild
-(no matches)
-
-rg -n '(from|require\()' app/rebuild
-(no matches)
+```ts
+expect(body).toContain("Source");
+expect(body).toContain("Fetched at");
+expect(body).toContain("Data age");
+expect(body).toContain('data-testid="trust-source"');
+expect(body).toContain('data-testid="trust-fetched-at"');
+expect(body).toContain('data-testid="trust-data-age"');
 ```
 
-- SSR proof snippet:
+- Visibility assertions (no hover):
 
-```tsx
-<p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-  Trust metadata
-</p>
-<dl className="mt-3 space-y-2 text-sm text-slate-700">
-  <div className="flex items-center justify-between">
-    <dt>Source</dt>
-    <dd className="font-mono text-slate-900">
-      {placeholderDeal.source}
-    </dd>
-  </div>
-</dl>
-```
-
-- Initial render visibility (no hover) description: Trust metadata is rendered in the default flow of the page, not behind hover UI.
-- DOM snippet:
-
-```tsx
-<section className="mt-6 grid gap-4 md:grid-cols-3">
-  <div className="rounded-lg border border-slate-200 bg-white p-4">
-    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-      Trust metadata
-    </p>
-    <dl className="mt-3 space-y-2 text-sm text-slate-700">
-      <div className="flex items-center justify-between">
-        <dt>Source</dt>
-        <dd className="font-mono text-slate-900">{placeholderDeal.source}</dd>
-      </div>
-    </dl>
-  </div>
-</section>
+```ts
+const trustPanel = page.getByTestId("trust-panel");
+await expect(trustPanel).toBeVisible();
+await expect(page.getByTestId("trust-confidence")).toBeVisible();
+await expect(page.getByTestId("trust-source")).toBeVisible();
+await expect(page.getByTestId("trust-fetched-at")).toBeVisible();
+await expect(page.getByTestId("trust-data-age")).toBeVisible();
 ```
 
 ### Confidence/provenance fields rendered from SSR (no client mutation)
 
 - PR: #228
 - Route: `/rebuild/listing/[id]`
-- Import scan proof:
+- Playwright test: `tests/e2e/rebuild-trust-panel.spec.ts`
+- SSR response proof (values asserted in HTML):
 
-```bash
-rg -n 'from "(app|components)/' app/rebuild
-(no matches)
-
-rg -n '(from|require\()' app/rebuild
-(no matches)
+```ts
+expect(body).toContain("72 / 100 (placeholder)");
+expect(body).toContain("placeholder-source");
+expect(body).toContain("2026-01-05T12:00:00Z");
+expect(body).toContain("5m");
 ```
 
-- SSR proof snippet:
+- No-mutation comparison proof:
 
-```tsx
-<div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
-  {placeholderDeal.confidence} / 100 (placeholder)
-</div>
-```
-
-- Initial render visibility (no hover) description: Provenance fields render in a static transparency log section.
-- DOM snippet:
-
-```tsx
-<h2 className="text-lg font-semibold text-slate-900">
-  Transparency log (placeholder)
-</h2>
-<dd className="mt-1 font-mono text-slate-900">
-  {placeholderDeal.parserVersion}
-</dd>
+```ts
+const before = {
+  confidence: (await confidence.textContent())?.trim() ?? "",
+  source: (await source.textContent())?.trim() ?? "",
+  fetchedAt: (await fetchedAt.textContent())?.trim() ?? "",
+  dataAge: (await dataAge.textContent())?.trim() ?? "",
+};
+await page.waitForLoadState("domcontentloaded");
+await page.waitForTimeout(250);
+const after = {
+  confidence: (await confidence.textContent())?.trim() ?? "",
+  source: (await source.textContent())?.trim() ?? "",
+  fetchedAt: (await fetchedAt.textContent())?.trim() ?? "",
+  dataAge: (await dataAge.textContent())?.trim() ?? "",
+};
+expect(after).toEqual(before);
 ```
 
 ### Rebuild isolation verified (no legacy imports)
@@ -273,31 +231,9 @@ rg -n '(from|require\()' app/rebuild
 - Import scan proof:
 
 ```bash
-rg -n 'from "(app|components)/' app/rebuild
+rg -n 'from\s+["'']@/(app|components|lib|server|pages)/' app/rebuild
 (no matches)
 
-rg -n '(from|require\()' app/rebuild
+rg -n 'from\s+["'']\.\./' app/rebuild
 (no matches)
-```
-
-- SSR proof snippet:
-
-```tsx
-<p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-  Rebuild listing
-</p>
-<h1 className="mt-2 text-2xl font-semibold text-slate-900">
-  {placeholderDeal.title}
-</h1>
-```
-
-- Initial render visibility (no hover) description: The rebuild page renders without importing legacy modules.
-- DOM snippet:
-
-```tsx
-<main className="min-h-screen bg-slate-50">
-  <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-    <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-      Rebuild lane - placeholder data
-    </div>
 ```

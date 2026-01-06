@@ -1,91 +1,106 @@
-# REBUILD_TRACKER
+# REBUILD_TRACKER.md
 
-Execution Plan (One-Page, Canonical) � source: Championship Rebuild Plan.pdf  
-Keep this short and authoritative. Evidence + proofs live in TRACKER_EVIDENCE.md.
-
-## Week 0: Setup & Weaponization
-
-### Create docs/rebuild/ with:
-
-- [x] PRD Lite
-- [x] Trust Metrics
-- [x] Contracts (tooltip/hydration/skeleton)
-- [x] Release checklist
-- [x] ADR log
-
-### Governance (rebuild-only, foundational)
-
-- [x] Non-negotiables (hard gates)
-
-### Implement Phase 0 skills:
-
-- [x] primitive-enforcer
-- [x] rebuild-contract-guard
-- [x] pr-impact-declaration
-
-### CI
-
-- [x] Scaffold CI pipeline with the 5 gates (may fail initially, but exists)
-
-## Weeks 1�2: Phase 0 � Prove the Architecture
-
-Deliverable: one route (/listing/[id]) that:
-
-- [x] uses contracts correctly (hydration/skeleton/tooltip)
-- [x] passes all CI gates
-- [ ] serves data from new pipeline
-- [x] has SSR-stable confidence
-- [ ] includes explainability-lite + transparency log
-
-Daily ritual: run primitive-enforcer on any UI change.
-
-## Weeks 3�5: Phase 1 � Core Engine
-
-- [ ] Build home ? discovery ? detail using the proven template
-- [ ] Deploy dashboards (freshness, errors, CWV proxy, outbound clicks)
-- [ ] Add data-sanity-gate
-- [ ] Lock rule: No new features until all routes pass CI 100%
-
-## Weeks 6�8: Phase 2 � Trust Polish
-
-- [ ] Credibility UI: drilldown + provenance
-- [ ] Resilience tiers + live/cached labels
-- [ ] Perceived speed optimizations: skeleton library everywhere
-- [ ] Perceived speed optimizations: priority hydration
-- [ ] Perceived speed optimizations: prefetch on intent
-- [ ] Compliance hardening
-- [ ] Synthetic monitoring active
-
-## Week 9+: Phase 3 � Moat Building
-
-Only after Phase 2 is �boringly stable�:
-
-- [ ] Alerts UI
-- [ ] Personalization expansion
-- [ ] Cross-market dedupe (optional)
-- [ ] Predictive signals beyond rules-based
+Purpose: single checkbox tracker that mirrors the Championship Rebuild Plan ?Execution Plan (One-Page, Canonical)?.
+Rule: do not reword sections here. If the plan changes, update both together in the same PR.
 
 ---
 
-## Invariants (always true, not checkboxes)
+## Week 0: Setup & Weaponization
 
-- No legacy imports into rebuild lane (`app/rebuild/**` is isolated).
-- Micro-claims (SSR visibility, no mutation, smoke packs) are proven in TRACKER_EVIDENCE.md.
+Create `docs/rebuild/` with:
 
-## Gate status snapshot (informational)
+- [ ] PRD Lite ? `docs/rebuild/PRD_LITE.md`
+- [ ] Trust Metrics ? `docs/rebuild/TRUST_METRICS.md`
+- [ ] Contracts (tooltip/hydration/skeleton) ? `docs/rebuild/CONTRACTS.md` (or equivalent canonical contracts doc)
+- [ ] Release checklist ? `docs/rebuild/RELEASE_CHECKLIST.md`
+- [ ] ADR log ? `docs/rebuild/ADR_LOG.md`
 
-- Lint + typecheck + unit + build: hard-pass gates
-- E2E smoke: present (Playwright minimal); still EXEMPT TEMP as a gate until expanded
-- Visual regression / CLS: EXEMPT (TEMP) until baseline exists
-- A11y smoke: EXEMPT (TEMP) until runner exists
-- Perf budget: EXEMPT (TEMP) until measurement harness exists
+Implement Phase 0 skills:
 
-## Links
+- [ ] `primitive-enforcer`
+- [ ] `rebuild-contract-guard`
+- [ ] `pr-impact-declaration`
 
-- PRD lite: PRD_LITE.md
-- Trust metrics: TRUST_METRICS.md
-- Non-negotiables: NON_NEGOTIABLES.md
-- Contracts: CONTRACTS.md
-- Release checklist: RELEASE_CHECKLIST.md
-- ADR log: ADR_LOG.md
-- Evidence map: TRACKER_EVIDENCE.md
+Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
+
+- [ ] CI scaffolding exists for required gates (even if temporarily exempted)
+
+---
+
+## Weeks 1?2: Phase 0 ? Prove the Architecture
+
+Deliverable: one route (`/rebuild/listing/[id]`) that:
+
+- [ ] uses contracts correctly (hydration/skeleton/tooltip)
+- [ ] passes all CI gates
+- [ ] serves data from new pipeline
+- [ ] has SSR-stable confidence
+- [ ] includes explainability-lite + transparency log
+
+Daily ritual:
+
+- [ ] Run `primitive-enforcer` on any UI change
+
+---
+
+## Weeks 3?5: Phase 1 ? Core Engine
+
+Build home ? discovery ? detail using the proven template:
+
+- [ ] Home route implemented in rebuild lane (template-based)
+- [ ] Discovery route implemented in rebuild lane (template-based)
+- [ ] Detail route implemented in rebuild lane (template-based)
+
+Deploy dashboards:
+
+- [ ] freshness
+- [ ] errors
+- [ ] CWV proxy
+- [ ] outbound clicks
+
+Add data-sanity-gate:
+
+- [ ] data-sanity-gate implemented
+- [ ] data-sanity-gate is deploy-blocking
+
+Lock rule:
+
+- [ ] No new features until all routes pass CI 100%
+
+---
+
+## Weeks 6?8: Cutover + Trust Hardening
+
+Cutover (route ownership, not blended flags):
+
+- [ ] rebuild owns routes by cutover plan (no interleaving legacy + rebuild on same route)
+
+Trust hardening:
+
+- [ ] trust metrics wired to real pipeline outputs
+- [ ] transparency log reflects real inputs + versions
+- [ ] contracts enforced across rebuilt routes (tooltip/hydration/skeleton)
+
+Operational hardening:
+
+- [ ] monitoring/alerting thresholds set for freshness + errors
+- [ ] incident playbook validated via release checklist
+
+---
+
+## Week 9+: Moat + Scale
+
+Scale coverage:
+
+- [ ] additional routes added only via proven template + contracts
+
+Performance + UX moat:
+
+- [ ] performance budgets enforced (LCP/CLS/INP proxy)
+- [ ] accessibility baseline enforced for rebuilt routes
+- [ ] observability baseline enforced (client + server errors, tracing where applicable)
+
+Long-term rules:
+
+- [ ] legacy remains read-only reference during rebuild (no legacy imports into rebuild namespaces)
+- [ ] rebuild tests assert contracts and trust invariants (not legacy quirks)

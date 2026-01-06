@@ -1,6 +1,8 @@
 # REBUILD_TRACKER.md
 
-Purpose: single checkbox tracker that mirrors the Championship Rebuild Plan ?Execution Plan (One-Page, Canonical)?.
+Checkboxes must match TRACKER_EVIDENCE.md; otherwise downgrade to [ ].
+
+Purpose: single checkbox tracker that mirrors the Championship Rebuild Plan "Execution Plan (One-Page, Canonical)".
 Rule: do not reword sections here. If the plan changes, update both together in the same PR.
 
 ---
@@ -9,33 +11,33 @@ Rule: do not reword sections here. If the plan changes, update both together in 
 
 Create `docs/rebuild/` with:
 
-- [ ] PRD Lite ? `docs/rebuild/PRD_LITE.md`
-- [ ] Trust Metrics ? `docs/rebuild/TRUST_METRICS.md`
-- [ ] Contracts (tooltip/hydration/skeleton) ? `docs/rebuild/CONTRACTS.md` (or equivalent canonical contracts doc)
-- [ ] Release checklist ? `docs/rebuild/RELEASE_CHECKLIST.md`
-- [ ] ADR log ? `docs/rebuild/ADR_LOG.md`
+- [x] PRD Lite - `docs/rebuild/PRD_LITE.md`
+- [x] Trust Metrics - `docs/rebuild/TRUST_METRICS.md`
+- [x] Contracts (tooltip/hydration/skeleton) - `docs/rebuild/CONTRACTS.md` (or equivalent canonical contracts doc)
+- [x] Release checklist - `docs/rebuild/RELEASE_CHECKLIST.md`
+- [x] ADR log - `docs/rebuild/ADR_LOG.md`
 
 Implement Phase 0 skills:
 
-- [ ] `primitive-enforcer`
-- [ ] `rebuild-contract-guard`
-- [ ] `pr-impact-declaration`
+- [x] `primitive-enforcer`
+- [x] `rebuild-contract-guard`
+- [x] `pr-impact-declaration`
 
 Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 
-- [ ] CI scaffolding exists for required gates (even if temporarily exempted)
+- [x] CI scaffolding exists for required gates (even if temporarily exempted)
 
 ---
 
-## Weeks 1?2: Phase 0 ? Prove the Architecture
+## Weeks 1-2: Phase 0 - Prove the Architecture
 
 Deliverable: one route (`/rebuild/listing/[id]`) that:
 
 - [ ] uses contracts correctly (hydration/skeleton/tooltip)
 - [ ] passes all CI gates
 - [ ] serves data from new pipeline
-- [ ] has SSR-stable confidence
-- [ ] includes explainability-lite + transparency log
+- [x] has SSR-stable confidence
+- [x] includes explainability-lite + transparency log
 
 Daily ritual:
 
@@ -43,9 +45,9 @@ Daily ritual:
 
 ---
 
-## Weeks 3?5: Phase 1 ? Core Engine
+## Weeks 3-5: Phase 1 - Core Engine
 
-Build home ? discovery ? detail using the proven template:
+Build home -> discovery -> detail using the proven template:
 
 - [ ] Home route implemented in rebuild lane (template-based)
 - [ ] Discovery route implemented in rebuild lane (template-based)
@@ -69,7 +71,7 @@ Lock rule:
 
 ---
 
-## Weeks 6?8: Cutover + Trust Hardening
+## Weeks 6-8: Cutover + Trust Hardening
 
 Cutover (route ownership, not blended flags):
 

@@ -21,12 +21,17 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      - name: Checkout code (push)
+        if: github.event_name == 'push'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - name: Detect docs-only change
         id: changes
         if: github.event_name == 'pull_request'
         uses: dorny/paths-filter@v3
         with:
-          predicate-quantifier: "every"
           filters: |
             non_docs:
               - "**"
@@ -38,7 +43,6 @@ jobs:
         if: github.event_name == 'push'
         uses: dorny/paths-filter@v3
         with:
-          predicate-quantifier: "every"
           base: ${{ github.event.before }}
           ref: ${{ github.sha }}
           filters: |
@@ -64,7 +68,7 @@ jobs:
           echo "Skipping formatting, lint, tests, and build to reduce Actions minutes."
 
       - name: Checkout code
-        if: env.NON_DOCS == 'true'
+        if: env.NON_DOCS == 'true' && github.event_name != 'push'
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}

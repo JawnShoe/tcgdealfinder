@@ -2,6 +2,9 @@ name: CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,31 +21,61 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      - name: Checkout code (push)
+        if: github.event_name == 'push'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - name: Detect docs-only change
         id: changes
+        if: github.event_name == 'pull_request'
         uses: dorny/paths-filter@v3
         with:
-          predicate-quantifier: "every"
           filters: |
             non_docs:
               - "**"
               - "!**/*.md"
               - "!docs/**"
 
+      - name: Detect docs-only change (push)
+        id: changes_push
+        if: github.event_name == 'push'
+        uses: dorny/paths-filter@v3
+        with:
+          base: ${{ github.event.before }}
+          ref: ${{ github.sha }}
+          filters: |
+            non_docs:
+              - "**"
+              - "!**/*.md"
+              - "!docs/**"
+
+      - name: Set non-docs flag
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "NON_DOCS=${{ steps.changes.outputs.non_docs }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "NON_DOCS=${{ steps.changes_push.outputs.non_docs }}" >> $GITHUB_ENV
+          else
+            echo "NON_DOCS=true" >> $GITHUB_ENV
+          fi
+
       - name: Docs-only fast path
-        if: steps.changes.outputs.non_docs != 'true'
+        if: env.NON_DOCS != 'true'
         run: |
           echo "Docs-only PR detected (only *.md and/or docs/** changes)."
           echo "Skipping formatting, lint, tests, and build to reduce Actions minutes."
 
       - name: Checkout code
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true' && github.event_name != 'push'
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Setup Node.js
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: "20"
@@ -50,11 +83,11 @@ jobs:
           cache-dependency-path: "package-lock.json"
 
       - name: Install dependencies
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         run: npm ci
 
       - name: Cache Next.js build
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         uses: actions/cache@v5
         with:
           path: .next/cache
@@ -63,11 +96,13 @@ jobs:
             ${{ runner.os }}-next-cache-
 
       - name: Check formatting (changed files only)
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         run: |
           # Get base branch for comparison
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            BASE_SHA="${{ github.event.before }}"
           else
             BASE_SHA="origin/main"
           fi
@@ -85,13 +120,69 @@ jobs:
           echo "$CHANGED_FILES" | xargs npx prettier --check
 
       - name: Run lint
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         run: npm run lint
 
+      - name: Run typecheck
+        if: env.NON_DOCS == 'true'
+        run: npx tsc --noEmit
+
       - name: Run unit tests
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         run: npm run test:unit
 
       - name: Run build
-        if: steps.changes.outputs.non_docs == 'true'
+        if: env.NON_DOCS == 'true'
         run: npm run build
+
+  e2e-smoke:
+    name: E2E Smoke (EXEMPT TEMP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: EXEMPT (TEMP) - E2E smoke not wired
+        continue-on-error: true
+        run: |
+          echo "EXEMPT (TEMP): E2E smoke not wired."
+          echo "Unblock: add Playwright config + rebuild route smoke."
+          exit 1
+
+  visual-regression:
+    name: Visual Regression / CLS (EXEMPT TEMP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: EXEMPT (TEMP) - Visual regression not wired
+        continue-on-error: true
+        run: |
+          echo "EXEMPT (TEMP): Visual regression/CLS not wired."
+          echo "Unblock: baseline capture + CLS thresholds."
+          exit 1
+
+  a11y-smoke:
+    name: A11y Smoke (EXEMPT TEMP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: EXEMPT (TEMP) - A11y smoke not wired
+        continue-on-error: true
+        run: |
+          echo "EXEMPT (TEMP): A11y smoke not wired."
+          echo "Unblock: a11y runner + baseline."
+          exit 1
+
+  perf-budget:
+    name: Perf Budget (EXEMPT TEMP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: EXEMPT (TEMP) - Perf budget not wired
+        continue-on-error: true
+        run: |
+          echo "EXEMPT (TEMP): Perf budget not wired."
+          echo "Unblock: budget definition + measurement harness."
+          exit 1

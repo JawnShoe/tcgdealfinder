@@ -45,3 +45,4 @@ Canonical rebuild checklist and progress tracker. Keep this short and authoritat
 - Contracts: CONTRACTS.md
 - Release checklist: RELEASE_CHECKLIST.md
 - ADR log: ADR_LOG.md
+- Evidence map: TRACKER_EVIDENCE.md

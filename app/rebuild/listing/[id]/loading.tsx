@@ -3,7 +3,7 @@ export default function Loading() {
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-          Rebuild lane — loading placeholder
+          Rebuild lane - loading placeholder
         </div>
 
         <header className="rounded-lg border border-slate-200 bg-white p-6">

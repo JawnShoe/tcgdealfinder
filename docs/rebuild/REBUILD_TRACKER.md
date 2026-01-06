@@ -16,10 +16,10 @@ Canonical rebuild checklist and progress tracker. Keep this short and authoritat
 
 ## Weeks 1-2: Phase 0 - Prove the Architecture
 
-- [ ] Rebuild lane route scaffold (placeholder UI, SSR-stable)
-- [ ] Trust metadata visible at first render (no hover-only meaning)
-- [ ] Confidence/provenance fields rendered from SSR (no client mutation)
-- [ ] Rebuild isolation verified (no legacy imports)
+- [x] Rebuild lane route scaffold (placeholder UI, SSR-stable)
+- [x] Trust metadata visible at first render (no hover-only meaning)
+- [x] Confidence/provenance fields rendered from SSR (no client mutation)
+- [x] Rebuild isolation verified (no legacy imports)
 - [ ] Rebuild smoke pack checklist executed
 
 ## Phase 0 Skills (LOCKED order)

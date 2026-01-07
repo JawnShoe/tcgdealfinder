@@ -13,8 +13,8 @@ export function SiteFooter() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           {/* Data source disclosure — trust indicator (static text) */}
-          <div className="text-xs text-slate-500 max-w-md">
-            <p className="font-medium text-slate-600 mb-1">Data Sources</p>
+          <div className="text-xs text-slate-800 max-w-md">
+            <p className="font-medium text-slate-900 mb-1">Data Sources</p>
             <p>
               Listings from eBay API. Historical prices from TCGPlayer market
               data. Prices shown in USD with automatic currency conversion for
@@ -23,7 +23,7 @@ export function SiteFooter() {
           </div>
 
           {/* Footer navigation */}
-          <nav className="flex flex-wrap gap-4 text-xs text-slate-500">
+          <nav className="flex flex-wrap gap-4 text-xs text-slate-800">
             <Link href="/" className="hover:text-slate-700">
               Home
             </Link>

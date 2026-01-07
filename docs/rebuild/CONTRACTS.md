@@ -4,6 +4,16 @@
 
 See docs/rebuild/VISUAL_CONTRACT.md.
 
+## Doctrine Ratification Gate
+
+Any cross-cutting decision (UI behavior, visual system, trust semantics, data interpretation, architecture) that is explicitly marked as "LOCKED", "final", or "canonical" MUST be ratified via a docs-only PR before:
+
+- implementation begins
+- implementation guardrails are defined
+- enforcement is discussed
+
+Chat agreement alone is not authoritative.
+
 ## Tooltip / Popover Contract
 
 - MUST use a single canonical tooltip/popover primitive.

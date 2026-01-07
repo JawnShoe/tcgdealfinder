@@ -20,7 +20,7 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 
 ### CI evidence
 
-- CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20768706658
+- CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20768781965
 - Checks observed:
   - Lint & Build
   - E2E Smoke

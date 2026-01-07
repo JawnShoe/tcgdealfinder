@@ -283,7 +283,7 @@ export const DEFAULT_LAYOUT: TableLayoutConfig = {
  */
 export function getColumnDefinition(
   variant: TableVariant,
-  columnKey: ColumnKey,
+  columnKey: ColumnKey
 ): ColumnDefinition | undefined {
   const layoutConfig = DEFAULT_LAYOUT[variant];
   if (!layoutConfig) return undefined;
@@ -298,7 +298,7 @@ export function getColumnDefinition(
  */
 export function getColumnClasses(
   variant: TableVariant,
-  columnKey: ColumnKey,
+  columnKey: ColumnKey
 ): { width: string; minWidth: string; classes: string } {
   const col = getColumnDefinition(variant, columnKey);
   if (!col) {

@@ -1,4 +1,3 @@
-
 import { DEFAULT_DEALS_VIEW_STATE, type DealsViewState } from "./dealsState";
 
 const STORAGE_KEY = "tcg_deals_view_state_v2";
@@ -34,7 +33,7 @@ export function saveDealsViewState(state: DealsViewState): void {
 }
 
 function sanitizePartial(
-  data: Record<string, unknown>,
+  data: Record<string, unknown>
 ): Partial<DealsViewState> {
   const partial: Partial<DealsViewState> = {};
 
@@ -78,9 +77,7 @@ function sanitizePartial(
   return partial;
 }
 
-function buildMinimalState(
-  state: DealsViewState,
-): Partial<DealsViewState> {
+function buildMinimalState(state: DealsViewState): Partial<DealsViewState> {
   const minimal: Partial<DealsViewState> = {};
   const defaults = DEFAULT_DEALS_VIEW_STATE;
 

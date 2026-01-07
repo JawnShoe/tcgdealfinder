@@ -33,7 +33,7 @@ Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 
 Deliverable: one route (`/rebuild/listing/[id]`) that:
 
-- [ ] uses contracts correctly (hydration/skeleton/tooltip)
+- [x] uses contracts correctly (hydration/skeleton/tooltip)
 - [x] passes all CI gates
 - [x] serves data from new pipeline
 - [x] has SSR-stable confidence

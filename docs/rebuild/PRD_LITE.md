@@ -43,3 +43,7 @@ Find actionable undervalued listings you can trust, fast.
 ## Rebuild execution model
 
 Same repo; isolated rebuild lane; legacy remains read-only reference; no intermingling.
+
+## Visual Contract
+
+See docs/rebuild/VISUAL_CONTRACT.md.

@@ -18,3 +18,10 @@
   - Visual regression/CLS: baseline capture + CLS thresholds.
   - A11y smoke: a11y runner + baseline.
   - Perf budget: budget definition + measurement harness.
+
+## ADR-0003: Phase-1 Visual Contract adoption
+
+- Status: Accepted
+- Decision: Adopt docs/rebuild/VISUAL_CONTRACT.md as the Phase-1 visual contract for rebuild UI surfaces.
+- Rationale: Prevent "vibecoded / AI slop" drift and enforce a calm, data-first design system.
+- Consequences: Phase-1 UI changes must follow the visual contract; deviations require a contract update.

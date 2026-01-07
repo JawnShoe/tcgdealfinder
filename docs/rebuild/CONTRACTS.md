@@ -1,5 +1,9 @@
 # Rebuild Contracts
 
+## Visual Contract
+
+See docs/rebuild/VISUAL_CONTRACT.md.
+
 ## Tooltip / Popover Contract
 
 - MUST use a single canonical tooltip/popover primitive.

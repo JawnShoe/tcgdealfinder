@@ -4,24 +4,25 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 
 ## Week 0: Setup & Weaponization
 
-| Tracker item                             | PR   | File(s)                           | Evidence (short)                                        |
-| ---------------------------------------- | ---- | --------------------------------- | ------------------------------------------------------- |
-| PRD Lite                                 | #221 | docs/rebuild/PRD_LITE.md          | Product Promise section present.                        |
-| Trust Metrics                            | #221 | docs/rebuild/TRUST_METRICS.md     | Freshness SLOs section present.                         |
-| Contracts (tooltip/hydration/skeleton)   | #225 | docs/rebuild/CONTRACTS.md         | Hydration Tiers Contract includes SSR stability rule.   |
-| Release checklist                        | #225 | docs/rebuild/RELEASE_CHECKLIST.md | CI gates list present.                                  |
-| ADR log                                  | #225 | docs/rebuild/ADR_LOG.md           | ADR-0001 and ADR-0002 present.                          |
-| Phase 0 skill: primitive-enforcer        | #222 | skills/README.md                  | Activation order lists primitive-enforcer.              |
-| Phase 0 skill: rebuild-contract-guard    | #222 | skills/README.md                  | Activation order lists rebuild-contract-guard.          |
-| Phase 0 skill: pr-impact-declaration     | #222 | skills/README.md                  | Activation order lists pr-impact-declaration.           |
-| CI scaffolding exists for required gates | #225 | .github/workflows/ci.yml          | Gate job names for lint/build and exempt gates present. |
+| Tracker item                                    | PR   | File(s)                                                                                                                           | Evidence (short)                                                                        |
+| ----------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| PRD Lite                                        | #221 | docs/rebuild/PRD_LITE.md                                                                                                          | Product Promise section present.                                                        |
+| Trust Metrics                                   | #221 | docs/rebuild/TRUST_METRICS.md                                                                                                     | Freshness SLOs section present.                                                         |
+| Contracts (tooltip/hydration/skeleton)          | #225 | docs/rebuild/CONTRACTS.md                                                                                                         | Hydration Tiers Contract includes SSR stability rule.                                   |
+| Release checklist                               | #225 | docs/rebuild/RELEASE_CHECKLIST.md                                                                                                 | CI gates list present.                                                                  |
+| ADR log                                         | #225 | docs/rebuild/ADR_LOG.md                                                                                                           | ADR-0001 and ADR-0002 present.                                                          |
+| Phase 0 skill: primitive-enforcer               | #222 | skills/README.md                                                                                                                  | Activation order lists primitive-enforcer.                                              |
+| Phase 0 skill: rebuild-contract-guard           | #222 | skills/README.md                                                                                                                  | Activation order lists rebuild-contract-guard.                                          |
+| Phase 0 skill: pr-impact-declaration            | #222 | skills/README.md                                                                                                                  | Activation order lists pr-impact-declaration.                                           |
+| CI scaffolding exists for required gates        | #225 | .github/workflows/ci.yml                                                                                                          | Gate job names for lint/build and exempt gates present.                                 |
+| E2E Smoke gate is real (Playwright + seeded DB) | #237 | .github/workflows/ci.yml; tests/fixtures/rebuild_seed.sql; tests/e2e/rebuild-trust-panel.spec.ts; package.json; package-lock.json | E2E runs twice in CI against seeded Postgres; deterministic listing_id = rebuild-e2e-1. |
 
 ### CI evidence
 
-- CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20736641784
+- CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20767264393
 - Checks observed:
   - Lint & Build
-  - E2E Smoke (EXEMPT TEMP)
+  - E2E Smoke
   - Visual Regression / CLS (EXEMPT TEMP)
   - A11y Smoke (EXEMPT TEMP)
   - Perf Budget (EXEMPT TEMP)
@@ -43,6 +44,5 @@ expect(body).toContain("rebuild-db-v1");
 
 ## Known gaps / risks
 
-- E2E Smoke is EXEMPT TEMP and Playwright is not executed in CI today.
-- SSR/no-mutation proof is currently local-run only.
-- Before removing EXEMPT, add a deterministic DB fixture/seed (preferred) or explicitly skip when no listing exists.
+- Visual Regression / CLS, A11y Smoke, and Perf Budget remain EXEMPT TEMP.
+- "passes all CI gates" stays unchecked until all gates are enforced.

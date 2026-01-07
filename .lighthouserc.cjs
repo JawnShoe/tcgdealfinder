@@ -10,6 +10,9 @@ module.exports = {
         onlyCategories: ["performance"],
         formFactor: "desktop",
         throttlingMethod: "devtools",
+        screenEmulation: {
+          mobile: false,
+        },
       },
     },
     assert: {

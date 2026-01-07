@@ -1,17 +1,35 @@
-import { getRebuildListing } from "@/rebuild/pipeline/getRebuildListing";
+import { getRebuildListingById } from "@/lib/rebuild/data/getRebuildListingById";
 
 type PageProps = {
   params: { id: string };
 };
 
 export default async function RebuildListingPage({ params }: PageProps) {
-  const rebuildListing = await getRebuildListing({ id: params.id });
+  const listing = await getRebuildListingById(params.id);
+
+  if (!listing) {
+    return (
+      <main className="min-h-screen bg-slate-50">
+        <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+            Rebuild lane - listing not found
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-6">
+            <p className="text-sm text-slate-700">
+              No listing data found for ID{" "}
+              <span className="font-mono">{params.id}</span>.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-          Rebuild lane - pipeline data (stub)
+          Rebuild lane - pipeline data (db)
         </div>
 
         <header className="rounded-lg border border-slate-200 bg-white p-6">
@@ -19,7 +37,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
             Rebuild listing
           </p>
           <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-            {rebuildListing.listing.title}
+            {listing.title}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
             Listing ID: <span className="font-mono">{params.id}</span>
@@ -32,16 +50,16 @@ export default async function RebuildListingPage({ params }: PageProps) {
               Price
             </p>
             <p className="mt-2 text-2xl font-semibold text-slate-900">
-              {rebuildListing.listing.price} {rebuildListing.listing.currency}
+              {listing.price.display}
             </p>
             <p className="mt-1 text-sm text-emerald-700">
-              Deal delta: {rebuildListing.listing.priceDelta}
+              Deal delta: {listing.price.deltaDisplay}
             </p>
             <p className="mt-3 text-sm text-slate-600">
-              Condition: {rebuildListing.listing.condition}
+              Condition: {listing.condition ?? "Unknown"}
             </p>
             <p className="text-sm text-slate-600">
-              Availability: {rebuildListing.listing.availability}
+              Availability: {listing.availability ?? "Unknown"}
             </p>
           </div>
 
@@ -59,7 +77,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
                   className="font-mono font-semibold text-slate-900"
                   data-testid="trust-confidence"
                 >
-                  {rebuildListing.trust.confidence}
+                  {listing.trust.confidence.display}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
@@ -68,7 +86,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
                   className="font-mono text-slate-900"
                   data-testid="trust-source"
                 >
-                  {rebuildListing.trust.source}
+                  {listing.trust.source}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
@@ -77,7 +95,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
                   className="font-mono text-slate-900"
                   data-testid="trust-fetched-at"
                 >
-                  {rebuildListing.trust.fetchedAtISO}
+                  {listing.trust.fetchedAtISO}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
@@ -86,12 +104,13 @@ export default async function RebuildListingPage({ params }: PageProps) {
                   className="font-mono text-slate-900"
                   data-testid="trust-data-age"
                 >
-                  {rebuildListing.trust.dataAge}
+                  {listing.trust.dataAgeLabel}
                 </dd>
               </div>
             </dl>
             <p className="mt-3 text-sm text-slate-600">
-              Seller: {rebuildListing.listing.seller}
+              Seller:{" "}
+              {listing.seller.name ?? listing.seller.username ?? "Unknown"}
             </p>
           </div>
         </section>
@@ -110,12 +129,12 @@ export default async function RebuildListingPage({ params }: PageProps) {
             className="mt-2 list-disc space-y-2 pl-5 text-sm text-slate-700"
             data-testid="explainability-inputs"
           >
-            {rebuildListing.transparency.inputs.map((input) => (
+            {listing.transparency.inputs.map((input) => (
               <li key={input}>{input}</li>
             ))}
           </ul>
           <p className="mt-3 text-xs text-slate-500">
-            Pipeline stub: output is deterministic and rebuild-only.
+            Pipeline version: {listing.transparency.pipelineVersion}.
           </p>
         </section>
 
@@ -135,7 +154,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
                 className="mt-1 font-mono text-slate-900"
                 data-testid="transparency-sources"
               >
-                {rebuildListing.transparency.sources.join(", ")}
+                {listing.transparency.sources.join(", ")}
               </dd>
             </div>
             <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
@@ -146,7 +165,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
                 className="mt-1 font-mono text-slate-900"
                 data-testid="transparency-fetched-at"
               >
-                {rebuildListing.trust.fetchedAtISO}
+                {listing.trust.fetchedAtISO}
               </dd>
             </div>
             <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
@@ -157,7 +176,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
                 className="mt-1 font-mono text-slate-900"
                 data-testid="transparency-computed-at"
               >
-                {rebuildListing.transparency.computedAtISO}
+                {listing.transparency.computedAtISO}
               </dd>
             </div>
             <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
@@ -168,7 +187,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
                 className="mt-1 font-mono text-slate-900"
                 data-testid="transparency-pipeline-version"
               >
-                {rebuildListing.transparency.pipelineVersion}
+                {listing.transparency.pipelineVersion}
               </dd>
             </div>
           </dl>

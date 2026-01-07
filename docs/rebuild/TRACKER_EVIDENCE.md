@@ -32,11 +32,12 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 
 ## Weeks 1-2: Phase 0 - Prove the Architecture
 
-| Tracker item                                    | PR   | Route                 | Evidence (short)                                                        |
-| ----------------------------------------------- | ---- | --------------------- | ----------------------------------------------------------------------- |
-| serves data from new pipeline                   | #236 | /rebuild/listing/[id] | DB-backed getRebuildListingById mapping + SSR assertions in Playwright. |
-| has SSR-stable confidence                       | #228 | /rebuild/listing/[id] | SSR HTML contains trust testids; no-mutation assertion in Playwright.   |
-| includes explainability-lite + transparency log | #228 | /rebuild/listing/[id] | SSR HTML contains transparency/explainability testids.                  |
+| Tracker item                                          | PR   | Route                 | Evidence (short)                                                                                                                                            |
+| ----------------------------------------------------- | ---- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| uses contracts correctly (hydration/skeleton/tooltip) | #244 | /rebuild/listing/[id] | Code inspection: page.tsx is server component with no client hooks; loading.tsx uses fixed-height skeleton blocks; no tooltip imports; trust data SSR-only. |
+| serves data from new pipeline                         | #236 | /rebuild/listing/[id] | DB-backed getRebuildListingById mapping + SSR assertions in Playwright.                                                                                     |
+| has SSR-stable confidence                             | #228 | /rebuild/listing/[id] | SSR HTML contains trust testids; no-mutation assertion in Playwright.                                                                                       |
+| includes explainability-lite + transparency log       | #228 | /rebuild/listing/[id] | SSR HTML contains transparency/explainability testids.                                                                                                      |
 
 ```ts
 expect(body).toContain('data-testid="trust-confidence"');

@@ -123,6 +123,17 @@ jobs:
         if: env.NON_DOCS == 'true'
         run: npm run lint
 
+      - name: Check rebuild → legacy boundary
+        if: env.NON_DOCS == 'true'
+        run: |
+          echo "Checking that rebuild surfaces do not import from legacy/**..."
+          # Fail if any file in app/rebuild or lib/rebuild imports from legacy
+          if grep -rE "from ['\"].*legacy|import.*from ['\"].*legacy" app/rebuild lib/rebuild 2>/dev/null; then
+            echo "ERROR: Rebuild surfaces must not import from legacy/**"
+            exit 1
+          fi
+          echo "✓ No legacy imports found in rebuild surfaces"
+
       - name: Run typecheck
         if: env.NON_DOCS == 'true'
         run: npx tsc --noEmit

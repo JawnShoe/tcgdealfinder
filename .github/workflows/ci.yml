@@ -253,17 +253,61 @@ jobs:
         run: npx playwright test tests/e2e/rebuild-cls.spec.ts --config tests/e2e/playwright.config.ts
 
   a11y-smoke:
-    name: A11y Smoke (EXEMPT TEMP)
+    name: A11y Smoke
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tcg_deals
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tcg_deals"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/tcg_deals
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+      NODE_ENV: test
 
     steps:
-      - name: EXEMPT (TEMP) - A11y smoke not wired
-        continue-on-error: true
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Install PostgreSQL client
         run: |
-          echo "EXEMPT (TEMP): A11y smoke not wired."
-          echo "Unblock: a11y runner + baseline."
-          exit 1
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Initialize DB schema
+        run: npx tsx scripts/init-db.ts
+
+      - name: Seed rebuild E2E listing
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d tcg_deals -f tests/fixtures/rebuild_seed.sql
+
+      - name: Run a11y gate
+        run: npx playwright test tests/e2e/rebuild-a11y.spec.ts --config tests/e2e/playwright.config.ts
 
   perf-budget:
     name: Perf Budget (EXEMPT TEMP)

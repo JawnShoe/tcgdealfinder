@@ -17,11 +17,11 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 | CI scaffolding exists for required gates          | #225 | .github/workflows/ci.yml                                                                                                          | Gate job names for lint/build and exempt gates present.                                                                              |
 | E2E Smoke gate is real (Playwright + seeded DB)   | #237 | .github/workflows/ci.yml; tests/fixtures/rebuild_seed.sql; tests/e2e/rebuild-trust-panel.spec.ts; package.json; package-lock.json | E2E runs twice in CI against seeded Postgres; deterministic listing_id = rebuild-e2e-1.                                              |
 | Visual Regression / CLS gate is real (CLS budget) | #239 | .github/workflows/ci.yml; tests/e2e/rebuild-cls.spec.ts; tests/fixtures/rebuild_seed.sql                                          | CLS budget enforced in CI for /rebuild/listing/rebuild-e2e-1 (clsBudget = 0.01).                                                     |
-| A11y Smoke gate is real (contrast fix)            | #240 | components/SiteHeader.tsx; components/SiteFooter.tsx                                                                              | A11y Smoke passes for rebuild route after contrast fixes. CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20769660777 |
+| A11y Smoke gate is real (contrast fix)            | #240 | components/SiteHeader.tsx; components/SiteFooter.tsx                                                                              | A11y Smoke passes for rebuild route after contrast fixes. CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20769726886 |
 
 ### CI evidence
 
-- CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20769660777
+- CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20769726886
 - Checks observed:
   - Lint & Build
   - E2E Smoke

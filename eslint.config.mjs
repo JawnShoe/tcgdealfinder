@@ -20,6 +20,28 @@ const eslintConfig = [
     ],
   },
   ...compat.extends("next/core-web-vitals"),
+  {
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "legacy/*",
+                "legacy/**",
+                "@/legacy/*",
+                "@/legacy/**",
+                "**/legacy/**",
+              ],
+              message:
+                "Legacy quarantine is reference-only. Do not import from /legacy/**.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;

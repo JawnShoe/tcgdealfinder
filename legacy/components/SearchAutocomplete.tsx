@@ -54,7 +54,7 @@ export function SearchAutocomplete() {
       try {
         const res = await fetch(
           `/api/search-cards?q=${encodeURIComponent(trimmed)}`,
-          { signal: controller.signal },
+          { signal: controller.signal }
         );
         if (!res.ok) {
           throw new Error(`Request failed: ${res.status}`);
@@ -86,7 +86,7 @@ export function SearchAutocomplete() {
       setSuggestions([]);
       router.push(`/cards/${suggestion.id}`);
     },
-    [closeDropdown, router],
+    [closeDropdown, router]
   );
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -205,9 +205,7 @@ export function SearchAutocomplete() {
         </div>
       )}
 
-      {isLoading && (
-        <span className="text-xs text-slate-400">Searching…</span>
-      )}
+      {isLoading && <span className="text-xs text-slate-400">Searching…</span>}
     </form>
   );
 }

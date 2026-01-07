@@ -40,7 +40,7 @@ export function SiteFooter() {
         </div>
 
         {/* Copyright */}
-        <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-400">
+        <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-700">
           TCG Deal Finder — Real-time undervalued card detection
         </div>
       </div>

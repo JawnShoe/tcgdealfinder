@@ -21,6 +21,7 @@
 ### Championship Rebuild Lane Exemption (LOCKED)
 
 During the Championship Rebuild, governance for rebuild work lives in docs/rebuild/\*.
+SHIFT_LOCK governs legacy lane only; rebuild lane governance is docs/rebuild/\*.
 Rebuild-lane changes are allowed to proceed in parallel with legacy "Active Work Item" rules.
 
 Allowed in rebuild lane:

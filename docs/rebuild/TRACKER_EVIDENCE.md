@@ -40,3 +40,9 @@ expect(body).toContain('data-testid="transparency-panel"');
 expect(body).toContain('data-testid="explainability-inputs"');
 expect(body).toContain("rebuild-db-v1");
 ```
+
+## Known gaps / risks
+
+- E2E Smoke is EXEMPT TEMP and Playwright is not executed in CI today.
+- SSR/no-mutation proof is currently local-run only.
+- Before removing EXEMPT, add a deterministic DB fixture/seed (preferred) or explicitly skip when no listing exists.

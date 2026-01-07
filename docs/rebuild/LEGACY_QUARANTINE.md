@@ -1,10 +1,6 @@
-# Legacy Quarantine (v3)
+# Legacy Quarantine
 
-Purpose:
-Quarantine pre-rebuild implementation files that are provably unused by active surfaces, while keeping the build green.
-
-Scope (Bucket A only):
-Move files that have no import references in the repo and are not part of the rebuild lane.
+Single source of truth for legacy code isolation.
 
 ## Rebuild Isolation Boundary (LOCKED)
 
@@ -12,70 +8,60 @@ Move files that have no import references in the repo and are not part of the re
 
 Enforcement:
 
-1. **ESLint**: `no-restricted-imports` rule blocks legacy imports globally, with stricter messaging for rebuild surfaces
-2. **CI boundary check**: `grep`-based check in CI fails if any rebuild file imports from legacy
+1. **ESLint**: `no-restricted-imports` blocks legacy imports globally
+2. **CI boundary check**: `grep`-based check fails if any rebuild file imports from legacy
 
-## Bucket A allowlist (v3)
+## Quarantine Allowlist
 
-### Components (v1)
+Files moved to `legacy/` — zero imports from active surfaces.
 
-- components/FeaturedDealsStrip.tsx
-- components/home/HomeContentSafe.tsx
-- components/SearchAutocomplete.tsx
-- components/WatchlistButton.tsx
+### Components
 
-### Lib utilities (v2)
+- `legacy/components/FeaturedDealsStrip.tsx`
+- `legacy/components/home/HomeContentSafe.tsx`
+- `legacy/components/SearchAutocomplete.tsx`
+- `legacy/components/WatchlistButton.tsx`
 
-- lib/dealsStateStorage.ts — localStorage persistence for deals view state (superseded)
-- lib/tableColumnConfig.ts — column configuration system (replaced by lib/tableColumns.tsx)
-- lib/useWatchlist.ts — legacy watchlist hook using external store pattern (replaced by lib/WatchlistContext.tsx)
+### Lib
 
-### Lib + hooks (v3 expansion)
+- `legacy/lib/dealsState.ts` — state types (dependency of dealsStateStorage only)
+- `legacy/lib/dealsStateStorage.ts` — localStorage persistence (superseded)
+- `legacy/lib/tableColumnConfig.ts` — replaced by `lib/tableColumns.tsx`
+- `legacy/lib/useWatchlist.ts` — replaced by `lib/WatchlistContext.tsx`
 
-- lib/dealsState.ts — deals view state types (only imported by legacy/lib/dealsStateStorage.ts)
-- hooks/useViewerCurrency.ts — viewer currency detection hook (completely unused)
+### Hooks
 
-## Audit evidence (v3)
+- `legacy/hooks/useViewerCurrency.ts` — completely unused
 
-Each file was verified with:
+## Script-Only Lib Files
 
-1. `grep -r "from.*<filename>|import.*<filename>" app components lib scripts --include="*.ts" --include="*.tsx"` → 0 code imports from active surfaces
-2. Confirmed NOT a Next.js route entrypoint (page.tsx, layout.tsx, route.ts)
-3. `npm run build` → PASS after move
+These are NOT quarantine candidates — used by scripts but not app routes:
 
-### lib/dealsState.ts (v3)
+| File                     | Used by                                                                |
+| ------------------------ | ---------------------------------------------------------------------- |
+| `lib/baselineUsd.ts`     | `scripts/update-historical-prices.ts`                                  |
+| `lib/collectorNumber.ts` | `scripts/backfill-collector-numbers.ts`, `scripts/update-listings.ts`  |
+| `lib/ebayStorefront.ts`  | `scripts/update-listings.ts`, `scripts/backfill-seller-store-names.ts` |
+| `lib/emailQueue.ts`      | `scripts/check-alerts.ts`                                              |
+| `lib/fxRates.ts`         | `scripts/update-fx-rates.ts`, `scripts/update-listings.ts`             |
+| `lib/language.ts`        | `scripts/backfill-card-language.ts`                                    |
+| `lib/tcgplayerClient.ts` | `scripts/import-tcgplayer-catalog.ts`                                  |
 
-- Exports: `DealsViewState`, `DEFAULT_DEALS_VIEW_STATE`, sort/filter validation functions
-- Import search: only imported by `legacy/lib/dealsStateStorage.ts` (itself in legacy)
-- Status: dependency of legacy code only
+## Audit Commands
 
-### hooks/useViewerCurrency.ts (v3)
+```bash
+# Find files with zero imports
+npx madge --extensions ts,tsx --ts-config tsconfig.json --json app/ components/ lib/
 
-- Exports: `useViewerCurrency()`, `shouldShowUsdApprox()`
-- Import search: `grep -r "useViewerCurrency" **/*.{ts,tsx}` → 0 imports anywhere
-- Status: completely unused (was scaffolded but never integrated)
+# Verify no legacy imports in rebuild surfaces
+grep -rE "from ['\"].*legacy|import.*from ['\"].*legacy" app/rebuild lib/rebuild
 
-### lib/dealsStateStorage.ts (v2)
-
-- Exports: `loadDealsViewState()`, `saveDealsViewState()`
-- Import search: `grep -r "dealsStateStorage" **/*.{ts,tsx}` → 0 code imports (only doc references)
-- Status: superseded by other state management
-
-### lib/tableColumnConfig.ts (v2)
-
-- Exports: `ColumnKey`, `TableVariant`, `ColumnDefinition`, `DEFAULT_LAYOUT`, `getColumnDefinition()`, `getColumnClasses()`, `getColumnTextAlignment()`, `getVariantColumnKeys()`
-- Import search: `grep -r "tableColumnConfig|getColumnDefinition|getColumnClasses" **/*.{ts,tsx}` → 0 code imports (only doc references)
-- Status: replaced by lib/tableColumns.tsx
-
-### lib/useWatchlist.ts (v2)
-
-- Exports: `useWatchlist()`, `WatchlistEntry`, `isCardWatched()`, `toggleWatchlistEntry()`, `removeWatchlistEntry()`
-- Import search: `grep -r "from.*useWatchlist[^C]" **/*.{ts,tsx}` → 0 code imports (only comment reference)
-- Status: replaced by lib/WatchlistContext.tsx (context-based approach)
+# Verify build passes
+npm run build
+```
 
 ## Rules
 
-- Moves only. No edits to quarantined files.
-- /legacy/\*\* is reference-only. No imports from legacy paths.
-- Rebuild surfaces (app/rebuild/\*\*, lib/rebuild/\*\*) must NEVER import from legacy — enforced by ESLint + CI.
-- Each quarantine expansion must include an evidence audit and keep npm run build passing.
+1. Moves only — no edits to quarantined files
+2. `/legacy/**` is reference-only — no imports allowed
+3. Each quarantine expansion requires evidence audit + green build

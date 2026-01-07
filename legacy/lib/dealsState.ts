@@ -39,7 +39,7 @@ const SORT_KEYS = new Set([
 
 export function parseDealsViewStateFromSearchParams(
   params: URLSearchParams,
-  defaults: DealsViewState = DEFAULT_DEALS_VIEW_STATE,
+  defaults: DealsViewState = DEFAULT_DEALS_VIEW_STATE
 ): DealsViewState {
   const next: DealsViewState = { ...defaults };
 
@@ -93,7 +93,7 @@ export function parseDealsViewStateFromSearchParams(
 
 export function serializeDealsViewStateToSearchParams(
   state: DealsViewState,
-  defaults: DealsViewState = DEFAULT_DEALS_VIEW_STATE,
+  defaults: DealsViewState = DEFAULT_DEALS_VIEW_STATE
 ): URLSearchParams {
   const params = new URLSearchParams();
 

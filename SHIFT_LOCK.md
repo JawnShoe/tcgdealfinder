@@ -18,6 +18,23 @@
 - Do **not** refactor table/deal components; wrap existing content with the existing shared layout/container.
 - Keep scope limited to layout/spacing parity; no new features, no redesigns.
 
+### Championship Rebuild Lane Exemption (LOCKED)
+
+During the Championship Rebuild, governance for rebuild work lives in docs/rebuild/\*.
+SHIFT_LOCK governs legacy lane only; rebuild lane governance is docs/rebuild/\*.
+Rebuild-lane changes are allowed to proceed in parallel with legacy "Active Work Item" rules.
+
+Allowed in rebuild lane:
+
+- Add rebuild-only data access adapters and route wiring for /rebuild/\*.
+- Read existing DB/pipeline outputs.
+
+Not allowed (still forbidden):
+
+- Modifying legacy ingestion, scoring, canonical IDs, overrides, or deal query logic.
+
+If a change touches any forbidden area, it must use the normal SHIFT_LOCK unlock path.
+
 ### DONE Gate (LOCKED)
 
 - SSOT cannot mark DONE unless: commit hash recorded, `git status` clean, changes pushed, `npm run lint` pass, `npm run build` pass, and regression checklist completed.

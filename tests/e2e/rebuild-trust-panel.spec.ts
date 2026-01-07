@@ -33,8 +33,8 @@ test("rebuild trust panel is SSR-visible and stable", async ({
   expect(body).toContain('data-testid="transparency-pipeline-version"');
   expect(body).toContain('data-testid="explainability-inputs"');
   expect(body).toContain(expectedPipelineVersion);
-  expect(body).toMatch(/data-testid="trust-source">\\s*[^<]+/);
-  expect(body).toMatch(/data-testid="transparency-sources">\\s*[^<]+/);
+  expect(body).toMatch(/data-testid="trust-source">\s*[^<]+/);
+  expect(body).toMatch(/data-testid="transparency-sources">\s*[^<]+/);
 
   const consoleErrors: string[] = [];
   page.on("console", (msg) => {

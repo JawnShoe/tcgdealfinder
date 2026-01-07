@@ -28,13 +28,15 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 
 ## Weeks 1-2: Phase 0 - Prove the Architecture
 
-| Tracker item                                    | PR   | Route                 | Evidence (short)                                                      |
-| ----------------------------------------------- | ---- | --------------------- | --------------------------------------------------------------------- |
-| has SSR-stable confidence                       | #228 | /rebuild/listing/[id] | SSR HTML contains trust testids; no-mutation assertion in Playwright. |
-| includes explainability-lite + transparency log | #228 | /rebuild/listing/[id] | SSR HTML contains transparency/explainability testids.                |
+| Tracker item                                    | PR   | Route                 | Evidence (short)                                                        |
+| ----------------------------------------------- | ---- | --------------------- | ----------------------------------------------------------------------- |
+| serves data from new pipeline                   | #236 | /rebuild/listing/[id] | DB-backed getRebuildListingById mapping + SSR assertions in Playwright. |
+| has SSR-stable confidence                       | #228 | /rebuild/listing/[id] | SSR HTML contains trust testids; no-mutation assertion in Playwright.   |
+| includes explainability-lite + transparency log | #228 | /rebuild/listing/[id] | SSR HTML contains transparency/explainability testids.                  |
 
 ```ts
 expect(body).toContain('data-testid="trust-confidence"');
 expect(body).toContain('data-testid="transparency-panel"');
 expect(body).toContain('data-testid="explainability-inputs"');
+expect(body).toContain("rebuild-db-v1");
 ```

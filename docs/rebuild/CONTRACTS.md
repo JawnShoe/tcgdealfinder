@@ -14,6 +14,22 @@ Any cross-cutting decision (UI behavior, visual system, trust semantics, data in
 
 Chat agreement alone is not authoritative.
 
+## State & Decision Query Guardrail (LOCKED)
+
+For any question asking about:
+
+- current state ("where are we at")
+- next steps
+- whether something is correct/complete
+- what was previously decided
+
+The Assistant MUST either:
+
+1. Quote the authoritative artifact (file + section or PR), or
+2. Respond ONLY with: "STOP — authoritative artifact required."
+
+Inference, memory recall, or conversational summaries are not allowed.
+
 ## Tooltip / Popover Contract
 
 - MUST use a single canonical tooltip/popover primitive.

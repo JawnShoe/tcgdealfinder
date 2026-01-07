@@ -9,7 +9,7 @@ export default function HomeContentSafe() {
               Real-time arbitrage radar
             </p>
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-              Find undervalued Pokémon cards in seconds.
+              Find undervalued Pokï¿½mon cards in seconds.
             </h1>
             <p className="text-sm md:text-base text-slate-600 max-w-xl">
               TCG Deal Finder scores every live eBay listing by discount, seller
@@ -27,7 +27,7 @@ export default function HomeContentSafe() {
         </div>
       </section>
 
-      {/* All live deals placeholder – we’ll plug the real table back in later */}
+      {/* All live deals placeholder ï¿½ weï¿½ll plug the real table back in later */}
       <section>
         <div className="rounded-2xl bg-white shadow-sm border border-slate-200 px-4 py-4 md:px-6 md:py-5">
           <h2 className="text-lg font-semibold tracking-tight mb-1">

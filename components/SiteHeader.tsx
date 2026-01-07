@@ -49,19 +49,19 @@ export function SiteHeader() {
           <nav className="flex items-center gap-1 sm:gap-4 text-sm">
             <Link
               href="/top-deals"
-              className="px-2 py-1 text-slate-600 hover:text-slate-900 rounded-md hover:bg-slate-100"
+              className="px-2 py-1 text-slate-800 hover:text-slate-900 rounded-md hover:bg-slate-100"
             >
               Top Deals
             </Link>
             <Link
               href="/newest"
-              className="px-2 py-1 text-slate-600 hover:text-slate-900 rounded-md hover:bg-slate-100"
+              className="px-2 py-1 text-slate-800 hover:text-slate-900 rounded-md hover:bg-slate-100"
             >
               Newest
             </Link>
             <Link
               href="/watchlist"
-              className="px-2 py-1 text-slate-600 hover:text-slate-900 rounded-md hover:bg-slate-100"
+              className="px-2 py-1 text-slate-800 hover:text-slate-900 rounded-md hover:bg-slate-100"
             >
               Watchlist
             </Link>

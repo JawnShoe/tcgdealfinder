@@ -33,20 +33,20 @@ export default async function RebuildListingPage({ params }: PageProps) {
         </div>
 
         <header className="rounded-lg border border-slate-200 bg-white p-6">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">
             Rebuild listing
           </p>
           <h1 className="mt-2 text-2xl font-semibold text-slate-900">
             {listing.title}
           </h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-slate-700">
             Listing ID: <span className="font-mono">{params.id}</span>
           </p>
         </header>
 
         <section className="mt-6 grid gap-4 md:grid-cols-2">
           <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">
               Price
             </p>
             <p className="mt-2 text-2xl font-semibold text-slate-900">
@@ -55,10 +55,10 @@ export default async function RebuildListingPage({ params }: PageProps) {
             <p className="mt-1 text-sm text-emerald-700">
               Deal delta: {listing.price.deltaDisplay}
             </p>
-            <p className="mt-3 text-sm text-slate-600">
+            <p className="mt-3 text-sm text-slate-700">
               Condition: {listing.condition ?? "Unknown"}
             </p>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-700">
               Availability: {listing.availability ?? "Unknown"}
             </p>
           </div>
@@ -67,7 +67,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
             className="rounded-lg border border-slate-200 bg-white p-4"
             data-testid="trust-panel"
           >
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">
               Trust panel
             </p>
             <dl className="mt-3 space-y-3 text-sm text-slate-700">
@@ -108,7 +108,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
                 </dd>
               </div>
             </dl>
-            <p className="mt-3 text-sm text-slate-600">
+            <p className="mt-3 text-sm text-slate-700">
               Seller:{" "}
               {listing.seller.name ?? listing.seller.username ?? "Unknown"}
             </p>
@@ -122,7 +122,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
           <h2 className="text-lg font-semibold text-slate-900">
             Explainability (pipeline)
           </h2>
-          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-700">
             Confidence inputs
           </p>
           <ul
@@ -133,7 +133,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
               <li key={input}>{input}</li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-slate-500">
+          <p className="mt-3 text-xs text-slate-700">
             Pipeline version: {listing.transparency.pipelineVersion}.
           </p>
         </section>
@@ -147,7 +147,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
           </h2>
           <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
             <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-700">
                 Data sources
               </dt>
               <dd
@@ -158,7 +158,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
               </dd>
             </div>
             <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-700">
                 Fetched at
               </dt>
               <dd
@@ -169,7 +169,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
               </dd>
             </div>
             <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-700">
                 Computed at
               </dt>
               <dd
@@ -180,7 +180,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
               </dd>
             </div>
             <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-700">
                 Pipeline version
               </dt>
               <dd

@@ -1,13 +1,49 @@
 import { expect, test } from "@playwright/test";
+import { Client } from "pg";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:3000";
-const routePath = "/rebuild/listing/TEST_ID";
-const routeUrl = `${baseURL}${routePath}`;
+const databaseUrl = process.env.DATABASE_URL;
+const expectedPipelineVersion = "rebuild-db-v1";
+
+test.skip(!databaseUrl, "DATABASE_URL not set for rebuild E2E.");
+
+async function fetchListingId() {
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL is not set.");
+  }
+
+  const client = new Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    const result = await client.query<{
+      listing_id: string;
+    }>(
+      `
+        SELECT listing_id
+        FROM listings
+        WHERE listing_id IS NOT NULL
+        ORDER BY updated_at DESC NULLS LAST
+        LIMIT 1;
+      `
+    );
+    const listingId = result.rows[0]?.listing_id;
+    if (!listingId) {
+      throw new Error("No listings found for rebuild E2E test.");
+    }
+    return listingId;
+  } finally {
+    await client.end();
+  }
+}
 
 test("rebuild trust panel is SSR-visible and stable", async ({
   page,
   request,
 }) => {
+  const listingId = await fetchListingId();
+  const routePath = `/rebuild/listing/${encodeURIComponent(listingId)}`;
+  const routeUrl = `${baseURL}${routePath}`;
+
   const response = await request.get(routeUrl);
   expect(response.ok()).toBeTruthy();
 
@@ -26,6 +62,19 @@ test("rebuild trust panel is SSR-visible and stable", async ({
   expect(body).toContain('data-testid="transparency-sources"');
   expect(body).toContain('data-testid="transparency-pipeline-version"');
   expect(body).toContain('data-testid="explainability-inputs"');
+  expect(body).toContain(expectedPipelineVersion);
+  expect(body).toMatch(/data-testid="trust-source">\\s*[^<]+/);
+  expect(body).toMatch(/data-testid="transparency-sources">\\s*[^<]+/);
+
+  const consoleErrors: string[] = [];
+  page.on("console", (msg) => {
+    if (msg.type() === "error") {
+      consoleErrors.push(msg.text());
+    }
+  });
+  page.on("pageerror", (error) => {
+    consoleErrors.push(error.message);
+  });
 
   await page.goto(routeUrl);
 
@@ -95,4 +144,5 @@ test("rebuild trust panel is SSR-visible and stable", async ({
   };
 
   expect(after).toEqual(before);
+  expect(consoleErrors).toEqual([]);
 });

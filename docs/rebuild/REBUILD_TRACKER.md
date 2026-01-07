@@ -35,7 +35,7 @@ Deliverable: one route (`/rebuild/listing/[id]`) that:
 
 - [ ] uses contracts correctly (hydration/skeleton/tooltip)
 - [ ] passes all CI gates
-- [ ] serves data from new pipeline
+- [x] serves data from new pipeline
 - [x] has SSR-stable confidence
 - [x] includes explainability-lite + transparency log
 

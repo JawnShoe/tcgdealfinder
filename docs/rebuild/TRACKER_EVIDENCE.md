@@ -55,9 +55,10 @@ expect(body).toContain("rebuild-db-v1");
 
 ## Weeks 3-5: Phase 1 - Core Engine
 
-| Tracker item             | PR   | File(s)                                                                                                  | Evidence (short)                                                                                                                                                                                                      |
-| ------------------------ | ---- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Phase 1 - Home (rebuild) | #255 | app/rebuild/page.tsx; app/rebuild/loading.tsx; app/rebuild/error.tsx; lib/rebuild/data/getRecentDeals.ts | Rebuild Home route added with SSR + loading/error states; rebuild-only data pipeline; force-dynamic + safe empty-return when DATABASE_URL missing to avoid build-time DB dependency; visual contract guardrails pass. |
+| Tracker item                  | PR   | File(s)                                                                                                                  | Evidence (short)                                                                                                                                                                                                      |
+| ----------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 1 - Home (rebuild)      | #255 | app/rebuild/page.tsx; app/rebuild/loading.tsx; app/rebuild/error.tsx; lib/rebuild/data/getRecentDeals.ts                 | Rebuild Home route added with SSR + loading/error states; rebuild-only data pipeline; force-dynamic + safe empty-return when DATABASE_URL missing to avoid build-time DB dependency; visual contract guardrails pass. |
+| Phase 1 - Discovery (rebuild) | #258 | app/rebuild/discovery/page.tsx; app/rebuild/discovery/loading.tsx; app/rebuild/discovery/error.tsx; app/rebuild/page.tsx | Discovery route added; rebuild-only data; loading + error states; guardrails pass.                                                                                                                                    |
 
 ## Known gaps / risks
 

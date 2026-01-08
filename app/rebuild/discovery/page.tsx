@@ -2,49 +2,22 @@ import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-export default async function RebuildHomePage() {
-  const { deals, total, fetchedAtISO } = await getRecentDeals(10);
+export default async function RebuildDiscoveryPage() {
+  const { deals, fetchedAtISO } = await getRecentDeals(25);
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-          Rebuild lane - Home (pipeline data)
+          Rebuild lane - Discovery (pipeline data)
         </div>
 
         <header className="rounded-lg border border-slate-200 bg-white p-6">
-          <h1 className="text-2xl font-semibold text-slate-900">
-            TCG Deal Finder
-          </h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Discovery</h1>
           <p className="mt-2 text-sm text-slate-700">
-            Find trading card deals with transparent pricing and confidence
-            signals.
+            Browse recent deals from the rebuild pipeline.
           </p>
         </header>
-
-        <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-            Search
-          </p>
-          <div className="mt-3 flex gap-3">
-            <input
-              type="text"
-              placeholder="Search cards (coming soon)"
-              disabled
-              className="flex-1 rounded-md border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-500"
-            />
-            <button
-              type="button"
-              disabled
-              className="rounded-md border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-500"
-            >
-              Search
-            </button>
-          </div>
-        </section>
 
         <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
           <div className="flex items-baseline justify-between">
@@ -52,14 +25,14 @@ export default async function RebuildHomePage() {
               Recent deals
             </h2>
             <p className="text-xs text-slate-500">
-              {total} result{total !== 1 ? "s" : ""}
+              {deals.length} result{deals.length !== 1 ? "s" : ""}
             </p>
           </div>
 
           {deals.length === 0 ? (
             <div className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
               <p className="text-sm text-slate-600">
-                No deals available at this time.
+                No deals available in this environment.
               </p>
             </div>
           ) : (
@@ -102,27 +75,6 @@ export default async function RebuildHomePage() {
 
           <p className="mt-4 text-xs text-slate-500">
             Data fetched: {fetchedAtISO}
-          </p>
-        </section>
-
-        <section
-          className="mt-6 rounded-lg border border-slate-200 bg-white p-6"
-          data-testid="rebuild-home-nav"
-        >
-          <h2 className="text-lg font-semibold text-slate-900">
-            Rebuild surfaces
-          </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Navigate to other rebuild-native routes.
-          </p>
-          <Link
-            href="/rebuild/discovery"
-            className="mt-4 inline-flex text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
-          >
-            Browse deals
-          </Link>
-          <p className="mt-4 text-xs text-slate-500">
-            Click any deal above to view its listing page.
           </p>
         </section>
       </div>

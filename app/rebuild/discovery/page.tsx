@@ -1,8 +1,10 @@
 import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 
 export default async function RebuildDiscoveryPage() {
+  const isDbConfigured = isRebuildDbConfigured();
   const { deals, fetchedAtISO } = await getRecentDeals(25);
 
   return (
@@ -32,7 +34,9 @@ export default async function RebuildDiscoveryPage() {
           {deals.length === 0 ? (
             <div className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
               <p className="text-sm text-slate-600">
-                No deals available in this environment.
+                {isDbConfigured
+                  ? "No deals available at this time."
+                  : "Rebuild data source not configured in this environment."}
               </p>
             </div>
           ) : (
@@ -74,7 +78,7 @@ export default async function RebuildDiscoveryPage() {
           )}
 
           <p className="mt-4 text-xs text-slate-500">
-            Data fetched: {fetchedAtISO}
+            Data fetched: {isDbConfigured ? fetchedAtISO : "n/a"}
           </p>
         </section>
       </div>

@@ -55,15 +55,15 @@ Build home -> discovery -> detail using the proven template:
 
 Deploy dashboards:
 
-- [ ] freshness
-- [ ] errors
-- [ ] CWV proxy
-- [ ] outbound clicks
+- [x] freshness
+- [x] errors
+- [x] CWV proxy
+- [x] outbound clicks
 
 Add data-sanity-gate:
 
-- [ ] data-sanity-gate implemented
-- [ ] data-sanity-gate is deploy-blocking
+- [x] data-sanity-gate implemented
+- [x] data-sanity-gate is deploy-blocking
 
 Lock rule:
 

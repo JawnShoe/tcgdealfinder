@@ -142,6 +142,10 @@ jobs:
         if: env.NON_DOCS == 'true'
         run: bash scripts/primitive-enforcer.sh
 
+      - name: Data Sanity Gate
+        if: env.NON_DOCS == 'true'
+        run: bash scripts/data-sanity-gate.sh
+
       - name: Run typecheck
         if: env.NON_DOCS == 'true'
         run: npx tsc --noEmit

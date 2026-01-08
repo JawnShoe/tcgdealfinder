@@ -49,7 +49,7 @@ Daily ritual:
 
 Build home -> discovery -> detail using the proven template:
 
-- [ ] Home route implemented in rebuild lane (template-based)
+- [x] Home route implemented in rebuild lane (template-based)
 - [ ] Discovery route implemented in rebuild lane (template-based)
 - [ ] Detail route implemented in rebuild lane (template-based)
 

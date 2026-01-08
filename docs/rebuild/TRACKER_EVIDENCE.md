@@ -53,6 +53,12 @@ expect(body).toContain('data-testid="explainability-inputs"');
 expect(body).toContain("rebuild-db-v1");
 ```
 
+## Weeks 3-5: Phase 1 - Core Engine
+
+| Tracker item             | PR   | File(s)                                                                                                  | Evidence (short)                                                                                                                                                                                                      |
+| ------------------------ | ---- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 1 - Home (rebuild) | #255 | app/rebuild/page.tsx; app/rebuild/loading.tsx; app/rebuild/error.tsx; lib/rebuild/data/getRecentDeals.ts | Rebuild Home route added with SSR + loading/error states; rebuild-only data pipeline; force-dynamic + safe empty-return when DATABASE_URL missing to avoid build-time DB dependency; visual contract guardrails pass. |
+
 ## Known gaps / risks
 
 - All Phase 0 CI gates now enforced (no EXEMPT TEMP).

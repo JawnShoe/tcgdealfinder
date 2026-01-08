@@ -67,6 +67,12 @@ expect(body).toContain("rebuild-db-v1");
 | data-sanity-gate implemented        | #261 | scripts/data-sanity-gate.sh; .github/workflows/ci.yml                                                                                                  | Data sanity gate script runs in CI; skips safely when DATABASE_URL missing.                                                                                                                                           |
 | data-sanity-gate is deploy-blocking | #261 | scripts/data-sanity-gate.sh; .github/workflows/ci.yml                                                                                                  | Data sanity gate is wired into required CI checks and fails the workflow when violations are detected.                                                                                                                |
 
+## Weeks 6-8: Cutover
+
+| Tracker item                                               | PR   | File(s)      | Evidence (short)                                                                                                                                     |
+| ---------------------------------------------------------- | ---- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cutover step 1 - root entrypoint ownership (/ -> /rebuild) | #262 | app/page.tsx | Root route redirects to /rebuild via server-side redirect. Operator smoke PASS: /->/rebuild, /rebuild loads, /top-deals unchanged. All checks green. |
+
 ## Known gaps / risks
 
 - All Phase 0 CI gates now enforced (no EXEMPT TEMP).

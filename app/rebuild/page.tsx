@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 
 export const dynamic = "force-dynamic";
@@ -120,24 +121,5 @@ export default async function RebuildHomePage() {
         </section>
       </div>
     </main>
-  );
-}
-
-function ConfidenceBadge({ label }: { label: string }) {
-  const colorClass =
-    label === "high"
-      ? "bg-emerald-100 text-emerald-800"
-      : label === "medium"
-        ? "bg-amber-100 text-amber-800"
-        : label === "low"
-          ? "bg-red-100 text-red-800"
-          : "bg-slate-100 text-slate-600";
-
-  return (
-    <span
-      className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${colorClass}`}
-    >
-      {label}
-    </span>
   );
 }

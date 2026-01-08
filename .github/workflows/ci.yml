@@ -138,6 +138,10 @@ jobs:
         if: env.NON_DOCS == 'true'
         run: bash scripts/visual-contract-guardrails.sh
 
+      - name: Primitive Enforcer (rebuild-only)
+        if: env.NON_DOCS == 'true'
+        run: bash scripts/primitive-enforcer.sh
+
       - name: Run typecheck
         if: env.NON_DOCS == 'true'
         run: npx tsc --noEmit

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
-import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRebuildListingById } from "@/lib/rebuild/data/getRebuildListingById";
 
 type PageProps = {
@@ -8,27 +7,7 @@ type PageProps = {
 };
 
 export default async function RebuildListingPage({ params }: PageProps) {
-  const isDbConfigured = isRebuildDbConfigured();
-  const listing = isDbConfigured
-    ? await getRebuildListingById(params.id)
-    : null;
-
-  if (!isDbConfigured) {
-    return (
-      <main className="min-h-screen bg-slate-50">
-        <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-            Rebuild lane - data unavailable
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-6">
-            <p className="text-sm text-slate-900">
-              Rebuild data source not configured in this environment.
-            </p>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const listing = await getRebuildListingById(params.id);
 
   if (!listing) {
     return (

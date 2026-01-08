@@ -4,14 +4,13 @@ import {
   ListingDomain,
   mapDbRowToListingDomain,
 } from "./listingMapper";
-import { isRebuildDbConfigured } from "./dataAvailability";
 
 const LISTING_ID_PATTERN = /^v1\|\d+\|0$/;
 
 export async function getRebuildListingById(
   listingId: string | number
 ): Promise<ListingDomain | null> {
-  if (!isRebuildDbConfigured()) {
+  if (!process.env.DATABASE_URL) {
     return null;
   }
   const normalizedId = normalizeListingId(listingId);

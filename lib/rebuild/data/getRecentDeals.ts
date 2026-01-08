@@ -4,7 +4,6 @@ import {
   ListingDomain,
   mapDbRowToListingDomain,
 } from "./listingMapper";
-import { isRebuildDbConfigured } from "./dataAvailability";
 
 const DEFAULT_LIMIT = 10;
 
@@ -23,7 +22,7 @@ export async function getRecentDeals(
   limit: number = DEFAULT_LIMIT
 ): Promise<RecentDealsResult> {
   const now = new Date();
-  if (!isRebuildDbConfigured()) {
+  if (!process.env.DATABASE_URL) {
     return { deals: [], total: 0, fetchedAtISO: now.toISOString() };
   }
   const safeLimit = Math.min(Math.max(1, limit), 50);

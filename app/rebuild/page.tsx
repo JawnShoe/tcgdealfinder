@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function RebuildHomePage() {
   const { deals, total, fetchedAtISO } = await getRecentDeals(10);
 

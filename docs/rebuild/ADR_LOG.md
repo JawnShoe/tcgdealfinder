@@ -32,3 +32,27 @@
 - Decision: Standardize rebuild DB-availability behavior to prevent drift across rebuild routes.
 - Rationale: Ensure rebuild pages remain build-safe and deterministic when DATABASE_URL is missing.
 - Consequences: Rebuild list pages return empty results and detail fetches return null when DB is unavailable, and pages render a clear data-unavailable empty state.
+
+## ADR-0005: Discovery Presets Contract - Cutover Mapping v1 (LOCKED)
+
+- Status: Accepted
+- Decision:
+  Purpose: Define explicit, non-guessy mapping for legacy discovery routes. No redirects are authorized until rebuild supports parity for each preset below.
+
+  Authorized in PR 3 (routing-only) only if rebuild supports these presets with equivalent semantics:
+
+  /newest -> /rebuild/discovery?sort=newest
+  /top-deals -> /rebuild/discovery?feed=top
+  /ending-soon -> /rebuild/discovery?sort=endingSoon
+  /search -> /rebuild/discovery?q=<query>
+
+  Not authorized yet (NO redirects until explicit rebuild equivalents exist):
+
+  /cards/[cardId] -> no mapping (identifier mismatch vs /rebuild/listing/[id])
+  /sets, /sets/[setId], /catalog, /catalog/sets/[catalogSetId], /watchlist, /alerts, /alerts/unsubscribe -> no rebuild equivalents
+
+  /admin/**, /debug/** -> no cutover; remain legacy
+
+  Non-interleaving rule: For any route cut over, legacy code must not remain in the same route handler. Cutover is ownership, not blending.
+
+  Next step: PR 3 will implement only the redirects that are explicitly authorized above after confirming /rebuild/discovery supports the preset query params.

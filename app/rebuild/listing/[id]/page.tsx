@@ -1,3 +1,5 @@
+import Link from "next/link";
+import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import { getRebuildListingById } from "@/lib/rebuild/data/getRebuildListingById";
 
 type PageProps = {
@@ -42,6 +44,24 @@ export default async function RebuildListingPage({ params }: PageProps) {
           <p className="mt-1 text-sm text-slate-900">
             Listing ID: <span className="font-mono">{params.id}</span>
           </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href="/rebuild/discovery"
+              className="text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
+            >
+              Back to Discovery
+            </Link>
+            {listing.url ? (
+              <a
+                href={listing.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
+              >
+                View original listing
+              </a>
+            ) : null}
+          </div>
         </header>
 
         <section className="mt-6 grid gap-4 md:grid-cols-2">
@@ -55,6 +75,9 @@ export default async function RebuildListingPage({ params }: PageProps) {
             <p className="mt-1 text-sm text-emerald-900">
               Deal delta: {listing.price.deltaDisplay}
             </p>
+            <div className="mt-2">
+              <ConfidenceBadge label={listing.trust.confidence.label} />
+            </div>
             <p className="mt-3 text-sm text-slate-900">
               Condition: {listing.condition ?? "Unknown"}
             </p>
@@ -112,6 +135,31 @@ export default async function RebuildListingPage({ params }: PageProps) {
               Seller:{" "}
               {listing.seller.name ?? listing.seller.username ?? "Unknown"}
             </p>
+            <div className="mt-4 border-t border-slate-100 pt-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                Provenance
+              </p>
+              <dl className="mt-2 space-y-2 text-sm text-slate-900">
+                <div className="flex items-center justify-between">
+                  <dt>Market</dt>
+                  <dd className="font-mono text-slate-900">
+                    {listing.provenance.market ?? "Unknown"}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt>Snapshot at</dt>
+                  <dd className="font-mono text-slate-900">
+                    {listing.provenance.snapshotAtISO ?? "Unknown"}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt>Updated at</dt>
+                  <dd className="font-mono text-slate-900">
+                    {listing.provenance.updatedAtISO ?? "Unknown"}
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </section>
 

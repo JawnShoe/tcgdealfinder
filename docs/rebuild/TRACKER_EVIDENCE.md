@@ -69,9 +69,10 @@ expect(body).toContain("rebuild-db-v1");
 
 ## Weeks 6-8: Cutover
 
-| Tracker item                                               | PR   | File(s)      | Evidence (short)                                                                                                                                     |
-| ---------------------------------------------------------- | ---- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cutover step 1 - root entrypoint ownership (/ -> /rebuild) | #262 | app/page.tsx | Root route redirects to /rebuild via server-side redirect. Operator smoke PASS: /->/rebuild, /rebuild loads, /top-deals unchanged. All checks green. |
+| Tracker item                                               | PR     | File(s)                 | Evidence (short)                                                                                                                                     |
+| ---------------------------------------------------------- | ------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cutover step 1 - root entrypoint ownership (/ -> /rebuild) | #262   | app/page.tsx            | Root route redirects to /rebuild via server-side redirect. Operator smoke PASS: /->/rebuild, /rebuild loads, /top-deals unchanged. All checks green. |
+| Discovery presets contract (cutover mapping v1) ratified   | PR TBD | docs/rebuild/ADR_LOG.md | Defines explicit legacy discovery -> rebuild/discovery preset mappings; blocks redirects until parity exists; non-interleaving rule restated.        |
 
 ## Known gaps / risks
 

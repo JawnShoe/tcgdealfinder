@@ -10,6 +10,9 @@ const LISTING_ID_PATTERN = /^v1\|\d+\|0$/;
 export async function getRebuildListingById(
   listingId: string | number
 ): Promise<ListingDomain | null> {
+  if (!process.env.DATABASE_URL) {
+    return null;
+  }
   const normalizedId = normalizeListingId(listingId);
   const numericId = parseNumericId(listingId);
 
@@ -33,7 +36,7 @@ export async function getRebuildListingById(
         l.seller_positive_percent,
         l.source,
         l.market,
-        l.deal_confidence_weight,
+        (to_jsonb(l) ->> 'deal_confidence_weight') as deal_confidence_weight,
         l.integrity_status,
         l.integrity_reason,
         l.snapshot_at,

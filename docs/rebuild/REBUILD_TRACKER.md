@@ -51,7 +51,7 @@ Build home -> discovery -> detail using the proven template:
 
 - [x] Home route implemented in rebuild lane (template-based)
 - [x] Discovery route implemented in rebuild lane (template-based)
-- [ ] Detail route implemented in rebuild lane (template-based)
+- [x] Detail route implemented in rebuild lane (template-based)
 
 Deploy dashboards:
 

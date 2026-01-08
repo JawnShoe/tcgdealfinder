@@ -25,3 +25,10 @@
 - Decision: Adopt docs/rebuild/VISUAL_CONTRACT.md as the Phase-1 visual contract for rebuild UI surfaces.
 - Rationale: Prevent "vibecoded / AI slop" drift and enforce a calm, data-first design system.
 - Consequences: Phase-1 UI changes must follow the visual contract; deviations require a contract update.
+
+## ADR-0004: Rebuild DB availability contract
+
+- Status: Accepted
+- Decision: Standardize rebuild DB-availability behavior to prevent drift across rebuild routes.
+- Rationale: Ensure rebuild pages remain build-safe and deterministic when DATABASE_URL is missing.
+- Consequences: Rebuild list pages return empty results and detail fetches return null when DB is unavailable, and pages render a clear data-unavailable empty state.

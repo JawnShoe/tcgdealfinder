@@ -30,6 +30,12 @@ The Assistant MUST either:
 
 Inference, memory recall, or conversational summaries are not allowed.
 
+## Rebuild Data Availability Contract (Build-safe)
+
+- If `DATABASE_URL` is missing, rebuild list fetches return empty results and detail fetches return null.
+- Rebuild pages MUST render a "data unavailable in this environment" empty state when DB is not configured.
+- Rebuild pages MUST NOT fail CI builds due to missing DB configuration.
+
 ## Tooltip / Popover Contract
 
 - MUST use a single canonical tooltip/popover primitive.

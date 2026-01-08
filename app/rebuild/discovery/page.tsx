@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 

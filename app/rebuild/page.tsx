@@ -2,16 +2,40 @@ import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
+import ResilienceLabel, {
+  ResilienceMode,
+  ResilienceTier,
+} from "@/components/rebuild/ResilienceLabel";
 import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+const FRESHNESS_SLO_SECONDS = 15 * 60;
 
 export default async function RebuildHomePage() {
   const isDbConfigured = isRebuildDbConfigured();
   const { deals, total, fetchedAtISO } = await getRecentDeals(10);
+  const ageSeconds = deals
+    .map((deal) => deal.freshness.dataAgeSeconds)
+    .filter((value): value is number => value != null);
+  const maxAgeSeconds = ageSeconds.length ? Math.max(...ageSeconds) : null;
+  const hasMissingAge = deals.length > 0 && ageSeconds.length !== deals.length;
+
+  let resilienceTier: ResilienceTier = "FULL";
+  let resilienceMode: ResilienceMode = "LIVE";
+  if (!isDbConfigured) {
+    resilienceTier = "UNAVAILABLE";
+    resilienceMode = "UNKNOWN";
+  } else if (deals.length === 0) {
+    resilienceTier = "DEGRADED";
+  } else if (hasMissingAge) {
+    resilienceTier = "DEGRADED";
+  } else if (maxAgeSeconds != null && maxAgeSeconds > FRESHNESS_SLO_SECONDS) {
+    resilienceTier = "DEGRADED";
+  }
+
   const provenanceFields = [
     { label: "DB configured", value: isDbConfigured ? "yes" : "no" },
   ];
@@ -26,6 +50,11 @@ export default async function RebuildHomePage() {
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
           Rebuild lane - Home (pipeline data)
         </div>
+        <ResilienceLabel
+          className="mb-6"
+          tier={resilienceTier}
+          mode={resilienceMode}
+        />
 
         <header className="rounded-lg border border-slate-200 bg-white p-6">
           <h1 className="text-2xl font-semibold text-slate-900">
@@ -83,7 +112,9 @@ export default async function RebuildHomePage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <IntentPrefetchLink
-                        href={`/rebuild/listing/${encodeURIComponent(deal.listingId)}`}
+                        href={`/rebuild/listing/${encodeURIComponent(
+                          deal.listingId
+                        )}`}
                         className="text-sm font-medium text-slate-900 hover:text-slate-700"
                       >
                         {deal.title}

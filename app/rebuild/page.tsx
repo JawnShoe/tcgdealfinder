@@ -1,5 +1,7 @@
 import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import PriorityHydration from "@/components/rebuild/PriorityHydration";
+import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 
@@ -129,6 +131,29 @@ export default async function RebuildHomePage() {
             Click any deal above to view its listing page.
           </p>
         </section>
+
+        <PriorityHydration
+          fallback={
+            <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+              <SkeletonBlock className="h-5 w-36" />
+              <SkeletonBlock className="mt-3 h-4 w-72" />
+              <SkeletonBlock className="mt-2 h-4 w-64" />
+            </section>
+          }
+        >
+          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Rebuild notes
+            </h2>
+            <p className="mt-2 text-sm text-slate-700">
+              Secondary context and diagnostics will live here as the rebuild
+              lane expands.
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              This block is non-critical and safe to defer after initial load.
+            </p>
+          </section>
+        </PriorityHydration>
       </div>
     </main>
   );

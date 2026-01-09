@@ -1,5 +1,5 @@
-import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
 import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
@@ -74,12 +74,12 @@ export default async function RebuildHomePage() {
                 <li key={deal.listingId} className="py-3">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
-                      <Link
+                      <IntentPrefetchLink
                         href={`/rebuild/listing/${encodeURIComponent(deal.listingId)}`}
                         className="text-sm font-medium text-slate-900 hover:text-slate-700"
                       >
                         {deal.title}
-                      </Link>
+                      </IntentPrefetchLink>
                       <p className="mt-1 text-xs text-slate-500">
                         {deal.seller.name ?? deal.seller.username ?? "Unknown"}{" "}
                         at {deal.provenance.market ?? deal.provenance.source}
@@ -121,12 +121,12 @@ export default async function RebuildHomePage() {
           <p className="mt-2 text-sm text-slate-600">
             Navigate to other rebuild-native routes.
           </p>
-          <Link
+          <IntentPrefetchLink
             href="/rebuild/discovery"
             className="mt-4 inline-flex text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
           >
             Browse deals
-          </Link>
+          </IntentPrefetchLink>
           <p className="mt-4 text-xs text-slate-500">
             Click any deal above to view its listing page.
           </p>

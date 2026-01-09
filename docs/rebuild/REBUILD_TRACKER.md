@@ -81,7 +81,7 @@ Perceived speed optimizations:
 
 - [x] skeleton library everywhere
 - [x] priority hydration
-- [ ] prefetch on intent
+- [x] prefetch on intent
 
 - [ ] Compliance hardening
 - [ ] Synthetic monitoring active

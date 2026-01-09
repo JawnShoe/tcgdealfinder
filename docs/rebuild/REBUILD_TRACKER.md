@@ -83,7 +83,7 @@ Perceived speed optimizations:
 - [x] priority hydration
 - [x] prefetch on intent
 
-- [ ] Compliance hardening
+- [x] Compliance hardening
 - [ ] Synthetic monitoring active
 
 ---

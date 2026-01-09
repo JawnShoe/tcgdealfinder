@@ -1,5 +1,7 @@
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
+import OutboundDealLink from "@/components/rebuild/OutboundDealLink";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import ResilienceLabel, {
@@ -142,14 +144,12 @@ export default async function RebuildListingPage({ params }: PageProps) {
               Back to Discovery
             </IntentPrefetchLink>
             {listing.url ? (
-              <a
+              <OutboundDealLink
                 href={listing.url}
-                target="_blank"
-                rel="noreferrer"
                 className="text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
               >
                 View original listing
-              </a>
+              </OutboundDealLink>
             ) : null}
           </div>
         </header>
@@ -336,6 +336,8 @@ export default async function RebuildListingPage({ params }: PageProps) {
           summary={`Data age ${listing.trust.dataAgeLabel}`}
           fields={provenanceFields}
         />
+
+        <ComplianceDisclosure className="mt-6" />
 
         <PriorityHydration
           fallback={

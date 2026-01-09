@@ -69,12 +69,26 @@ expect(body).toContain("rebuild-db-v1");
 
 ## Weeks 6–8: Phase 2 — Trust Polish
 
-| Tracker item                                               | PR   | File(s)                 | Evidence (short)                                                                                                                                     |
+_No checked items yet._
+
+## Week 9+: Phase 3 — Moat Building
+
+_No checked items yet._
+
+---
+
+## Additional Evidence (Non-Tracker, Informational)
+
+The entries below document important rebuild enforcement, contracts, or cutover
+decisions that do not map directly to a checkbox in REBUILD_TRACKER.md, but are
+retained for auditability and historical context.
+
+| Item                                                       | PR   | File(s)                 | Evidence (short)                                                                                                                                     |
 | ---------------------------------------------------------- | ---- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Cutover step 1 - root entrypoint ownership (/ -> /rebuild) | #262 | app/page.tsx            | Root route redirects to /rebuild via server-side redirect. Operator smoke PASS: /->/rebuild, /rebuild loads, /top-deals unchanged. All checks green. |
 | Discovery presets contract (cutover mapping v1) ratified   | #264 | docs/rebuild/ADR_LOG.md | Defines explicit legacy discovery -> rebuild/discovery preset mappings; blocks redirects until parity exists; non-interleaving rule restated.        |
 
-## Week 9+: Phase 3 — Moat Building
+---
 
 ## Known gaps / risks
 

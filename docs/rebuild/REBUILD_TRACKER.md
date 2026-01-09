@@ -74,7 +74,7 @@ Lock rule:
 
 ## Weeks 6–8: Phase 2 — Trust Polish
 
-- [ ] Credibility UI: drilldown + provenance
+- [x] Credibility UI: drilldown + provenance
 - [ ] Resilience tiers + live/cached labels
 
 Perceived speed optimizations:

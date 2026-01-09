@@ -1,6 +1,7 @@
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
+import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRebuildListingById } from "@/lib/rebuild/data/getRebuildListingById";
@@ -48,6 +49,36 @@ export default async function RebuildListingPage({ params }: PageProps) {
         </div>
       </main>
     );
+  }
+
+  const provenanceFields = [
+    { label: "DB configured", value: isDbConfigured ? "yes" : "no" },
+    { label: "Listing ID", value: listing.listingId },
+    { label: "Source", value: listing.provenance.source },
+    { label: "Data fetched at", value: listing.trust.fetchedAtISO },
+    { label: "Data age", value: listing.trust.dataAgeLabel },
+    { label: "Pipeline version", value: listing.transparency.pipelineVersion },
+  ];
+
+  if (listing.provenance.market) {
+    provenanceFields.splice(3, 0, {
+      label: "Market",
+      value: listing.provenance.market,
+    });
+  }
+
+  if (listing.provenance.snapshotAtISO) {
+    provenanceFields.push({
+      label: "Snapshot at",
+      value: listing.provenance.snapshotAtISO,
+    });
+  }
+
+  if (listing.provenance.updatedAtISO) {
+    provenanceFields.push({
+      label: "Updated at",
+      value: listing.provenance.updatedAtISO,
+    });
   }
 
   return (
@@ -263,6 +294,12 @@ export default async function RebuildListingPage({ params }: PageProps) {
             </div>
           </dl>
         </section>
+
+        <ProvenanceDrilldown
+          className="mt-6"
+          summary={`Data age ${listing.trust.dataAgeLabel}`}
+          fields={provenanceFields}
+        />
 
         <PriorityHydration
           fallback={

@@ -53,7 +53,7 @@ expect(body).toContain('data-testid="explainability-inputs"');
 expect(body).toContain("rebuild-db-v1");
 ```
 
-## Weeks 3-5: Phase 1 - Core Engine
+## Weeks 3–5: Phase 1 — Core Engine
 
 | Tracker item                        | PR   | File(s)                                                                                                                                                | Evidence (short)                                                                                                                                                                                                      |
 | ----------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -67,14 +67,14 @@ expect(body).toContain("rebuild-db-v1");
 | data-sanity-gate implemented        | #261 | scripts/data-sanity-gate.sh; .github/workflows/ci.yml                                                                                                  | Data sanity gate script runs in CI; skips safely when DATABASE_URL missing.                                                                                                                                           |
 | data-sanity-gate is deploy-blocking | #261 | scripts/data-sanity-gate.sh; .github/workflows/ci.yml                                                                                                  | Data sanity gate is wired into required CI checks and fails the workflow when violations are detected.                                                                                                                |
 
-## Weeks 6-8: Phase 2 - Trust Polish
+## Weeks 6–8: Phase 2 — Trust Polish
 
 | Tracker item                                               | PR   | File(s)                 | Evidence (short)                                                                                                                                     |
 | ---------------------------------------------------------- | ---- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Cutover step 1 - root entrypoint ownership (/ -> /rebuild) | #262 | app/page.tsx            | Root route redirects to /rebuild via server-side redirect. Operator smoke PASS: /->/rebuild, /rebuild loads, /top-deals unchanged. All checks green. |
 | Discovery presets contract (cutover mapping v1) ratified   | #264 | docs/rebuild/ADR_LOG.md | Defines explicit legacy discovery -> rebuild/discovery preset mappings; blocks redirects until parity exists; non-interleaving rule restated.        |
 
-## Week 9+: Phase 3 - Moat Building
+## Week 9+: Phase 3 — Moat Building
 
 ## Known gaps / risks
 

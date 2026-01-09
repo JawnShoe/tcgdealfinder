@@ -22,7 +22,9 @@ async function assertSsrTrustSurfaces(request: APIRequestContext, url: string) {
 async function assertUiTrustSurfaces(page: Page) {
   await expect(page.getByText(complianceCopy, { exact: true })).toBeVisible();
   await expect(page.getByText(/Resilience:/)).toBeVisible();
-  await expect(page.getByRole("button", { name: /Provenance/i })).toBeVisible();
+  await expect(
+    page.locator("summary", { hasText: "Provenance" })
+  ).toBeVisible();
 }
 
 test("rebuild synthetics: trust surfaces visible across rebuild funnel", async ({
@@ -38,7 +40,7 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
   for (const route of routes) {
     const url = `${baseURL}${route}`;
     await assertSsrTrustSurfaces(request, url);
-    await page.goto(url);
+    await page.goto(url, { waitUntil: "domcontentloaded" });
     await assertUiTrustSurfaces(page);
   }
 });

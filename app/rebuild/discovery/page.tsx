@@ -1,4 +1,5 @@
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import ResilienceLabel, {
@@ -127,6 +128,8 @@ export default async function RebuildDiscoveryPage() {
             fields={provenanceFields}
           />
         </section>
+
+        <ComplianceDisclosure className="mt-6" />
       </div>
     </main>
   );

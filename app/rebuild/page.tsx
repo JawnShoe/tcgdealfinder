@@ -1,4 +1,5 @@
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
@@ -155,6 +156,8 @@ export default async function RebuildHomePage() {
             fields={provenanceFields}
           />
         </section>
+
+        <ComplianceDisclosure className="mt-6" />
 
         <section
           className="mt-6 rounded-lg border border-slate-200 bg-white p-6"

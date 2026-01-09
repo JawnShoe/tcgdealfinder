@@ -1,5 +1,5 @@
-import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
 import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
@@ -47,12 +47,12 @@ export default async function RebuildDiscoveryPage() {
                 <li key={deal.listingId} className="py-3">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
-                      <Link
+                      <IntentPrefetchLink
                         href={`/rebuild/listing/${encodeURIComponent(deal.listingId)}`}
                         className="text-sm font-medium text-slate-900 hover:text-slate-700"
                       >
                         {deal.title}
-                      </Link>
+                      </IntentPrefetchLink>
                       <p className="mt-1 text-xs text-slate-500">
                         {deal.seller.name ?? deal.seller.username ?? "Unknown"}{" "}
                         at {deal.provenance.market ?? deal.provenance.source}

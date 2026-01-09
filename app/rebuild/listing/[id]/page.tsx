@@ -1,5 +1,5 @@
-import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
 import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
@@ -68,12 +68,12 @@ export default async function RebuildListingPage({ params }: PageProps) {
             Listing ID: <span className="font-mono">{params.id}</span>
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Link
+            <IntentPrefetchLink
               href="/rebuild/discovery"
               className="text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
             >
               Back to Discovery
-            </Link>
+            </IntentPrefetchLink>
             {listing.url ? (
               <a
                 href={listing.url}

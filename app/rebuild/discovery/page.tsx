@@ -1,6 +1,7 @@
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
+import PreferencesBar from "@/components/rebuild/PreferencesBar";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import ResilienceLabel, {
   ResilienceMode,
@@ -8,12 +9,24 @@ import ResilienceLabel, {
 } from "@/components/rebuild/ResilienceLabel";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
+import {
+  parseRebuildPrefs,
+  sortDealsByPrefs,
+} from "@/lib/rebuild/prefs/rebuildPrefs";
 
 const FRESHNESS_SLO_SECONDS = 15 * 60;
 
-export default async function RebuildDiscoveryPage() {
+type RebuildDiscoveryPageProps = {
+  searchParams?: { [key: string]: string | string[] | undefined };
+};
+
+export default async function RebuildDiscoveryPage({
+  searchParams,
+}: RebuildDiscoveryPageProps) {
+  const prefs = parseRebuildPrefs(searchParams ?? {});
   const isDbConfigured = isRebuildDbConfigured();
   const { deals, fetchedAtISO } = await getRecentDeals(25);
+  const orderedDeals = sortDealsByPrefs(deals, prefs);
   const ageSeconds = deals
     .map((deal) => deal.freshness.dataAgeSeconds)
     .filter((value): value is number => value != null);
@@ -60,17 +73,20 @@ export default async function RebuildDiscoveryPage() {
           </p>
         </header>
 
+        <PreferencesBar initialSort={prefs.sort} />
+
         <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
           <div className="flex items-baseline justify-between">
             <h2 className="text-lg font-semibold text-slate-900">
               Recent deals
             </h2>
             <p className="text-xs text-slate-500">
-              {deals.length} result{deals.length !== 1 ? "s" : ""}
+              {orderedDeals.length} result
+              {orderedDeals.length !== 1 ? "s" : ""}
             </p>
           </div>
 
-          {deals.length === 0 ? (
+          {orderedDeals.length === 0 ? (
             <div className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
               <p className="text-sm text-slate-600">
                 {isDbConfigured
@@ -80,7 +96,7 @@ export default async function RebuildDiscoveryPage() {
             </div>
           ) : (
             <ul className="mt-4 divide-y divide-slate-100">
-              {deals.map((deal) => (
+              {orderedDeals.map((deal) => (
                 <li key={deal.listingId} className="py-3">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">

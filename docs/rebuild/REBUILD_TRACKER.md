@@ -93,6 +93,6 @@ Perceived speed optimizations:
 Only after Phase 2 is "boringly stable":
 
 - [x] Alerts UI
-- [ ] Personalization expansion
+- [x] Personalization expansion
 - [ ] Cross-market dedupe (optional)
 - [ ] Predictive signals beyond rules-based

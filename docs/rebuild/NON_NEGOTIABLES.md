@@ -1,5 +1,27 @@
 # Non-Negotiables
 
+## Governance Hardening (LOCKED)
+
+### Authority / STOP Rule (LOCKED)
+
+No rebuild decision, checkbox flip, or phase advancement may occur without authoritative artifacts (PR link + diff, CI run, evidence row) available. If artifacts are missing: **STOP**.
+
+### Docs Sprawl Rule (LOCKED)
+
+No net-new rebuild/governance docs may be added unless obsolete docs are archived or removed in the same PR (net doc count must not increase). Canonical rebuild governance remains in `docs/rebuild/` only.
+
+### Evidence Freshness Rule (LOCKED)
+
+Evidence must remain valid against main (links work, referenced files/paths still exist, gates still exist). If evidence becomes stale, the corresponding tracker item must be downgraded until refreshed.
+
+### PR Atomicity Rule (LOCKED)
+
+Each PR should advance at most one rebuild tracker checkbox or one governance rule. Mixed-scope PRs require explicit justification in the PR body.
+
+### Repository-Verifiable Governance Rule (LOCKED)
+
+Governance correctness must be verifiable from repository artifacts alone (docs, diffs, CI runs, evidence rows). No process may rely on tool or human memory to establish compliance.
+
 ## Hard Gates
 
 - Price/deal indicators MUST NOT mutate after first render; versioned state only.

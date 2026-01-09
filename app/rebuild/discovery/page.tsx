@@ -1,13 +1,19 @@
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
-import PriorityHydration from "@/components/rebuild/PriorityHydration";
-import { SkeletonBlock } from "@/components/rebuild/Skeleton";
+import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 
 export default async function RebuildDiscoveryPage() {
   const isDbConfigured = isRebuildDbConfigured();
   const { deals, fetchedAtISO } = await getRecentDeals(25);
+  const provenanceFields = [
+    { label: "DB configured", value: isDbConfigured ? "yes" : "no" },
+  ];
+
+  if (isDbConfigured) {
+    provenanceFields.push({ label: "Data fetched at", value: fetchedAtISO });
+  }
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -79,17 +85,15 @@ export default async function RebuildDiscoveryPage() {
             </ul>
           )}
 
-          <PriorityHydration
-            fallback={
-              <div className="mt-4">
-                <SkeletonBlock className="h-3 w-40" />
-              </div>
+          <ProvenanceDrilldown
+            className="mt-4"
+            summary={
+              isDbConfigured
+                ? `Fetched at ${fetchedAtISO}`
+                : "DB not configured"
             }
-          >
-            <p className="mt-4 text-xs text-slate-500">
-              Data fetched: {isDbConfigured ? fetchedAtISO : "n/a"}
-            </p>
-          </PriorityHydration>
+            fields={provenanceFields}
+          />
         </section>
       </div>
     </main>

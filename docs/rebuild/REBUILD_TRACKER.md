@@ -80,7 +80,7 @@ Lock rule:
 Perceived speed optimizations:
 
 - [x] skeleton library everywhere
-- [ ] priority hydration
+- [x] priority hydration
 - [ ] prefetch on intent
 
 - [ ] Compliance hardening

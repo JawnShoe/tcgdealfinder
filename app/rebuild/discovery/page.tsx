@@ -1,5 +1,7 @@
 import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import PriorityHydration from "@/components/rebuild/PriorityHydration";
+import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 
@@ -77,9 +79,17 @@ export default async function RebuildDiscoveryPage() {
             </ul>
           )}
 
-          <p className="mt-4 text-xs text-slate-500">
-            Data fetched: {isDbConfigured ? fetchedAtISO : "n/a"}
-          </p>
+          <PriorityHydration
+            fallback={
+              <div className="mt-4">
+                <SkeletonBlock className="h-3 w-40" />
+              </div>
+            }
+          >
+            <p className="mt-4 text-xs text-slate-500">
+              Data fetched: {isDbConfigured ? fetchedAtISO : "n/a"}
+            </p>
+          </PriorityHydration>
         </section>
       </div>
     </main>

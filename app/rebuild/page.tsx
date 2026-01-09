@@ -1,5 +1,7 @@
 import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import PriorityHydration from "@/components/rebuild/PriorityHydration";
+import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 
@@ -109,26 +111,37 @@ export default async function RebuildHomePage() {
           </p>
         </section>
 
-        <section
-          className="mt-6 rounded-lg border border-slate-200 bg-white p-6"
-          data-testid="rebuild-home-nav"
+        <PriorityHydration
+          fallback={
+            <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+              <SkeletonBlock className="h-5 w-40" />
+              <SkeletonBlock className="mt-3 h-4 w-64" />
+              <SkeletonBlock className="mt-4 h-4 w-28" />
+              <SkeletonBlock className="mt-4 h-3 w-40" />
+            </section>
+          }
         >
-          <h2 className="text-lg font-semibold text-slate-900">
-            Rebuild surfaces
-          </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Navigate to other rebuild-native routes.
-          </p>
-          <Link
-            href="/rebuild/discovery"
-            className="mt-4 inline-flex text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
+          <section
+            className="mt-6 rounded-lg border border-slate-200 bg-white p-6"
+            data-testid="rebuild-home-nav"
           >
-            Browse deals
-          </Link>
-          <p className="mt-4 text-xs text-slate-500">
-            Click any deal above to view its listing page.
-          </p>
-        </section>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Rebuild surfaces
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Navigate to other rebuild-native routes.
+            </p>
+            <Link
+              href="/rebuild/discovery"
+              className="mt-4 inline-flex text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
+            >
+              Browse deals
+            </Link>
+            <p className="mt-4 text-xs text-slate-500">
+              Click any deal above to view its listing page.
+            </p>
+          </section>
+        </PriorityHydration>
       </div>
     </main>
   );

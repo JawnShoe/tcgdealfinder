@@ -1,5 +1,7 @@
 import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import PriorityHydration from "@/components/rebuild/PriorityHydration";
+import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRebuildListingById } from "@/lib/rebuild/data/getRebuildListingById";
 
@@ -261,6 +263,29 @@ export default async function RebuildListingPage({ params }: PageProps) {
             </div>
           </dl>
         </section>
+
+        <PriorityHydration
+          fallback={
+            <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+              <SkeletonBlock className="h-5 w-40" />
+              <SkeletonBlock className="mt-3 h-4 w-72" />
+              <SkeletonBlock className="mt-2 h-4 w-60" />
+            </section>
+          }
+        >
+          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Rebuild notes
+            </h2>
+            <p className="mt-2 text-sm text-slate-700">
+              Additional non-critical panels will appear here as the rebuild
+              lane expands.
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              This section is secondary to the trust and pricing surfaces above.
+            </p>
+          </section>
+        </PriorityHydration>
       </div>
     </main>
   );

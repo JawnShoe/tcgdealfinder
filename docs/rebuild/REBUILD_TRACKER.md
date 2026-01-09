@@ -42,7 +42,7 @@ Deliverable: one route (`/rebuild/listing/[id]`) that:
 
 Daily ritual:
 
-- [ ] Run `primitive-enforcer` on any UI change
+- [x] Run `primitive-enforcer` on any UI change
 
 ---
 
@@ -68,7 +68,7 @@ Add data-sanity-gate:
 
 Lock rule:
 
-- [ ] No new features until all routes pass CI 100%
+- [x] No new features until all routes pass CI 100%
 
 ---
 

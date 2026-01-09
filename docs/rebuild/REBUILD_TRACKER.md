@@ -1,8 +1,9 @@
 # REBUILD_TRACKER.md
 
 Checkboxes must match TRACKER_EVIDENCE.md; otherwise downgrade to [ ].
+This file mirrors the Championship Rebuild Plan PDF Execution Plan. Do not reword phase titles/bullets here. Any plan changes require updating the PDF + tracker + evidence in the same PR, plus ADR if needed.
 
-Purpose: single checkbox tracker that mirrors the Championship Rebuild Plan "Execution Plan (One-Page, Canonical)".
+Purpose: single checkbox tracker that mirrors the Championship Rebuild Plan PDF "Execution Plan (One-Page, Canonical)".
 Rule: do not reword sections here. If the plan changes, update both together in the same PR.
 
 ---
@@ -45,9 +46,9 @@ Daily ritual:
 
 ---
 
-## Weeks 3-5: Phase 1 - Core Engine
+## Weeks 3–5: Phase 1 — Core Engine
 
-Build home -> discovery -> detail using the proven template:
+Build home → discovery → detail using the proven template:
 
 - [x] Home route implemented in rebuild lane (template-based)
 - [x] Discovery route implemented in rebuild lane (template-based)
@@ -71,38 +72,27 @@ Lock rule:
 
 ---
 
-## Weeks 6-8: Cutover + Trust Hardening
+## Weeks 6–8: Phase 2 — Trust Polish
 
-Cutover (route ownership, not blended flags):
+- [ ] Credibility UI: drilldown + provenance
+- [ ] Resilience tiers + live/cached labels
 
-- [ ] rebuild owns routes by cutover plan (no interleaving legacy + rebuild on same route)
+Perceived speed optimizations:
 
-Trust hardening:
+- [ ] skeleton library everywhere
+- [ ] priority hydration
+- [ ] prefetch on intent
 
-- [ ] trust metrics wired to real pipeline outputs
-- [ ] transparency log reflects real inputs + versions
-- [ ] contracts enforced across rebuilt routes (tooltip/hydration/skeleton)
-
-Operational hardening:
-
-- [ ] monitoring/alerting thresholds set for freshness + errors
-- [ ] incident playbook validated via release checklist
+- [ ] Compliance hardening
+- [ ] Synthetic monitoring active
 
 ---
 
-## Week 9+: Moat + Scale
+## Week 9+: Phase 3 — Moat Building
 
-Scale coverage:
+Only after Phase 2 is "boringly stable":
 
-- [ ] additional routes added only via proven template + contracts
-
-Performance + UX moat:
-
-- [ ] performance budgets enforced (LCP/CLS/INP proxy)
-- [ ] accessibility baseline enforced for rebuilt routes
-- [ ] observability baseline enforced (client + server errors, tracing where applicable)
-
-Long-term rules:
-
-- [ ] legacy remains read-only reference during rebuild (no legacy imports into rebuild namespaces)
-- [ ] rebuild tests assert contracts and trust invariants (not legacy quirks)
+- [ ] Alerts UI
+- [ ] Personalization expansion
+- [ ] Cross-market dedupe (optional)
+- [ ] Predictive signals beyond rules-based

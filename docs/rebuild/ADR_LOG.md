@@ -56,3 +56,13 @@
   Non-interleaving rule: For any route cut over, legacy code must not remain in the same route handler. Cutover is ownership, not blending.
 
   Next step: PR 3 will implement only the redirects that are explicitly authorized above after confirming /rebuild/discovery supports the preset query params.
+
+## ADR-0006: Enforcement Clarifications for Phase 2/3 (Non-Interleaving + Budgets + Invariants)
+
+- Status: Accepted
+- Decision: Record enforcement clarifications for Phase 2/3 quality without changing the plan text.
+- Clarifications:
+  - Cutover rule (route ownership, no interleaving): When cutting over a legacy route to rebuild, the route handler must be routing-only (redirect/rewrite) or fully rebuild-owned. No blending legacy + rebuild logic in the same handler.
+  - Performance budgets as "moat" enforcement: Budgets/targets for LCP/CLS/INP proxy should be enforced (CI gate or documented policy), consistent with Trust/Perceived Speed goals.
+  - Invariant testing: Rebuild tests should assert contracts and trust invariants (not legacy quirks). Legacy remains read-only reference during rebuild (no imports into rebuild namespaces).
+  - Scale discipline: New rebuilt routes in Phase 3 must be added only via the proven template + contracts (no one-off route patterns).

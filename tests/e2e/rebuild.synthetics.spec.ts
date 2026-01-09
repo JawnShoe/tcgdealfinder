@@ -35,7 +35,9 @@ async function assertUiTrustSurfaces(page: Page) {
 }
 
 async function assertAlertsHeading(page: Page) {
-  await expect(page.getByRole("heading", { name: "Alerts" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Alerts", exact: true })
+  ).toBeVisible();
 }
 
 test("rebuild synthetics: trust surfaces visible across rebuild funnel", async ({

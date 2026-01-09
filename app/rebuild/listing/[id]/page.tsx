@@ -2,6 +2,10 @@ import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
+import ResilienceLabel, {
+  ResilienceMode,
+  ResilienceTier,
+} from "@/components/rebuild/ResilienceLabel";
 import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRebuildListingById } from "@/lib/rebuild/data/getRebuildListingById";
@@ -10,11 +14,28 @@ type PageProps = {
   params: { id: string };
 };
 
+const FRESHNESS_SLO_SECONDS = 15 * 60;
+
 export default async function RebuildListingPage({ params }: PageProps) {
   const isDbConfigured = isRebuildDbConfigured();
   const listing = isDbConfigured
     ? await getRebuildListingById(params.id)
     : null;
+
+  let resilienceTier: ResilienceTier = "FULL";
+  let resilienceMode: ResilienceMode = "LIVE";
+  if (!isDbConfigured) {
+    resilienceTier = "UNAVAILABLE";
+    resilienceMode = "UNKNOWN";
+  } else if (!listing) {
+    resilienceTier = "UNAVAILABLE";
+    resilienceMode = "UNKNOWN";
+  } else if (
+    listing.freshness.dataAgeSeconds == null ||
+    listing.freshness.dataAgeSeconds > FRESHNESS_SLO_SECONDS
+  ) {
+    resilienceTier = "DEGRADED";
+  }
 
   if (!isDbConfigured) {
     return (
@@ -23,6 +44,11 @@ export default async function RebuildListingPage({ params }: PageProps) {
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
             Rebuild lane - data unavailable
           </div>
+          <ResilienceLabel
+            className="mb-6"
+            tier={resilienceTier}
+            mode={resilienceMode}
+          />
           <div className="rounded-lg border border-slate-200 bg-white p-6">
             <p className="text-sm text-slate-900">
               Rebuild data source not configured in this environment.
@@ -40,6 +66,11 @@ export default async function RebuildListingPage({ params }: PageProps) {
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
             Rebuild lane - listing not found
           </div>
+          <ResilienceLabel
+            className="mb-6"
+            tier={resilienceTier}
+            mode={resilienceMode}
+          />
           <div className="rounded-lg border border-slate-200 bg-white p-6">
             <p className="text-sm text-slate-900">
               No listing data found for ID{" "}
@@ -87,6 +118,11 @@ export default async function RebuildListingPage({ params }: PageProps) {
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
           Rebuild lane - pipeline data (db)
         </div>
+        <ResilienceLabel
+          className="mb-6"
+          tier={resilienceTier}
+          mode={resilienceMode}
+        />
 
         <header className="rounded-lg border border-slate-200 bg-white p-6">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-900">

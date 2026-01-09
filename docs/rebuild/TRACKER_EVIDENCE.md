@@ -71,9 +71,9 @@ expect(body).toContain("rebuild-db-v1");
 
 ## Weeks 6–8: Phase 2 — Trust Polish
 
-| Tracker item                                                | PR      | File(s)                                                                                                                                                        | Evidence (short)                                                                                           |
-| ----------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Perceived speed optimizations - skeleton library everywhere | PR #TBD | components/rebuild/Skeleton.tsx; app/rebuild/loading.tsx; app/rebuild/discovery/loading.tsx; app/rebuild/listing/[id]/loading.tsx; app/rebuild/ops/loading.tsx | Shared rebuild skeleton primitives replace ad-hoc placeholders; layout dimensions preserved; no animation. |
+| Tracker item                                                | PR   | File(s)                                                                                                                                                        | Evidence (short)                                                                                           |
+| ----------------------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Perceived speed optimizations - skeleton library everywhere | #268 | components/rebuild/Skeleton.tsx; app/rebuild/loading.tsx; app/rebuild/discovery/loading.tsx; app/rebuild/listing/[id]/loading.tsx; app/rebuild/ops/loading.tsx | Shared rebuild skeleton primitives replace ad-hoc placeholders; layout dimensions preserved; no animation. |
 
 ## Week 9+: Phase 3 — Moat Building
 

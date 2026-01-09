@@ -84,7 +84,7 @@ Perceived speed optimizations:
 - [x] prefetch on intent
 
 - [x] Compliance hardening
-- [ ] Synthetic monitoring active
+- [x] Synthetic monitoring active
 
 ---
 

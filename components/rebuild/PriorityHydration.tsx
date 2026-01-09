@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 
 type IdleDeadline = {
   didTimeout: boolean;
@@ -14,8 +15,8 @@ type IdleOptions = {
 };
 
 type PriorityHydrationProps = {
-  fallback: React.ReactNode;
-  children: React.ReactNode;
+  fallback: ReactNode;
+  children: ReactNode;
   timeoutMs?: number;
 };
 

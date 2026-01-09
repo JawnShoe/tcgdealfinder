@@ -46,9 +46,9 @@ Daily ritual:
 
 ---
 
-## Weeks 3-5: Phase 1 - Core Engine
+## Weeks 3–5: Phase 1 — Core Engine
 
-Build home -> discovery -> detail using the proven template:
+Build home → discovery → detail using the proven template:
 
 - [x] Home route implemented in rebuild lane (template-based)
 - [x] Discovery route implemented in rebuild lane (template-based)
@@ -72,7 +72,7 @@ Lock rule:
 
 ---
 
-## Weeks 6-8: Phase 2 - Trust Polish
+## Weeks 6–8: Phase 2 — Trust Polish
 
 - [ ] Credibility UI: drilldown + provenance
 - [ ] Resilience tiers + live/cached labels
@@ -88,7 +88,7 @@ Perceived speed optimizations:
 
 ---
 
-## Week 9+: Phase 3 - Moat Building
+## Week 9+: Phase 3 — Moat Building
 
 Only after Phase 2 is "boringly stable":
 

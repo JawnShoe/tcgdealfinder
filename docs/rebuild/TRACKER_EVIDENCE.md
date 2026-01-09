@@ -84,7 +84,9 @@ expect(body).toContain("rebuild-db-v1");
 
 ## Week 9+: Phase 3 — Moat Building
 
-_No checked items yet._
+| Tracker item | PR   | File(s)                                                                                                                                                                                               | Evidence (short)                                                                                                               |
+| ------------ | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Alerts UI    | #277 | app/rebuild/alerts/page.tsx; app/rebuild/alerts/loading.tsx; app/rebuild/alerts/error.tsx; components/rebuild/AlertsShell.tsx; components/rebuild/AlertCard.tsx; tests/e2e/rebuild.synthetics.spec.ts | Rebuild Alerts UI route added with SSR-visible shell and default-safe empty states; synth test covers /rebuild/alerts; no CLS. |
 
 ---
 

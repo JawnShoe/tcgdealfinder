@@ -37,7 +37,7 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 
 | Track   | Item                                          | Date       | Evidence (short)                                                                                                      | PR      |
 | ------- | --------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------- | ------- |
-| Track A | PR Ritual Enforcement (template + disclosure) | 2026-01-10 | Added canonical PR template + locked disclosure requirement in NON_NEGOTIABLES + ADR. Verified via template presence. | PR #TBD |
+| Track A | PR Ritual Enforcement (template + disclosure) | 2026-01-10 | Added canonical PR template + locked disclosure requirement in NON_NEGOTIABLES + ADR. Verified via template presence. | PR #282 |
 
 ### CI evidence
 

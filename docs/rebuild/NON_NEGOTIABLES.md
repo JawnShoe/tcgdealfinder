@@ -91,3 +91,15 @@ Failure:
 - Any detected drift blocks further rebuild progression until resolved and re-audited.
 
 This ritual is non-optional for the rebuild lane.
+
+## PR Ritual (Mandatory - Rebuild Lane)
+
+All PRs MUST include the standardized disclosure checklist (contracts, gates, drift risk, and evidence updates).
+The canonical template is:
+
+- .github/pull_request_template.md
+
+Failure:
+
+- Missing the PR ritual disclosure is a governance violation.
+- Rebuild progression is blocked until the PR is updated to include the required sections.

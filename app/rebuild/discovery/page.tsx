@@ -10,6 +10,10 @@ import ResilienceLabel, {
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 import {
+  dedupeDeals,
+  normalizeListingKey,
+} from "@/lib/rebuild/dedupe/crossMarketDedupe";
+import {
   parseRebuildPrefs,
   sortDealsByPrefs,
 } from "@/lib/rebuild/prefs/rebuildPrefs";
@@ -27,6 +31,7 @@ export default async function RebuildDiscoveryPage({
   const isDbConfigured = isRebuildDbConfigured();
   const { deals, fetchedAtISO } = await getRecentDeals(25);
   const orderedDeals = sortDealsByPrefs(deals, prefs);
+  const { deduped: dedupedDeals, duplicates } = dedupeDeals(orderedDeals);
   const ageSeconds = deals
     .map((deal) => deal.freshness.dataAgeSeconds)
     .filter((value): value is number => value != null);
@@ -81,12 +86,12 @@ export default async function RebuildDiscoveryPage({
               Recent deals
             </h2>
             <p className="text-xs text-slate-500">
-              {orderedDeals.length} result
-              {orderedDeals.length !== 1 ? "s" : ""}
+              {dedupedDeals.length} result
+              {dedupedDeals.length !== 1 ? "s" : ""}
             </p>
           </div>
 
-          {orderedDeals.length === 0 ? (
+          {dedupedDeals.length === 0 ? (
             <div className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
               <p className="text-sm text-slate-600">
                 {isDbConfigured
@@ -96,41 +101,58 @@ export default async function RebuildDiscoveryPage({
             </div>
           ) : (
             <ul className="mt-4 divide-y divide-slate-100">
-              {orderedDeals.map((deal) => (
-                <li key={deal.listingId} className="py-3">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <IntentPrefetchLink
-                        href={`/rebuild/listing/${encodeURIComponent(
-                          deal.listingId
-                        )}`}
-                        className="text-sm font-medium text-slate-900 hover:text-slate-700"
-                      >
-                        {deal.title}
-                      </IntentPrefetchLink>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {deal.seller.name ?? deal.seller.username ?? "Unknown"}{" "}
-                        at {deal.provenance.market ?? deal.provenance.source}
-                      </p>
+              {dedupedDeals.map((deal) => {
+                const duplicateGroup = duplicates.get(
+                  normalizeListingKey(deal)
+                );
+                const duplicateCount = duplicateGroup
+                  ? duplicateGroup.length - 1
+                  : 0;
+
+                return (
+                  <li key={deal.listingId} className="py-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <IntentPrefetchLink
+                          href={`/rebuild/listing/${encodeURIComponent(
+                            deal.listingId
+                          )}`}
+                          className="text-sm font-medium text-slate-900 hover:text-slate-700"
+                        >
+                          {deal.title}
+                        </IntentPrefetchLink>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {deal.seller.name ??
+                            deal.seller.username ??
+                            "Unknown"}{" "}
+                          at {deal.provenance.market ?? deal.provenance.source}
+                        </p>
+                        {duplicateCount > 0 ? (
+                          <p className="mt-1 text-xs text-slate-500">
+                            Also seen in {duplicateCount} other market
+                            {duplicateCount !== 1 ? "s" : ""}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="flex-shrink-0 text-right">
+                        <p className="text-sm font-semibold text-slate-900">
+                          {deal.price.display}
+                        </p>
+                        <p
+                          className={`text-xs font-medium ${
+                            (deal.price.discountPercent ?? 0) < 0
+                              ? "text-emerald-700"
+                              : "text-slate-500"
+                          }`}
+                        >
+                          {deal.price.deltaDisplay}
+                        </p>
+                        <ConfidenceBadge label={deal.trust.confidence.label} />
+                      </div>
                     </div>
-                    <div className="flex-shrink-0 text-right">
-                      <p className="text-sm font-semibold text-slate-900">
-                        {deal.price.display}
-                      </p>
-                      <p
-                        className={`text-xs font-medium ${
-                          (deal.price.discountPercent ?? 0) < 0
-                            ? "text-emerald-700"
-                            : "text-slate-500"
-                        }`}
-                      >
-                        {deal.price.deltaDisplay}
-                      </p>
-                      <ConfidenceBadge label={deal.trust.confidence.label} />
-                    </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
 

@@ -1,0 +1,157 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import type { ListingDomain } from "../../rebuild/data/listingMapper";
+import {
+  dedupeDeals,
+  normalizeListingKey,
+} from "../../rebuild/dedupe/crossMarketDedupe";
+
+const BASE_LISTING: ListingDomain = {
+  listingId: "listing-1",
+  title: "Sample Listing",
+  url: "https://example.com/item/1",
+  price: {
+    amount: 100,
+    currency: "USD",
+    totalCad: 130,
+    totalUsd: 100,
+    totalNative: 100,
+    discountPercent: -10,
+    display: "100.00 USD",
+    deltaDisplay: "-10%",
+  },
+  seller: {
+    name: "Sample Seller",
+    username: "sample-seller",
+    feedbackCount: 42,
+    positivePercent: 99,
+  },
+  condition: "NM",
+  availability: "In stock",
+  provenance: {
+    source: "EBAY",
+    listingId: "listing-1",
+    market: "EBAY_US",
+    fetchedAtISO: "2026-01-01T00:00:00Z",
+    snapshotAtISO: "2026-01-01T00:00:00Z",
+    ingestedAtISO: "2026-01-01T00:00:00Z",
+    updatedAtISO: "2026-01-01T00:00:00Z",
+  },
+  trust: {
+    confidence: { weight: 0.8, label: "high", display: "80 / 100" },
+    source: "EBAY",
+    fetchedAtISO: "2026-01-01T00:00:00Z",
+    dataAgeLabel: "0m",
+  },
+  freshness: {
+    fetchedAtISO: "2026-01-01T00:00:00Z",
+    dataAgeLabel: "0m",
+    dataAgeSeconds: 0,
+  },
+  reliability: {
+    integrityStatus: "OK",
+    integrityReason: null,
+    shippingKnown: true,
+  },
+  transparency: {
+    sources: ["EBAY"],
+    computedAtISO: "2026-01-01T00:00:00Z",
+    inputs: ["Listings totals + currency from listings."],
+    pipelineVersion: "rebuild-db-v1",
+  },
+  riskFlags: [],
+};
+
+function buildListing(overrides: Partial<ListingDomain> = {}): ListingDomain {
+  const listingId = overrides.listingId ?? BASE_LISTING.listingId;
+  const provenanceOverride = overrides.provenance ?? {};
+  const provenance = {
+    ...BASE_LISTING.provenance,
+    ...provenanceOverride,
+    listingId: provenanceOverride.listingId ?? listingId,
+  };
+  const trust = {
+    ...BASE_LISTING.trust,
+    ...(overrides.trust ?? {}),
+    confidence: {
+      ...BASE_LISTING.trust.confidence,
+      ...(overrides.trust?.confidence ?? {}),
+    },
+  };
+
+  return {
+    ...BASE_LISTING,
+    ...overrides,
+    listingId,
+    price: { ...BASE_LISTING.price, ...(overrides.price ?? {}) },
+    seller: { ...BASE_LISTING.seller, ...(overrides.seller ?? {}) },
+    provenance,
+    trust,
+    freshness: { ...BASE_LISTING.freshness, ...(overrides.freshness ?? {}) },
+    reliability: {
+      ...BASE_LISTING.reliability,
+      ...(overrides.reliability ?? {}),
+    },
+    transparency: {
+      ...BASE_LISTING.transparency,
+      ...(overrides.transparency ?? {}),
+    },
+    riskFlags: overrides.riskFlags ?? BASE_LISTING.riskFlags,
+  };
+}
+
+test("normalizeListingKey prefers listingId", () => {
+  const listing = buildListing({
+    listingId: "ebay-123",
+    url: "https://Example.com/item/123?utm=1",
+  });
+
+  assert.equal(normalizeListingKey(listing), "listing:ebay-123");
+});
+
+test("normalizeListingKey falls back to normalized URL", () => {
+  const listing = buildListing({
+    listingId: " ",
+    url: "https://Example.com/item/123/?utm=1#frag",
+    provenance: { listingId: " " },
+  });
+
+  assert.equal(
+    normalizeListingKey(listing),
+    "url:https://example.com/item/123"
+  );
+});
+
+test("normalizeListingKey falls back to composite key when needed", () => {
+  const listing = buildListing({
+    listingId: "",
+    url: null,
+    provenance: { listingId: "" },
+    seller: { name: "Seller Alpha", username: null },
+    title: "Base Set Charizard",
+    price: { amount: 50, currency: "USD" },
+  });
+
+  const key = normalizeListingKey(listing);
+  assert.ok(key.startsWith("fallback:"));
+  assert.ok(key.includes("seller alpha"));
+});
+
+test("dedupeDeals collapses duplicate listings by key", () => {
+  const first = buildListing({
+    listingId: "dupe-1",
+    provenance: { listingId: "dupe-1", market: "EBAY_US" },
+  });
+  const second = buildListing({
+    listingId: "dupe-1",
+    provenance: { listingId: "dupe-1", market: "EBAY_CA" },
+    url: "https://example.com/item/1?loc=ca",
+  });
+
+  const { deduped, duplicates } = dedupeDeals([first, second]);
+  const key = normalizeListingKey(first);
+
+  assert.equal(deduped.length, 1);
+  assert.equal(duplicates.get(key)?.length, 2);
+});

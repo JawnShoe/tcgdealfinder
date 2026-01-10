@@ -74,7 +74,7 @@ type ListingOverrides = Omit<
   price?: Partial<ListingDomain["price"]>;
   seller?: Partial<ListingDomain["seller"]>;
   provenance?: Partial<ListingDomain["provenance"]>;
-  trust?: Partial<ListingDomain["trust"]> & {
+  trust?: Omit<Partial<ListingDomain["trust"]>, "confidence"> & {
     confidence?: Partial<ListingDomain["trust"]["confidence"]>;
   };
   freshness?: Partial<ListingDomain["freshness"]>;

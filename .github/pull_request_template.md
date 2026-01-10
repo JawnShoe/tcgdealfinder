@@ -1,6 +1,6 @@
-## Summary
+﻿## Summary
 
-What does this PR do? (1-3 sentences)
+What does this PR do? (1–3 sentences)
 
 ## Scope / Allowlist
 
@@ -14,7 +14,7 @@ Which rebuild contracts are relied on or potentially impacted?
 - [ ] Skeleton / loading stability (no CLS)
 - [ ] Tooltip / portal rules
 - [ ] Trust surfaces (confidence, labels, provenance/explainability)
-- [ ] Boundary rules (UI -> domain -> data -> integrations)
+- [ ] Boundary rules (UI → domain → data → integrations)
 - [ ] Other (specify):
 
 Notes (required if any box is checked):
@@ -43,7 +43,7 @@ If Yes, explain what could drift and why this is still safe:
 Does this PR require tracker/evidence updates?
 
 - [ ] No
-- [ ] Yes - updated:
+- [ ] Yes — updated:
   - [ ] REBUILD_TRACKER.md
   - [ ] TRACKER_EVIDENCE.md
   - [ ] ADR_LOG.md (if governance/contract change)

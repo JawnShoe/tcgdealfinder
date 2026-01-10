@@ -51,3 +51,43 @@ Governance correctness must be verifiable from repository artifacts alone (docs,
 
 - Phase 0 skills: primitive-enforcer, rebuild-contract-guard, pr-impact-declaration.
 - Fail-hard CI gates: lint/typecheck/unit, e2e smoke, visual regression/CLS, a11y smoke, perf budget.
+
+## Drift Audit (Mandatory - Rebuild Lane)
+
+Purpose:
+Detect and prevent architectural, contract, and governance drift in the rebuild lane.
+
+Cadence:
+
+- Weekly, manual audit.
+
+Scope (fixed):
+
+- Routes:
+  - /rebuild
+  - /rebuild/discovery
+  - /rebuild/listing/[id]
+
+- Enforcement checks:
+  - All CI gates pass
+  - Rebuild contracts (hydration / skeleton / tooltip / trust surfaces) still hold
+  - No CLS or post-hydration metadata pop-in
+  - Synthetic monitoring passing
+  - UI -> domain -> data -> integration boundaries respected
+
+- Governance checks:
+  - REBUILD_TRACKER.md and TRACKER_EVIDENCE.md remain in sync
+  - No [x] exists without evidence
+  - No undocumented deviations from contracts
+
+Output:
+
+- One dated audit record with:
+  - Confirmation of checks
+  - Link to commit or PR used as evidence
+
+Failure:
+
+- Any detected drift blocks further rebuild progression until resolved and re-audited.
+
+This ritual is non-optional for the rebuild lane.

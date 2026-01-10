@@ -19,6 +19,17 @@ async function assertSsrTrustSurfaces(request: APIRequestContext, url: string) {
   expect(body).toContain("Provenance");
 }
 
+async function assertSsrPredictiveSignals(
+  request: APIRequestContext,
+  url: string
+) {
+  const response = await request.get(url);
+  expect(response.ok()).toBeTruthy();
+  const body = await response.text();
+  expect(body).toContain("Predictive signals");
+  expect(body).toContain('data-testid="predictive-signals-reasons"');
+}
+
 async function assertAlertsSsrHeading(request: APIRequestContext, url: string) {
   const response = await request.get(url);
   expect(response.ok()).toBeTruthy();
@@ -31,6 +42,13 @@ async function assertUiTrustSurfaces(page: Page) {
   await expect(page.getByText(/Resilience:/)).toBeVisible();
   await expect(
     page.locator("summary", { hasText: "Provenance" })
+  ).toBeVisible();
+}
+
+async function assertUiPredictiveSignals(page: Page) {
+  await expect(page.getByTestId("predictive-signals")).toBeVisible();
+  await expect(
+    page.getByTestId("predictive-signals-reasons").locator("li").first()
   ).toBeVisible();
 }
 
@@ -56,6 +74,10 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
     await assertSsrTrustSurfaces(request, url);
     await page.goto(url, { waitUntil: "domcontentloaded" });
     await assertUiTrustSurfaces(page);
+    if (route.startsWith("/rebuild/listing/")) {
+      await assertSsrPredictiveSignals(request, url);
+      await assertUiPredictiveSignals(page);
+    }
     if (route === "/rebuild/alerts") {
       await assertAlertsSsrHeading(request, url);
       await assertAlertsHeading(page);

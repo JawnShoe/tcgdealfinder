@@ -95,4 +95,4 @@ Only after Phase 2 is "boringly stable":
 - [x] Alerts UI
 - [x] Personalization expansion
 - [x] Cross-market dedupe (optional)
-- [ ] Predictive signals beyond rules-based
+- [x] Predictive signals beyond rules-based

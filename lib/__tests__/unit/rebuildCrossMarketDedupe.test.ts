@@ -7,6 +7,29 @@ import {
   normalizeListingKey,
 } from "../../rebuild/dedupe/crossMarketDedupe";
 
+type ListingOverrides = Omit<
+  Partial<ListingDomain>,
+  | "price"
+  | "seller"
+  | "provenance"
+  | "trust"
+  | "freshness"
+  | "reliability"
+  | "transparency"
+  | "riskFlags"
+> & {
+  price?: Partial<ListingDomain["price"]>;
+  seller?: Partial<ListingDomain["seller"]>;
+  provenance?: Partial<ListingDomain["provenance"]>;
+  trust?: Partial<ListingDomain["trust"]> & {
+    confidence?: Partial<ListingDomain["trust"]["confidence"]>;
+  };
+  freshness?: Partial<ListingDomain["freshness"]>;
+  reliability?: Partial<ListingDomain["reliability"]>;
+  transparency?: Partial<ListingDomain["transparency"]>;
+  riskFlags?: ListingDomain["riskFlags"];
+};
+
 const BASE_LISTING: ListingDomain = {
   listingId: "listing-1",
   title: "Sample Listing",
@@ -63,7 +86,7 @@ const BASE_LISTING: ListingDomain = {
   riskFlags: [],
 };
 
-function buildListing(overrides: Partial<ListingDomain> = {}): ListingDomain {
+function buildListing(overrides: ListingOverrides = {}): ListingDomain {
   const listingId = overrides.listingId ?? BASE_LISTING.listingId;
   const provenanceOverride = overrides.provenance ?? {};
   const provenance = {

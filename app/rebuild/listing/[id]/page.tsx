@@ -2,6 +2,7 @@ import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import OutboundDealLink from "@/components/rebuild/OutboundDealLink";
+import PredictiveSignalsPanel from "@/components/rebuild/PredictiveSignalsPanel";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import ResilienceLabel, {
@@ -11,6 +12,7 @@ import ResilienceLabel, {
 import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRebuildListingById } from "@/lib/rebuild/data/getRebuildListingById";
+import { computePredictiveSignals } from "@/lib/rebuild/signals/predictiveSignals";
 
 type PageProps = {
   params: { id: string };
@@ -113,6 +115,8 @@ export default async function RebuildListingPage({ params }: PageProps) {
       value: listing.provenance.updatedAtISO,
     });
   }
+
+  const predictiveSignals = computePredictiveSignals(listing);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -330,6 +334,8 @@ export default async function RebuildListingPage({ params }: PageProps) {
             </div>
           </dl>
         </section>
+
+        <PredictiveSignalsPanel className="mt-6" result={predictiveSignals} />
 
         <ProvenanceDrilldown
           className="mt-6"

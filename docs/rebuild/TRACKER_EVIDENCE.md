@@ -27,6 +27,12 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 | A11y Smoke gate is real (contrast fix)            | #240       | components/SiteHeader.tsx; components/SiteFooter.tsx                                                                                                                                                              | A11y Smoke passes for rebuild route after contrast fixes. CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20769726886                                                              |
 | Perf Budget gate is real (rebuild route)          | #242       | .github/workflows/ci.yml; .lighthouserc.cjs; package.json; package-lock.json                                                                                                                                      | Perf budget enforced in CI for /rebuild/listing/rebuild-e2e-1 (LHCI, 2 runs). CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20772925779                                          |
 
+### Track 0
+
+| Track   | Item                              | Date       | Evidence (short)                                                                                                                                         | PR      |
+| ------- | --------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Track 0 | Weekly Drift Audit - Rebuild Lane | 2026-01-09 | Catch-up audit performed across all rebuild routes; CI, contracts, synthetics, boundaries, and tracker/evidence consistency verified. No drift detected. | PR #281 |
+
 ### CI evidence
 
 - CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20772925779

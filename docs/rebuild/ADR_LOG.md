@@ -66,3 +66,18 @@
   - Performance budgets as "moat" enforcement: Budgets/targets for LCP/CLS/INP proxy should be enforced (CI gate or documented policy), consistent with Trust/Perceived Speed goals.
   - Invariant testing: Rebuild tests should assert contracts and trust invariants (not legacy quirks). Legacy remains read-only reference during rebuild (no imports into rebuild namespaces).
   - Scale discipline: New rebuilt routes in Phase 3 must be added only via the proven template + contracts (no one-off route patterns).
+
+## ADR-0007: Rebuild Drift Audit Ritual
+
+- Status: Accepted
+- Context: The rebuild requires explicit detection of architectural, contract, and governance drift to prevent silent erosion over time.
+- Decision: A mandatory weekly Drift Audit is instituted for the rebuild lane, covering:
+  - Core rebuild routes
+  - Contract compliance
+  - CI and synthetic enforcement
+  - Boundary discipline
+  - Tracker/evidence consistency
+  - The audit produces a dated record with a commit or PR reference.
+- Consequences:
+  - Missing or failed drift audits constitute a governance violation.
+  - Rebuild progression is blocked until drift is resolved and re-audited.

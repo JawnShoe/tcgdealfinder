@@ -31,7 +31,7 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 
 | Track   | Item                              | Date       | Evidence (short)                                                                                                                                         | PR      |
 | ------- | --------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| Track 0 | Weekly Drift Audit - Rebuild Lane | 2026-01-09 | Catch-up audit performed across all rebuild routes; CI, contracts, synthetics, boundaries, and tracker/evidence consistency verified. No drift detected. | PR #TBD |
+| Track 0 | Weekly Drift Audit - Rebuild Lane | 2026-01-09 | Catch-up audit performed across all rebuild routes; CI, contracts, synthetics, boundaries, and tracker/evidence consistency verified. No drift detected. | PR #281 |
 
 ### CI evidence
 

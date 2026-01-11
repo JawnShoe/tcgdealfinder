@@ -81,3 +81,18 @@
 - Consequences:
   - Missing or failed drift audits constitute a governance violation.
   - Rebuild progression is blocked until drift is resolved and re-audited.
+
+## ADR-0008: Mandatory PR Ritual Disclosure (Rebuild Lane)
+
+- Status: Accepted
+- Context: The rebuild requires repeatable, auditable PR discipline so contracts, gates, and drift risk cannot silently decay.
+- Decision: All PRs must use a standardized disclosure checklist covering:
+  - Scope / allowlist
+  - Applicable contracts
+  - Verification gates / CI evidence
+  - Drift risk declaration
+  - Evidence update requirements
+- The canonical template is .github/PULL_REQUEST_TEMPLATE.md.
+- Consequences:
+  - PRs missing the required sections are governance violations.
+  - Rebuild progression is blocked until disclosure is present.

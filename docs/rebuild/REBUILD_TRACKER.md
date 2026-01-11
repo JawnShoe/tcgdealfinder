@@ -108,4 +108,4 @@ Only after Phase 2 is "boringly stable":
 
 ## Track B - Product Excellence Baselines
 
-- [x] B3 Observability Baseline + Ops Readiness
+- [ ] B3 Observability Baseline + Ops Readiness

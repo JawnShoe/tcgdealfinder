@@ -44,8 +44,8 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 
 | Track   | Item                                                    | Date       | Evidence (short)                                                                                                                                                          | PR      |
 | ------- | ------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| Track B | B1 Performance Baselines (targets + enforcement)        | 2026-01-10 | Defined CWV targets + measurement method in TRUST_METRICS; locked enforcement in NON_NEGOTIABLES + ADR. Existing CI Perf Budget + CLS/Visual gates verify non-regression. | PR #XXX |
-| Track B | B2 Accessibility Baseline (gate + keyboard requirement) | 2026-01-10 | Locked A11y Smoke gate + keyboard-only requirement in NON_NEGOTIABLES + ADR; CI A11y Smoke gate verifies baseline.                                                        | PR #XXX |
+| Track B | B1 Performance Baselines (targets + enforcement)        | 2026-01-10 | Defined CWV targets + measurement method in TRUST_METRICS; locked enforcement in NON_NEGOTIABLES + ADR. Existing CI Perf Budget + CLS/Visual gates verify non-regression. | PR #284 |
+| Track B | B2 Accessibility Baseline (gate + keyboard requirement) | 2026-01-10 | Locked A11y Smoke gate + keyboard-only requirement in NON_NEGOTIABLES + ADR; CI A11y Smoke gate verifies baseline.                                                        | PR #284 |
 
 ### CI evidence
 

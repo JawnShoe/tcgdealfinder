@@ -103,3 +103,25 @@ Failure:
 
 - Missing the PR ritual disclosure is a governance violation.
 - Rebuild progression is blocked until the PR is updated to include the required sections.
+
+---
+
+## Boundary Discipline (Mandatory — Rebuild Lane)
+
+The rebuild lane enforces strict layer boundaries:
+
+- UI layer: rendering and UI-only state. No direct DB or external integration access.
+- Domain layer: pure business logic (deterministic; no I/O).
+- Data access layer: DB queries and persistence only (I/O lives here).
+- Integrations layer: external APIs/services only (I/O lives here).
+
+Rules (non-negotiable):
+
+- UI MUST NOT import from DB/data-access or integrations modules.
+- Domain MUST NOT import from integrations.
+- Data access MUST NOT import from UI.
+- Any exception requires an ADR with explicit scope, rationale, and rollback path.
+
+Operationalization:
+
+- Boundary discipline is checked during the Weekly Drift Audit and must be called out in PR Ritual disclosures.

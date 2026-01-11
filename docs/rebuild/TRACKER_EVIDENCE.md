@@ -42,10 +42,11 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 
 ### Track B
 
-| Track   | Item                                                    | Date       | Evidence (short)                                                                                                                                                          | PR      |
-| ------- | ------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| Track B | B1 Performance Baselines (targets + enforcement)        | 2026-01-10 | Defined CWV targets + measurement method in TRUST_METRICS; locked enforcement in NON_NEGOTIABLES + ADR. Existing CI Perf Budget + CLS/Visual gates verify non-regression. | PR #284 |
-| Track B | B2 Accessibility Baseline (gate + keyboard requirement) | 2026-01-10 | Locked A11y Smoke gate + keyboard-only requirement in NON_NEGOTIABLES + ADR; CI A11y Smoke gate verifies baseline.                                                        | PR #284 |
+| Track   | Item                                                    | Date       | Evidence (short)                                                                                                                                                                                                                                                                          | PR      |
+| ------- | ------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Track B | B1 Performance Baselines (targets + enforcement)        | 2026-01-10 | Defined CWV targets + measurement method in TRUST_METRICS; locked enforcement in NON_NEGOTIABLES + ADR. Existing CI Perf Budget + CLS/Visual gates verify non-regression.                                                                                                                 | PR #284 |
+| Track B | B2 Accessibility Baseline (gate + keyboard requirement) | 2026-01-10 | Locked A11y Smoke gate + keyboard-only requirement in NON_NEGOTIABLES + ADR; CI A11y Smoke gate verifies baseline.                                                                                                                                                                        | PR #284 |
+| Track B | B3 Observability Baseline + Ops Readiness               | 2026-01-11 | Release tags; request/job JSON logs; ops dashboard shows freshness/error/latency/clicks; outbound click tracking + metrics tables. Verified: CI run https://github.com/JawnShoe/tcgdealfinder/actions/runs/20893367952. Manual check: npx tsx log helper emits JSON with requestId/jobId. | PR #286 |
 
 ### CI evidence
 

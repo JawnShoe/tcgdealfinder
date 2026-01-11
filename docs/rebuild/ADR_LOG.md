@@ -96,3 +96,17 @@
 - Consequences:
   - PRs missing the required sections are governance violations.
   - Rebuild progression is blocked until disclosure is present.
+
+## ADR-0009: Rebuild Lane Boundary Discipline (UI → Domain → Data → Integrations)
+
+- Status: Accepted
+- Context: The rebuild depends on a stable architecture template. Boundary leaks (e.g., UI importing DB or integrations) create drift and make enforcement unreliable.
+- Decision: The rebuild lane uses strict boundaries:
+  - UI: rendering only; no DB/integration imports
+  - Domain: deterministic business logic; no I/O
+  - Data access: DB I/O only
+  - Integrations: external I/O only
+    Exceptions require a dedicated ADR specifying scope, rationale, and rollback.
+- Consequences:
+  - Boundary violations are governance failures.
+  - Drift audits must flag violations and block progression until resolved or explicitly ADR-exempted.

@@ -40,6 +40,13 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 | Track A | PR Ritual Enforcement (template + disclosure)           | 2026-01-10 | Added canonical PR template + locked disclosure requirement in NON_NEGOTIABLES + ADR. Verified via template presence.         | PR #282 |
 | Track A | Boundary Discipline (UI → domain → data → integrations) | 2026-01-10 | Locked rebuild lane boundary rules in NON_NEGOTIABLES + ADR; enforced via PR ritual disclosure and weekly drift audit checks. | PR #283 |
 
+### Track B
+
+| Track   | Item                                                    | Date       | Evidence (short)                                                                                                                                                          | PR      |
+| ------- | ------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Track B | B1 Performance Baselines (targets + enforcement)        | 2026-01-10 | Defined CWV targets + measurement method in TRUST_METRICS; locked enforcement in NON_NEGOTIABLES + ADR. Existing CI Perf Budget + CLS/Visual gates verify non-regression. | PR #XXX |
+| Track B | B2 Accessibility Baseline (gate + keyboard requirement) | 2026-01-10 | Locked A11y Smoke gate + keyboard-only requirement in NON_NEGOTIABLES + ADR; CI A11y Smoke gate verifies baseline.                                                        | PR #XXX |
+
 ### CI evidence
 
 - CI run: https://github.com/JawnShoe/tcgdealfinder/actions/runs/20772925779

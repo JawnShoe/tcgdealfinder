@@ -125,3 +125,17 @@ Rules (non-negotiable):
 Operationalization:
 
 - Boundary discipline is checked during the Weekly Drift Audit and must be called out in PR Ritual disclosures.
+
+---
+
+## Track B Baselines (Mandatory — Rebuild Lane)
+
+Performance baseline:
+
+- CWV targets are defined in TRUST_METRICS.md and must be protected by CI gates.
+- Perf Budget and CLS/Visual gates must remain enabled and green.
+
+Accessibility baseline:
+
+- A11y Smoke gate must remain enabled and green.
+- Keyboard-only navigation must work on key rebuild routes (home, discovery, detail, outbound click).

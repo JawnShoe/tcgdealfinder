@@ -110,3 +110,16 @@
 - Consequences:
   - Boundary violations are governance failures.
   - Drift audits must flag violations and block progression until resolved or explicitly ADR-exempted.
+
+## ADR-0010: Track B Baselines (Performance + Accessibility)
+
+- Status: Accepted
+- Context: Track B requires measurable product excellence (performance + accessibility) so the rebuild does not regress as features expand.
+- Decision:
+  - Performance targets + measurement method are defined in TRUST_METRICS.md.
+  - CI must keep enforcing Perf Budget and CLS/Visual gates.
+  - CI must keep enforcing A11y Smoke gate.
+  - Keyboard-only navigation must remain functional on key rebuild routes.
+- Consequences:
+  - Disabling these gates or allowing regressions is a governance failure.
+  - Drift Audit must flag missing enforcement.

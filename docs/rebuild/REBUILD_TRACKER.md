@@ -30,6 +30,13 @@ Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 
 ---
 
+## Track B: Product Excellence Baselines
+
+- [x] B1 Performance Baselines (targets + enforcement)
+- [x] B2 Accessibility Baseline (gate + keyboard requirement)
+
+---
+
 ## Weeks 1-2: Phase 0 - Prove the Architecture
 
 Deliverable: one route (`/rebuild/listing/[id]`) that:

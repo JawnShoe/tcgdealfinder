@@ -1,192 +1,308 @@
 import { headers } from "next/headers";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRebuildFreshnessSnapshot } from "@/lib/rebuild/data/getRebuildOpsSnapshot";
+import {
+  getRequestIdFromHeaders,
+  logRequest,
+} from "@/lib/rebuild/observability/logging";
+import {
+  getRebuildApiMetricsSnapshot,
+  getRebuildOutboundClicksSnapshot,
+} from "@/lib/rebuild/observability/metrics";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type HealthSnapshot = {
-  status: "ok" | "error" | "unavailable";
-  payload: unknown | null;
-  error: string | null;
-};
-
-async function getHealthSnapshot(): Promise<HealthSnapshot> {
-  try {
-    const headerStore = headers();
-    const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
-    if (!host) {
-      return {
-        status: "unavailable",
-        payload: null,
-        error: "Host header unavailable.",
-      };
-    }
-
-    const protocol =
-      headerStore.get("x-forwarded-proto") ??
-      (host.includes("localhost") ? "http" : "https");
-
-    const response = await fetch(`${protocol}://${host}/api/health`, {
-      cache: "no-store",
-    });
-
-    const bodyText = await response.text();
-    if (!response.ok) {
-      return {
-        status: "error",
-        payload: null,
-        error: `HTTP ${response.status}`,
-      };
-    }
-
-    try {
-      return {
-        status: "ok",
-        payload: JSON.parse(bodyText),
-        error: null,
-      };
-    } catch {
-      return {
-        status: "ok",
-        payload: { raw: bodyText },
-        error: null,
-      };
-    }
-  } catch (error) {
-    return {
-      status: "error",
-      payload: null,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
+function formatPercent(value: number | null): string {
+  if (value == null || Number.isNaN(value)) {
+    return "n/a";
   }
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatNumber(value: number | null): string {
+  if (value == null || Number.isNaN(value)) {
+    return "n/a";
+  }
+  return `${Math.round(value)}`;
 }
 
 export default async function RebuildOpsPage() {
-  const isDbConfigured = isRebuildDbConfigured();
-  const freshness = await getRebuildFreshnessSnapshot();
-  const health = await getHealthSnapshot();
+  const start = Date.now();
+  const requestId = getRequestIdFromHeaders(headers());
+  let status = 200;
+  let requestError: unknown;
 
-  const freshnessStatus = isDbConfigured ? freshness.status : "unavailable";
-  const freshnessStatusLabel =
-    freshnessStatus === "ok"
-      ? "OK"
-      : freshnessStatus === "stale"
-        ? "STALE"
-        : freshnessStatus === "unavailable"
-          ? "UNAVAILABLE"
-          : "UNKNOWN";
+  try {
+    const isDbConfigured = isRebuildDbConfigured();
+    const freshness = await getRebuildFreshnessSnapshot();
+    const apiMetrics = await getRebuildApiMetricsSnapshot();
+    const outboundClicks = await getRebuildOutboundClicksSnapshot();
 
-  const freshnessStatusClass =
-    freshnessStatus === "ok"
-      ? "text-emerald-800"
-      : freshnessStatus === "stale"
-        ? "text-amber-900"
-        : "text-slate-700";
+    const freshnessStatus = isDbConfigured ? freshness.status : "unavailable";
+    const freshnessStatusLabel =
+      freshnessStatus === "ok"
+        ? "OK"
+        : freshnessStatus === "stale"
+          ? "STALE"
+          : freshnessStatus === "unavailable"
+            ? "UNAVAILABLE"
+            : "UNKNOWN";
 
-  return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-          Rebuild lane - Ops dashboards
-        </div>
+    const freshnessStatusClass =
+      freshnessStatus === "ok"
+        ? "text-emerald-800"
+        : freshnessStatus === "stale"
+          ? "text-amber-900"
+          : "text-slate-700";
 
-        <header className="rounded-lg border border-slate-200 bg-white p-6">
-          <h1 className="text-2xl font-semibold text-slate-900">Rebuild Ops</h1>
-          <p className="mt-2 text-sm text-slate-700">
-            Operational visibility and sanity checks for rebuild surfaces.
-          </p>
-        </header>
+    const apiStatusLabel =
+      apiMetrics.status === "available"
+        ? "OK"
+        : apiMetrics.status === "empty"
+          ? "NO DATA"
+          : apiMetrics.status === "error"
+            ? "ERROR"
+            : "UNAVAILABLE";
 
-        <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Freshness</h2>
-            <span className={`text-sm font-semibold ${freshnessStatusClass}`}>
-              {freshnessStatusLabel}
-            </span>
+    const apiStatusClass =
+      apiMetrics.status === "available"
+        ? "text-emerald-800"
+        : apiMetrics.status === "empty"
+          ? "text-amber-900"
+          : "text-slate-700";
+
+    const clicksStatusLabel =
+      outboundClicks.status === "available"
+        ? "OK"
+        : outboundClicks.status === "empty"
+          ? "NO DATA"
+          : outboundClicks.status === "error"
+            ? "ERROR"
+            : "UNAVAILABLE";
+
+    const clicksStatusClass =
+      outboundClicks.status === "available"
+        ? "text-emerald-800"
+        : outboundClicks.status === "empty"
+          ? "text-amber-900"
+          : "text-slate-700";
+
+    const apiEmptyMessage =
+      apiMetrics.status === "empty"
+        ? "No API traffic recorded yet."
+        : apiMetrics.status === "error"
+          ? "Metrics query failed."
+          : "Not instrumented yet.";
+
+    const clicksEmptyMessage =
+      outboundClicks.status === "empty"
+        ? "No outbound clicks recorded yet."
+        : outboundClicks.status === "error"
+          ? "Metrics query failed."
+          : "Not instrumented yet.";
+
+    return (
+      <main className="min-h-screen bg-slate-50">
+        <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+            Rebuild lane - Ops dashboards
           </div>
-          <p className="mt-2 text-sm text-slate-700">
-            Data source configured: {isDbConfigured ? "Yes" : "No"}
-          </p>
-          <dl className="mt-4 grid gap-3 text-sm text-slate-900 sm:grid-cols-2">
-            <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
-                Latest updated_at
-              </dt>
-              <dd className="mt-1 font-mono text-slate-900">
-                {freshness.latestUpdatedAtISO ?? "n/a"}
-              </dd>
-            </div>
-            <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
-                Age (hours)
-              </dt>
-              <dd className="mt-1 font-mono text-slate-900">
-                {freshness.ageHours ?? "n/a"}
-              </dd>
-            </div>
-            <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
-                Listings last 24h
-              </dt>
-              <dd className="mt-1 font-mono text-slate-900">
-                {freshness.count24h ?? "n/a"}
-              </dd>
-            </div>
-          </dl>
-          <p className="mt-3 text-xs text-slate-600">
-            Stale threshold: &gt; 6 hours since latest update.
-          </p>
-        </section>
 
-        <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Errors</h2>
-            <span
-              className={
-                health.status === "ok"
-                  ? "text-sm font-semibold text-emerald-800"
-                  : "text-sm font-semibold text-amber-900"
-              }
-            >
-              {health.status === "ok" ? "OK" : "CHECK"}
-            </span>
-          </div>
-          <p className="mt-2 text-sm text-slate-700">
-            /api/health snapshot (server-side).
-          </p>
-          {health.error ? (
-            <p className="mt-3 text-sm text-slate-700">
-              Health fetch error: {health.error}
+          <header className="rounded-lg border border-slate-200 bg-white p-6">
+            <h1 className="text-2xl font-semibold text-slate-900">
+              Rebuild Ops
+            </h1>
+            <p className="mt-2 text-sm text-slate-700">
+              Operational visibility and sanity checks for rebuild surfaces.
             </p>
-          ) : null}
-          <pre className="mt-4 max-h-64 overflow-auto rounded-md border border-slate-100 bg-slate-50 p-3 text-xs text-slate-800">
-            {JSON.stringify(health.payload, null, 2)}
-          </pre>
-        </section>
+          </header>
 
-        <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-          <h2 className="text-lg font-semibold text-slate-900">CWV proxy</h2>
-          <p className="mt-2 text-sm text-slate-700">
-            Targets for rebuild surfaces (static placeholders).
-          </p>
-          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-900">
-            <li>LCP target: &lt;= 2.5s</li>
-            <li>CLS target: &lt;= 0.1</li>
-            <li>INP target: &lt;= 200ms</li>
-          </ul>
-          <p className="mt-3 text-xs text-slate-600">
-            Last CI run: placeholder (see CI checks for perf and CLS gates).
-          </p>
-        </section>
+          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Job freshness
+              </h2>
+              <span className={`text-sm font-semibold ${freshnessStatusClass}`}>
+                {freshnessStatusLabel}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-slate-700">
+              Data source configured: {isDbConfigured ? "Yes" : "No"}
+            </p>
+            <dl className="mt-4 grid gap-3 text-sm text-slate-900 sm:grid-cols-2">
+              <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                  Latest updated_at
+                </dt>
+                <dd className="mt-1 font-mono text-slate-900">
+                  {freshness.latestUpdatedAtISO ?? "n/a"}
+                </dd>
+              </div>
+              <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                  Age (hours)
+                </dt>
+                <dd className="mt-1 font-mono text-slate-900">
+                  {freshness.ageHours ?? "n/a"}
+                </dd>
+              </div>
+              <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                  Listings last 24h
+                </dt>
+                <dd className="mt-1 font-mono text-slate-900">
+                  {freshness.count24h ?? "n/a"}
+                </dd>
+              </div>
+            </dl>
+            <p className="mt-3 text-xs text-slate-600">
+              Stale threshold: &gt; 6 hours since latest update.
+            </p>
+          </section>
 
-        <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Outbound clicks
-          </h2>
-          <p className="mt-2 text-sm text-slate-700">Not instrumented yet.</p>
-        </section>
-      </div>
-    </main>
-  );
+          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">
+                API error rate
+              </h2>
+              <span className={`text-sm font-semibold ${apiStatusClass}`}>
+                {apiStatusLabel}
+              </span>
+            </div>
+            {apiMetrics.status === "available" ? (
+              <dl className="mt-4 grid gap-3 text-sm text-slate-900 sm:grid-cols-3">
+                <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                    Error rate
+                  </dt>
+                  <dd className="mt-1 font-mono text-slate-900">
+                    {formatPercent(apiMetrics.errorRate)}
+                  </dd>
+                </div>
+                <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                    Requests
+                  </dt>
+                  <dd className="mt-1 font-mono text-slate-900">
+                    {apiMetrics.totalRequests}
+                  </dd>
+                </div>
+                <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                    Window
+                  </dt>
+                  <dd className="mt-1 font-mono text-slate-900">
+                    {apiMetrics.windowMinutes}m
+                  </dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="mt-3 text-sm text-slate-700">{apiEmptyMessage}</p>
+            )}
+          </section>
+
+          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">Latency</h2>
+              <span className={`text-sm font-semibold ${apiStatusClass}`}>
+                {apiStatusLabel}
+              </span>
+            </div>
+            {apiMetrics.status === "available" ? (
+              <dl className="mt-4 grid gap-3 text-sm text-slate-900 sm:grid-cols-3">
+                <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                    P50 (ms)
+                  </dt>
+                  <dd className="mt-1 font-mono text-slate-900">
+                    {formatNumber(apiMetrics.p50Ms)}
+                  </dd>
+                </div>
+                <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                    P95 (ms)
+                  </dt>
+                  <dd className="mt-1 font-mono text-slate-900">
+                    {formatNumber(apiMetrics.p95Ms)}
+                  </dd>
+                </div>
+                <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                    Window
+                  </dt>
+                  <dd className="mt-1 font-mono text-slate-900">
+                    {apiMetrics.windowMinutes}m
+                  </dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="mt-3 text-sm text-slate-700">
+                {apiMetrics.status === "empty"
+                  ? "No latency samples recorded yet."
+                  : apiEmptyMessage}
+              </p>
+            )}
+          </section>
+
+          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Outbound clicks
+              </h2>
+              <span className={`text-sm font-semibold ${clicksStatusClass}`}>
+                {clicksStatusLabel}
+              </span>
+            </div>
+            {outboundClicks.status === "available" ? (
+              <dl className="mt-4 grid gap-3 text-sm text-slate-900 sm:grid-cols-3">
+                <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                    Last 24h
+                  </dt>
+                  <dd className="mt-1 font-mono text-slate-900">
+                    {outboundClicks.last24hClicks}
+                  </dd>
+                </div>
+                <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                    Total
+                  </dt>
+                  <dd className="mt-1 font-mono text-slate-900">
+                    {outboundClicks.totalClicks}
+                  </dd>
+                </div>
+                <div className="rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                    Last click
+                  </dt>
+                  <dd className="mt-1 font-mono text-slate-900">
+                    {outboundClicks.lastClickedAtISO ?? "n/a"}
+                  </dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="mt-3 text-sm text-slate-700">
+                {clicksEmptyMessage}
+              </p>
+            )}
+          </section>
+        </div>
+      </main>
+    );
+  } catch (error) {
+    status = 500;
+    requestError = error;
+    throw error;
+  } finally {
+    logRequest({
+      level: status >= 500 ? "error" : "info",
+      msg: "rebuild.ops.render",
+      route: "/rebuild/ops",
+      requestId,
+      durationMs: Date.now() - start,
+      status,
+      error: requestError,
+    });
+  }
 }

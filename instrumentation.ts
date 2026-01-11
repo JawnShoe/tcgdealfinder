@@ -1,5 +1,11 @@
 import * as Sentry from "@sentry/nextjs";
 
+const sentryRelease =
+  process.env.SENTRY_RELEASE ??
+  process.env.VERCEL_GIT_COMMIT_SHA ??
+  process.env.GITHUB_SHA ??
+  "dev";
+
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     // Server-side Sentry initialization
@@ -8,6 +14,7 @@ export async function register() {
     if (dsn) {
       Sentry.init({
         dsn,
+        release: sentryRelease,
         tracesSampleRate: 0.1,
         beforeSend(event, hint) {
           // Scrub sensitive data from error messages
@@ -44,6 +51,7 @@ export async function register() {
     if (dsn) {
       Sentry.init({
         dsn,
+        release: sentryRelease,
         tracesSampleRate: 0.1,
         beforeSend(event) {
           // PII scrubbing patterns

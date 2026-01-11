@@ -1,15 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ -z "${DATABASE_URL:-}" ]; then
-  echo "SKIP: DATABASE_URL not set"
-  exit 0
-fi
-
 node <<'NODE'
 const { Client } = require("pg");
+const { randomUUID } = require("crypto");
 
 const connectionString = process.env.DATABASE_URL;
+const jobId = randomUUID();
+
+const log = (level, msg, extra = {}) => {
+  const payload = {
+    level,
+    msg,
+    ts: new Date().toISOString(),
+    job: "data-sanity-gate",
+    jobId,
+    ...extra,
+  };
+  console.log(JSON.stringify(payload));
+};
+
+if (!connectionString) {
+  log("info", "data-sanity.skip", { reason: "DATABASE_URL not set" });
+  process.exit(0);
+}
 
 const checks = [
   {
@@ -51,12 +65,13 @@ const checks = [
         (row) => row.listing_id ?? row.id ?? "unknown"
       );
 
-      console.error(`[FAIL] ${check.name}: ${count} rows`);
-      if (samples.length) {
-        console.error(`Sample listing_id: ${samples.join(", ")}`);
-      }
+      log("error", "data-sanity.check.fail", {
+        check: check.name,
+        count,
+        sampleIds: samples,
+      });
     } else {
-      console.log(`[PASS] ${check.name}`);
+      log("info", "data-sanity.check.pass", { check: check.name });
     }
   }
 
@@ -66,26 +81,31 @@ const checks = [
   const latestRaw = freshnessRes.rows[0]?.latest_updated_at;
 
   if (!latestRaw) {
-    console.warn("[WARN] freshness: no updated_at values found");
+    log("warn", "data-sanity.freshness.missing");
   } else {
     const latest = new Date(latestRaw);
     const ageHours = (Date.now() - latest.getTime()) / 36e5;
     if (Number.isFinite(ageHours) && ageHours > 168) {
-      console.warn(
-        `[WARN] freshness: latest updated_at is ${Math.round(ageHours)} hours old`
-      );
+      log("warn", "data-sanity.freshness.stale", {
+        ageHours: Math.round(ageHours),
+      });
     } else {
-      console.log("[PASS] freshness: latest updated_at within 7 days");
+      log("info", "data-sanity.freshness.ok");
     }
   }
 
   await client.end();
 
+  log("info", "data-sanity.complete", { failed });
+
   if (failed) {
     process.exit(1);
   }
 })().catch((error) => {
-  console.error("[FAIL] data-sanity-gate crashed", error);
+  log("error", "data-sanity.crash", {
+    errorName: error?.name ?? "Error",
+    errorMessage: error?.message ?? String(error),
+  });
   process.exit(1);
 });
 NODE

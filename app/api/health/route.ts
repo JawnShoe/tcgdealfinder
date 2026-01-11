@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  getRequestIdFromHeaders,
+  logRequest,
+} from "@/lib/rebuild/observability/logging";
+import { recordRebuildApiRequest } from "@/lib/rebuild/observability/metrics";
 
 // Optional: Import query for freshness checks
 // Only runs DB queries if DATABASE_URL is available
@@ -420,22 +425,63 @@ function computeOverallHealth(jobStatuses: JobStatuses | null): boolean {
   return true;
 }
 
-export async function GET() {
-  const freshness = await getFreshnessData();
-  const jobStatuses = buildJobStatuses(freshness);
-  const overallOk = computeOverallHealth(jobStatuses);
+export async function GET(request: Request) {
+  const start = Date.now();
+  const requestId = getRequestIdFromHeaders(request.headers);
+  let status = 200;
+  let requestError: unknown;
+  let response: NextResponse;
 
-  const healthData = {
-    ok: overallOk,
-    timestamp: new Date().toISOString(),
-    service: "tcg-deal-finder",
-    version: process.env.npm_package_version || "unknown",
-    node: process.version,
-    // Job statuses with OK/STALE/FAIL signals (null if DB unavailable)
-    jobs: jobStatuses,
-    // Detailed freshness data (null if DB unavailable)
-    freshness,
-  };
+  try {
+    const freshness = await getFreshnessData();
+    const jobStatuses = buildJobStatuses(freshness);
+    const overallOk = computeOverallHealth(jobStatuses);
 
-  return NextResponse.json(healthData);
+    const healthData = {
+      ok: overallOk,
+      timestamp: new Date().toISOString(),
+      service: "tcg-deal-finder",
+      version: process.env.npm_package_version || "unknown",
+      node: process.version,
+      // Job statuses with OK/STALE/FAIL signals (null if DB unavailable)
+      jobs: jobStatuses,
+      // Detailed freshness data (null if DB unavailable)
+      freshness,
+    };
+
+    response = NextResponse.json(healthData);
+  } catch (error) {
+    status = 500;
+    requestError = error;
+    response = NextResponse.json(
+      {
+        ok: false,
+        timestamp: new Date().toISOString(),
+        service: "tcg-deal-finder",
+        error: "health_check_failed",
+      },
+      { status }
+    );
+  }
+
+  response.headers.set("x-request-id", requestId);
+
+  await recordRebuildApiRequest({
+    route: "/api/health",
+    statusCode: status,
+    durationMs: Date.now() - start,
+    requestId,
+  });
+
+  logRequest({
+    level: status >= 500 ? "error" : "info",
+    msg: "health.check",
+    route: "/api/health",
+    requestId,
+    durationMs: Date.now() - start,
+    status,
+    error: requestError,
+  });
+
+  return response;
 }

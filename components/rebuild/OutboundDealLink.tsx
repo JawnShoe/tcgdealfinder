@@ -19,6 +19,7 @@ type OutboundDealLinkProps = {
   href: string;
   children: ReactNode;
   className?: string;
+  listingId?: string;
 };
 
 function hasAffiliateParams(href: string): boolean {
@@ -39,6 +40,7 @@ export default function OutboundDealLink({
   href,
   children,
   className,
+  listingId,
 }: OutboundDealLinkProps) {
   const lastClickAtRef = useRef(0);
   const isAffiliate = useMemo(() => hasAffiliateParams(href), [href]);
@@ -51,6 +53,24 @@ export default function OutboundDealLink({
       return;
     }
     lastClickAtRef.current = now;
+
+    const payload = JSON.stringify({
+      url: href,
+      listingId: listingId ?? null,
+    });
+
+    if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: "application/json" });
+      navigator.sendBeacon("/api/rebuild/outbound-click", blob);
+      return;
+    }
+
+    void fetch("/api/rebuild/outbound-click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      keepalive: true,
+    }).catch(() => {});
   };
 
   return (

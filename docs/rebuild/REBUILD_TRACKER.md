@@ -103,3 +103,9 @@ Only after Phase 2 is "boringly stable":
 - [x] Personalization expansion
 - [x] Cross-market dedupe (optional)
 - [x] Predictive signals beyond rules-based
+
+---
+
+## Track B - Product Excellence Baselines
+
+- [ ] B3 Observability Baseline + Ops Readiness

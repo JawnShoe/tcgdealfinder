@@ -92,7 +92,7 @@
   - Verification gates / CI evidence
   - Drift risk declaration
   - Evidence update requirements
-- The canonical template is .github/pull_request_template.md.
+- The canonical template is .github/PULL_REQUEST_TEMPLATE.md.
 - Consequences:
   - PRs missing the required sections are governance violations.
   - Rebuild progression is blocked until disclosure is present.

@@ -97,7 +97,7 @@ This ritual is non-optional for the rebuild lane.
 All PRs MUST include the standardized disclosure checklist (contracts, gates, drift risk, and evidence updates).
 The canonical template is:
 
-- .github/pull_request_template.md
+- .github/PULL_REQUEST_TEMPLATE.md
 
 Failure:
 

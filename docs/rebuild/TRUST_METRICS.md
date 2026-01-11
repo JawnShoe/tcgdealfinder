@@ -23,3 +23,26 @@
   - CI assertion: hash(inputs) yields identical score.
 - Explainability: every confidence value must be reproducible with same inputs.
 - Required provenance fields at render: fetched_at, source, parser_version, confidence_inputs_hash, data_age_minutes.
+
+---
+
+## Track B Baselines (Measured, not vibes)
+
+### B1 Performance Baselines (targets)
+
+Core Web Vitals targets (rebuild lane):
+
+- LCP: <= 2.5s (p75)
+- INP: <= 200ms (p75)
+- CLS: <= 0.1 (p75)
+
+Measurement method:
+
+- CI gates: Perf Budget + Visual Regression/CLS (required on every PR)
+- Periodic: Lighthouse CI baseline + WebPageTest spot checks (as scheduled/needed)
+- Optional later: RUM via Next.js web-vitals reporting
+
+Route performance budget (guardrails):
+
+- Must not regress Perf Budget gate
+- Must not regress CLS gate

@@ -38,7 +38,7 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 | Track   | Item                                                    | Date       | Evidence (short)                                                                                                              | PR      |
 | ------- | ------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------- | ------- |
 | Track A | PR Ritual Enforcement (template + disclosure)           | 2026-01-10 | Added canonical PR template + locked disclosure requirement in NON_NEGOTIABLES + ADR. Verified via template presence.         | PR #282 |
-| Track A | Boundary Discipline (UI → domain → data → integrations) | 2026-01-10 | Locked rebuild lane boundary rules in NON_NEGOTIABLES + ADR; enforced via PR ritual disclosure and weekly drift audit checks. | PR #XXX |
+| Track A | Boundary Discipline (UI → domain → data → integrations) | 2026-01-10 | Locked rebuild lane boundary rules in NON_NEGOTIABLES + ADR; enforced via PR ritual disclosure and weekly drift audit checks. | PR #283 |
 
 ### CI evidence
 

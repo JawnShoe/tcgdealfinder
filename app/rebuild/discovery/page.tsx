@@ -39,6 +39,34 @@ export default async function RebuildDiscoveryPage({
 
   try {
     const prefs = parseRebuildPrefs(searchParams ?? {});
+    const isDiscoveryDisabled =
+      process.env.KILL_FEATURE_REBUILD_DISCOVERY === "1";
+    if (isDiscoveryDisabled) {
+      return (
+        <main className="min-h-screen bg-slate-50">
+          <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+              Rebuild lane - Discovery temporarily disabled
+            </div>
+            <ResilienceLabel
+              className="mb-6"
+              tier="UNAVAILABLE"
+              mode="UNKNOWN"
+            />
+            <section className="rounded-lg border border-slate-200 bg-white p-6">
+              <h1 className="text-2xl font-semibold text-slate-900">
+                Discovery
+              </h1>
+              <p className="mt-2 text-sm text-slate-700">
+                Discovery is temporarily disabled via
+                KILL_FEATURE_REBUILD_DISCOVERY.
+              </p>
+            </section>
+            <ComplianceDisclosure className="mt-6" />
+          </div>
+        </main>
+      );
+    }
     const isDbConfigured = isRebuildDbConfigured();
     const { deals, fetchedAtISO } = await getRecentDeals(25);
     const orderedDeals = sortDealsByPrefs(deals, prefs);

@@ -32,6 +32,32 @@ export default async function RebuildListingPage({ params }: PageProps) {
   let requestError: unknown;
 
   try {
+    const isListingDisabled =
+      process.env.KILL_FEATURE_REBUILD_LISTING_DETAIL === "1";
+    if (isListingDisabled) {
+      return (
+        <main className="min-h-screen bg-slate-50">
+          <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+              Rebuild lane - listing temporarily disabled
+            </div>
+            <ResilienceLabel
+              className="mb-6"
+              tier="UNAVAILABLE"
+              mode="UNKNOWN"
+            />
+            <section className="rounded-lg border border-slate-200 bg-white p-6">
+              <h1 className="text-2xl font-semibold text-slate-900">Listing</h1>
+              <p className="mt-2 text-sm text-slate-700">
+                Listing detail is temporarily disabled via
+                KILL_FEATURE_REBUILD_LISTING_DETAIL.
+              </p>
+            </section>
+            <ComplianceDisclosure className="mt-6" />
+          </div>
+        </main>
+      );
+    }
     const isDbConfigured = isRebuildDbConfigured();
     const listing = isDbConfigured
       ? await getRebuildListingById(params.id)

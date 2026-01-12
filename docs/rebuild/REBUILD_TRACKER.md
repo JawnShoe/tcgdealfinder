@@ -33,7 +33,7 @@ Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 ## Track B: Product Excellence (measured, not vibes)
 
 - [ ] B1 Performance Baselines
-- [ ] B2 Accessibility Baseline
+- [x] B2 Accessibility Baseline
 - [x] B3 Observability Baseline + Ops Readiness (solo realistic)
 - [ ] B4 UX Polish Baseline
 - [ ] B5 Security + Reliability Baseline

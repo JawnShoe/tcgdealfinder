@@ -90,8 +90,8 @@ export default async function RebuildListingPage({ params }: PageProps) {
               tier={resilienceTier}
               mode={resilienceMode}
             />
-            <div className="rounded-lg border border-slate-200 bg-white p-6">
-              <p className="text-sm text-slate-900">
+            <div className="rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
+              <p className="text-sm text-slate-600">
                 Rebuild data source not configured in this environment.
               </p>
             </div>
@@ -112,10 +112,10 @@ export default async function RebuildListingPage({ params }: PageProps) {
               tier={resilienceTier}
               mode={resilienceMode}
             />
-            <div className="rounded-lg border border-slate-200 bg-white p-6">
-              <p className="text-sm text-slate-900">
+            <div className="rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
+              <p className="text-sm text-slate-600">
                 No listing data found for ID{" "}
-                <span className="font-mono">{params.id}</span>.
+                <span className="font-mono text-slate-700">{params.id}</span>.
               </p>
             </div>
           </div>

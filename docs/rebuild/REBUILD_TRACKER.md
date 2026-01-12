@@ -35,7 +35,7 @@ Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 - [ ] B1 Performance Baselines
 - [x] B2 Accessibility Baseline
 - [x] B3 Observability Baseline + Ops Readiness (solo realistic)
-- [ ] B4 UX Polish Baseline
+- [x] B4 UX Polish Baseline
 - [ ] B5 Security + Reliability Baseline
 - [ ] B6 SEO + Structured Data Baseline
 

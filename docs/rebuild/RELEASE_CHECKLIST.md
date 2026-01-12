@@ -160,3 +160,46 @@ Defaults: OFF (unset).
 - KILL_FEATURE_REBUILD_LISTING_DETAIL
   - Effect: Disable /rebuild/listing/[id] content and render a safe "temporarily disabled" state.
   - Enforced in: app/rebuild/listing/[id]/page.tsx
+
+## A11y Baseline Evidence (Keyboard-only pass)
+
+Date: 2026-01-11
+
+### /rebuild
+
+- Tab reaches "Browse deals" link and any deal link when data is present.
+- Focus outline visible on links and controls (browser default).
+- Enter activates "Browse deals".
+- Provenance drilldown summary toggles via Enter/Space.
+- No keyboard traps observed.
+
+### /rebuild/discovery
+
+- Tab reaches listing links and the Sort select.
+- Sort select has an accessible label ("Sort") and is keyboard operable.
+- Focus outline visible on links and controls (browser default).
+- Enter activates listing links.
+- Provenance drilldown summary toggles via Enter/Space.
+- No keyboard traps observed.
+
+### /rebuild/listing/[id]
+
+- Tab reaches "Back to Discovery" and "View original listing" links.
+- Focus outline visible on links and controls (browser default).
+- Enter activates "Back to Discovery".
+- Outbound link is focusable and labeled.
+- Provenance drilldown summary toggles via Enter/Space.
+- No keyboard traps observed.
+
+### Outbound click flow
+
+- "View original listing" is focusable and activates via keyboard.
+- Outbound link has visible label; no icon-only controls.
+
+### Component-level checks (rebuild routes)
+
+- Tooltip: none used on rebuild routes.
+- Dialog/Menu: none used on rebuild routes.
+- Combobox: PreferencesBar Sort select is labeled ("Sort") and keyboard operable.
+- Table sorting headers: no sortable tables in rebuild routes.
+- Icon-only controls: none present on rebuild routes.

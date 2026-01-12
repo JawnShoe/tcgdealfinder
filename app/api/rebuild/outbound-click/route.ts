@@ -18,16 +18,23 @@ export async function POST(request: Request) {
   let requestError: unknown;
 
   try {
-    const body = await request.json();
-    const url = typeof body?.url === "string" ? body.url : null;
-    const listingId =
-      typeof body?.listingId === "string" ? body.listingId : null;
-
-    if (!url) {
-      status = 400;
-      payload = { ok: false, error: "missing_url" };
+    const integrationKilled =
+      process.env.KILL_INTEGRATION_OUTBOUND_CLICK === "1";
+    if (integrationKilled) {
+      status = 503;
+      payload = { ok: false, error: "integration_killed" };
     } else {
-      await recordRebuildOutboundClick({ listingId, url, requestId });
+      const body = await request.json();
+      const url = typeof body?.url === "string" ? body.url : null;
+      const listingId =
+        typeof body?.listingId === "string" ? body.listingId : null;
+
+      if (!url) {
+        status = 400;
+        payload = { ok: false, error: "missing_url" };
+      } else {
+        await recordRebuildOutboundClick({ listingId, url, requestId });
+      }
     }
   } catch (error) {
     status = 400;

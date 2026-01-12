@@ -9,7 +9,11 @@ const complianceCopy = "We may earn a commission from qualifying purchases.";
 
 test.skip(!databaseUrl, "DATABASE_URL not set for rebuild synthetics.");
 
-async function assertSsrTrustSurfaces(request: APIRequestContext, url: string) {
+async function assertSsrTrustSurfaces(
+  request: APIRequestContext,
+  url: string,
+  options?: { expectFetchedAt?: boolean }
+) {
   const response = await request.get(url);
   expect(response.ok()).toBeTruthy();
 
@@ -17,6 +21,9 @@ async function assertSsrTrustSurfaces(request: APIRequestContext, url: string) {
   expect(body).toContain(complianceCopy);
   expect(body).toContain("Resilience:");
   expect(body).toContain("Provenance");
+  if (options?.expectFetchedAt) {
+    expect(body).toContain("Fetched at");
+  }
 }
 
 async function assertSsrPredictiveSignals(
@@ -45,6 +52,19 @@ async function assertUiTrustSurfaces(page: Page) {
   ).toBeVisible();
 }
 
+async function assertProvenanceSummaryStable(page: Page) {
+  const summary = page.locator("summary", { hasText: "Provenance" });
+  await expect(summary).toBeVisible();
+
+  const before = (await summary.textContent())?.trim() ?? "";
+  expect(before).toContain("Fetched at");
+
+  await page.waitForTimeout(250);
+
+  const after = (await summary.textContent())?.trim() ?? "";
+  expect(after).toBe(before);
+}
+
 async function assertUiPredictiveSignals(page: Page) {
   await expect(page.getByTestId("predictive-signals")).toBeVisible();
   await expect(
@@ -71,9 +91,14 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
 
   for (const route of routes) {
     const url = `${baseURL}${route}`;
-    await assertSsrTrustSurfaces(request, url);
+    const expectFetchedAt =
+      route === "/rebuild" || route === "/rebuild/discovery";
+    await assertSsrTrustSurfaces(request, url, { expectFetchedAt });
     await page.goto(url, { waitUntil: "domcontentloaded" });
     await assertUiTrustSurfaces(page);
+    if (expectFetchedAt) {
+      await assertProvenanceSummaryStable(page);
+    }
     if (route.startsWith("/rebuild/listing/")) {
       await assertSsrPredictiveSignals(request, url);
       await assertUiPredictiveSignals(page);

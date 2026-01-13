@@ -123,3 +123,31 @@
 - Consequences:
   - Disabling these gates or allowing regressions is a governance failure.
   - Drift Audit must flag missing enforcement.
+
+## ADR-0011: Rebuild Route Render Modes (SSR-First)
+
+- Status: Accepted
+- Context: Rebuild performance and trust surfaces require predictable server rendering and stable hydration.
+- Decision:
+  - /rebuild: SSR only (dynamic). No streaming.
+  - /rebuild/discovery: SSR only (dynamic). No streaming.
+  - /rebuild/listing/[id]: SSR only (dynamic). No streaming for trust/price.
+  - /rebuild/alerts: SSR shell is acceptable as static. No streaming.
+  - /rebuild/ops: SSR only (dynamic). No streaming.
+- Consequences:
+  - Route performance contracts in docs/rebuild/CONTRACTS.md are authoritative.
+  - Any render-mode change requires a new ADR and updated enforcement.
+
+## ADR-0012: Track B1 Performance Budgets + Enforcement
+
+- Status: Accepted
+- Context: Track B1 requires explicit, enforceable performance rules for rebuild routes.
+- Decision:
+  - CLS budget: <= 0.01 enforced via tests/e2e/rebuild-cls.spec.ts (CI job: Visual Regression / CLS).
+  - LCP/FCP/TBT/performance score budgets enforced via .lighthouserc.cjs (CI job: Perf Budget) for rebuild routes.
+  - SSR trust surfaces + no pop-in metadata enforced via tests/e2e/rebuild.synthetics.spec.ts.
+  - Image constraints enforced via synthetics: all rebuild images must declare dimensions.
+  - INP and TTFB remain DEFERRED until a CI gate exists.
+- Consequences:
+  - CI must fail on performance regressions for enforced metrics.
+  - Deferred metrics remain explicitly marked and may not be treated as complete.

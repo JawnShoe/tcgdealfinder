@@ -139,3 +139,49 @@ Accessibility baseline:
 
 - A11y Smoke gate must remain enabled and green.
 - Keyboard-only navigation must work on key rebuild routes (home, discovery, detail, outbound click).
+
+---
+
+## Performance Baselines (Mandatory - Rebuild Lane)
+
+Render mode and performance limits (fail-hard):
+
+/rebuild
+
+- Render mode: SSR only (dynamic). Streaming: not used. Client-only: forbidden.
+- CLS <= 0.01 (CI: tests/e2e/rebuild-cls.spec.ts).
+- LCP <= 4000ms (CI: Perf Budget gate / .lighthouserc.cjs).
+- Hydration: provenance summary + trust labels MUST be SSR and MUST NOT pop in after hydration (CI: tests/e2e/rebuild.synthetics.spec.ts).
+- Images: above-the-fold images MUST have fixed width/height or reserved dimensions; no unbounded images (CI: tests/e2e/rebuild.synthetics.spec.ts).
+
+/rebuild/discovery
+
+- Render mode: SSR only (dynamic). Streaming: not used. Client-only: forbidden.
+- CLS <= 0.01 (CI: tests/e2e/rebuild-cls.spec.ts).
+- LCP <= 4000ms (CI: Perf Budget gate / .lighthouserc.cjs).
+- Hydration: provenance summary + trust labels MUST be SSR and MUST NOT pop in after hydration (CI: tests/e2e/rebuild.synthetics.spec.ts).
+- Images: above-the-fold images MUST have fixed width/height or reserved dimensions; no unbounded images (CI: tests/e2e/rebuild.synthetics.spec.ts).
+
+/rebuild/listing/[id]
+
+- Render mode: SSR only (dynamic). Streaming: not used. Client-only: forbidden.
+- CLS <= 0.01 (CI: tests/e2e/rebuild-cls.spec.ts).
+- LCP <= 4000ms (CI: Perf Budget gate / .lighthouserc.cjs).
+- Hydration: trust panel + confidence/provenance MUST be SSR and MUST NOT mutate post-hydration (CI: tests/e2e/rebuild-trust-panel.spec.ts).
+- Images: above-the-fold images MUST have fixed width/height or reserved dimensions; no unbounded images (CI: tests/e2e/rebuild.synthetics.spec.ts).
+
+/rebuild/alerts
+
+- Render mode: SSR (static is acceptable). Streaming: not used. Client-only: forbidden for the shell.
+- CLS <= 0.01 (CI: tests/e2e/rebuild-cls.spec.ts).
+- LCP <= 4000ms (CI: Perf Budget gate / .lighthouserc.cjs).
+- Hydration: shell content MUST be SSR and MUST NOT pop in after hydration.
+- Images: above-the-fold images MUST have fixed width/height or reserved dimensions; no unbounded images (CI: tests/e2e/rebuild.synthetics.spec.ts).
+
+/rebuild/ops
+
+- Render mode: SSR only (dynamic). Streaming: not used. Client-only: forbidden for the shell.
+- CLS <= 0.01 (CI: tests/e2e/rebuild-cls.spec.ts).
+- LCP <= 4000ms (CI: Perf Budget gate / .lighthouserc.cjs).
+- Hydration: shell content MUST be SSR and MUST NOT pop in after hydration.
+- Images: above-the-fold images MUST have fixed width/height or reserved dimensions; no unbounded images (CI: tests/e2e/rebuild.synthetics.spec.ts).

@@ -56,3 +56,45 @@ Inference, memory recall, or conversational summaries are not allowed.
 - Skeletons MUST reserve final dimensions to prevent layout shift.
 - Skeletons MUST be replaced by final content without CLS.
 - Loading states MUST NOT hide already-available trust metadata.
+
+## Route Performance Contracts (Rebuild Lane)
+
+### /rebuild (Home)
+
+- First paint MUST include: header, resilience label, compliance disclosure, and provenance summary (fetched-at when DB is configured).
+- Streaming: not used. SSR-only for the shell and trust surfaces.
+- Loading/empty/error: must use rebuild skeleton/empty/error patterns without CLS.
+- Images: any above-the-fold image MUST declare fixed dimensions (width/height) or reserved space.
+- Caching: none (dynamic SSR; no ISR guarantees).
+
+### /rebuild/discovery
+
+- First paint MUST include: header, resilience label, compliance disclosure, and provenance summary (fetched-at when DB is configured).
+- Streaming: not used. SSR-only for the shell and trust surfaces.
+- Loading/empty/error: must use rebuild skeleton/empty/error patterns without CLS.
+- Images: any above-the-fold image MUST declare fixed dimensions (width/height) or reserved space.
+- Caching: none (dynamic SSR; no ISR guarantees).
+
+### /rebuild/listing/[id]
+
+- First paint MUST include: price, confidence, trust panel, and provenance (no client-only trust).
+- Streaming: not used for trust/price surfaces; SSR-only for trust/price.
+- Loading/empty/error: must use rebuild skeleton/empty/error patterns without CLS.
+- Images: any above-the-fold image MUST declare fixed dimensions (width/height) or reserved space.
+- Caching: none (dynamic SSR; no ISR guarantees).
+
+### /rebuild/alerts
+
+- First paint MUST include: alerts shell + compliance disclosure.
+- Streaming: not used; SSR shell only (static SSR is acceptable).
+- Loading/empty/error: must use rebuild skeleton/empty/error patterns without CLS.
+- Images: any above-the-fold image MUST declare fixed dimensions (width/height) or reserved space.
+- Caching: static SSR is acceptable; no runtime cache guarantees.
+
+### /rebuild/ops
+
+- First paint MUST include: ops shell + dashboard section headers.
+- Streaming: not used; SSR-only for the shell.
+- Loading/empty/error: must use rebuild skeleton/empty/error patterns without CLS.
+- Images: any above-the-fold image MUST declare fixed dimensions (width/height) or reserved space.
+- Caching: none (dynamic SSR; no ISR guarantees).

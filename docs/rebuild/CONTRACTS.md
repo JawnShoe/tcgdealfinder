@@ -36,6 +36,47 @@ Inference, memory recall, or conversational summaries are not allowed.
 - Rebuild pages MUST render a "data unavailable in this environment" empty state when DB is not configured.
 - Rebuild pages MUST NOT fail CI builds due to missing DB configuration.
 
+## Rate Limiting / Abuse Contract (Rebuild Lane)
+
+Public routes:
+
+- App-level rate limiting is not applied to rebuild pages in v0. Abuse mitigation is handled by CDN/WAF baselines (see WAF/CDN Baseline).
+
+Public API endpoints (rebuild):
+
+- MUST enforce segmented rate limits per endpoint class (no single global bucket).
+- On limit hit: return 429 with JSON `{ ok: false, error: "rate_limited" }`.
+- MUST include `x-request-id` and `retry-after` headers.
+- MUST log rate-limit hits with route + requestId.
+
+Internal APIs (if added):
+
+- MUST use separate buckets from public endpoints.
+
+Jobs:
+
+- Job entrypoints must include per-job throttles or gates. If no public job endpoint exists, this is N/A.
+
+## Input Validation Contract (Rebuild Lane)
+
+- API routes that accept input MUST validate payloads at entry.
+- Validation failures MUST return 400 with `{ ok: false, error: "invalid_payload" }`.
+- Validation failures MUST NOT leak stack traces or internal details.
+
+## Failure / Degradation Contract (Rebuild Lane)
+
+- DB unavailable: follow the Rebuild Data Availability Contract (empty list or null detail + safe empty-state UI).
+- Rate limit hit: return 429 with `{ ok: false, error: "rate_limited" }` and log the hit.
+- Validation failure: return 400 with `{ ok: false, error: "invalid_payload" }`.
+- Unexpected server error: return 500 with `{ ok: false, error: "server_error" }` and log the error with requestId.
+- Upstream source unavailable: return 503 with `{ ok: false, error: "upstream_unavailable" }` if a rebuild integration exists (DEFERRED until integrations are introduced).
+
+## WAF / CDN Baseline (Rebuild Lane)
+
+- Baseline posture: bot mitigation + abuse throttling for public routes and APIs.
+- Enforcement lives at CDN/WAF configuration (DEFERRED; not CI-verifiable in repo).
+- Any WAF/CDN changes must be documented in ADR with owner and enforcement path.
+
 ## Tooltip / Popover Contract
 
 - MUST use a single canonical tooltip/popover primitive.

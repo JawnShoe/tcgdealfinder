@@ -7,8 +7,18 @@ import {
   recordRebuildApiRequest,
   recordRebuildOutboundClick,
 } from "@/lib/rebuild/observability/metrics";
+import {
+  checkRateLimit,
+  getRateLimitKey,
+} from "@/lib/rebuild/security/rateLimit";
+import { parseOutboundClickPayload } from "@/lib/rebuild/security/validation";
 
 const ROUTE = "/api/rebuild/outbound-click";
+const RATE_LIMIT = {
+  bucket: "outbound-click",
+  limit: 20,
+  windowMs: 60_000,
+};
 
 export async function POST(request: Request) {
   const start = Date.now();
@@ -18,27 +28,40 @@ export async function POST(request: Request) {
   let requestError: unknown;
 
   try {
-    const integrationKilled =
-      process.env.KILL_INTEGRATION_OUTBOUND_CLICK === "1";
-    if (integrationKilled) {
-      status = 503;
-      payload = { ok: false, error: "integration_killed" };
+    const rateKey = getRateLimitKey(request.headers);
+    const rateLimit = checkRateLimit({
+      bucket: RATE_LIMIT.bucket,
+      key: rateKey,
+      limit: RATE_LIMIT.limit,
+      windowMs: RATE_LIMIT.windowMs,
+    });
+    if (!rateLimit.allowed) {
+      status = 429;
+      payload = { ok: false, error: "rate_limited" };
     } else {
-      const body = await request.json();
-      const url = typeof body?.url === "string" ? body.url : null;
-      const listingId =
-        typeof body?.listingId === "string" ? body.listingId : null;
-
-      if (!url) {
-        status = 400;
-        payload = { ok: false, error: "missing_url" };
+      const integrationKilled =
+        process.env.KILL_INTEGRATION_OUTBOUND_CLICK === "1";
+      if (integrationKilled) {
+        status = 503;
+        payload = { ok: false, error: "integration_killed" };
       } else {
-        await recordRebuildOutboundClick({ listingId, url, requestId });
+        const body = await request.json();
+        const parsed = parseOutboundClickPayload(body);
+        if (parsed.ok) {
+          await recordRebuildOutboundClick({
+            listingId: parsed.data.listingId ?? null,
+            url: parsed.data.url,
+            requestId,
+          });
+        } else {
+          status = 400;
+          payload = { ok: false, error: "invalid_payload" };
+        }
       }
     }
   } catch (error) {
     status = 400;
-    payload = { ok: false, error: "invalid_json" };
+    payload = { ok: false, error: "invalid_payload" };
     requestError = error;
   }
 
@@ -62,5 +85,11 @@ export async function POST(request: Request) {
 
   const response = NextResponse.json(payload, { status });
   response.headers.set("x-request-id", requestId);
+  if (status === 429) {
+    response.headers.set(
+      "retry-after",
+      Math.ceil(RATE_LIMIT.windowMs / 1000).toString()
+    );
+  }
   return response;
 }

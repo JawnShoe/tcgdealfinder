@@ -7,13 +7,14 @@ import {
   evaluateSavedSearchAlert,
   evaluateTrustThresholdAlert,
 } from "@/lib/rebuild/alerts/alerts";
+import { deriveTrustAssessment } from "@/lib/rebuild/trust/trustAssessment";
 import {
   parseRebuildActionPrefs,
   serializeRebuildActionPrefs,
 } from "@/lib/rebuild/prefs/actionPrefs";
 
 function buildListingDomain(): ListingDomain {
-  return {
+  const listing: Omit<ListingDomain, "trustAssessment"> = {
     listingId: "listing-1",
     title: "Charizard V",
     url: "https://example.com/listing/1",
@@ -71,6 +72,11 @@ function buildListingDomain(): ListingDomain {
       pipelineVersion: "rebuild-db-v1",
     },
     riskFlags: [],
+  };
+
+  return {
+    ...listing,
+    trustAssessment: deriveTrustAssessment(listing),
   };
 }
 

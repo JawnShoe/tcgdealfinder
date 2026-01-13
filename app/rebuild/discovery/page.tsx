@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
@@ -22,12 +23,43 @@ import {
   parseRebuildPrefs,
   sortDealsByPrefs,
 } from "@/lib/rebuild/prefs/rebuildPrefs";
+import { buildDiscoveryCanonicalUrl } from "@/lib/rebuild/seo/canonical";
+import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
 
 const FRESHNESS_SLO_SECONDS = 15 * 60;
+const discoveryTitle = buildRebuildTitle("Discovery");
+const discoveryDescription =
+  "Browse recent deals from the rebuild pipeline with trust signals.";
 
 type RebuildDiscoveryPageProps = {
   searchParams?: { [key: string]: string | string[] | undefined };
 };
+
+export async function generateMetadata({
+  searchParams,
+}: RebuildDiscoveryPageProps): Promise<Metadata> {
+  const canonical = buildDiscoveryCanonicalUrl(searchParams);
+  return {
+    title: discoveryTitle,
+    description: discoveryDescription,
+    alternates: {
+      canonical,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+    openGraph: {
+      title: discoveryTitle,
+      description: discoveryDescription,
+      url: canonical,
+    },
+    twitter: {
+      title: discoveryTitle,
+      description: discoveryDescription,
+    },
+  };
+}
 
 export default async function RebuildDiscoveryPage({
   searchParams,

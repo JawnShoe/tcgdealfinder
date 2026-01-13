@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
@@ -24,10 +25,36 @@ import {
   parseRebuildPrefs,
   sortDealsByPrefs,
 } from "@/lib/rebuild/prefs/rebuildPrefs";
+import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
+import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 const FRESHNESS_SLO_SECONDS = 15 * 60;
+const homeTitle = buildRebuildTitle("Home");
+const homeDescription =
+  "Rebuild home for TCG Deal Finder with recent deals and trust signals.";
+
+export const metadata: Metadata = {
+  title: homeTitle,
+  description: homeDescription,
+  alternates: {
+    canonical: buildCanonicalUrl("/rebuild"),
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: homeTitle,
+    description: homeDescription,
+    url: buildCanonicalUrl("/rebuild"),
+  },
+  twitter: {
+    title: homeTitle,
+    description: homeDescription,
+  },
+};
 
 type RebuildHomePageProps = {
   searchParams?: { [key: string]: string | string[] | undefined };

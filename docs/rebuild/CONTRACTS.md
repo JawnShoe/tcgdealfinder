@@ -77,6 +77,38 @@ Jobs:
 - Enforcement lives at CDN/WAF configuration (DEFERRED; not CI-verifiable in repo).
 - Any WAF/CDN changes must be documented in ADR with owner and enforcement path.
 
+## SEO Baseline (Rebuild Lane)
+
+Canonical rules:
+
+- /rebuild -> canonical /rebuild
+- /rebuild/discovery -> canonical /rebuild/discovery plus only `sort` when non-default; all other params are ignored
+- /rebuild/listing/[id] -> canonical /rebuild/listing/<id>
+
+Indexing rules:
+
+- /rebuild, /rebuild/discovery, /rebuild/listing/[id] are indexable.
+- /rebuild/alerts and /rebuild/ops are noindex (robots meta + robots.txt disallow).
+
+Metadata rules:
+
+- Title format: Rebuild <Page> | TCG Deal Finder (listing: Rebuild Listing - <title> | TCG Deal Finder).
+- Meta description must be present and non-empty on all rebuild routes.
+
+robots/sitemap:
+
+- robots.txt must publish sitemap.xml and disallow /rebuild/ops and /rebuild/alerts.
+- sitemap.xml must include /rebuild, /rebuild/discovery, and listing URLs when DB is configured.
+
+## Structured Data Contract (Rebuild Lane)
+
+- WebApplication JSON-LD is emitted site-wide (rebuild routes inherit from root layout).
+- Listing detail emits Product JSON-LD with:
+  - name, sku, url (canonical rebuild URL)
+  - Offer data only when price + currency are known
+  - No misleading availability or price claims when data is unknown
+- JSON-LD must be SSR and valid JSON (no client-only emission).
+
 ## Tooltip / Popover Contract
 
 - MUST use a single canonical tooltip/popover primitive.

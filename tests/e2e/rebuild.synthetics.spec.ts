@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Page } from "@playwright/test";
+import {
+  buildCanonicalUrl,
+  buildDiscoveryCanonicalUrl,
+  buildListingCanonicalUrl,
+} from "../../lib/rebuild/seo/canonical";
+import {
+  buildListingTitle,
+  buildRebuildTitle,
+} from "../../lib/rebuild/seo/meta";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:3000";
 const databaseUrl = process.env.DATABASE_URL;
@@ -8,6 +17,118 @@ const listingId = "rebuild-e2e-1";
 const complianceCopy = "We may earn a commission from qualifying purchases.";
 
 test.skip(!databaseUrl, "DATABASE_URL not set for rebuild synthetics.");
+
+function extractMetaContent(body: string, name: string): string | null {
+  const tagMatch = body.match(
+    new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")
+  );
+  if (!tagMatch) {
+    return null;
+  }
+  const contentMatch = tagMatch[0].match(/content="([^"]+)"/i);
+  return contentMatch?.[1] ?? null;
+}
+
+function extractTitle(body: string): string | null {
+  const match = body.match(/<title>([^<]+)<\/title>/i);
+  return match?.[1] ?? null;
+}
+
+function extractMetaProperty(body: string, property: string): string | null {
+  const tagMatch = body.match(
+    new RegExp(`<meta[^>]+property="${property}"[^>]*>`, "i")
+  );
+  if (!tagMatch) {
+    return null;
+  }
+  const contentMatch = tagMatch[0].match(/content="([^"]+)"/i);
+  return contentMatch?.[1] ?? null;
+}
+
+function extractCanonical(body: string): string | null {
+  const tagMatch = body.match(/<link[^>]+rel="canonical"[^>]*>/i);
+  if (!tagMatch) {
+    return null;
+  }
+  const hrefMatch = tagMatch[0].match(/href="([^"]+)"/i);
+  return hrefMatch?.[1] ?? null;
+}
+
+function extractJsonLdObjects(body: string): Array<Record<string, unknown>> {
+  const scripts = [
+    ...body.matchAll(
+      /<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi
+    ),
+  ];
+  const objects: Array<Record<string, unknown>> = [];
+
+  for (const match of scripts) {
+    const json = match[1]?.trim();
+    if (!json) continue;
+    const parsed = JSON.parse(json);
+    if (Array.isArray(parsed)) {
+      parsed.forEach((item) => {
+        if (item && typeof item === "object") {
+          objects.push(item as Record<string, unknown>);
+        }
+      });
+    } else if (parsed && typeof parsed === "object") {
+      objects.push(parsed as Record<string, unknown>);
+    }
+  }
+
+  return objects;
+}
+
+function findJsonLdByType(
+  objects: Array<Record<string, unknown>>,
+  type: string
+): Record<string, unknown> | undefined {
+  return objects.find((obj) => {
+    const value = obj["@type"];
+    if (Array.isArray(value)) {
+      return value.includes(type);
+    }
+    return value === type;
+  });
+}
+
+function assertSeoBasics(
+  body: string,
+  expected: {
+    canonical: string;
+    indexable: boolean;
+  }
+) {
+  const title = extractTitle(body);
+  expect(title).not.toBeNull();
+  expect(title).toMatch(/^Rebuild .+ \| TCG Deal Finder$/);
+
+  const description = extractMetaContent(body, "description");
+  expect(description).not.toBeNull();
+  expect(description?.trim().length).toBeGreaterThan(0);
+
+  const ogTitle = extractMetaProperty(body, "og:title");
+  const ogDescription = extractMetaProperty(body, "og:description");
+  const twitterTitle = extractMetaContent(body, "twitter:title");
+  const twitterDescription = extractMetaContent(body, "twitter:description");
+  expect(ogTitle).not.toBeNull();
+  expect(ogDescription).not.toBeNull();
+  expect(twitterTitle).not.toBeNull();
+  expect(twitterDescription).not.toBeNull();
+
+  const canonical = extractCanonical(body);
+  expect(canonical).toBe(expected.canonical);
+
+  const robots = extractMetaContent(body, "robots");
+  expect(robots).not.toBeNull();
+  if (expected.indexable) {
+    expect(robots).toMatch(/index/i);
+    expect(robots).not.toMatch(/noindex/i);
+  } else {
+    expect(robots).toMatch(/noindex/i);
+  }
+}
 
 async function assertSsrTrustSurfaces(
   request: APIRequestContext,
@@ -106,6 +227,32 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
   page,
   request,
 }) => {
+  const robotsResponse = await request.get(`${baseURL}/robots.txt`);
+  expect(robotsResponse.ok()).toBeTruthy();
+  const robotsBody = await robotsResponse.text();
+  expect(robotsBody).toContain("User-agent: *");
+  expect(robotsBody).toContain("Disallow: /rebuild/ops");
+  expect(robotsBody).toContain("Disallow: /rebuild/alerts");
+  expect(robotsBody).toContain("Sitemap:");
+
+  const sitemapResponse = await request.get(`${baseURL}/sitemap.xml`);
+  expect(sitemapResponse.ok()).toBeTruthy();
+  const sitemapBody = await sitemapResponse.text();
+  expect(sitemapBody).toContain(buildCanonicalUrl("/rebuild"));
+  expect(sitemapBody).toContain(buildCanonicalUrl("/rebuild/discovery"));
+  expect(sitemapBody).toContain(buildListingCanonicalUrl(listingId));
+
+  const discoveryQueryUrl = `${baseURL}/rebuild/discovery?sort=biggest-discount&foo=bar`;
+  const discoveryQueryResponse = await request.get(discoveryQueryUrl);
+  expect(discoveryQueryResponse.ok()).toBeTruthy();
+  const discoveryQueryBody = await discoveryQueryResponse.text();
+  assertSeoBasics(discoveryQueryBody, {
+    canonical: buildDiscoveryCanonicalUrl(
+      new URLSearchParams("sort=biggest-discount&foo=bar")
+    ),
+    indexable: true,
+  });
+
   const routes = [
     "/rebuild",
     "/rebuild/discovery",
@@ -117,6 +264,13 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
   for (const route of routes) {
     const url = `${baseURL}${route}`;
     if (route === "/rebuild/ops") {
+      const response = await request.get(url);
+      expect(response.ok()).toBeTruthy();
+      const body = await response.text();
+      assertSeoBasics(body, {
+        canonical: buildCanonicalUrl("/rebuild/ops"),
+        indexable: false,
+      });
       await assertOpsSsrHeading(request, url);
       await page.goto(url, { waitUntil: "domcontentloaded" });
       await assertOpsHeading(page);
@@ -126,6 +280,44 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
 
     const expectFetchedAt =
       route === "/rebuild" || route === "/rebuild/discovery";
+    const response = await request.get(url);
+    expect(response.ok()).toBeTruthy();
+    const body = await response.text();
+
+    if (route === "/rebuild") {
+      assertSeoBasics(body, {
+        canonical: buildCanonicalUrl("/rebuild"),
+        indexable: true,
+      });
+      const jsonLd = extractJsonLdObjects(body);
+      expect(findJsonLdByType(jsonLd, "WebApplication")).toBeTruthy();
+      const title = extractTitle(body);
+      expect(title).toBe(buildRebuildTitle("Home"));
+    } else if (route === "/rebuild/discovery") {
+      assertSeoBasics(body, {
+        canonical: buildDiscoveryCanonicalUrl(),
+        indexable: true,
+      });
+      const title = extractTitle(body);
+      expect(title).toBe(buildRebuildTitle("Discovery"));
+    } else if (route.startsWith("/rebuild/listing/")) {
+      assertSeoBasics(body, {
+        canonical: buildListingCanonicalUrl(listingId),
+        indexable: true,
+      });
+      const jsonLd = extractJsonLdObjects(body);
+      expect(findJsonLdByType(jsonLd, "Product")).toBeTruthy();
+      const title = extractTitle(body);
+      expect(title).toBe(buildListingTitle("Rebuild E2E Listing"));
+    } else if (route === "/rebuild/alerts") {
+      assertSeoBasics(body, {
+        canonical: buildCanonicalUrl("/rebuild/alerts"),
+        indexable: false,
+      });
+      const title = extractTitle(body);
+      expect(title).toBe(buildRebuildTitle("Alerts"));
+    }
+
     await assertSsrTrustSurfaces(request, url, { expectFetchedAt });
     await page.goto(url, { waitUntil: "domcontentloaded" });
     await assertUiTrustSurfaces(page);

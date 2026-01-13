@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
@@ -17,6 +18,9 @@ import {
   getRequestIdFromHeaders,
   logRequest,
 } from "@/lib/rebuild/observability/logging";
+import { buildListingCanonicalUrl } from "@/lib/rebuild/seo/canonical";
+import { buildListingTitle } from "@/lib/rebuild/seo/meta";
+import { buildListingJsonLd } from "@/lib/rebuild/seo/structuredData";
 import { computePredictiveSignals } from "@/lib/rebuild/signals/predictiveSignals";
 
 type PageProps = {
@@ -24,6 +28,40 @@ type PageProps = {
 };
 
 const FRESHNESS_SLO_SECONDS = 15 * 60;
+const listingDescription =
+  "Rebuild listing detail with pricing, trust signals, and provenance.";
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const listing = await getRebuildListingById(params.id);
+  const canonical = buildListingCanonicalUrl(params.id);
+  const title = buildListingTitle(listing?.title);
+  const description = listing
+    ? `Rebuild listing detail for ${listing.title} with trust signals.`
+    : listingDescription;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+    },
+    twitter: {
+      title,
+      description,
+    },
+  };
+}
 
 export default async function RebuildListingPage({ params }: PageProps) {
   const start = Date.now();
@@ -157,6 +195,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
     }
 
     const predictiveSignals = computePredictiveSignals(listing);
+    const listingJsonLd = buildListingJsonLd(listing);
 
     return (
       <main className="min-h-screen bg-slate-50">
@@ -164,6 +203,12 @@ export default async function RebuildListingPage({ params }: PageProps) {
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
             Rebuild lane - pipeline data (db)
           </div>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(listingJsonLd),
+            }}
+          />
           <ResilienceLabel
             className="mb-6"
             tier={resilienceTier}

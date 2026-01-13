@@ -217,3 +217,13 @@ WAF/CDN baseline:
 Failure/degradation:
 
 - Rebuild routes/APIs MUST degrade to contract-defined safe responses; no uncaught errors or crash loops.
+
+---
+
+## SEO Baseline (Mandatory - Rebuild Lane)
+
+- Rebuild pages MUST emit <title> and <meta name="description"> using the rebuild template (Rebuild <Page> | TCG Deal Finder).
+- Canonical URLs MUST follow the SEO Baseline contract in CONTRACTS.md (including discovery parameter normalization).
+- /rebuild/ops and /rebuild/alerts MUST be noindex; other rebuild routes MUST be indexable unless explicitly documented.
+- robots.txt and sitemap.xml MUST exist and list indexable rebuild routes.
+- Structured data MUST be emitted per the Structured Data Contract and validated in CI.

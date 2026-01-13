@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import AlertsShell from "@/components/rebuild/AlertsShell";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
@@ -6,6 +7,33 @@ import ResilienceLabel, {
   ResilienceTier,
 } from "@/components/rebuild/ResilienceLabel";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
+import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
+import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
+
+const alertsTitle = buildRebuildTitle("Alerts");
+const alertsDescription =
+  "Rebuild alerts for tracking listing changes and thresholds.";
+
+export const metadata: Metadata = {
+  title: alertsTitle,
+  description: alertsDescription,
+  alternates: {
+    canonical: buildCanonicalUrl("/rebuild/alerts"),
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+  openGraph: {
+    title: alertsTitle,
+    description: alertsDescription,
+    url: buildCanonicalUrl("/rebuild/alerts"),
+  },
+  twitter: {
+    title: alertsTitle,
+    description: alertsDescription,
+  },
+};
 
 export default function RebuildAlertsPage() {
   const isDbConfigured = isRebuildDbConfigured();

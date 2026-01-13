@@ -60,3 +60,14 @@ Deferred metrics (not yet enforced; must remain marked DEFERRED):
 
 - INP: DEFERRED (no CI gate yet).
 - TTFB: DEFERRED (no CI gate yet).
+
+## Input Validation Metrics (B5)
+
+Validation failure definition:
+
+- A validation failure occurs when an API payload fails schema validation at the boundary.
+
+Detection and enforcement:
+
+- CI unit tests: lib/**tests**/unit/rebuildSecurityBaseline.test.ts (invalid payload returns 400; valid payload passes).
+- Runtime logging: validation failures must log route + requestId (see NON_NEGOTIABLES and CONTRACTS).

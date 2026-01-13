@@ -185,3 +185,35 @@ Render mode and performance limits (fail-hard):
 - LCP <= 4000ms (CI: Perf Budget gate / .lighthouserc.cjs).
 - Hydration: shell content MUST be SSR and MUST NOT pop in after hydration.
 - Images: above-the-fold images MUST have fixed width/height or reserved dimensions; no unbounded images (CI: tests/e2e/rebuild.synthetics.spec.ts).
+
+---
+
+## Security + Reliability Baseline (Mandatory - Rebuild Lane)
+
+Rate limiting:
+
+- Public rebuild API endpoints MUST enforce segmented rate limits (no single global bucket).
+- Rate limit hits MUST return 429 with `{ ok: false, error: "rate_limited" }` and include `x-request-id` + `retry-after`.
+- Rate limit hits MUST be logged with route + requestId.
+
+Input validation:
+
+- Rebuild API routes that accept input MUST schema-validate at entry.
+- Invalid input MUST return 400 with `{ ok: false, error: "invalid_payload" }` and MUST NOT leak internals.
+- Validation failures MUST be logged with requestId.
+
+Secrets + dependency hygiene:
+
+- Secrets MUST NOT be committed.
+- Secret scanning MUST be CI-enforced or explicitly marked DEFERRED in ADR with owner + path to enforcement.
+- Dependency alerts (Dependabot) MUST remain enabled; high/critical vulnerabilities block merge until triaged.
+- Secrets rotation MUST occur within 24 hours of suspected leak and at least quarterly for rebuild-critical keys.
+
+WAF/CDN baseline:
+
+- A baseline WAF/CDN posture MUST exist (bot mitigation + abuse throttling).
+- If WAF/CDN enforcement is not CI-verifiable, it MUST be marked DEFERRED in ADR with owner + target path.
+
+Failure/degradation:
+
+- Rebuild routes/APIs MUST degrade to contract-defined safe responses; no uncaught errors or crash loops.

@@ -151,3 +151,31 @@
 - Consequences:
   - CI must fail on performance regressions for enforced metrics.
   - Deferred metrics remain explicitly marked and may not be treated as complete.
+
+## ADR-0013: Track B5 Threat Model (Rebuild Lane)
+
+- Status: Accepted
+- Context: Track B5 requires a concrete threat model with real, enforceable baselines so security and reliability do not drift.
+- Decision:
+  - Bots/scraping:
+    - Baseline: segmented rate limits on rebuild public APIs; requestId logging on limit hits.
+    - Deferred: CDN/WAF bot mitigation rules (documented in CONTRACTS; not CI-verifiable).
+    - Signals: rate-limit hit logs + API error rate.
+  - Affiliate fraud:
+    - Baseline: outbound click logging + kill switch + input validation on /api/rebuild/outbound-click.
+    - Deferred: fraud scoring/heuristics and partner dispute automation.
+    - Signals: outbound click volume and anomalies (manual review).
+  - Brute forcing endpoints:
+    - Baseline: segmented rate limits + validation at boundaries.
+    - Deferred: IP reputation and WAF rules.
+    - Signals: rate-limit hits + elevated 4xx/429 spikes.
+  - Spam/abuse:
+    - Baseline: schema validation + rate limits on public APIs.
+    - Deferred: CAPTCHA or external abuse scoring.
+    - Signals: validation failure rate and repeated 400/429 patterns.
+  - Secrets scanning:
+    - Baseline: no secrets in repo + rotation policy enforced in NON_NEGOTIABLES.
+    - Deferred: CI-enforced secret scanning (external tooling required).
+- Consequences:
+  - Deferred items must be called out in TRACKER_EVIDENCE and remain explicit.
+  - CI enforcement focuses on rate limiting + validation gates for rebuild APIs.

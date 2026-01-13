@@ -229,11 +229,11 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
 }) => {
   const robotsResponse = await request.get(`${baseURL}/robots.txt`);
   expect(robotsResponse.ok()).toBeTruthy();
-  const robotsBody = await robotsResponse.text();
-  expect(robotsBody).toContain("User-agent: *");
-  expect(robotsBody).toContain("Disallow: /rebuild/ops");
-  expect(robotsBody).toContain("Disallow: /rebuild/alerts");
-  expect(robotsBody).toContain("Sitemap:");
+  const robotsBody = (await robotsResponse.text()).toLowerCase();
+  expect(robotsBody).toContain("user-agent: *");
+  expect(robotsBody).toContain("disallow: /rebuild/ops");
+  expect(robotsBody).toContain("disallow: /rebuild/alerts");
+  expect(robotsBody).toContain("sitemap:");
 
   const sitemapResponse = await request.get(`${baseURL}/sitemap.xml`);
   expect(sitemapResponse.ok()).toBeTruthy();

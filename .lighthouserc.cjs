@@ -1,7 +1,13 @@
 module.exports = {
   ci: {
     collect: {
-      url: ["http://127.0.0.1:3000/rebuild/listing/rebuild-e2e-1"],
+      url: [
+        "http://127.0.0.1:3000/rebuild",
+        "http://127.0.0.1:3000/rebuild/discovery",
+        "http://127.0.0.1:3000/rebuild/listing/rebuild-e2e-1",
+        "http://127.0.0.1:3000/rebuild/alerts",
+        "http://127.0.0.1:3000/rebuild/ops",
+      ],
       numberOfRuns: 2,
       startServerCommand: "npm run dev -- --hostname 127.0.0.1 --port 3000",
       startServerReadyPattern: "started server",

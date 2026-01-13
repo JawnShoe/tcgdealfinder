@@ -46,3 +46,17 @@ Route performance budget (guardrails):
 
 - Must not regress Perf Budget gate
 - Must not regress CLS gate
+
+### B1 Measurement + Proof (authoritative)
+
+Enforced metrics (CI must fail on regression):
+
+- CLS: tests/e2e/rebuild-cls.spec.ts (CI job: Visual Regression / CLS).
+- LCP, FCP, TBT, performance score: .lighthouserc.cjs (CI job: Perf Budget).
+- SSR trust surfaces + no pop-in metadata: tests/e2e/rebuild.synthetics.spec.ts (CI job: E2E Smoke).
+- Trust panel no-mutation (listing): tests/e2e/rebuild-trust-panel.spec.ts (CI job: E2E Smoke).
+
+Deferred metrics (not yet enforced; must remain marked DEFERRED):
+
+- INP: DEFERRED (no CI gate yet).
+- TTFB: DEFERRED (no CI gate yet).

@@ -44,6 +44,13 @@ async function assertAlertsSsrHeading(request: APIRequestContext, url: string) {
   expect(body).toContain("Alerts");
 }
 
+async function assertOpsSsrHeading(request: APIRequestContext, url: string) {
+  const response = await request.get(url);
+  expect(response.ok()).toBeTruthy();
+  const body = await response.text();
+  expect(body).toContain("Rebuild Ops");
+}
+
 async function assertUiTrustSurfaces(page: Page) {
   await expect(page.getByText(complianceCopy, { exact: true })).toBeVisible();
   await expect(page.getByText(/Resilience:/)).toBeVisible();
@@ -52,6 +59,17 @@ async function assertUiTrustSurfaces(page: Page) {
   ).toBeVisible();
 }
 
+async function assertImagesHaveDimensions(page: Page) {
+  const images = page.locator("img");
+  const count = await images.count();
+
+  for (let index = 0; index < count; index += 1) {
+    const image = images.nth(index);
+    const width = await image.getAttribute("width");
+    const height = await image.getAttribute("height");
+    expect(Boolean(width && height)).toBeTruthy();
+  }
+}
 async function assertProvenanceSummaryStable(page: Page) {
   const summary = page.locator("summary", { hasText: "Provenance" });
   await expect(summary).toBeVisible();
@@ -78,6 +96,12 @@ async function assertAlertsHeading(page: Page) {
   ).toBeVisible();
 }
 
+async function assertOpsHeading(page: Page) {
+  await expect(
+    page.getByRole("heading", { name: "Rebuild Ops", exact: true })
+  ).toBeVisible();
+}
+
 test("rebuild synthetics: trust surfaces visible across rebuild funnel", async ({
   page,
   request,
@@ -87,15 +111,25 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
     "/rebuild/discovery",
     `/rebuild/listing/${encodeURIComponent(listingId)}`,
     "/rebuild/alerts",
+    "/rebuild/ops",
   ];
 
   for (const route of routes) {
     const url = `${baseURL}${route}`;
+    if (route === "/rebuild/ops") {
+      await assertOpsSsrHeading(request, url);
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+      await assertOpsHeading(page);
+      await assertImagesHaveDimensions(page);
+      continue;
+    }
+
     const expectFetchedAt =
       route === "/rebuild" || route === "/rebuild/discovery";
     await assertSsrTrustSurfaces(request, url, { expectFetchedAt });
     await page.goto(url, { waitUntil: "domcontentloaded" });
     await assertUiTrustSurfaces(page);
+    await assertImagesHaveDimensions(page);
     if (expectFetchedAt) {
       await assertProvenanceSummaryStable(page);
     }

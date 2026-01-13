@@ -83,3 +83,21 @@ Detection and enforcement:
 
 - Unit tests: lib/**tests**/unit/rebuildSeoBaseline.test.ts (canonical + JSON-LD shape).
 - E2E smoke: tests/e2e/rebuild.synthetics.spec.ts (SSR HTML includes canonical, robots meta, and JSON-LD).
+
+## Trust Invariants (C1)
+
+Trust properties measured:
+
+- Confidence weight -> label mapping is deterministic.
+- Fetched-at timestamp is present for trust surfaces.
+- Freshness state (fresh/stale) follows the SLO threshold.
+- Integrity flags are surfaced as degraded trust state.
+
+Detection and enforcement:
+
+- Unit tests: lib/**tests**/unit/rebuildTrustInvariants.test.ts (assessment state + invariant violations).
+- Unit tests: lib/**tests**/unit/rebuildListingMapper.test.ts (trustAssessment is VERIFIED for good data).
+
+Failure behavior:
+
+- Trust invariant violations fail CI (test:unit).

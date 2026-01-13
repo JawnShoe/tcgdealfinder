@@ -44,6 +44,8 @@ test("mapDbRowToListingDomain maps DB row into rebuild domain model", () => {
   assert.equal(mapped.trust.source, "EBAY");
   assert.equal(mapped.trust.confidence.label, "high");
   assert.equal(mapped.trust.dataAgeLabel, "5m");
+  assert.equal(mapped.trustAssessment.state, "VERIFIED");
+  assert.equal(mapped.trustAssessment.disclosures.length, 0);
   assert.equal(mapped.transparency.pipelineVersion, "rebuild-db-v1");
   assert.ok(mapped.transparency.inputs.length >= 2);
   assert.equal(mapped.riskFlags.includes("MISSING_CONFIDENCE_WEIGHT"), false);

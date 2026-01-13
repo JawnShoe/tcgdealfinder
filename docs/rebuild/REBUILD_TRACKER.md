@@ -41,6 +41,12 @@ Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 
 ---
 
+## Track C: Trust Moat
+
+- [x] C1 Trust Moat foundation (explainable trust + legacy trust archive)
+
+---
+
 ## Weeks 1-2: Phase 0 - Prove the Architecture
 
 Deliverable: one route (`/rebuild/listing/[id]`) that:

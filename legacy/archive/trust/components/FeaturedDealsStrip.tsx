@@ -1,5 +1,7 @@
 "use client";
 
+// DO NOT USE - REBUILD REPLACED (legacy trust archive)
+
 import Image from "next/image";
 import type { Deal } from "@/types/deal";
 import { MarketFlag } from "./MarketFlag";

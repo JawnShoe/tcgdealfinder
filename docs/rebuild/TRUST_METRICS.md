@@ -71,3 +71,15 @@ Detection and enforcement:
 
 - CI unit tests: lib/**tests**/unit/rebuildSecurityBaseline.test.ts (invalid payload returns 400; valid payload passes).
 - Runtime logging: validation failures must log route + requestId (see NON_NEGOTIABLES and CONTRACTS).
+
+## Structured Data Validation (B6)
+
+Validation failure definition:
+
+- Missing required JSON-LD keys for WebApplication or Product/Offer.
+- Invalid types or empty required fields (title/description, canonical, offer price+currency when present).
+
+Detection and enforcement:
+
+- Unit tests: lib/**tests**/unit/rebuildSeoBaseline.test.ts (canonical + JSON-LD shape).
+- E2E smoke: tests/e2e/rebuild.synthetics.spec.ts (SSR HTML includes canonical, robots meta, and JSON-LD).

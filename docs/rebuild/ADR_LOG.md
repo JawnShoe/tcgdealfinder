@@ -179,3 +179,19 @@
 - Consequences:
   - Deferred items must be called out in TRACKER_EVIDENCE and remain explicit.
   - CI enforcement focuses on rate limiting + validation gates for rebuild APIs.
+
+## ADR-0014: Rebuild SEO Baseline (Canonicals + Structured Data)
+
+- Status: Accepted
+- Context: Track B6 requires deterministic SEO rules and CI enforcement to prevent silent regressions in the rebuild lane.
+- Decision:
+  - Canonical base uses the configured site URL (NEXT_PUBLIC_SITE_URL or VERCEL_URL; fallback to https://tcg-deal-finder.local).
+  - /rebuild canonical -> /rebuild.
+  - /rebuild/discovery canonical uses only sort when non-default; all other params are ignored.
+  - Pagination policy: DEFERRED. page params are stripped until pagination is implemented and contract-updated.
+  - Duplicate content policy: cross-market duplicates are collapsed in UI; listing canonical is /rebuild/listing/<id>.
+  - /rebuild/ops and /rebuild/alerts are noindex and disallowed in robots.txt.
+  - WebApplication JSON-LD is required site-wide; Product JSON-LD is required on listing detail.
+- Consequences:
+  - CI enforces canonical/robots/meta via tests/e2e/rebuild.synthetics.spec.ts.
+  - Structured data shape is validated in lib/**tests**/unit/rebuildSeoBaseline.test.ts.

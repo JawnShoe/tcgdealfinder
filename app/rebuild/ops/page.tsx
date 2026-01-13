@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRebuildFreshnessSnapshot } from "@/lib/rebuild/data/getRebuildOpsSnapshot";
@@ -9,9 +10,35 @@ import {
   getRebuildApiMetricsSnapshot,
   getRebuildOutboundClicksSnapshot,
 } from "@/lib/rebuild/observability/metrics";
+import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
+import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+const opsTitle = buildRebuildTitle("Ops");
+const opsDescription =
+  "Rebuild ops dashboards for freshness, errors, latency, and outbound clicks.";
+
+export const metadata: Metadata = {
+  title: opsTitle,
+  description: opsDescription,
+  alternates: {
+    canonical: buildCanonicalUrl("/rebuild/ops"),
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+  openGraph: {
+    title: opsTitle,
+    description: opsDescription,
+    url: buildCanonicalUrl("/rebuild/ops"),
+  },
+  twitter: {
+    title: opsTitle,
+    description: opsDescription,
+  },
+};
 
 function formatPercent(value: number | null): string {
   if (value == null || Number.isNaN(value)) {

@@ -74,6 +74,7 @@ export type ListingDomain = {
   availability: string | null;
   provenance: Provenance;
   trust: TrustMetadata;
+  trustAssessment: TrustAssessment;
   freshness: Freshness;
   reliability: Reliability;
   transparency: TransparencyLog;
@@ -175,6 +176,36 @@ export function mapDbRowToListingDomain(
     inputs.push("deal_confidence_weight from listings.");
   }
 
+  const trust = {
+    confidence: {
+      weight: clampedWeight,
+      label: confidenceLabel,
+      display: confidenceDisplay,
+    },
+    source: row.source,
+    fetchedAtISO,
+    dataAgeLabel,
+  };
+
+  const freshness = {
+    fetchedAtISO,
+    dataAgeLabel,
+    dataAgeSeconds,
+  };
+
+  const reliability = {
+    integrityStatus: row.integrity_status ?? null,
+    integrityReason: row.integrity_reason ?? null,
+    shippingKnown: row.shipping_known ?? null,
+  };
+
+  const trustAssessment = deriveTrustAssessment({
+    trust,
+    freshness,
+    reliability,
+    riskFlags,
+  });
+
   return {
     listingId: row.listing_id,
     title: row.title,
@@ -210,26 +241,10 @@ export function mapDbRowToListingDomain(
       ingestedAtISO: toIsoString(row.ingested_at),
       updatedAtISO: toIsoString(row.updated_at),
     },
-    trust: {
-      confidence: {
-        weight: clampedWeight,
-        label: confidenceLabel,
-        display: confidenceDisplay,
-      },
-      source: row.source,
-      fetchedAtISO,
-      dataAgeLabel,
-    },
-    freshness: {
-      fetchedAtISO,
-      dataAgeLabel,
-      dataAgeSeconds,
-    },
-    reliability: {
-      integrityStatus: row.integrity_status ?? null,
-      integrityReason: row.integrity_reason ?? null,
-      shippingKnown: row.shipping_known ?? null,
-    },
+    trust,
+    trustAssessment,
+    freshness,
+    reliability,
     transparency: {
       sources,
       computedAtISO: now.toISOString(),
@@ -302,3 +317,7 @@ function pickDisplayPrice(values: {
   }
   return { amount: null, displayCurrency: null };
 }
+import {
+  deriveTrustAssessment,
+  type TrustAssessment,
+} from "../trust/trustAssessment";

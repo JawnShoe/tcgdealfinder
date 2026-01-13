@@ -227,3 +227,13 @@ Failure/degradation:
 - /rebuild/ops and /rebuild/alerts MUST be noindex; other rebuild routes MUST be indexable unless explicitly documented.
 - robots.txt and sitemap.xml MUST exist and list indexable rebuild routes.
 - Structured data MUST be emitted per the Structured Data Contract and validated in CI.
+
+---
+
+## Trust Invariants (Mandatory - Rebuild Lane)
+
+- Trust signals MUST be explainable from server data (no implicit trust claims).
+- Confidence, freshness, and provenance MUST be derived server-side and reproducible from stored inputs.
+- If confidence weight or fetched-at is missing, the trust state MUST be "insufficient" and MUST disclose the missing fields.
+- If data age exceeds the freshness SLO or integrity is flagged, the trust state MUST be "degraded" and MUST disclose the reason.
+- Missing or uncertain trust data MUST be labeled explicitly; silent fallbacks are forbidden.

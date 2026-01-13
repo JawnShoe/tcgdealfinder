@@ -195,3 +195,16 @@
 - Consequences:
   - CI enforces canonical/robots/meta via tests/e2e/rebuild.synthetics.spec.ts.
   - Structured data shape is validated in lib/**tests**/unit/rebuildSeoBaseline.test.ts.
+
+## ADR-0015: Trust Moat - Explainable Trust (Rebuild Lane)
+
+- Status: Accepted
+- Context: Trust signals drive user action. Implicit or unexplained trust claims create risk and make regressions hard to detect.
+- Decision:
+  - Trust in the rebuild lane must be explainable and derived from server data.
+  - Core trust signals are: confidence weight, freshness (data age), provenance (source + fetched-at), and integrity flags.
+  - Missing critical trust inputs yield an "insufficient" trust state; stale or flagged data yields a "degraded" state.
+  - Deferred: seller reputation trends, multi-source trust fusion, and ML scoring (require new data and governance).
+- Consequences:
+  - Trust assessment is computed server-side and enforced by unit tests.
+  - UI trust surfaces must disclose missing or degraded states; silent assumptions are forbidden.

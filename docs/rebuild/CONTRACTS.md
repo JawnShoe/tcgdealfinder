@@ -109,6 +109,27 @@ robots/sitemap:
   - No misleading availability or price claims when data is unknown
 - JSON-LD must be SSR and valid JSON (no client-only emission).
 
+## Trust Contract (Rebuild Lane)
+
+Trust signals (conceptual, non-UI):
+
+- Confidence (stored weight + deterministic label).
+- Freshness (data age + SLO state).
+- Provenance (source + fetched-at).
+- Integrity flags (integrity status + shipping known).
+
+Guarantees:
+
+- Trust signals are SSR-first and deterministic (same inputs -> same outputs).
+- Confidence display MUST map directly to stored confidence weight (no hidden recalculation).
+- Provenance fields required at render: source, fetched_at, data_age.
+
+Degraded states:
+
+- If confidence weight or fetched-at is missing: trust state is "insufficient" and reasons must be disclosed.
+- If data is stale, integrity is flagged, or shipping is unknown: trust state is "degraded" and reasons must be disclosed.
+- DB unavailable: follow Rebuild Data Availability Contract (safe empty-state, no trust assertions).
+
 ## Tooltip / Popover Contract
 
 - MUST use a single canonical tooltip/popover primitive.

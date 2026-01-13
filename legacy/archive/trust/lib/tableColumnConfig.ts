@@ -1,3 +1,5 @@
+// DO NOT USE - REBUILD REPLACED (legacy trust archive)
+
 /**
  * Centralized table column layout configuration.
  * Defines widths and display rules for table columns across variants.

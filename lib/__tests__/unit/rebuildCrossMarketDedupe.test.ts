@@ -6,6 +6,7 @@ import {
   dedupeDeals,
   normalizeListingKey,
 } from "../../rebuild/dedupe/crossMarketDedupe";
+import { deriveTrustAssessment } from "../../rebuild/trust/trustAssessment";
 
 type ListingOverrides = Omit<
   Partial<ListingDomain>,
@@ -29,6 +30,30 @@ type ListingOverrides = Omit<
   transparency?: Partial<ListingDomain["transparency"]>;
   riskFlags?: ListingDomain["riskFlags"];
 };
+
+const BASE_TRUST: ListingDomain["trust"] = {
+  confidence: { weight: 0.8, label: "high", display: "80 / 100" },
+  source: "EBAY",
+  fetchedAtISO: "2026-01-01T00:00:00Z",
+  dataAgeLabel: "0m",
+};
+const BASE_FRESHNESS: ListingDomain["freshness"] = {
+  fetchedAtISO: "2026-01-01T00:00:00Z",
+  dataAgeLabel: "0m",
+  dataAgeSeconds: 0,
+};
+const BASE_RELIABILITY: ListingDomain["reliability"] = {
+  integrityStatus: "OK",
+  integrityReason: null,
+  shippingKnown: true,
+};
+const BASE_RISK_FLAGS: ListingDomain["riskFlags"] = [];
+const BASE_TRUST_ASSESSMENT = deriveTrustAssessment({
+  trust: BASE_TRUST,
+  freshness: BASE_FRESHNESS,
+  reliability: BASE_RELIABILITY,
+  riskFlags: BASE_RISK_FLAGS,
+});
 
 const BASE_LISTING: ListingDomain = {
   listingId: "listing-1",
@@ -61,29 +86,17 @@ const BASE_LISTING: ListingDomain = {
     ingestedAtISO: "2026-01-01T00:00:00Z",
     updatedAtISO: "2026-01-01T00:00:00Z",
   },
-  trust: {
-    confidence: { weight: 0.8, label: "high", display: "80 / 100" },
-    source: "EBAY",
-    fetchedAtISO: "2026-01-01T00:00:00Z",
-    dataAgeLabel: "0m",
-  },
-  freshness: {
-    fetchedAtISO: "2026-01-01T00:00:00Z",
-    dataAgeLabel: "0m",
-    dataAgeSeconds: 0,
-  },
-  reliability: {
-    integrityStatus: "OK",
-    integrityReason: null,
-    shippingKnown: true,
-  },
+  trust: BASE_TRUST,
+  trustAssessment: BASE_TRUST_ASSESSMENT,
+  freshness: BASE_FRESHNESS,
+  reliability: BASE_RELIABILITY,
   transparency: {
     sources: ["EBAY"],
     computedAtISO: "2026-01-01T00:00:00Z",
     inputs: ["Listings totals + currency from listings."],
     pipelineVersion: "rebuild-db-v1",
   },
-  riskFlags: [],
+  riskFlags: BASE_RISK_FLAGS,
 };
 
 function buildListing(overrides: ListingOverrides = {}): ListingDomain {
@@ -102,6 +115,21 @@ function buildListing(overrides: ListingOverrides = {}): ListingDomain {
       ...(overrides.trust?.confidence ?? {}),
     },
   };
+  const freshness = {
+    ...BASE_LISTING.freshness,
+    ...(overrides.freshness ?? {}),
+  };
+  const reliability = {
+    ...BASE_LISTING.reliability,
+    ...(overrides.reliability ?? {}),
+  };
+  const riskFlags = overrides.riskFlags ?? BASE_LISTING.riskFlags;
+  const trustAssessment = deriveTrustAssessment({
+    trust,
+    freshness,
+    reliability,
+    riskFlags,
+  });
 
   return {
     ...BASE_LISTING,
@@ -111,16 +139,14 @@ function buildListing(overrides: ListingOverrides = {}): ListingDomain {
     seller: { ...BASE_LISTING.seller, ...(overrides.seller ?? {}) },
     provenance,
     trust,
-    freshness: { ...BASE_LISTING.freshness, ...(overrides.freshness ?? {}) },
-    reliability: {
-      ...BASE_LISTING.reliability,
-      ...(overrides.reliability ?? {}),
-    },
+    trustAssessment,
+    freshness,
+    reliability,
     transparency: {
       ...BASE_LISTING.transparency,
       ...(overrides.transparency ?? {}),
     },
-    riskFlags: overrides.riskFlags ?? BASE_LISTING.riskFlags,
+    riskFlags,
   };
 }
 

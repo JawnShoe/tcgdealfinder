@@ -208,3 +208,18 @@
 - Consequences:
   - Trust assessment is computed server-side and enforced by unit tests.
   - UI trust surfaces must disclose missing or degraded states; silent assumptions are forbidden.
+
+## ADR-0016: Track C2 Action Engine Foundations (Alerts + Preferences)
+
+- Status: Accepted
+- Context: Track C requires action-engine foundations that are deterministic, trust-preserving, and rebuild-only without introducing UI risk or persistence drift.
+- Decision:
+  - Alerts are defined as deterministic domain rules (saved search, price threshold, trust threshold) evaluated server-side.
+  - Alerts must pass trust gating: no fire on stale data beyond freshness SLO, missing confidence, or integrity failure.
+  - Alert evaluation is exposed via rebuild-only API endpoints and is rate limited; DB-unavailable returns a safe 503 with an explicit error.
+  - Preferences are request-scoped URL parameters (budget, condition, trust threshold); no cookies/localStorage in C2.
+  - Persistence and UI wiring are deferred to later Track C items.
+- Consequences:
+  - Alert evaluation remains deterministic and SSR-safe.
+  - Trust invariants are enforced before any alert decision is emitted.
+  - Future UI/persistence work requires a new ADR to avoid silent drift.

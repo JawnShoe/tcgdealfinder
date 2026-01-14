@@ -242,12 +242,32 @@ export default async function RebuildHomePage({
             <p className="mt-2 text-sm text-slate-600">
               Navigate to other rebuild-native routes.
             </p>
-            <IntentPrefetchLink
-              href="/rebuild/discovery"
-              className="mt-4 inline-flex text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
-            >
-              Browse deals
-            </IntentPrefetchLink>
+            <ul className="mt-4 space-y-2 text-sm">
+              <li>
+                <IntentPrefetchLink
+                  href="/rebuild/discovery"
+                  className="inline-flex font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
+                >
+                  Browse deals
+                </IntentPrefetchLink>
+              </li>
+              <li>
+                <IntentPrefetchLink
+                  href="/rebuild/alerts"
+                  className="inline-flex font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
+                >
+                  Alerts
+                </IntentPrefetchLink>
+              </li>
+              <li>
+                <IntentPrefetchLink
+                  href="/rebuild/ops"
+                  className="inline-flex font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
+                >
+                  Ops
+                </IntentPrefetchLink>
+              </li>
+            </ul>
             <p className="mt-4 text-xs text-slate-500">
               Click any deal above to view its listing page.
             </p>
@@ -255,14 +275,20 @@ export default async function RebuildHomePage({
 
           <PriorityHydration
             fallback={
-              <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+              <section
+                className="mt-6 rounded-lg border border-slate-200 bg-white p-6"
+                data-testid="rebuild-home-deferred-skeleton"
+              >
                 <SkeletonBlock className="h-5 w-36" />
                 <SkeletonBlock className="mt-3 h-4 w-72" />
                 <SkeletonBlock className="mt-2 h-4 w-64" />
               </section>
             }
           >
-            <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+            <section
+              className="mt-6 rounded-lg border border-slate-200 bg-white p-6"
+              data-testid="rebuild-home-deferred-content"
+            >
               <h2 className="text-lg font-semibold text-slate-900">
                 Rebuild notes
               </h2>

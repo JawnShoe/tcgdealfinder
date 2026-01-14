@@ -200,6 +200,29 @@ Degraded states:
 - Skeletons MUST be replaced by final content without CLS.
 - Loading states MUST NOT hide already-available trust metadata.
 
+## Perceived Speed Contract (Rebuild Lane)
+
+Skeleton coverage (dimension-correct):
+
+- Every rebuild route MUST have a `loading.tsx` that uses rebuild skeleton primitives (`components/rebuild/Skeleton.tsx`).
+- Skeletons MUST reserve final dimensions (no unknown/auto height for primary sections).
+- CLS MUST remain within the enforced budget (see `tests/e2e/rebuild-cls.spec.ts`).
+
+Priority hydration (ordering):
+
+- Trust surfaces (confidence, provenance, resilience, compliance disclosure) MUST be SSR-first and MUST NOT be deferred.
+- Secondary, below-the-fold content MAY be deferred only via `components/rebuild/PriorityHydration.tsx` with a skeleton fallback.
+- Deferred fallbacks MUST be SSR-visible and MUST swap to content without layout shift.
+
+Prefetch on intent (rebuild-only):
+
+- Rebuild-to-rebuild navigation links MUST use `components/rebuild/IntentPrefetchLink.tsx`.
+- Eager prefetch MUST be disabled (`prefetch={false}`); prefetch MUST occur only on intent (hover/focus/touch).
+
+Enforcement (CI):
+
+- Perceived speed behavior is enforced by `tests/e2e/rebuild.synthetics.spec.ts` and CLS budget by `tests/e2e/rebuild-cls.spec.ts`.
+
 ## Route Performance Contracts (Rebuild Lane)
 
 ### /rebuild (Home)

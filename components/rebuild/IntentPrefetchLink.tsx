@@ -12,6 +12,12 @@ type IntentPrefetchLinkProps = {
   prefetchEnabled?: boolean;
 };
 
+declare global {
+  interface Window {
+    __rebuildIntentPrefetches?: string[];
+  }
+}
+
 export default function IntentPrefetchLink({
   href,
   children,
@@ -28,6 +34,8 @@ export default function IntentPrefetchLink({
 
     prefetchedRef.current = true;
     router.prefetch(href);
+    window.__rebuildIntentPrefetches ??= [];
+    window.__rebuildIntentPrefetches.push(href);
   }, [href, prefetchEnabled, router]);
 
   return (
@@ -35,6 +43,7 @@ export default function IntentPrefetchLink({
       href={href}
       prefetch={false}
       className={className}
+      data-intent-prefetch="true"
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
       onTouchStart={handlePrefetch}

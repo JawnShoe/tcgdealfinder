@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Page } from "@playwright/test";
+import type { Locator } from "@playwright/test";
 import {
   buildCanonicalUrl,
   buildDiscoveryCanonicalUrl,
@@ -237,6 +238,43 @@ async function assertOpsHeading(page: Page) {
   await expect(page.getByText("Resilience Tiers (C4)")).toBeVisible();
 }
 
+async function assertIntentPrefetchTriggered(
+  page: Page,
+  link: Locator,
+  expectedHref: string
+) {
+  await page.evaluate(() => {
+    (window as any).__rebuildIntentPrefetches = [];
+  });
+
+  await link.hover();
+
+  await expect
+    .poll(async () => {
+      const values = await page.evaluate(
+        () => (window as any).__rebuildIntentPrefetches ?? []
+      );
+      return values.includes(expectedHref);
+    })
+    .toBeTruthy();
+}
+
+async function delayNextFetch(page: Page, urlSubstring: string, delayMs = 800) {
+  let delayed = false;
+
+  await page.route(`**/*${urlSubstring}*`, async (route) => {
+    const request = route.request();
+    if (delayed || request.resourceType() !== "fetch") {
+      await route.continue();
+      return;
+    }
+
+    delayed = true;
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    await route.continue();
+  });
+}
+
 test("rebuild synthetics: trust surfaces visible across rebuild funnel", async ({
   page,
   request,
@@ -348,4 +386,164 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
       await assertAlertsHeading(page);
     }
   }
+});
+
+test("rebuild perceived speed: skeletons + priority hydration + intent prefetch", async ({
+  page,
+  request,
+}) => {
+  const homeUrl = `${baseURL}/rebuild`;
+  const discoveryUrl = `${baseURL}/rebuild/discovery`;
+  const alertsUrl = `${baseURL}/rebuild/alerts`;
+  const opsUrl = `${baseURL}/rebuild/ops`;
+  const listingPath = `/rebuild/listing/${encodeURIComponent(listingId)}`;
+  const listingUrl = `${baseURL}${listingPath}`;
+
+  const homeResponse = await request.get(homeUrl);
+  expect(homeResponse.ok()).toBeTruthy();
+  const homeBody = await homeResponse.text();
+  expect(homeBody).toContain('data-testid="rebuild-home-deferred-skeleton"');
+  expect(homeBody).not.toContain('data-testid="rebuild-home-deferred-content"');
+
+  const listingResponse = await request.get(listingUrl);
+  expect(listingResponse.ok()).toBeTruthy();
+  const listingBody = await listingResponse.text();
+  expect(listingBody).toContain(
+    'data-testid="rebuild-listing-deferred-skeleton"'
+  );
+  expect(listingBody).not.toContain(
+    'data-testid="rebuild-listing-deferred-content"'
+  );
+
+  await page.goto(homeUrl, { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByText(complianceCopy, { exact: true })).toBeVisible();
+  await expect(page.getByTestId("resilience-label")).toBeVisible();
+  await expect(
+    page.locator("summary", { hasText: "Provenance" })
+  ).toBeVisible();
+
+  const deferredSkeleton = page.getByTestId("rebuild-home-deferred-skeleton");
+  await expect(deferredSkeleton).toBeVisible();
+  await expect(page.getByTestId("rebuild-home-deferred-content")).toHaveCount(
+    0
+  );
+  const homeSkeletonBox = await deferredSkeleton.boundingBox();
+  expect(homeSkeletonBox?.height).toBeGreaterThan(0);
+
+  await page.waitForTimeout(1400);
+
+  const homeDeferredContent = page.getByTestId("rebuild-home-deferred-content");
+  await expect(homeDeferredContent).toBeVisible();
+  const homeContentBox = await homeDeferredContent.boundingBox();
+  expect(homeContentBox?.height).toBeGreaterThan(0);
+  if (homeSkeletonBox && homeContentBox) {
+    expect(
+      Math.abs(homeContentBox.height - homeSkeletonBox.height)
+    ).toBeLessThanOrEqual(8);
+  }
+
+  const browseDealsLink = page.getByRole("link", { name: "Browse deals" });
+  await expect(browseDealsLink).toHaveAttribute("data-intent-prefetch", "true");
+  const alertsLink = page.getByRole("link", { name: "Alerts" });
+  await expect(alertsLink).toHaveAttribute("data-intent-prefetch", "true");
+  const opsLink = page.getByRole("link", { name: "Ops" });
+  await expect(opsLink).toHaveAttribute("data-intent-prefetch", "true");
+
+  await delayNextFetch(page, "/rebuild/alerts");
+  await alertsLink.click();
+  await expect(page.getByTestId("rebuild-loading-alerts")).toBeVisible();
+  await page.waitForURL(alertsUrl, { waitUntil: "domcontentloaded" });
+
+  await page.goto(homeUrl, { waitUntil: "domcontentloaded" });
+
+  await delayNextFetch(page, "/rebuild/discovery");
+  await browseDealsLink.click();
+
+  await expect(page.getByTestId("rebuild-loading-discovery")).toBeVisible();
+  await page.waitForURL(discoveryUrl, { waitUntil: "domcontentloaded" });
+
+  const firstListingLink = page.locator('a[href^="/rebuild/listing/"]').first();
+  await expect(firstListingLink).toHaveAttribute(
+    "data-intent-prefetch",
+    "true"
+  );
+  const firstListingHref = await firstListingLink.getAttribute("href");
+  expect(firstListingHref).not.toBeNull();
+
+  await delayNextFetch(page, "/rebuild/listing/");
+  await firstListingLink.click();
+
+  await expect(page.getByTestId("rebuild-loading-listing")).toBeVisible();
+  await page.waitForURL(/\/rebuild\/listing\//, {
+    waitUntil: "domcontentloaded",
+  });
+
+  const listingDeferredSkeleton = page.getByTestId(
+    "rebuild-listing-deferred-skeleton"
+  );
+  await expect(listingDeferredSkeleton).toBeVisible();
+  await expect(
+    page.getByTestId("rebuild-listing-deferred-content")
+  ).toHaveCount(0);
+
+  const skeletonBox = await listingDeferredSkeleton.boundingBox();
+  expect(skeletonBox?.height).toBeGreaterThan(0);
+
+  await page.waitForTimeout(1400);
+
+  const listingDeferredContent = page.getByTestId(
+    "rebuild-listing-deferred-content"
+  );
+  await expect(listingDeferredContent).toBeVisible();
+  const contentBox = await listingDeferredContent.boundingBox();
+  expect(contentBox?.height).toBeGreaterThan(0);
+  if (skeletonBox && contentBox) {
+    expect(
+      Math.abs(contentBox.height - skeletonBox.height)
+    ).toBeLessThanOrEqual(8);
+  }
+
+  await delayNextFetch(page, "/rebuild/discovery");
+  const backToDiscovery = page.getByRole("link", { name: "Back to Discovery" });
+  await expect(backToDiscovery).toHaveAttribute("data-intent-prefetch", "true");
+  await backToDiscovery.click();
+
+  await expect(page.getByTestId("rebuild-loading-discovery")).toBeVisible();
+  await page.waitForURL(discoveryUrl, { waitUntil: "domcontentloaded" });
+
+  await page.goto(alertsUrl, { waitUntil: "domcontentloaded" });
+  const exampleListing = page.getByRole("link", {
+    name: "View example listing",
+  });
+  await expect(exampleListing).toHaveAttribute("data-intent-prefetch", "true");
+
+  await delayNextFetch(page, "/rebuild/listing/rebuild-e2e-1");
+  await exampleListing.click();
+  await expect(page.getByTestId("rebuild-loading-listing")).toBeVisible();
+  await page.waitForURL(listingUrl, { waitUntil: "domcontentloaded" });
+
+  await page.goto(homeUrl, { waitUntil: "domcontentloaded" });
+
+  await delayNextFetch(page, "/rebuild/ops");
+  await opsLink.click();
+  await expect(page.getByTestId("rebuild-loading-ops")).toBeVisible();
+  await page.waitForURL(opsUrl, { waitUntil: "domcontentloaded" });
+
+  // Prefetch intent assertions (separate from transition assertions to avoid caching)
+  await page.goto(homeUrl, { waitUntil: "domcontentloaded" });
+  await assertIntentPrefetchTriggered(
+    page,
+    browseDealsLink,
+    "/rebuild/discovery"
+  );
+  await assertIntentPrefetchTriggered(page, alertsLink, "/rebuild/alerts");
+  await assertIntentPrefetchTriggered(page, opsLink, "/rebuild/ops");
+
+  await page.goto(alertsUrl, { waitUntil: "domcontentloaded" });
+  await assertIntentPrefetchTriggered(
+    page,
+    exampleListing,
+    "/rebuild/listing/rebuild-e2e-1"
+  );
 });

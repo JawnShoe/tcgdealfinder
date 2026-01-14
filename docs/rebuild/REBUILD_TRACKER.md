@@ -47,6 +47,7 @@ Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 - [x] C2 Action Engine foundations (alerts + preferences)
 - [x] C3 Intelligence Layer (rules-based risk signals)
 - [x] C4 Resilience Engineering (explicit degradation tiers)
+- [x] C5 Perceived Speed (audit + enforcement)
 
 ---
 

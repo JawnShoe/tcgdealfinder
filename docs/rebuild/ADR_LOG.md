@@ -238,3 +238,23 @@
   - Legacy directory is now archive-only; no active code remains at top level.
   - Future legacy cleanup follows the same pattern (add header, move to appropriate domain archive).
   - Track C3 (Visible Trust UI) can proceed without confusion about which legacy trust files are active.
+
+## ADR-0018: Rules-Based Intelligence Layer (Track C3)
+
+- Status: Accepted
+- Context: Track C3 requires deterministic risk signals to enhance the trust moat without ML or UI expansion.
+- Decision:
+  - Intelligence layer lives at `lib/rebuild/intelligence/**` with pure evaluation functions.
+  - V1 rules: STOCK_IMAGE_ONLY, SELLER_MISMATCH, SUSPICIOUS_DESCRIPTION, MISSING_KEY_FIELDS, PRICE_OUTLIER_SIMPLE.
+  - All rules are boolean or threshold-based, fully reproducible, and explainable in one sentence.
+  - Engine is fully deterministic: no wall-clock time, no IO, no side effects.
+  - Integration is read-only: intelligence flags are additive signals, not trust score overrides.
+  - `IntelligenceRiskFlag` is separate from `RiskFlag` to avoid coupling and preserve trust math stability.
+  - Uses `ListingLike` minimal type to avoid circular import risk with listingMapper.
+  - Flags are sorted alphabetically for stable, deterministic output ordering.
+  - DEFERRED: ML/probabilistic scoring.
+  - DEFERRED: UI expansion (no app/rebuild changes).
+- Consequences:
+  - New signals must follow the same pattern (pure, deterministic, one-sentence explainable).
+  - Risk flags are available for future UI consumption but not wired in this track.
+  - Intelligence results are attached to `ListingDomain.intelligence?` (optional field).

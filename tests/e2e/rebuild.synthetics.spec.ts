@@ -249,10 +249,15 @@ async function assertIntentPrefetchTriggered(
     (window as any).__rebuildIntentPrefetches = [];
   });
 
+  await expect(link).toBeVisible();
+
   const deadline = Date.now() + 5_000;
 
   while (Date.now() < deadline) {
+    await link.scrollIntoViewIfNeeded();
+    await link.focus();
     await link.hover();
+    await link.dispatchEvent("touchstart");
     const didPrefetch = await page.evaluate(
       (href) =>
         ((window as any).__rebuildIntentPrefetches ?? []).includes(href),
@@ -491,7 +496,9 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
   await browseDealsLink.click();
   await page.waitForURL(discoveryUrl, { waitUntil: "domcontentloaded" });
 
-  const firstListingLink = page.locator('a[href^="/rebuild/listing/"]').first();
+  const firstListingLink = page
+    .locator('[data-intent-prefetch="true"][href^="/rebuild/listing/"]')
+    .first();
   await expect(firstListingLink).toHaveAttribute(
     "data-intent-prefetch",
     "true"

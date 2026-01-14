@@ -79,6 +79,8 @@ export type ListingDomain = {
   reliability: Reliability;
   transparency: TransparencyLog;
   riskFlags: RiskFlag[];
+  /** Intelligence layer signals (Track C3). Optional to avoid breaking consumers. */
+  intelligence?: IntelligenceResult;
 };
 
 export type DbListingRow = {
@@ -206,30 +208,43 @@ export function mapDbRowToListingDomain(
     riskFlags,
   });
 
+  const price = {
+    amount,
+    currency: displayCurrency,
+    totalCad,
+    totalUsd,
+    totalNative,
+    discountPercent,
+    display:
+      amount != null && displayCurrency
+        ? `${amount.toFixed(2)} ${displayCurrency}`
+        : "Unavailable",
+    deltaDisplay,
+  };
+
+  const seller = {
+    name: row.seller ?? null,
+    username: row.seller_username ?? null,
+    feedbackCount: row.seller_feedback_count ?? null,
+    positivePercent: parseNullableNumber(row.seller_positive_percent),
+  };
+
+  const condition = row.condition_raw ?? null;
+
+  const intelligence = evaluateIntelligence({
+    title: row.title,
+    price: { amount, discountPercent },
+    seller: { name: seller.name, username: seller.username },
+    condition,
+  });
+
   return {
     listingId: row.listing_id,
     title: row.title,
     url: row.url ?? null,
-    price: {
-      amount,
-      currency: displayCurrency,
-      totalCad,
-      totalUsd,
-      totalNative,
-      discountPercent,
-      display:
-        amount != null && displayCurrency
-          ? `${amount.toFixed(2)} ${displayCurrency}`
-          : "Unavailable",
-      deltaDisplay,
-    },
-    seller: {
-      name: row.seller ?? null,
-      username: row.seller_username ?? null,
-      feedbackCount: row.seller_feedback_count ?? null,
-      positivePercent: parseNullableNumber(row.seller_positive_percent),
-    },
-    condition: row.condition_raw ?? null,
+    price,
+    seller,
+    condition,
     availability:
       row.shipping_known === false ? "Shipping unknown" : "In stock",
     provenance: {
@@ -252,6 +267,7 @@ export function mapDbRowToListingDomain(
       pipelineVersion: PIPELINE_VERSION,
     },
     riskFlags,
+    intelligence,
   };
 }
 
@@ -321,3 +337,4 @@ import {
   deriveTrustAssessment,
   type TrustAssessment,
 } from "../trust/trustAssessment";
+import { evaluateIntelligence, type IntelligenceResult } from "../intelligence";

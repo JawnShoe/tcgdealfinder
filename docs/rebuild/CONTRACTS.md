@@ -223,6 +223,31 @@ Enforcement (CI):
 
 - Perceived speed behavior is enforced by `tests/e2e/rebuild.synthetics.spec.ts` and CLS budget by `tests/e2e/rebuild-cls.spec.ts`.
 
+## Synthetic Monitoring Contract (Track C6 - Guarantee)
+
+Guaranteed rebuild journeys (must pass on every push to main and every PR):
+
+- Journey A: Discovery path - `/rebuild` -> `/rebuild/discovery` -> `/rebuild/listing/[id]` -> outbound click
+- Journey B: Alerts path - `/rebuild/alerts` -> `/rebuild/listing/[id]` -> outbound click
+- Journey C: Health/Ops - `/rebuild/ops` (resilience tiers visible + freshness indicators present)
+
+Required assertions (each step):
+
+- Availability: 200 response; SSR content present (not client-only shell).
+- Trust surfaces: resilience label SSR-visible (`data-testid="resilience-label"` with allowed `data-tier`); provenance drilldown visible.
+- Perceived speed (contract compliance): route loading skeleton exists (`loading.tsx` with skeleton primitives); priority hydration markers remain SSR-first when present; CLS budget remains green.
+- Freshness/staleness: freshness indicators are visible; staleness (if present) is explicitly labeled (no silent staleness).
+- Outbound safety: outbound link is http(s) and uses rebuild outbound click endpoint without error.
+
+Failure semantics:
+
+- Any journey failure is a release-blocking regression and MUST fail CI.
+- Playwright artifacts MUST be uploaded on failure (`test-results/**`, `playwright-report/**`) for root-cause triage.
+
+Enforcement (CI):
+
+- Synthetic guarantee: `tests/e2e/rebuild.synthetics.guarantee.spec.ts` (CI job: Synthetic Guarantee).
+
 ## Route Performance Contracts (Rebuild Lane)
 
 ### /rebuild (Home)

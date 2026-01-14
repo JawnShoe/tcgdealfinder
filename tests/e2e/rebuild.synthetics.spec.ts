@@ -269,7 +269,7 @@ function assertLoadingSkeletonSourceFile(
   expect(body).toContain(`data-testid="${expectedTestId}"`);
   expect(body).toContain('from "@/components/rebuild/Skeleton"');
   expect(body).toMatch(/min-h-screen/);
-  expect(body).toMatch(/SkeletonBlock[^\\n]*className="[^"]*\\bh-/);
+  expect(body).toMatch(/<SkeletonBlock[^>]*className="[^"]*\bh-/);
 }
 
 test("rebuild synthetics: trust surfaces visible across rebuild funnel", async ({

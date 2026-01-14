@@ -48,6 +48,7 @@ Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 ## Track C: Trust Moat
 
 - [x] C1 Trust Moat foundation (explainable trust + legacy trust archive)
+- [x] C3 Intelligence Layer (rules-based risk signals)
 
 ---
 

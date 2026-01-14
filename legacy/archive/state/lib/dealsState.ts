@@ -1,3 +1,4 @@
+// ARCHIVED: replaced by rebuild lane – do not import
 import type { MarketFilterKey } from "./filters";
 import { DEFAULT_MARKET_FILTER } from "./filters";
 

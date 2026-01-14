@@ -223,3 +223,18 @@
   - Alert evaluation remains deterministic and SSR-safe.
   - Trust invariants are enforced before any alert decision is emitted.
   - Future UI/persistence work requires a new ADR to avoid silent drift.
+
+## ADR-0017: Legacy Archive Cleanup (Track C Supporting Work)
+
+- Status: Accepted
+- Context: Legacy files that are unused, superseded by rebuild equivalents, or already quarantined but not formally archived create confusion and bloat. Cleaning these up reduces noise and makes the codebase easier to navigate while preserving historical reference.
+- Decision:
+  - All legacy files in quarantine are moved to `legacy/archive/<domain>/` with standardized header comments (`// ARCHIVED: replaced by rebuild lane – do not import`).
+  - Domain-based organization: trust, search, watchlist, state, currency.
+  - No behavior changes; archived files remain as reference-only.
+  - ESLint + CI boundary checks continue to block imports from `legacy/**`.
+  - LEGACY_QUARANTINE.md updated to reflect the new archive structure.
+- Consequences:
+  - Legacy directory is now archive-only; no active code remains at top level.
+  - Future legacy cleanup follows the same pattern (add header, move to appropriate domain archive).
+  - Track C3 (Visible Trust UI) can proceed without confusion about which legacy trust files are active.

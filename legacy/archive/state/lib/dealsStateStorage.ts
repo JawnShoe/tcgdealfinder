@@ -1,3 +1,4 @@
+// ARCHIVED: replaced by rebuild lane – do not import
 import { DEFAULT_DEALS_VIEW_STATE, type DealsViewState } from "./dealsState";
 
 const STORAGE_KEY = "tcg_deals_view_state_v2";

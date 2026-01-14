@@ -11,27 +11,33 @@ Enforcement:
 1. **ESLint**: `no-restricted-imports` blocks legacy imports globally
 2. **CI boundary check**: `grep`-based check fails if any rebuild file imports from legacy
 
-## Quarantine Allowlist
+## Archive Structure
 
-Files moved to `legacy/` — zero imports from active surfaces.
+All legacy files are now archived under `legacy/archive/<domain>/` with header comments.
 
-### Components
+### Trust (archived)
 
-- `legacy/components/FeaturedDealsStrip.tsx`
-- `legacy/components/home/HomeContentSafe.tsx`
-- `legacy/components/SearchAutocomplete.tsx`
-- `legacy/components/WatchlistButton.tsx`
+- `legacy/archive/trust/components/FeaturedDealsStrip.tsx`
+- `legacy/archive/trust/components/home/HomeContentSafe.tsx`
+- `legacy/archive/trust/lib/tableColumnConfig.ts`
 
-### Lib
+### Search (archived)
 
-- `legacy/lib/dealsState.ts` — state types (dependency of dealsStateStorage only)
-- `legacy/lib/dealsStateStorage.ts` — localStorage persistence (superseded)
-- `legacy/lib/tableColumnConfig.ts` — replaced by `lib/tableColumns.tsx`
-- `legacy/lib/useWatchlist.ts` — replaced by `lib/WatchlistContext.tsx`
+- `legacy/archive/search/components/SearchAutocomplete.tsx`
 
-### Hooks
+### Watchlist (archived)
 
-- `legacy/hooks/useViewerCurrency.ts` — completely unused
+- `legacy/archive/watchlist/components/WatchlistButton.tsx`
+- `legacy/archive/watchlist/lib/useWatchlist.ts`
+
+### State (archived)
+
+- `legacy/archive/state/lib/dealsState.ts`
+- `legacy/archive/state/lib/dealsStateStorage.ts`
+
+### Currency (archived)
+
+- `legacy/archive/currency/hooks/useViewerCurrency.ts`
 
 ## Script-Only Lib Files
 

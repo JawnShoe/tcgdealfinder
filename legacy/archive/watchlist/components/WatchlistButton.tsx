@@ -1,3 +1,4 @@
+// ARCHIVED: replaced by rebuild lane – do not import
 "use client";
 
 import { useEffect, useState } from "react";

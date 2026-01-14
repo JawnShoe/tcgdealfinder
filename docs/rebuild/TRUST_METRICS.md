@@ -137,3 +137,18 @@ Detection and enforcement:
 Failure behavior:
 
 - Missing skeleton markers / broken priority hydration / missing intent-prefetch wiring fails CI (E2E Smoke).
+
+## Synthetic Coverage (C6 - Guarantee)
+
+Coverage measured:
+
+- 100% of the guaranteed rebuild journeys pass (Journey A/B/C; see `docs/rebuild/CONTRACTS.md`).
+
+Detection and enforcement:
+
+- CI job: Synthetic Guarantee
+- E2E spec: `tests/e2e/rebuild.synthetics.guarantee.spec.ts` (journey-specific failures; artifacts uploaded on failure).
+
+Failure behavior:
+
+- Any journey regression fails CI (non-zero exit) and blocks main.

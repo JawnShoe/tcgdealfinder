@@ -18,26 +18,40 @@ export default function ResilienceLabel(props: ResilienceLabelProps) {
   const label = getTierLabel(tier);
   const isDegraded = isDegradedTier(tier);
 
-  // Tier-specific styling
-  const tierStyles: Record<ResilienceTier, string> = {
-    LIVE: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    CACHED: "border-blue-200 bg-blue-50 text-blue-800",
-    STALE: "border-amber-200 bg-amber-50 text-amber-800",
-    PARTIAL: "border-orange-200 bg-orange-50 text-orange-800",
-    UNAVAILABLE: "border-slate-300 bg-slate-100 text-slate-700",
+  const tierBorderStyles: Record<ResilienceTier, string> = {
+    LIVE: "border-emerald-700",
+    CACHED: "border-blue-700",
+    STALE: "border-amber-800",
+    PARTIAL: "border-orange-800",
+    UNAVAILABLE: "border-slate-500",
+  };
+
+  const tierBadgeStyles: Record<ResilienceTier, string> = {
+    LIVE: "bg-emerald-700 text-white",
+    CACHED: "bg-blue-700 text-white",
+    STALE: "bg-amber-800 text-white",
+    PARTIAL: "bg-orange-800 text-white",
+    UNAVAILABLE: "bg-slate-700 text-white",
   };
 
   return (
     <div
-      className={`inline-flex h-5 items-center gap-2 rounded-full border px-2 text-[11px] font-semibold uppercase leading-5 ${tierStyles[tier]} ${className ?? ""}`}
+      className={`inline-flex h-6 items-center gap-2 rounded-md border border-l-4 bg-white px-2 text-[11px] font-semibold leading-5 text-slate-900 ${tierBorderStyles[tier]} ${className ?? ""}`}
       data-testid="resilience-label"
       data-tier={tier}
     >
-      <span>Resilience: {label}</span>
+      <span
+        className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase leading-4 ${tierBadgeStyles[tier]}`}
+      >
+        {label}
+      </span>
+      <span className="uppercase">Resilience</span>
       {isDegraded && explanation ? (
         <>
-          <span className="opacity-50">/</span>
-          <span className="font-normal normal-case opacity-75">
+          <span className="font-normal text-slate-800" aria-hidden="true">
+            -
+          </span>
+          <span className="font-normal normal-case text-slate-800">
             {explanation}
           </span>
         </>

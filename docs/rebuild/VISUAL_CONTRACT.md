@@ -143,6 +143,33 @@ Rules
 - Seller detail (if available)
 - Provenance / limitations
 
+### C. Resilience label (trust surface)
+
+Placement and SSR requirements:
+
+- MUST render server-side and be visible at first render (no hover-only meaning).
+- MUST be present on all rebuild routes that surface trust: `/rebuild`, `/rebuild/discovery`, `/rebuild/listing/[id]`.
+- MUST include stable attributes:
+  - `data-testid="resilience-label"`
+  - `data-tier="<LIVE|CACHED|STALE|PARTIAL|UNAVAILABLE>"`
+
+Copy and state rules:
+
+- MUST display the word "Resilience" plus the tier label (Live/Cached/Stale/Partial/Unavailable).
+- MAY display an explanation string only for degraded tiers; explanation MUST be plain text (no hype, no urgency).
+- MUST NOT claim certainty when tier is not Live.
+
+Stability rules:
+
+- MUST have stable dimensions in the closed/default state (no layout shift on load/hydration).
+- MUST NOT "pop in" additional tier/explanation content after hydration.
+
+A11y rules:
+
+- MUST pass axe color-contrast checks on all tiers.
+- MUST NOT use low-opacity text for critical meaning.
+- MUST NOT rely on colored text on transparent/light backgrounds for tier meaning.
+
 Language rules
 
 - No hype

@@ -218,6 +218,17 @@ jobs:
       - name: Run Playwright E2E smoke (2)
         run: npx playwright test tests/e2e/rebuild-trust-panel.spec.ts tests/e2e/rebuild.synthetics.spec.ts --config tests/e2e/playwright.config.ts
 
+      - name: Upload Playwright artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-${{ github.job }}
+          path: |
+            playwright-report/**
+            test-results/**
+          if-no-files-found: warn
+          retention-days: 7
+
   visual-regression:
     name: Visual Regression / CLS
     runs-on: ubuntu-latest
@@ -275,6 +286,17 @@ jobs:
       - name: Run CLS gate
         run: npx playwright test tests/e2e/rebuild-cls.spec.ts --config tests/e2e/playwright.config.ts
 
+      - name: Upload Playwright artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-${{ github.job }}
+          path: |
+            playwright-report/**
+            test-results/**
+          if-no-files-found: warn
+          retention-days: 7
+
   a11y-smoke:
     name: A11y Smoke
     runs-on: ubuntu-latest
@@ -331,6 +353,17 @@ jobs:
 
       - name: Run a11y gate
         run: npx playwright test tests/e2e/rebuild-a11y.spec.ts --config tests/e2e/playwright.config.ts
+
+      - name: Upload Playwright artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-${{ github.job }}
+          path: |
+            playwright-report/**
+            test-results/**
+          if-no-files-found: warn
+          retention-days: 7
 
   perf-budget:
     name: Perf Budget

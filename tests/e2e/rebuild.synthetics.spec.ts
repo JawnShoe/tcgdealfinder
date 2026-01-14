@@ -249,16 +249,22 @@ async function assertIntentPrefetchTriggered(
     (window as any).__rebuildIntentPrefetches = [];
   });
 
-  await link.hover();
+  const deadline = Date.now() + 5_000;
 
-  await expect
-    .poll(async () => {
-      const values = await page.evaluate(
-        () => (window as any).__rebuildIntentPrefetches ?? []
-      );
-      return values.includes(expectedHref);
-    })
-    .toBeTruthy();
+  while (Date.now() < deadline) {
+    await link.hover();
+    const didPrefetch = await page.evaluate(
+      (href) =>
+        ((window as any).__rebuildIntentPrefetches ?? []).includes(href),
+      expectedHref
+    );
+    if (didPrefetch) {
+      return;
+    }
+    await page.waitForTimeout(100);
+  }
+
+  expect(false).toBeTruthy();
 }
 
 function assertLoadingSkeletonSourceFile(

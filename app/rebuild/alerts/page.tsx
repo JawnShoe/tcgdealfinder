@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import AlertsShell from "@/components/rebuild/AlertsShell";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
-import ResilienceLabel, {
-  ResilienceMode,
-  ResilienceTier,
-} from "@/components/rebuild/ResilienceLabel";
+import ResilienceLabel from "@/components/rebuild/ResilienceLabel";
+import { evaluateResilience } from "@/lib/rebuild/resilience/evaluateResilience";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
 import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
@@ -40,16 +38,14 @@ export default function RebuildAlertsPage() {
   const alertsAvailable = false;
   const alerts = [];
 
-  let resilienceTier: ResilienceTier = "FULL";
-  let resilienceMode: ResilienceMode = "LIVE";
-
-  if (!isDbConfigured) {
-    resilienceTier = "UNAVAILABLE";
-    resilienceMode = "UNKNOWN";
-  } else if (!alertsAvailable) {
-    resilienceTier = "DEGRADED";
-    resilienceMode = "UNKNOWN";
-  }
+  // Evaluate resilience using the pure function
+  const resilienceResult = evaluateResilience({
+    dbAvailable: isDbConfigured,
+    cacheAvailable: false, // No cache layer yet
+    cacheAgeMs: null,
+    requiredFieldsPresent: alertsAvailable,
+    dataCount: alerts.length,
+  });
 
   const provenanceFields = [
     { label: "DB configured", value: isDbConfigured ? "yes" : "no" },
@@ -67,8 +63,8 @@ export default function RebuildAlertsPage() {
         </div>
         <ResilienceLabel
           className="mb-6"
-          tier={resilienceTier}
-          mode={resilienceMode}
+          tier={resilienceResult.tier}
+          explanation={resilienceResult.explanation}
         />
 
         <header className="rounded-lg border border-slate-200 bg-white p-6">

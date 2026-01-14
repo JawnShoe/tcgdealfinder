@@ -3,6 +3,11 @@ import { headers } from "next/headers";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRebuildFreshnessSnapshot } from "@/lib/rebuild/data/getRebuildOpsSnapshot";
 import {
+  evaluateResilience,
+  getTierLabel,
+  type ResilienceTier,
+} from "@/lib/rebuild/resilience/evaluateResilience";
+import {
   getRequestIdFromHeaders,
   logRequest,
 } from "@/lib/rebuild/observability/logging";
@@ -54,6 +59,27 @@ function formatNumber(value: number | null): string {
   return `${Math.round(value)}`;
 }
 
+function getTierColorClass(tier: ResilienceTier): string {
+  switch (tier) {
+    case "LIVE":
+      return "text-emerald-800";
+    case "CACHED":
+      return "text-blue-800";
+    case "STALE":
+      return "text-amber-800";
+    case "PARTIAL":
+      return "text-orange-800";
+    case "UNAVAILABLE":
+      return "text-slate-700";
+  }
+}
+
+type RouteResilienceStatus = {
+  route: string;
+  tier: ResilienceTier;
+  explanation: string;
+};
+
 export default async function RebuildOpsPage() {
   const start = Date.now();
   const requestId = getRequestIdFromHeaders(headers());
@@ -85,6 +111,63 @@ export default async function RebuildOpsPage() {
     const freshness = await getRebuildFreshnessSnapshot();
     const apiMetrics = await getRebuildApiMetricsSnapshot();
     const outboundClicks = await getRebuildOutboundClicksSnapshot();
+
+    // Compute resilience status for each route based on current data availability
+    const freshnessAgeMs =
+      freshness.ageHours != null ? freshness.ageHours * 60 * 60 * 1000 : null;
+
+    const routeResilienceStatuses: RouteResilienceStatus[] = [
+      {
+        route: "/rebuild",
+        ...evaluateResilience({
+          dbAvailable: isDbConfigured,
+          cacheAvailable: false,
+          cacheAgeMs: freshnessAgeMs,
+          requiredFieldsPresent: freshness.count24h != null,
+          dataCount: freshness.count24h ?? 0,
+        }),
+      },
+      {
+        route: "/rebuild/discovery",
+        ...evaluateResilience({
+          dbAvailable: isDbConfigured,
+          cacheAvailable: false,
+          cacheAgeMs: freshnessAgeMs,
+          requiredFieldsPresent: freshness.count24h != null,
+          dataCount: freshness.count24h ?? 0,
+        }),
+      },
+      {
+        route: "/rebuild/listing/[id]",
+        ...evaluateResilience({
+          dbAvailable: isDbConfigured,
+          cacheAvailable: false,
+          cacheAgeMs: freshnessAgeMs,
+          requiredFieldsPresent: true,
+          dataCount: isDbConfigured ? 1 : 0,
+        }),
+      },
+      {
+        route: "/rebuild/alerts",
+        ...evaluateResilience({
+          dbAvailable: isDbConfigured,
+          cacheAvailable: false,
+          cacheAgeMs: null,
+          requiredFieldsPresent: false, // Alerts not yet available
+          dataCount: 0,
+        }),
+      },
+      {
+        route: "/rebuild/ops",
+        ...evaluateResilience({
+          dbAvailable: isDbConfigured,
+          cacheAvailable: false,
+          cacheAgeMs: null,
+          requiredFieldsPresent: true,
+          dataCount: isDbConfigured ? 1 : 0,
+        }),
+      },
+    ];
 
     const freshnessStatus = isDbConfigured ? freshness.status : "unavailable";
     const freshnessStatusLabel =
@@ -164,6 +247,44 @@ export default async function RebuildOpsPage() {
               Operational visibility and sanity checks for rebuild surfaces.
             </p>
           </header>
+
+          <section
+            className="mt-6 rounded-lg border border-slate-200 bg-white p-6"
+            data-testid="resilience-tiers-panel"
+          >
+            <h2 className="text-lg font-semibold text-slate-900">
+              Resilience Tiers (C4)
+            </h2>
+            <p className="mt-2 text-sm text-slate-700">
+              Current degradation tier for each rebuild route.
+            </p>
+            <dl className="mt-4 space-y-2">
+              {routeResilienceStatuses.map((status) => (
+                <div
+                  key={status.route}
+                  className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50 px-3 py-2"
+                >
+                  <dt className="font-mono text-sm text-slate-900">
+                    {status.route}
+                  </dt>
+                  <dd className="flex items-center gap-2">
+                    <span
+                      className={`text-sm font-semibold ${getTierColorClass(status.tier)}`}
+                    >
+                      {getTierLabel(status.tier)}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {status.explanation}
+                    </span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-3 text-xs text-slate-600">
+              Tiers: LIVE (full data) → CACHED (from cache) → STALE (expired
+              cache) → PARTIAL (missing fields) → UNAVAILABLE (no data).
+            </p>
+          </section>
 
           <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
             <div className="flex items-baseline justify-between">

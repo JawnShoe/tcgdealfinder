@@ -5,10 +5,8 @@ import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import PreferencesBar from "@/components/rebuild/PreferencesBar";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
-import ResilienceLabel, {
-  ResilienceMode,
-  ResilienceTier,
-} from "@/components/rebuild/ResilienceLabel";
+import ResilienceLabel from "@/components/rebuild/ResilienceLabel";
+import { evaluateResilience } from "@/lib/rebuild/resilience/evaluateResilience";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 import {
@@ -26,7 +24,6 @@ import {
 import { buildDiscoveryCanonicalUrl } from "@/lib/rebuild/seo/canonical";
 import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
 
-const FRESHNESS_SLO_SECONDS = 15 * 60;
 const discoveryTitle = buildRebuildTitle("Discovery");
 const discoveryDescription =
   "Browse recent deals from the rebuild pipeline with trust signals.";
@@ -83,7 +80,7 @@ export default async function RebuildDiscoveryPage({
             <ResilienceLabel
               className="mb-6"
               tier="UNAVAILABLE"
-              mode="UNKNOWN"
+              explanation="Discovery disabled via kill switch"
             />
             <section className="rounded-lg border border-slate-200 bg-white p-6">
               <h1 className="text-2xl font-semibold text-slate-900">
@@ -110,18 +107,14 @@ export default async function RebuildDiscoveryPage({
     const hasMissingAge =
       deals.length > 0 && ageSeconds.length !== deals.length;
 
-    let resilienceTier: ResilienceTier = "FULL";
-    let resilienceMode: ResilienceMode = "LIVE";
-    if (!isDbConfigured) {
-      resilienceTier = "UNAVAILABLE";
-      resilienceMode = "UNKNOWN";
-    } else if (deals.length === 0) {
-      resilienceTier = "DEGRADED";
-    } else if (hasMissingAge) {
-      resilienceTier = "DEGRADED";
-    } else if (maxAgeSeconds != null && maxAgeSeconds > FRESHNESS_SLO_SECONDS) {
-      resilienceTier = "DEGRADED";
-    }
+    // Evaluate resilience using the pure function
+    const resilienceResult = evaluateResilience({
+      dbAvailable: isDbConfigured,
+      cacheAvailable: false, // No cache layer yet
+      cacheAgeMs: maxAgeSeconds !== null ? maxAgeSeconds * 1000 : null,
+      requiredFieldsPresent: !hasMissingAge,
+      dataCount: deals.length,
+    });
 
     const provenanceFields = [
       { label: "DB configured", value: isDbConfigured ? "yes" : "no" },
@@ -139,8 +132,8 @@ export default async function RebuildDiscoveryPage({
           </div>
           <ResilienceLabel
             className="mb-6"
-            tier={resilienceTier}
-            mode={resilienceMode}
+            tier={resilienceResult.tier}
+            explanation={resilienceResult.explanation}
           />
 
           <header className="rounded-lg border border-slate-200 bg-white p-6">

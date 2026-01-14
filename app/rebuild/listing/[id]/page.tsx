@@ -7,10 +7,8 @@ import OutboundDealLink from "@/components/rebuild/OutboundDealLink";
 import PredictiveSignalsPanel from "@/components/rebuild/PredictiveSignalsPanel";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
-import ResilienceLabel, {
-  ResilienceMode,
-  ResilienceTier,
-} from "@/components/rebuild/ResilienceLabel";
+import ResilienceLabel from "@/components/rebuild/ResilienceLabel";
+import { evaluateResilience } from "@/lib/rebuild/resilience/evaluateResilience";
 import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRebuildListingById } from "@/lib/rebuild/data/getRebuildListingById";
@@ -27,7 +25,6 @@ type PageProps = {
   params: { id: string };
 };
 
-const FRESHNESS_SLO_SECONDS = 15 * 60;
 const listingDescription =
   "Rebuild listing detail with pricing, trust signals, and provenance.";
 
@@ -82,7 +79,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
             <ResilienceLabel
               className="mb-6"
               tier="UNAVAILABLE"
-              mode="UNKNOWN"
+              explanation="Listing disabled via kill switch"
             />
             <section className="rounded-lg border border-slate-200 bg-white p-6">
               <h1 className="text-2xl font-semibold text-slate-900">Listing</h1>
@@ -101,20 +98,21 @@ export default async function RebuildListingPage({ params }: PageProps) {
       ? await getRebuildListingById(params.id)
       : null;
 
-    let resilienceTier: ResilienceTier = "FULL";
-    let resilienceMode: ResilienceMode = "LIVE";
-    if (!isDbConfigured) {
-      resilienceTier = "UNAVAILABLE";
-      resilienceMode = "UNKNOWN";
-    } else if (!listing) {
-      resilienceTier = "UNAVAILABLE";
-      resilienceMode = "UNKNOWN";
-    } else if (
-      listing.freshness.dataAgeSeconds == null ||
-      listing.freshness.dataAgeSeconds > FRESHNESS_SLO_SECONDS
-    ) {
-      resilienceTier = "DEGRADED";
-    }
+    // Evaluate resilience using the pure function
+    const dataAgeMs =
+      listing?.freshness.dataAgeSeconds != null
+        ? listing.freshness.dataAgeSeconds * 1000
+        : null;
+    const hasRequiredFields =
+      listing != null && listing.freshness.dataAgeSeconds != null;
+
+    const resilienceResult = evaluateResilience({
+      dbAvailable: isDbConfigured,
+      cacheAvailable: false, // No cache layer yet
+      cacheAgeMs: dataAgeMs,
+      requiredFieldsPresent: hasRequiredFields,
+      dataCount: listing ? 1 : 0,
+    });
 
     if (!isDbConfigured) {
       return (
@@ -125,8 +123,8 @@ export default async function RebuildListingPage({ params }: PageProps) {
             </div>
             <ResilienceLabel
               className="mb-6"
-              tier={resilienceTier}
-              mode={resilienceMode}
+              tier={resilienceResult.tier}
+              explanation={resilienceResult.explanation}
             />
             <div className="rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
               <p className="text-sm text-slate-600">
@@ -147,8 +145,8 @@ export default async function RebuildListingPage({ params }: PageProps) {
             </div>
             <ResilienceLabel
               className="mb-6"
-              tier={resilienceTier}
-              mode={resilienceMode}
+              tier={resilienceResult.tier}
+              explanation={resilienceResult.explanation}
             />
             <div className="rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
               <p className="text-sm text-slate-600">
@@ -211,8 +209,8 @@ export default async function RebuildListingPage({ params }: PageProps) {
           />
           <ResilienceLabel
             className="mb-6"
-            tier={resilienceTier}
-            mode={resilienceMode}
+            tier={resilienceResult.tier}
+            explanation={resilienceResult.explanation}
           />
 
           <header className="rounded-lg border border-slate-200 bg-white p-6">

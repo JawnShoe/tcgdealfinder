@@ -30,10 +30,6 @@ Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 
 ---
 
-## Track C: Action Engine Foundations
-
-- [x] C2 Action Engine foundations (alerts + preferences)
-
 ## Track B: Product Excellence (measured, not vibes)
 
 - [x] B1 Performance Baselines
@@ -48,6 +44,7 @@ Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 ## Track C: Trust Moat
 
 - [x] C1 Trust Moat foundation (explainable trust + legacy trust archive)
+- [x] C2 Action Engine foundations (alerts + preferences)
 - [x] C3 Intelligence Layer (rules-based risk signals)
 
 ---

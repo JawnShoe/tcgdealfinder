@@ -1,4 +1,5 @@
-﻿"use client";
+// ARCHIVED: replaced by rebuild lane – do not import
+"use client";
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";

@@ -475,6 +475,14 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
   const opsLink = homeNav.getByRole("link", { name: "Ops" });
   await expect(opsLink).toHaveAttribute("data-intent-prefetch", "true");
 
+  await assertIntentPrefetchTriggered(
+    page,
+    browseDealsLink,
+    "/rebuild/discovery"
+  );
+  await assertIntentPrefetchTriggered(page, alertsLink, "/rebuild/alerts");
+  await assertIntentPrefetchTriggered(page, opsLink, "/rebuild/ops");
+
   await alertsLink.click();
   await page.waitForURL(alertsUrl, { waitUntil: "domcontentloaded" });
 
@@ -490,6 +498,14 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
   );
   const firstListingHref = await firstListingLink.getAttribute("href");
   expect(firstListingHref).not.toBeNull();
+
+  if (firstListingHref) {
+    await assertIntentPrefetchTriggered(
+      page,
+      firstListingLink,
+      firstListingHref
+    );
+  }
 
   await firstListingLink.click();
   await page.waitForURL(/\/rebuild\/listing\//, {
@@ -532,6 +548,12 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
   });
   await expect(exampleListing).toHaveAttribute("data-intent-prefetch", "true");
 
+  await assertIntentPrefetchTriggered(
+    page,
+    exampleListing,
+    "/rebuild/listing/rebuild-e2e-1"
+  );
+
   await exampleListing.click();
   await page.waitForURL(listingUrl, { waitUntil: "domcontentloaded" });
 
@@ -539,27 +561,4 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
 
   await opsLink.click();
   await page.waitForURL(opsUrl, { waitUntil: "domcontentloaded" });
-
-  // Prefetch intent assertions (separate from transition assertions to avoid caching)
-  await page.goto(homeUrl, { waitUntil: "domcontentloaded" });
-  await assertIntentPrefetchTriggered(
-    page,
-    browseDealsLink,
-    "/rebuild/discovery"
-  );
-  await assertIntentPrefetchTriggered(page, alertsLink, "/rebuild/alerts");
-  await assertIntentPrefetchTriggered(page, opsLink, "/rebuild/ops");
-
-  if (firstListingHref) {
-    await page.goto(discoveryUrl, { waitUntil: "domcontentloaded" });
-    const listingLink = page.locator(`a[href='${firstListingHref}']`).first();
-    await assertIntentPrefetchTriggered(page, listingLink, firstListingHref);
-  }
-
-  await page.goto(alertsUrl, { waitUntil: "domcontentloaded" });
-  await assertIntentPrefetchTriggered(
-    page,
-    exampleListing,
-    "/rebuild/listing/rebuild-e2e-1"
-  );
 });

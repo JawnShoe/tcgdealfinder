@@ -140,7 +140,7 @@ async function assertSsrTrustSurfaces(
 
   const body = await response.text();
   expect(body).toContain(complianceCopy);
-  expect(body).toContain("Resilience:");
+  expect(body).toContain("Resilience");
   expect(body).toContain('data-testid="resilience-label"');
   expect(body).toMatch(/data-tier="(LIVE|CACHED|STALE|PARTIAL|UNAVAILABLE)"/);
   expect(body).toContain("Provenance");
@@ -178,8 +178,9 @@ async function assertOpsSsrHeading(request: APIRequestContext, url: string) {
 
 async function assertUiTrustSurfaces(page: Page) {
   await expect(page.getByText(complianceCopy, { exact: true })).toBeVisible();
-  await expect(page.getByText(/Resilience:/)).toBeVisible();
-  await expect(page.getByTestId("resilience-label")).toBeVisible();
+  const resilienceLabel = page.getByTestId("resilience-label");
+  await expect(resilienceLabel).toBeVisible();
+  await expect(resilienceLabel).toContainText(/Resilience/i);
   const tierAttr = await page
     .getByTestId("resilience-label")
     .getAttribute("data-tier");

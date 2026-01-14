@@ -120,3 +120,20 @@ Failure behavior:
 
 - Missing or incorrect tier logic fails CI (test:unit).
 - Missing SSR tier label fails CI (E2E Smoke).
+
+## Perceived Speed Enforcement (C5)
+
+Properties measured (CI-enforced):
+
+- Skeleton coverage exists for rebuild routes (route `loading.tsx` present and exercised).
+- Deferred secondary content (if present) renders a skeleton in SSR HTML and swaps without layout shift.
+- Intent prefetch is wired for rebuild navigation (hover/focus/touch triggers prefetch; no eager prefetch).
+
+Detection and enforcement:
+
+- E2E: `tests/e2e/rebuild.synthetics.spec.ts` (priority hydration SSR fallback markers; intent-prefetch wiring).
+- CLS: `tests/e2e/rebuild-cls.spec.ts` (visual regression budget must remain green).
+
+Failure behavior:
+
+- Missing skeleton markers / broken priority hydration / missing intent-prefetch wiring fails CI (E2E Smoke).

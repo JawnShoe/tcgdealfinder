@@ -12,6 +12,12 @@ type IntentPrefetchLinkProps = {
   prefetchEnabled?: boolean;
 };
 
+declare global {
+  interface Window {
+    __rebuildIntentPrefetches?: string[];
+  }
+}
+
 export default function IntentPrefetchLink({
   href,
   children,
@@ -22,12 +28,23 @@ export default function IntentPrefetchLink({
   const prefetchedRef = useRef(false);
 
   const handlePrefetch = useCallback(() => {
-    if (!prefetchEnabled || prefetchedRef.current) {
+    if (!prefetchEnabled) {
+      return;
+    }
+
+    window.__rebuildIntentPrefetches ??= [];
+    if (!window.__rebuildIntentPrefetches.includes(href)) {
+      window.__rebuildIntentPrefetches.push(href);
+    }
+
+    if (prefetchedRef.current) {
       return;
     }
 
     prefetchedRef.current = true;
-    router.prefetch(href);
+    try {
+      router.prefetch(href);
+    } catch {}
   }, [href, prefetchEnabled, router]);
 
   return (
@@ -35,6 +52,7 @@ export default function IntentPrefetchLink({
       href={href}
       prefetch={false}
       className={className}
+      data-intent-prefetch="true"
       onMouseEnter={handlePrefetch}
       onFocus={handlePrefetch}
       onTouchStart={handlePrefetch}

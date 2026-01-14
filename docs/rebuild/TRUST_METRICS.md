@@ -101,3 +101,22 @@ Detection and enforcement:
 Failure behavior:
 
 - Trust invariant violations fail CI (test:unit).
+
+## Resilience Coverage (C4)
+
+Resilience tier coverage measured:
+
+- All rebuild routes evaluate resilience tier using `evaluateResilience()`.
+- Tier label is SSR-visible (`data-testid="resilience-label"` with `data-tier` attribute).
+- Tier selection is deterministic (same inputs → same tier).
+- No silent degradation (every non-LIVE tier displays explanation).
+
+Detection and enforcement:
+
+- Unit tests: `lib/__tests__/unit/rebuildResilienceEvaluator.test.ts` (one test per tier, deterministic ordering).
+- E2E tests: `tests/e2e/rebuild.synthetics.spec.ts` (SSR visibility, data-tier attribute present on all routes).
+
+Failure behavior:
+
+- Missing or incorrect tier logic fails CI (test:unit).
+- Missing SSR tier label fails CI (E2E Smoke).

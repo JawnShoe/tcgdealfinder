@@ -71,6 +71,55 @@ Jobs:
 - Unexpected server error: return 500 with `{ ok: false, error: "server_error" }` and log the error with requestId.
 - Upstream source unavailable: return 503 with `{ ok: false, error: "upstream_unavailable" }` if a rebuild integration exists (DEFERRED until integrations are introduced).
 
+## Resilience Tiers Contract (C4)
+
+Rebuild routes MUST evaluate and display one of five mutually exclusive resilience tiers. Tier selection is deterministic (same inputs → same tier).
+
+### Tiers (priority order)
+
+| Tier        | Condition                                   | Required Behavior                          |
+| ----------- | ------------------------------------------- | ------------------------------------------ |
+| LIVE        | DB + integrations healthy, data fresh       | Full data, normal UI                       |
+| CACHED      | DB unavailable, cache available and fresh   | Cached data + "Cached" label               |
+| STALE       | Cache expired but usable (exceeds 15m SLO)  | Stale data + "Stale" label + stale warning |
+| PARTIAL     | Some required fields unavailable or no data | Missing fields hidden + explanation        |
+| UNAVAILABLE | No safe data source                         | Empty state + reason + retry guidance      |
+
+### Required surfaces
+
+All rebuild routes MUST wire C4 behavior:
+
+- /rebuild
+- /rebuild/discovery
+- /rebuild/listing/[id]
+- /rebuild/alerts
+- /rebuild/ops (displays tier status for all routes)
+
+### Implementation requirements
+
+1. **Domain-level evaluator**: `lib/rebuild/resilience/evaluateResilience.ts` is a pure function (no IO, no framework imports). Inputs: `dbAvailable`, `cacheAvailable`, `cacheAgeMs`, `requiredFieldsPresent`, `dataCount`. Outputs: `tier`, `explanation`, `uiFlags`.
+
+2. **SSR-first**: Tier label MUST be visible in SSR HTML (`data-testid="resilience-label"` with `data-tier` attribute).
+
+3. **Deterministic**: Same inputs → same outputs. No timestamps, randomness, or environment-dependent branching in tier selection.
+
+4. **Explicit degradation**: No silent failures. Every degraded state MUST be labeled.
+
+### UI Flags
+
+The evaluator returns UI flags for consistent degradation behavior:
+
+- `showRetry`: Display retry guidance
+- `showStaleWarning`: Indicate stale data
+- `showCachedLabel`: Indicate cached mode
+- `showPartialWarning`: Indicate partial data
+- `hidePrice`: Hide price when unreliable
+
+### CI enforcement
+
+- Unit tests: `lib/__tests__/unit/rebuildResilienceEvaluator.test.ts` (one test per tier)
+- E2E tests: `tests/e2e/rebuild.synthetics.spec.ts` (SSR visibility + data-tier attribute)
+
 ## WAF / CDN Baseline (Rebuild Lane)
 
 - Baseline posture: bot mitigation + abuse throttling for public routes and APIs.

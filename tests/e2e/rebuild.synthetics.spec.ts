@@ -141,6 +141,8 @@ async function assertSsrTrustSurfaces(
   const body = await response.text();
   expect(body).toContain(complianceCopy);
   expect(body).toContain("Resilience:");
+  expect(body).toContain('data-testid="resilience-label"');
+  expect(body).toMatch(/data-tier="(LIVE|CACHED|STALE|PARTIAL|UNAVAILABLE)"/);
   expect(body).toContain("Provenance");
   if (options?.expectFetchedAt) {
     expect(body).toContain("Fetched at");
@@ -170,11 +172,20 @@ async function assertOpsSsrHeading(request: APIRequestContext, url: string) {
   expect(response.ok()).toBeTruthy();
   const body = await response.text();
   expect(body).toContain("Rebuild Ops");
+  expect(body).toContain('data-testid="resilience-tiers-panel"');
+  expect(body).toContain("Resilience Tiers (C4)");
 }
 
 async function assertUiTrustSurfaces(page: Page) {
   await expect(page.getByText(complianceCopy, { exact: true })).toBeVisible();
   await expect(page.getByText(/Resilience:/)).toBeVisible();
+  await expect(page.getByTestId("resilience-label")).toBeVisible();
+  const tierAttr = await page
+    .getByTestId("resilience-label")
+    .getAttribute("data-tier");
+  expect(["LIVE", "CACHED", "STALE", "PARTIAL", "UNAVAILABLE"]).toContain(
+    tierAttr
+  );
   await expect(
     page.locator("summary", { hasText: "Provenance" })
   ).toBeVisible();
@@ -221,6 +232,8 @@ async function assertOpsHeading(page: Page) {
   await expect(
     page.getByRole("heading", { name: "Rebuild Ops", exact: true })
   ).toBeVisible();
+  await expect(page.getByTestId("resilience-tiers-panel")).toBeVisible();
+  await expect(page.getByText("Resilience Tiers (C4)")).toBeVisible();
 }
 
 test("rebuild synthetics: trust surfaces visible across rebuild funnel", async ({

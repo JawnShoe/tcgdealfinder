@@ -6,10 +6,8 @@ import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import PreferencesBar from "@/components/rebuild/PreferencesBar";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
-import ResilienceLabel, {
-  ResilienceMode,
-  ResilienceTier,
-} from "@/components/rebuild/ResilienceLabel";
+import ResilienceLabel from "@/components/rebuild/ResilienceLabel";
+import { evaluateResilience } from "@/lib/rebuild/resilience/evaluateResilience";
 import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
@@ -30,7 +28,6 @@ import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-const FRESHNESS_SLO_SECONDS = 15 * 60;
 const homeTitle = buildRebuildTitle("Home");
 const homeDescription =
   "Rebuild home for TCG Deal Finder with recent deals and trust signals.";
@@ -81,18 +78,14 @@ export default async function RebuildHomePage({
     const hasMissingAge =
       deals.length > 0 && ageSeconds.length !== deals.length;
 
-    let resilienceTier: ResilienceTier = "FULL";
-    let resilienceMode: ResilienceMode = "LIVE";
-    if (!isDbConfigured) {
-      resilienceTier = "UNAVAILABLE";
-      resilienceMode = "UNKNOWN";
-    } else if (deals.length === 0) {
-      resilienceTier = "DEGRADED";
-    } else if (hasMissingAge) {
-      resilienceTier = "DEGRADED";
-    } else if (maxAgeSeconds != null && maxAgeSeconds > FRESHNESS_SLO_SECONDS) {
-      resilienceTier = "DEGRADED";
-    }
+    // Evaluate resilience using the pure function
+    const resilienceResult = evaluateResilience({
+      dbAvailable: isDbConfigured,
+      cacheAvailable: false, // No cache layer yet
+      cacheAgeMs: maxAgeSeconds !== null ? maxAgeSeconds * 1000 : null,
+      requiredFieldsPresent: !hasMissingAge,
+      dataCount: deals.length,
+    });
 
     const provenanceFields = [
       { label: "DB configured", value: isDbConfigured ? "yes" : "no" },
@@ -110,8 +103,8 @@ export default async function RebuildHomePage({
           </div>
           <ResilienceLabel
             className="mb-6"
-            tier={resilienceTier}
-            mode={resilienceMode}
+            tier={resilienceResult.tier}
+            explanation={resilienceResult.explanation}
           />
 
           <header className="rounded-lg border border-slate-200 bg-white p-6">

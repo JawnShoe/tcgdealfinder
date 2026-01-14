@@ -443,11 +443,12 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
     ).toBeLessThanOrEqual(8);
   }
 
-  const browseDealsLink = page.getByRole("link", { name: "Browse deals" });
+  const homeNav = page.getByTestId("rebuild-home-nav");
+  const browseDealsLink = homeNav.getByRole("link", { name: "Browse deals" });
   await expect(browseDealsLink).toHaveAttribute("data-intent-prefetch", "true");
-  const alertsLink = page.getByRole("link", { name: "Alerts" });
+  const alertsLink = homeNav.getByRole("link", { name: "Alerts" });
   await expect(alertsLink).toHaveAttribute("data-intent-prefetch", "true");
-  const opsLink = page.getByRole("link", { name: "Ops" });
+  const opsLink = homeNav.getByRole("link", { name: "Ops" });
   await expect(opsLink).toHaveAttribute("data-intent-prefetch", "true");
 
   await delayNextFetch(page, "/rebuild/alerts");

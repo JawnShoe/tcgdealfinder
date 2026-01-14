@@ -28,14 +28,23 @@ export default function IntentPrefetchLink({
   const prefetchedRef = useRef(false);
 
   const handlePrefetch = useCallback(() => {
-    if (!prefetchEnabled || prefetchedRef.current) {
+    if (!prefetchEnabled) {
+      return;
+    }
+
+    window.__rebuildIntentPrefetches ??= [];
+    if (!window.__rebuildIntentPrefetches.includes(href)) {
+      window.__rebuildIntentPrefetches.push(href);
+    }
+
+    if (prefetchedRef.current) {
       return;
     }
 
     prefetchedRef.current = true;
-    router.prefetch(href);
-    window.__rebuildIntentPrefetches ??= [];
-    window.__rebuildIntentPrefetches.push(href);
+    try {
+      router.prefetch(href);
+    } catch {}
   }, [href, prefetchEnabled, router]);
 
   return (

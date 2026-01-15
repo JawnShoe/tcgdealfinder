@@ -143,6 +143,14 @@ retained for auditability and historical context.
 
 ---
 
+## Prerequisite Fixes (Boundary Remediation)
+
+| Type                         | Date       | What                                           | File(s)                                                                                                                   | Proof                                                                                                                                            |
+| ---------------------------- | ---------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Legacy boundary prerequisite | 2026-01-14 | Removed legacy→rebuild import from /api/health | app/api/health/route.ts; lib/observability/logging.ts; lib/observability/metrics.ts; lib/rebuild/observability/logging.ts | `rg -n "(app/rebuild/\|components/rebuild/\|lib/rebuild/)" app components lib pages` returns no matches; TypeScript, lint, tests, build all pass |
+
+---
+
 ## Known gaps / risks
 
 - All Phase 0 CI gates now enforced (no EXEMPT TEMP).

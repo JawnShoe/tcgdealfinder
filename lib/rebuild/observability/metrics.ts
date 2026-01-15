@@ -163,7 +163,7 @@ export async function getRebuildOutboundClicksSnapshot(): Promise<OutboundClicks
     const result = await queryRebuild<{
       total: number | string | null;
       last_24h: number | string | null;
-      last_clicked_at: string | null;
+      last_clicked_at: Date | string | null;
     }>(
       `
         SELECT
@@ -177,7 +177,13 @@ export async function getRebuildOutboundClicksSnapshot(): Promise<OutboundClicks
     const row = result.rows[0];
     const total = row?.total != null ? Number(row.total) : 0;
     const last24h = row?.last_24h != null ? Number(row.last_24h) : 0;
-    const lastClickedAtISO = row?.last_clicked_at ?? null;
+    const lastClickedAtRaw = row?.last_clicked_at ?? null;
+    const lastClickedAt =
+      lastClickedAtRaw != null ? new Date(lastClickedAtRaw) : null;
+    const lastClickedAtISO =
+      lastClickedAt && !Number.isNaN(lastClickedAt.getTime())
+        ? lastClickedAt.toISOString()
+        : null;
 
     if (!total) {
       return {
@@ -185,7 +191,7 @@ export async function getRebuildOutboundClicksSnapshot(): Promise<OutboundClicks
         windowHours: OUTBOUND_WINDOW_HOURS,
         totalClicks: 0,
         last24hClicks: 0,
-        lastClickedAtISO,
+        lastClickedAtISO: null,
       };
     }
 

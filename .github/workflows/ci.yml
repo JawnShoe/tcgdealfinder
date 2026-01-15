@@ -279,6 +279,10 @@ jobs:
       - name: Initialize DB schema
         run: npx tsx scripts/init-db.ts
 
+      - name: Apply rebuild observability migration
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d tcg_deals -f migrations/015_add_rebuild_observability.sql
+
       - name: Seed rebuild E2E listing
         run: |
           PGPASSWORD=postgres psql -h localhost -U postgres -d tcg_deals -f tests/fixtures/rebuild_seed.sql

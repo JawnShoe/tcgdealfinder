@@ -19,7 +19,7 @@ type OutboundDealLinkProps = {
   href: string;
   children: ReactNode;
   className?: string;
-  listingId?: string;
+  listingId: string;
 };
 
 function hasAffiliateParams(href: string): boolean {
@@ -56,7 +56,7 @@ export default function OutboundDealLink({
 
     const payload = JSON.stringify({
       url: href,
-      listingId: listingId ?? null,
+      listingId,
     });
 
     if (typeof navigator !== "undefined" && navigator.sendBeacon) {

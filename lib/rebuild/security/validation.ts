@@ -3,7 +3,7 @@ import { z } from "zod";
 const outboundClickSchema = z
   .object({
     url: z.string().url(),
-    listingId: z.string().min(1).optional(),
+    listingId: z.string().min(1),
   })
   .strict();
 

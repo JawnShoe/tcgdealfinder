@@ -49,6 +49,7 @@ Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 - [x] C4 Resilience Engineering (explicit degradation tiers)
 - [x] C5 Perceived Speed (audit + enforcement)
 - [x] C6 Synthetic Monitoring (guarantee)
+- [ ] C7 Marketplace Compliance (don't get nuked later)
 
 ---
 

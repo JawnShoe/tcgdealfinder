@@ -57,6 +57,41 @@ Jobs:
 
 - Job entrypoints must include per-job throttles or gates. If no public job endpoint exists, this is N/A.
 
+## Marketplace Compliance Contract (C7 - Rebuild Lane)
+
+Marketplace compliance SSOT:
+
+- Versioned per-marketplace checklist lives in `lib/rebuild/compliance/marketplaceCompliance.ts`.
+- Each supported marketplace MUST define:
+  - display rules (disclosure text + placement semantics),
+  - attribution window assumptions (explicit; may be "not modeled"),
+  - caching/storage constraints (what is stored and what is never stored).
+
+Disclosure pattern:
+
+- Disclosure MUST be SSR-visible (not hover-only) and CLS-safe.
+- Canonical disclosure copy is `lib/rebuild/compliance/disclosure.ts`.
+
+Outbound click integrity (server-enforced):
+
+- Endpoint: `app/api/rebuild/outbound-click/route.ts`
+- MUST validate input and reject malformed targets (400 `{ ok: false, error: "invalid_payload" }`).
+- MUST enforce bot filtering for obvious automation (403 `{ ok: false, error: "bot_blocked" }`).
+- MUST suppress duplicate clicks for the same `listingId` + sanitized URL within a short TTL (no extra DB write; still return 200 `{ ok: true }`).
+- MUST perform attribution sanity checks:
+  - listing must exist,
+  - outbound URL must match the listing's stored URL after normalization,
+  - listing marketplace must be supported by the compliance SSOT.
+
+Storage constraints:
+
+- Outbound click URL MUST be stored without query string or fragment (origin + pathname only).
+
+Enforcement (CI):
+
+- Unit: `lib/__tests__/unit/rebuildMarketplaceCompliance.test.ts`
+- Existing rebuild journeys MUST remain green (including synthetic guarantee journeys).
+
 ## Input Validation Contract (Rebuild Lane)
 
 - API routes that accept input MUST validate payloads at entry.

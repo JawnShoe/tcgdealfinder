@@ -1,3 +1,5 @@
+import { REBUILD_COMPLIANCE_DISCLOSURE_COPY } from "@/lib/rebuild/compliance/disclosure";
+
 type ComplianceDisclosureProps = {
   className?: string;
 };
@@ -7,7 +9,7 @@ export default function ComplianceDisclosure({
 }: ComplianceDisclosureProps) {
   return (
     <p className={`text-xs text-slate-600 ${className ?? ""}`}>
-      We may earn a commission from qualifying purchases.
+      {REBUILD_COMPLIANCE_DISCLOSURE_COPY}
     </p>
   );
 }

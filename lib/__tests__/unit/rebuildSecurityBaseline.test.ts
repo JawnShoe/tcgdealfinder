@@ -108,7 +108,10 @@ test("outbound click route returns 429 when rate limit is exceeded", async () =>
             "content-type": "application/json",
             "x-forwarded-for": ip,
           },
-          body: JSON.stringify({ url: "https://example.com/listing/123" }),
+          body: JSON.stringify({
+            url: "https://example.com/listing/123",
+            listingId: "listing-123",
+          }),
         }
       );
 

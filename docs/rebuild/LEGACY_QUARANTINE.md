@@ -84,6 +84,24 @@ npm run build
 - Requirement: Rebuild parity must exist and be tested
 - Deliverable: Routes redirect to rebuild equivalents OR are deleted with justification
 
+### Stage 1 Kill List (Visitor Surfaces)
+
+| Legacy Route          | Current Status | Disposition                 | Rebuild Target          | Parity Criteria                                                                                          | VISUAL_CONTRACT | Evidence Hook |
+| --------------------- | -------------- | --------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------- | --------------- | ------------- |
+| `/`                   | Redirected     | Replace in rebuild          | `/rebuild`              | Root entrypoint ownership; SSR-stable trust surfaces; compliance disclosure                              | Yes             | PR #262       |
+| `/top-deals`          | Active         | Redirect to rebuild         | `/rebuild/discovery`    | Discovery route exists; sort/filter parity; trust moat present; synthetics cover journey                 | Yes             | PR TBD        |
+| `/newest`             | Active         | Redirect to rebuild         | `/rebuild/discovery`    | Discovery route exists; sort=newest preset; trust moat present; synthetics cover journey                 | Yes             | PR TBD        |
+| `/ending-soon`        | Active         | Redirect to rebuild         | `/rebuild/discovery`    | Discovery route exists; sort=endingSoon preset; trust moat present; synthetics cover journey             | Yes             | PR TBD        |
+| `/search`             | Active         | Redirect to rebuild         | `/rebuild/discovery`    | Discovery route exists; query param support; trust moat present; synthetics cover journey                | Yes             | PR TBD        |
+| `/alerts`             | Active         | Redirect to rebuild         | `/rebuild/alerts`       | Alerts shell exists; alert evaluation API exists; SSR-visible compliance disclosure                      | Yes             | PR TBD        |
+| `/alerts/unsubscribe` | Active         | Redirect to rebuild or Port | `/rebuild/alerts`       | Unsubscribe flow wired; email link compatibility maintained                                              | Maybe           | PR TBD        |
+| `/watchlist`          | Active         | Retire or Port              | N/A or `/rebuild`       | Watchlist is dual-mode (localStorage + DB flag); rebuild does not expose watchlist UI yet                | No              | PR TBD        |
+| `/cards/[cardId]`     | Active         | Redirect to rebuild         | `/rebuild/listing/[id]` | Listing detail exists; cardId→listingId mapping deterministic; trust panel + confidence + provenance SSR | Yes             | PR TBD        |
+| `/sets`               | Active         | Redirect to rebuild         | `/rebuild/discovery`    | Discovery route exists; set filter parity; trust moat present                                            | Yes             | PR TBD        |
+| `/sets/[setId]`       | Active         | Redirect to rebuild         | `/rebuild/discovery`    | Discovery route exists; set filter by setId; trust moat present                                          | Yes             | PR TBD        |
+| `/catalog`            | Active         | Retire                      | N/A                     | Catalog route is low-traffic utility; rebuild does not require catalog UI                                | N/A             | PR TBD        |
+| `/catalog/sets/[...]` | Active         | Retire                      | N/A                     | Catalog route is low-traffic utility; rebuild does not require catalog UI                                | N/A             | PR TBD        |
+
 **Stage 2: Admin surfaces migrate**
 
 - Scope: `/admin/**`, `/debug/**` routes and components

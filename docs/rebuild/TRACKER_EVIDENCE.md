@@ -156,9 +156,10 @@ retained for auditability and historical context.
 
 ## Legacy Decommission Program
 
-| Item                                     | Date       | Evidence (short)                                                                                                                                                                                                                                | PR  |
-| ---------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| Legacy Decommission Program Ratification | 2026-01-15 | ADR-0019 added to ADR_LOG.md (decision + scope + guardrails + Upgrade Ledger template); Legacy Decommission Contract added to CONTRACTS.md; Decommission Stages added to LEGACY_QUARANTINE.md; Decommission Gates added to RELEASE_CHECKLIST.md | TBD |
+| Item                                           | Date       | Evidence (short)                                                                                                                                                                                                                                                                                                                                                   | PR   |
+| ---------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
+| Legacy Decommission Program Ratification       | 2026-01-15 | ADR-0019 added to ADR_LOG.md (decision + scope + guardrails + Upgrade Ledger template); Legacy Decommission Contract added to CONTRACTS.md; Decommission Stages added to LEGACY_QUARANTINE.md; Decommission Gates added to RELEASE_CHECKLIST.md                                                                                                                    | #311 |
+| Stage 1 Planning: Kill List + Ledger Bootstrap | 2026-01-15 | Upgrade Ledger in ADR-0019 populated with 9 completed rebuild surfaces (/, /rebuild, /rebuild/discovery, /rebuild/listing/[id], /rebuild/ops, /rebuild/alerts, Synthetic Guarantee, Marketplace Compliance, shared observability); Stage 1 Kill List added to LEGACY_QUARANTINE.md with 13 visitor routes (disposition + parity criteria + VISUAL_CONTRACT status) | #312 |
 
 ---
 

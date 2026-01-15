@@ -258,3 +258,24 @@
   - New signals must follow the same pattern (pure, deterministic, one-sentence explainable).
   - Risk flags are available for future UI consumption but not wired in this track.
   - Intelligence results are attached to `ListingDomain.intelligence?` (optional field).
+
+## ADR-0019: Start Legacy Decommission Program
+
+- Status: Accepted
+- Context: The rebuild lane is now complete and proven. Legacy code must be systematically decommissioned while preserving enterprise-grade auditability and VISUAL_CONTRACT compliance.
+- Decision: Start the legacy decommission program with the following governance:
+  - **Scope**: Legacy runtime routes/components/libs are in-scope. Scripts are in-scope but phased.
+  - **Guardrails**: Boundary rules + CI gates remain fail-hard during decommission.
+  - **Upgrade Ledger**: Every migration PR must include a Before/After/Why entry documenting the surface change.
+  - **Cutover discipline**: Legacy routes must not be silently changed. Redirect/cutover must be explicit and tested.
+  - **VISUAL_CONTRACT enforcement**: Every migrated user-visible surface must respect VISUAL_CONTRACT.
+- Consequences:
+  - Legacy deletion PRs require parity definition, test updates, and evidence entries.
+  - Boundary cleanliness is a prerequisite for all decommission work.
+  - The Upgrade Ledger provides an auditable migration trail.
+
+### Upgrade Ledger
+
+| Surface | Before behavior | After behavior | Why upgrade | Evidence (PR link + tests) |
+| ------- | --------------- | -------------- | ----------- | -------------------------- |
+| (empty) | (empty)         | (empty)        | (empty)     | (empty)                    |

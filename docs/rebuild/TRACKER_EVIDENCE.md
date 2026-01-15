@@ -145,9 +145,20 @@ retained for auditability and historical context.
 
 ## Prerequisite Fixes (Boundary Remediation)
 
-| Type                         | Date       | What                                           | File(s)                                                                                                                   | Proof                                                                                                                                            |
-| ---------------------------- | ---------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Legacy boundary prerequisite | 2026-01-14 | Removed legacy→rebuild import from /api/health | app/api/health/route.ts; lib/observability/logging.ts; lib/observability/metrics.ts; lib/rebuild/observability/logging.ts | `rg -n "(app/rebuild/\|components/rebuild/\|lib/rebuild/)" app components lib pages` returns no matches; TypeScript, lint, tests, build all pass |
+| Type                         | Date       | What                                                        | File(s)                                                                                                                   | Proof                                                                                                                                                 |
+| ---------------------------- | ---------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legacy boundary prerequisite | 2026-01-14 | Removed legacy→rebuild import from /api/health              | app/api/health/route.ts; lib/observability/logging.ts; lib/observability/metrics.ts; lib/rebuild/observability/logging.ts | `rg -n "(app/rebuild/\|components/rebuild/\|lib/rebuild/)" app components lib pages` returns no matches; TypeScript, lint, tests, build all pass      |
+| Legacy quarantine expansion  | 2026-01-15 | Verified quarantine complete - no additional files eligible | legacy/archive/<domain>/\*\* (9 files already archived per PR #299); Boundary Audit 2026-01-14 reference                  | All quarantine-eligible files already moved per PR #299. No legacy imports found. Build passes. Boundary clean (rebuild→legacy: 0, legacy→rebuild: 0) |
+
+---
+
+---
+
+## Legacy Decommission Program
+
+| Item                                     | Date       | Evidence (short)                                                                                                                                                                                                                                | PR  |
+| ---------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Legacy Decommission Program Ratification | 2026-01-15 | ADR-0019 added to ADR_LOG.md (decision + scope + guardrails + Upgrade Ledger template); Legacy Decommission Contract added to CONTRACTS.md; Decommission Stages added to LEGACY_QUARANTINE.md; Decommission Gates added to RELEASE_CHECKLIST.md | TBD |
 
 ---
 

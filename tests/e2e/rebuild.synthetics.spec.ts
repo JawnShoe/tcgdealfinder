@@ -21,6 +21,13 @@ const complianceCopy = "We may earn a commission from qualifying purchases.";
 
 test.skip(!databaseUrl, "DATABASE_URL not set for rebuild synthetics.");
 
+function buildCanonicalDiscoveryUrl(searchParams?: URLSearchParams): string {
+  return buildDiscoveryCanonicalUrl(searchParams).replace(
+    "/rebuild/discovery",
+    "/discovery"
+  );
+}
+
 test("Stage 1 decommission: /top-deals redirects to /rebuild/discovery (top deals preset)", async ({
   page,
   request,
@@ -334,13 +341,15 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
   expect(discoveryQueryResponse.ok()).toBeTruthy();
   const discoveryQueryBody = await discoveryQueryResponse.text();
   assertSeoBasics(discoveryQueryBody, {
-    canonical: buildDiscoveryCanonicalUrl(
+    canonical: buildCanonicalDiscoveryUrl(
       new URLSearchParams("sort=biggest-discount&foo=bar")
     ),
     indexable: true,
   });
 
   const routes = [
+    "/",
+    "/discovery",
     "/rebuild",
     "/rebuild/discovery",
     `/rebuild/listing/${encodeURIComponent(listingId)}`,
@@ -366,12 +375,26 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
     }
 
     const expectFetchedAt =
-      route === "/rebuild" || route === "/rebuild/discovery";
+      route === "/" ||
+      route === "/discovery" ||
+      route === "/rebuild" ||
+      route === "/rebuild/discovery";
     const response = await request.get(url);
     expect(response.ok()).toBeTruthy();
     const body = await response.text();
 
-    if (route === "/rebuild") {
+    if (
+      route === "/" ||
+      route === "/discovery" ||
+      route === "/rebuild/discovery"
+    ) {
+      assertSeoBasics(body, {
+        canonical: buildCanonicalDiscoveryUrl(),
+        indexable: true,
+      });
+      const title = extractTitle(body);
+      expect(title).toBe(buildRebuildTitle("Discovery"));
+    } else if (route === "/rebuild") {
       assertSeoBasics(body, {
         canonical: buildCanonicalUrl("/rebuild"),
         indexable: true,
@@ -380,13 +403,6 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
       expect(findJsonLdByType(jsonLd, "WebApplication")).toBeTruthy();
       const title = extractTitle(body);
       expect(title).toBe(buildRebuildTitle("Home"));
-    } else if (route === "/rebuild/discovery") {
-      assertSeoBasics(body, {
-        canonical: buildDiscoveryCanonicalUrl(),
-        indexable: true,
-      });
-      const title = extractTitle(body);
-      expect(title).toBe(buildRebuildTitle("Discovery"));
     } else if (route.startsWith("/rebuild/listing/")) {
       assertSeoBasics(body, {
         canonical: buildListingCanonicalUrl(listingId),

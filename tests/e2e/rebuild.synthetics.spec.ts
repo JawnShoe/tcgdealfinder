@@ -21,6 +21,33 @@ const complianceCopy = "We may earn a commission from qualifying purchases.";
 
 test.skip(!databaseUrl, "DATABASE_URL not set for rebuild synthetics.");
 
+test("Stage 1 decommission: /top-deals redirects to /rebuild/discovery (top deals preset)", async ({
+  page,
+  request,
+}) => {
+  const legacyUrl = `${baseURL}/top-deals`;
+  const expectedPath = "/rebuild/discovery?sort=biggest-discount";
+
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+
+  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(
+    new RegExp(`/rebuild/discovery\\?sort=biggest-discount`)
+  );
+  await expect(page.getByLabel("Sort")).toHaveValue("biggest-discount");
+  await assertUiTrustSurfaces(page);
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

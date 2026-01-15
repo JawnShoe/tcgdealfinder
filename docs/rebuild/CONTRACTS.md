@@ -155,6 +155,22 @@ The evaluator returns UI flags for consistent degradation behavior:
 - Unit tests: `lib/__tests__/unit/rebuildResilienceEvaluator.test.ts` (one test per tier)
 - E2E tests: `tests/e2e/rebuild.synthetics.spec.ts` (SSR visibility + data-tier attribute)
 
+## Legacy Decommission Contract
+
+**Objective**: Rebuild is the only product; legacy removed.
+
+**Non-negotiables during decommission**:
+
+- No legacy → rebuild imports (must remain 0)
+- No rebuild → legacy imports (must remain 0)
+- Every migrated user-visible surface must respect VISUAL_CONTRACT
+- Every migration PR must include a Before/After/Why entry in the Upgrade Ledger (see ADR-0019)
+
+**Cutover rules**:
+
+- Legacy routes must not be silently changed without parity definition
+- Redirect/cutover must be explicit and tested
+
 ## WAF / CDN Baseline (Rebuild Lane)
 
 - Baseline posture: bot mitigation + abuse throttling for public routes and APIs.

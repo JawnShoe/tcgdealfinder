@@ -66,6 +66,42 @@ grep -rE "from ['\"].*legacy|import.*from ['\"].*legacy" app/rebuild lib/rebuild
 npm run build
 ```
 
+## Decommission Stages
+
+**Prerequisite**: Boundary must remain clean (0 legacy→rebuild imports, 0 rebuild→legacy imports).
+
+**Stage 0: Governance + kill list**
+
+- Ratify decommission program (ADR-0019 + Legacy Decommission Contract in CONTRACTS.md)
+- Define Upgrade Ledger template
+- Lock Decommission Gates in RELEASE_CHECKLIST.md
+- Status: COMPLETE (this PR)
+
+**Stage 1: Visitor surfaces migrate**
+
+- Scope: User-facing routes and components not yet migrated to rebuild
+- Examples: `/newest`, `/top-deals`, `/ending-soon`, `/search` (if not yet redirected)
+- Requirement: Rebuild parity must exist and be tested
+- Deliverable: Routes redirect to rebuild equivalents OR are deleted with justification
+
+**Stage 2: Admin surfaces migrate**
+
+- Scope: `/admin/**`, `/debug/**` routes and components
+- Requirement: Rebuild ops dashboard must provide equivalent functionality OR admin routes are documented as deprecated
+- Deliverable: Admin routes either migrated or explicitly deprecated with runbook
+
+**Stage 3: Pipelines/scripts migrate**
+
+- Scope: Scripts that import from legacy lib files (see Script-Only Lib Files above)
+- Requirement: Rebuild equivalents exist in `lib/rebuild/**` OR scripts are refactored to use rebuild data access patterns
+- Deliverable: Zero legacy lib imports from scripts
+
+**Stage 4: Delete legacy**
+
+- Scope: Remove `legacy/**`, `app/cards/**`, `app/sets/**`, and any remaining non-rebuild runtime code
+- Requirement: All prior stages complete, boundary clean, CI green, E2E passing
+- Deliverable: Legacy namespace removed from repo
+
 ## Rules
 
 1. Moves only — no edits to quarantined files

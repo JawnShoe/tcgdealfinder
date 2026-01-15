@@ -161,6 +161,16 @@ Defaults: OFF (unset).
   - Effect: Disable /rebuild/listing/[id] content and render a safe "temporarily disabled" state.
   - Enforced in: app/rebuild/listing/[id]/page.tsx
 
+## Decommission Gates
+
+Required before any legacy deletion PR can merge:
+
+1. **Parity defined + verified**: Rebuild equivalent exists and behavior is documented in Upgrade Ledger (ADR-0019)
+2. **Tests updated**: E2E/visual/a11y/perf tests updated as applicable for the migrated surface
+3. **Synthetics updated**: If flows change, synthetics (rebuild.synthetics.guarantee.spec.ts) updated to cover new paths
+4. **VISUAL_CONTRACT updated**: If user-visible changes, VISUAL_CONTRACT compliance confirmed and any contract updates merged
+5. **TRACKER_EVIDENCE row added**: Migration PR recorded in TRACKER_EVIDENCE.md with Before/After/Why and evidence links
+
 ## A11y Baseline Evidence (Keyboard-only pass)
 
 Date: 2026-01-11

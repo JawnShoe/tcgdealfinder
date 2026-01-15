@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import {
   getRequestIdFromHeaders,
   logRequest,
-} from "@/lib/rebuild/observability/logging";
-import { recordRebuildApiRequest } from "@/lib/rebuild/observability/metrics";
+} from "@/lib/observability/logging";
+import { recordApiRequest } from "@/lib/observability/metrics";
 
 // Optional: Import query for freshness checks
 // Only runs DB queries if DATABASE_URL is available
@@ -466,7 +466,7 @@ export async function GET(request: Request) {
 
   response.headers.set("x-request-id", requestId);
 
-  await recordRebuildApiRequest({
+  await recordApiRequest({
     route: "/api/health",
     statusCode: status,
     durationMs: Date.now() - start,

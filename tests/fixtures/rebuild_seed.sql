@@ -1,4 +1,26 @@
 -- Deterministic seed data for rebuild E2E smoke tests.
+
+-- Create a test card for cardId->listingId mapping tests (Stage 1 decommission: /cards/[cardId])
+-- Uses id=99999 to avoid conflicts with production data
+INSERT INTO cards (
+  id,
+  name,
+  set_name,
+  card_number,
+  condition_bucket
+) VALUES (
+  99999,
+  'E2E Test Card',
+  'E2E Test Set',
+  '001',
+  'NM'
+)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  set_name = EXCLUDED.set_name,
+  card_number = EXCLUDED.card_number,
+  condition_bucket = EXCLUDED.condition_bucket;
+
 INSERT INTO listings (
   listing_id,
   title,
@@ -23,7 +45,8 @@ INSERT INTO listings (
   snapshot_at,
   ingested_at,
   updated_at,
-  created_at
+  created_at,
+  card_id
 ) VALUES (
   'rebuild-e2e-1',
   'Rebuild E2E Listing',
@@ -48,7 +71,8 @@ INSERT INTO listings (
   '2026-01-01T00:00:00Z',
   '2026-01-01T00:00:00Z',
   '2026-01-01T00:00:00Z',
-  '2026-01-01T00:00:00Z'
+  '2026-01-01T00:00:00Z',
+  99999
 )
 ON CONFLICT (listing_id) DO UPDATE SET
   title = EXCLUDED.title,
@@ -73,4 +97,5 @@ ON CONFLICT (listing_id) DO UPDATE SET
   snapshot_at = EXCLUDED.snapshot_at,
   ingested_at = EXCLUDED.ingested_at,
   updated_at = EXCLUDED.updated_at,
-  created_at = EXCLUDED.created_at;
+  created_at = EXCLUDED.created_at,
+  card_id = EXCLUDED.card_id;

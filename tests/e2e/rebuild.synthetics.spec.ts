@@ -250,6 +250,58 @@ test("Stage 1 decommission: no watchlist star buttons on discovery page", async 
   await expect(page.locator('button:has-text("★")')).toHaveCount(0);
 });
 
+// Seed data uses card_id=99999 linked to listing_id='rebuild-e2e-1'
+const seedCardId = 99999;
+const seedListingId = "rebuild-e2e-1";
+
+test("Stage 1 decommission: /cards/[cardId] redirects to /rebuild/listing/[id]", async ({
+  page,
+  request,
+}) => {
+  const legacyUrl = `${baseURL}/cards/${seedCardId}`;
+  const expectedPath = `/rebuild/listing/${seedListingId}`;
+
+  // Verify 308 redirect with maxRedirects: 0
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  // Location can be absolute or relative
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+
+  // Verify browser navigation lands on rebuild listing and passes trust surface assertions
+  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(new RegExp(`/rebuild/listing/${seedListingId}`));
+  await assertUiTrustSurfaces(page);
+});
+
+test("Stage 1 decommission: /cards/[cardId] returns 404 for unknown cardId", async ({
+  request,
+}) => {
+  // Use a cardId that doesn't exist in seed data
+  const unknownCardId = 1;
+  const legacyUrl = `${baseURL}/cards/${unknownCardId}`;
+
+  const response = await request.get(legacyUrl);
+  expect(response.status()).toBe(404);
+});
+
+test("Stage 1 decommission: /cards/[cardId] returns 404 for invalid cardId", async ({
+  request,
+}) => {
+  // Invalid cardId (not a number)
+  const invalidUrl = `${baseURL}/cards/invalid`;
+
+  const response = await request.get(invalidUrl);
+  expect(response.status()).toBe(404);
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

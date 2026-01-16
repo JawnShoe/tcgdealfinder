@@ -59,12 +59,6 @@ export function SiteHeader() {
             >
               Newest
             </Link>
-            <Link
-              href="/watchlist"
-              className="px-2 py-1 text-slate-800 hover:text-slate-900 rounded-md hover:bg-slate-100"
-            >
-              Watchlist
-            </Link>
           </nav>
         </div>
       </div>

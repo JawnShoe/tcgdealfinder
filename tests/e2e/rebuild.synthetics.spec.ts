@@ -203,6 +203,53 @@ test("Rebuild unsubscribe endpoint: returns appropriate response for invalid tok
   );
 });
 
+test("Stage 1 decommission: /watchlist redirects to /rebuild/discovery", async ({
+  page,
+  request,
+}) => {
+  const legacyUrl = `${baseURL}/watchlist`;
+  const expectedPath = "/rebuild/discovery";
+
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+
+  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(new RegExp(`/rebuild/discovery`));
+  await assertUiTrustSurfaces(page);
+});
+
+test("Stage 1 decommission: header does not contain Watchlist link", async ({
+  page,
+}) => {
+  await page.goto(`${baseURL}/rebuild`, { waitUntil: "domcontentloaded" });
+  const header = page.locator("header");
+  await expect(header).toBeVisible();
+  await expect(header.getByRole("link", { name: "Watchlist" })).toHaveCount(0);
+});
+
+test("Stage 1 decommission: no watchlist star buttons on discovery page", async ({
+  page,
+}) => {
+  await page.goto(`${baseURL}/rebuild/discovery`, {
+    waitUntil: "domcontentloaded",
+  });
+  // Star buttons used aria-label "Watch this card" or similar
+  await expect(page.locator('[aria-label*="watchlist"]')).toHaveCount(0);
+  await expect(page.locator('[aria-label*="Watch this card"]')).toHaveCount(0);
+  // The star unicode characters used by watchlist
+  await expect(page.locator('button:has-text("☆")')).toHaveCount(0);
+  await expect(page.locator('button:has-text("★")')).toHaveCount(0);
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

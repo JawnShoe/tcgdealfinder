@@ -16,7 +16,6 @@ import {
   SellerNameWithTooltip,
   formatSellerSalesCount,
 } from "../components/SellerNameWithTooltip";
-import { WatchlistStarButton } from "../components/WatchlistStarButton";
 import { getSellerDisplayData } from "./sellerDisplay";
 import type { DealViewModel } from "./dealViewModel";
 import {
@@ -125,10 +124,6 @@ const CardColumn: ColumnSpec = {
   renderCell: (vm, options) => {
     // Prefer stock image (TCGplayer) over listing thumbnail
     const imageUrl = vm.stockImageUrl ?? vm.thumbnailUrl;
-    const cardId = vm.deal.card?.id ?? vm.deal.cardId ?? null;
-    const cardName =
-      vm.deal.card?.name ?? vm.deal.cardName ?? vm.deal.title ?? null;
-    const setName = vm.deal.card?.setName ?? vm.deal.setName ?? null;
     return (
       <div className="flex items-start gap-2.5">
         {imageUrl ? (
@@ -144,27 +139,18 @@ const CardColumn: ColumnSpec = {
         ) : (
           <div className="flex h-16 w-16 md:h-12 md:w-12 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
         )}
-        <div className="flex min-w-0 flex-1 items-start gap-2">
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <CardIdentityBlock
-              identity={buildCardIdentityFromDeal(vm.deal)}
-              primaryHref={vm.affiliateUrl}
-              showListingTitle={options?.showListingTitle ?? false}
-              showViewCardLink={options?.showViewCardLink ?? true}
-            />
-            {vm.deal.historicBaselineConfidence === "none" ? (
-              <p className="text-xs text-amber-600">
-                {baselineBadgeLabel(vm.deal.historicBaselineBucketUsed)}
-              </p>
-            ) : null}
-          </div>
-          <WatchlistStarButton
-            cardId={cardId ?? undefined}
-            cardName={cardName ?? undefined}
-            setName={setName ?? null}
-            initialIsWatched={vm.deal.isWatched ?? false}
-            className="flex-shrink-0"
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <CardIdentityBlock
+            identity={buildCardIdentityFromDeal(vm.deal)}
+            primaryHref={vm.affiliateUrl}
+            showListingTitle={options?.showListingTitle ?? false}
+            showViewCardLink={options?.showViewCardLink ?? true}
           />
+          {vm.deal.historicBaselineConfidence === "none" ? (
+            <p className="text-xs text-amber-600">
+              {baselineBadgeLabel(vm.deal.historicBaselineBucketUsed)}
+            </p>
+          ) : null}
         </div>
       </div>
     );

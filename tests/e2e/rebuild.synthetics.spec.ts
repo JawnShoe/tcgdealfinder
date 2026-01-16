@@ -231,9 +231,9 @@ test("Stage 1 decommission: header does not contain Watchlist link", async ({
   page,
 }) => {
   await page.goto(`${baseURL}/rebuild`, { waitUntil: "domcontentloaded" });
-  const header = page.locator("header");
-  await expect(header).toBeVisible();
-  await expect(header.getByRole("link", { name: "Watchlist" })).toHaveCount(0);
+  const banner = page.getByRole("banner");
+  await expect(banner).toBeVisible();
+  await expect(banner.getByRole("link", { name: "Watchlist" })).toHaveCount(0);
 });
 
 test("Stage 1 decommission: no watchlist star buttons on discovery page", async ({

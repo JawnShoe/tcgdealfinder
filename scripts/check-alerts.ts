@@ -420,7 +420,7 @@ async function notifyEmailSubscribers(args: {
       }
     }
 
-    const unsubscribeLink = `${siteUrl}/api/alerts/unsubscribe?token=${encodeURIComponent(sub.unsubscribeToken)}`;
+    const unsubscribeLink = `${siteUrl}/api/rebuild/alerts/unsubscribe?token=${encodeURIComponent(sub.unsubscribeToken)}`;
     const text = `Good news! ${card.name} (${card.set_name}) is now ${discountText}.
 Price: ${formatCurrency(args.totalPrice)}
 Historic median: ${formatCurrency(args.historicPrice)}

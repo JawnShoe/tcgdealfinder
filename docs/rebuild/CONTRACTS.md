@@ -1,5 +1,26 @@
 # Rebuild Contracts
 
+## Championship Rebuild Plan — Archived
+
+**Status: Archived / Completed**
+
+The Championship Rebuild Plan (CRP) is completed and retained for historical provenance only.
+
+The CRP is **NOT** operational authority. It MUST NOT be used to:
+
+- decide next steps,
+- define parity requirements,
+- introduce new constraints or gates,
+- override current rebuild governance.
+
+Active authority for rebuild and legacy decommission decisions lives in:
+
+- `docs/rebuild/LEGACY_QUARANTINE.md`
+- `docs/rebuild/TRACKER_EVIDENCE.md`
+- `docs/rebuild/CONTRACTS.md` (this file)
+
+If any guidance in the CRP conflicts with active authority, active authority wins and the CRP remains unchanged as a historical record.
+
 ## Visual Contract
 
 See docs/rebuild/VISUAL_CONTRACT.md.

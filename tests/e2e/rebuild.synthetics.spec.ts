@@ -129,6 +129,30 @@ test("Stage 1 decommission: /search redirects to /rebuild/discovery", async ({
   await assertUiTrustSurfaces(page);
 });
 
+test("Stage 1 decommission: /sets redirects to /rebuild/discovery", async ({
+  page,
+  request,
+}) => {
+  const legacyUrl = `${baseURL}/sets`;
+  const expectedPath = "/rebuild/discovery";
+
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+
+  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(new RegExp(`/rebuild/discovery`));
+  await assertUiTrustSurfaces(page);
+});
+
 test("Stage 1 decommission: /alerts redirects to /rebuild/alerts", async ({
   page,
   request,

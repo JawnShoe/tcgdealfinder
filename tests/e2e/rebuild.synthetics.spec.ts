@@ -154,6 +154,55 @@ test("Stage 1 decommission: /alerts redirects to /rebuild/alerts", async ({
   await assertAlertsHeading(page);
 });
 
+test("Stage 1 decommission: /api/alerts/unsubscribe redirects to rebuild endpoint", async ({
+  request,
+}) => {
+  const testToken = "test-token-e2e-redirect";
+  const legacyUrl = `${baseURL}/api/alerts/unsubscribe?token=${testToken}`;
+  const expectedPath = `/api/rebuild/alerts/unsubscribe?token=${testToken}`;
+
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+});
+
+test("Rebuild unsubscribe endpoint: returns 400 for missing token", async ({
+  request,
+}) => {
+  const url = `${baseURL}/api/rebuild/alerts/unsubscribe`;
+
+  const response = await request.get(url);
+  // When alerts are disabled, returns 501; when enabled, returns 400 for missing token
+  expect([400, 501]).toContain(response.status());
+
+  const body = await response.text();
+  expect(body).toMatch(/Missing unsubscribe token|Alerts are not enabled/i);
+});
+
+test("Rebuild unsubscribe endpoint: returns appropriate response for invalid token", async ({
+  request,
+}) => {
+  const invalidToken = "invalid-token-does-not-exist";
+  const url = `${baseURL}/api/rebuild/alerts/unsubscribe?token=${invalidToken}`;
+
+  const response = await request.get(url);
+  // When alerts are disabled, returns 501; when enabled, returns 400 for invalid token
+  expect([400, 501]).toContain(response.status());
+
+  const body = await response.text();
+  expect(body).toMatch(
+    /invalid or has already been used|Alerts are not enabled/i
+  );
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

@@ -30,29 +30,6 @@ Scaffold CI pipeline with the 5 gates (may fail initially, but exists):
 
 ---
 
-## Track B: Product Excellence (measured, not vibes)
-
-- [x] B1 Performance Baselines
-- [x] B2 Accessibility Baseline
-- [x] B3 Observability Baseline + Ops Readiness (solo realistic)
-- [x] B4 UX Polish Baseline
-- [x] B5 Security + Reliability Baseline
-- [x] B6 SEO + Structured Data Baseline
-
----
-
-## Track C: Trust Moat
-
-- [x] C1 Trust Moat foundation (explainable trust + legacy trust archive)
-- [x] C2 Action Engine foundations (alerts + preferences)
-- [x] C3 Intelligence Layer (rules-based risk signals)
-- [x] C4 Resilience Engineering (explicit degradation tiers)
-- [x] C5 Perceived Speed (audit + enforcement)
-- [x] C6 Synthetic Monitoring (guarantee)
-- [x] C7 Marketplace Compliance (don't get nuked later)
-
----
-
 ## Weeks 1-2: Phase 0 - Prove the Architecture
 
 Deliverable: one route (`/rebuild/listing/[id]`) that:
@@ -121,3 +98,37 @@ Only after Phase 2 is "boringly stable":
 - [x] Predictive signals beyond rules-based
 
 ---
+
+## Track A: Stability / Governance (prevents rebuild loops)
+
+- [x] PR Ritual Enforcement (template + disclosure)
+- [x] Boundary Discipline (UI → domain → data → integrations)
+
+---
+
+## Track B: Product Excellence (measured, not vibes)
+
+- [x] B1 Performance Baselines
+- [x] B2 Accessibility Baseline
+- [x] B3 Observability Baseline + Ops Readiness (solo realistic)
+- [x] B4 UX Polish Baseline
+- [x] B5 Security + Reliability Baseline
+- [x] B6 SEO + Structured Data Baseline
+
+---
+
+## Track C: Trust Moat
+
+- [x] C1 Trust Moat foundation (explainable trust + legacy trust archive)
+- [x] C2 Action Engine foundations (alerts + preferences)
+- [x] C3 Intelligence Layer (rules-based risk signals)
+- [x] C4 Resilience Engineering (explicit degradation tiers)
+- [x] C5 Perceived Speed (audit + enforcement)
+- [x] C6 Synthetic Monitoring (guarantee)
+- [x] C7 Marketplace Compliance (don't get nuked later)
+
+---
+
+## Known gaps / risks
+
+- All Phase 0 CI gates now enforced (no EXEMPT TEMP).

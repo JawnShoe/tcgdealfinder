@@ -55,6 +55,31 @@ test("Stage 1 decommission: /top-deals redirects to /discovery (top deals preset
   await assertUiTrustSurfaces(page);
 });
 
+test("Stage 1 decommission: /newest redirects to /discovery (newest preset)", async ({
+  page,
+  request,
+}) => {
+  const legacyUrl = `${baseURL}/newest`;
+  const expectedPath = "/discovery?sort=newest";
+
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+
+  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(new RegExp(`/discovery\\?sort=newest`));
+  await expect(page.getByLabel("Sort")).toHaveValue("newest");
+  await assertUiTrustSurfaces(page);
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

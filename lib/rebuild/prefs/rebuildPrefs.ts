@@ -1,6 +1,6 @@
 import type { ListingDomain } from "@/lib/rebuild/data/listingMapper";
 
-export type RebuildSort = "newest" | "biggest-discount";
+export type RebuildSort = "newest" | "biggest-discount" | "endingSoon";
 
 export type RebuildPrefs = {
   sort: RebuildSort;
@@ -14,6 +14,7 @@ export const REBUILD_SORT_OPTIONS: Array<{
 }> = [
   { value: "newest", label: "Newest" },
   { value: "biggest-discount", label: "Biggest discount" },
+  { value: "endingSoon", label: "Ending soon" },
 ];
 
 export function parseRebuildSortValue(
@@ -21,6 +22,9 @@ export function parseRebuildSortValue(
 ): RebuildSort {
   if (value === "biggest-discount") {
     return "biggest-discount";
+  }
+  if (value === "endingSoon") {
+    return "endingSoon";
   }
   return DEFAULT_REBUILD_SORT;
 }

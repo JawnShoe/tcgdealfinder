@@ -99,8 +99,8 @@ npm run build
 | `/cards/[cardId]`     | Redirected          | Redirect to rebuild | `/rebuild/listing/[id]`            | Listing detail exists; cardId→listingId mapping deterministic; trust panel + confidence + provenance SSR                | Yes             | PR #325       |
 | `/sets`               | Redirected          | Redirect to rebuild | `/rebuild/discovery`               | Discovery route exists; set filter parity; trust moat present                                                           | Yes             | PR #326       |
 | `/sets/[setId]`       | Redirected          | Redirect to rebuild | `/rebuild/discovery`               | Discovery route exists; trust moat present; NOTE: set filter not supported (degraded parity)                            | Yes             | PR #327       |
-| `/catalog`            | Active              | Retire              | N/A                                | Catalog route is low-traffic utility; rebuild does not require catalog UI                                               | N/A             | PR TBD        |
-| `/catalog/sets/[...]` | Active              | Retire              | N/A                                | Catalog route is low-traffic utility; rebuild does not require catalog UI                                               | N/A             | PR TBD        |
+| `/catalog`            | Retired             | Retire              | N/A                                | Catalog route is low-traffic utility; rebuild does not require catalog UI                                               | N/A             | PR #328       |
+| `/catalog/sets/[...]` | Retired             | Retire              | N/A                                | Catalog route is low-traffic utility; rebuild does not require catalog UI                                               | N/A             | PR #328       |
 
 **Stage 2: Admin surfaces migrate**
 

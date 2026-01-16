@@ -351,6 +351,20 @@ test("Stage 1 decommission: /cards/[cardId] returns 404 for invalid cardId", asy
   expect(response.status()).toBe(404);
 });
 
+test("Stage 1 decommission: /catalog returns 404 (retired)", async ({
+  request,
+}) => {
+  const response = await request.get(`${baseURL}/catalog`);
+  expect(response.status()).toBe(404);
+});
+
+test("Stage 1 decommission: /catalog/sets/[id] returns 404 (retired)", async ({
+  request,
+}) => {
+  const response = await request.get(`${baseURL}/catalog/sets/1`);
+  expect(response.status()).toBe(404);
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

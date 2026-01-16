@@ -42,7 +42,6 @@ import {
   formatSellerSalesCount,
 } from "./SellerNameWithTooltip";
 import { getSellerDisplayData } from "@/lib/sellerDisplay";
-import { WatchlistStarButton } from "./WatchlistStarButton";
 import { WhyDealHint } from "./WhyDealHint";
 import { SellerSeenBadge } from "./SellerSeenBadge";
 import { TooltipPopoverClientOnly } from "./TooltipPopoverClientOnly";
@@ -1083,15 +1082,6 @@ export default function DealsTable({
                           </tr>
                         ))
                       : currentSlice.map((vm) => {
-                          const cardId =
-                            vm.deal.card?.id ?? vm.deal.cardId ?? null;
-                          const cardName =
-                            vm.deal.card?.name ??
-                            vm.deal.cardName ??
-                            vm.deal.title ??
-                            null;
-                          const setName =
-                            vm.deal.card?.setName ?? vm.deal.setName ?? null;
                           const sellerSalesBadge = renderSellerSalesBadge(
                             vm.deal.sellerFeedbackCount
                           );
@@ -1127,34 +1117,23 @@ export default function DealsTable({
                                   ) : (
                                     <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded border border-dashed border-slate-300 bg-white" />
                                   )}
-                                  <div className="flex min-w-0 flex-1 items-start gap-2">
-                                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                      <CardIdentityBlock
-                                        identity={buildCardIdentityFromDeal(
-                                          vm.deal
-                                        )}
-                                        primaryHref={vm.affiliateUrl}
-                                        showListingTitle={isNewestVariant}
-                                        showViewCardLink
-                                      />
-                                      {vm.deal.historicBaselineConfidence ===
-                                      "none" ? (
-                                        <p className="text-xs text-amber-600">
-                                          {baselineBadgeLabel(
-                                            vm.deal.historicBaselineBucketUsed
-                                          )}
-                                        </p>
-                                      ) : null}
-                                    </div>
-                                    <WatchlistStarButton
-                                      cardId={cardId ?? undefined}
-                                      cardName={cardName ?? undefined}
-                                      setName={setName ?? null}
-                                      initialIsWatched={
-                                        vm.deal.isWatched ?? false
-                                      }
-                                      className="flex-shrink-0"
+                                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                    <CardIdentityBlock
+                                      identity={buildCardIdentityFromDeal(
+                                        vm.deal
+                                      )}
+                                      primaryHref={vm.affiliateUrl}
+                                      showListingTitle={isNewestVariant}
+                                      showViewCardLink
                                     />
+                                    {vm.deal.historicBaselineConfidence ===
+                                    "none" ? (
+                                      <p className="text-xs text-amber-600">
+                                        {baselineBadgeLabel(
+                                          vm.deal.historicBaselineBucketUsed
+                                        )}
+                                      </p>
+                                    ) : null}
                                   </div>
                                 </div>
                               </td>
@@ -1311,10 +1290,6 @@ export default function DealsTable({
 
           <div className="space-y-3 sm:hidden">
             {currentSlice.map((vm) => {
-              const cardId = vm.deal.card?.id ?? vm.deal.cardId ?? null;
-              const cardName =
-                vm.deal.card?.name ?? vm.deal.cardName ?? vm.deal.title ?? null;
-              const setName = vm.deal.card?.setName ?? vm.deal.setName ?? null;
               const freshness = formatFreshness(
                 vm.deal.updatedAt,
                 4,
@@ -1345,20 +1320,12 @@ export default function DealsTable({
                     ) : (
                       <div className="h-20 w-20 rounded border border-dashed border-slate-300" />
                     )}
-                    <div className="flex flex-1 items-start gap-2">
-                      <div className="min-w-0 flex-1">
-                        <CardIdentityBlock
-                          identity={buildCardIdentityFromDeal(vm.deal)}
-                          primaryHref={vm.affiliateUrl}
-                          showListingTitle={isNewestVariant}
-                          showViewCardLink={false}
-                        />
-                      </div>
-                      <WatchlistStarButton
-                        cardId={cardId ?? undefined}
-                        cardName={cardName ?? undefined}
-                        setName={setName ?? null}
-                        initialIsWatched={vm.deal.isWatched ?? false}
+                    <div className="min-w-0 flex-1">
+                      <CardIdentityBlock
+                        identity={buildCardIdentityFromDeal(vm.deal)}
+                        primaryHref={vm.affiliateUrl}
+                        showListingTitle={isNewestVariant}
+                        showViewCardLink={false}
                       />
                     </div>
                   </div>

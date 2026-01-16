@@ -7,7 +7,6 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { TrustedBadge } from "./TrustedBadge";
-import { WatchlistStarButton } from "./WatchlistStarButton";
 import { CardIdentityBlock } from "./CardIdentity";
 import { ConfidenceChip } from "./ConfidenceChip";
 import { MarketFlag } from "./MarketFlag";
@@ -702,14 +701,6 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                   </div>
                   <p className="text-sm text-slate-600">{card.setName}</p>
                 </div>
-                <div className="sm:pt-1">
-                  <WatchlistStarButton
-                    cardId={card.id}
-                    cardName={card.name}
-                    setName={card.setName}
-                    initialIsWatched={card.isWatched ?? false}
-                  />
-                </div>
               </div>
               <div
                 className={`grid gap-4 ${bestTrustedDeal && bestTrustedDeal.totalUsd && bestTrustedDeal.deal.market ? "md:grid-cols-2" : ""}`}
@@ -1252,18 +1243,6 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                             )}
                           </p>
                         )}
-
-                        <div className="flex items-center justify-center gap-2 pt-2">
-                          <WatchlistStarButton
-                            cardId={card.id}
-                            cardName={card.name}
-                            setName={card.setName}
-                            initialIsWatched={card.isWatched ?? false}
-                          />
-                          <span className="text-sm text-slate-600">
-                            Watch this card
-                          </span>
-                        </div>
 
                         {canShowOtherMarkets && (
                           <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-left">

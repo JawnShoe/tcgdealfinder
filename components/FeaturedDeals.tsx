@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { TrustedBadge } from "./TrustedBadge";
-import { WatchlistStarButton } from "./WatchlistStarButton";
 import { buildAffiliateUrl } from "../lib/affiliateUrl";
 import type { Deal } from "../types/deal";
 import {
@@ -77,22 +76,12 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                     <div className="h-20 w-20 rounded-md bg-slate-200" />
                   )}
                   <div className="flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardIdentityBlock
-                        identity={buildCardIdentityFromDeal(deal)}
-                        primaryHref={buildAffiliateUrl(deal.url)}
-                        showListingTitle
-                        showViewCardLink={false}
-                      />
-                      <WatchlistStarButton
-                        cardId={deal.card?.id ?? deal.cardId ?? null}
-                        cardName={
-                          deal.card?.name ?? deal.cardName ?? deal.title ?? null
-                        }
-                        setName={deal.card?.setName ?? deal.setName ?? null}
-                        initialIsWatched={deal.isWatched ?? false}
-                      />
-                    </div>
+                    <CardIdentityBlock
+                      identity={buildCardIdentityFromDeal(deal)}
+                      primaryHref={buildAffiliateUrl(deal.url)}
+                      showListingTitle
+                      showViewCardLink={false}
+                    />
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                       {(() => {
                         const { primary, secondary } = formatPriceWithApprox(

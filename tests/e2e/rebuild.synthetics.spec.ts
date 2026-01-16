@@ -129,6 +129,31 @@ test("Stage 1 decommission: /search redirects to /rebuild/discovery", async ({
   await assertUiTrustSurfaces(page);
 });
 
+test("Stage 1 decommission: /alerts redirects to /rebuild/alerts", async ({
+  page,
+  request,
+}) => {
+  const legacyUrl = `${baseURL}/alerts`;
+  const expectedPath = "/rebuild/alerts";
+
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+
+  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(new RegExp(`/rebuild/alerts`));
+  await assertUiTrustSurfaces(page);
+  await assertAlertsHeading(page);
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

@@ -28,12 +28,12 @@ function buildCanonicalDiscoveryUrl(searchParams?: URLSearchParams): string {
   );
 }
 
-test("Stage 1 decommission: /top-deals redirects to /rebuild/discovery (top deals preset)", async ({
+test("Stage 1 decommission: /top-deals redirects to /discovery (top deals preset)", async ({
   page,
   request,
 }) => {
   const legacyUrl = `${baseURL}/top-deals`;
-  const expectedPath = "/rebuild/discovery?sort=biggest-discount";
+  const expectedPath = "/discovery?sort=biggest-discount";
 
   const response = await request.get(legacyUrl, { maxRedirects: 0 });
   expect(response.status()).toBe(308);
@@ -49,7 +49,7 @@ test("Stage 1 decommission: /top-deals redirects to /rebuild/discovery (top deal
 
   await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
   await expect(page).toHaveURL(
-    new RegExp(`/rebuild/discovery\\?sort=biggest-discount`)
+    new RegExp(`/discovery\\?sort=biggest-discount`)
   );
   await expect(page.getByLabel("Sort")).toHaveValue("biggest-discount");
   await assertUiTrustSurfaces(page);

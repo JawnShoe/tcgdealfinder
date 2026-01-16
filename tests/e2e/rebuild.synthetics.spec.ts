@@ -153,6 +153,31 @@ test("Stage 1 decommission: /sets redirects to /rebuild/discovery", async ({
   await assertUiTrustSurfaces(page);
 });
 
+test("Stage 1 decommission: /sets/[setId] redirects to /rebuild/discovery", async ({
+  page,
+  request,
+}) => {
+  // Use any setId - redirect is unconditional (degraded parity: set filter not supported)
+  const legacyUrl = `${baseURL}/sets/1`;
+  const expectedPath = "/rebuild/discovery";
+
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+
+  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(new RegExp(`/rebuild/discovery`));
+  await assertUiTrustSurfaces(page);
+});
+
 test("Stage 1 decommission: /alerts redirects to /rebuild/alerts", async ({
   page,
   request,

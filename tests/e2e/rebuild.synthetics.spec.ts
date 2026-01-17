@@ -293,6 +293,47 @@ test("Rebuild unsubscribe endpoint: returns appropriate response for invalid tok
   );
 });
 
+test("Stage 1 decommission: /api/alerts/subscribe redirects to rebuild endpoint", async ({
+  request,
+}) => {
+  const legacyUrl = `${baseURL}/api/alerts/subscribe`;
+  const expectedPath = `/api/rebuild/alerts/subscribe`;
+
+  // Send a POST request with maxRedirects: 0 to verify redirect behavior
+  const response = await request.post(legacyUrl, {
+    data: { cardId: 1, email: "test@example.com", minDiscountPercent: 10 },
+    maxRedirects: 0,
+  });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+});
+
+test("Rebuild subscribe endpoint: returns deterministic validation error for missing email", async ({
+  request,
+}) => {
+  const url = `${baseURL}/api/rebuild/alerts/subscribe`;
+
+  // Send POST with missing email to trigger validation
+  const response = await request.post(url, {
+    data: { cardId: 1, minDiscountPercent: 10 },
+  });
+
+  // When alerts are disabled, returns 501; when enabled, returns 400 for missing email
+  expect([400, 501]).toContain(response.status());
+
+  const body = await response.json();
+  expect(body.ok).toBe(false);
+  expect(body.error).toMatch(/valid email address|Alerts are not enabled/i);
+});
+
 test("Stage 1 decommission: /watchlist redirects to /rebuild/discovery", async ({
   page,
   request,

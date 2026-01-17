@@ -6,13 +6,15 @@ import {
 } from "@/lib/rebuild/observability/logging";
 import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
 import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
+import { listOverrides } from "@/lib/rebuild/data/exclusions";
+import { ExclusionsToolClient } from "./ExclusionsToolClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const exclusionsTitle = buildRebuildTitle("Exclusions");
 const exclusionsDescription =
-  "Rebuild ops view for exclusions quarantine review.";
+  "Rebuild ops view for listing exclusion overrides.";
 
 export const metadata: Metadata = {
   title: exclusionsTitle,
@@ -35,16 +37,54 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RebuildOpsExclusionsPage() {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default async function RebuildOpsExclusionsPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams;
+}) {
   const start = Date.now();
   const requestId = getRequestIdFromHeaders(headers());
   let status = 200;
   let requestError: unknown;
 
+  // Parse query params
+  const params = searchParams ?? {};
+  const limitParam = Array.isArray(params.limit)
+    ? params.limit[0]
+    : params.limit;
+  const limit = limitParam
+    ? Math.min(parseInt(limitParam, 10) || 100, 500)
+    : 100;
+
+  const kindParam = Array.isArray(params.kind) ? params.kind[0] : params.kind;
+  const kindFilter =
+    kindParam === "ALLOW" ||
+    kindParam === "HARD_BLOCK" ||
+    kindParam === "SOFT_EXCLUDE"
+      ? kindParam
+      : undefined;
+
   try {
+    // Fetch overrides (safe - returns empty array on DB issues)
+    let overrides: Awaited<ReturnType<typeof listOverrides>> = [];
+    let fetchError: string | null = null;
+
+    try {
+      overrides = await listOverrides({
+        limit,
+        overrideType: kindFilter,
+      });
+    } catch (err) {
+      fetchError =
+        err instanceof Error ? err.message : "Failed to fetch overrides";
+      console.error("[rebuild/ops/exclusions] fetch error:", err);
+    }
+
     return (
       <main className="min-h-screen bg-slate-50">
-        <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
             Rebuild lane - Ops Exclusions
           </div>
@@ -54,38 +94,25 @@ export default async function RebuildOpsExclusionsPage() {
               Exclusions
             </h1>
             <p className="mt-2 text-sm text-slate-700">
-              Rebuild ops view for exclusions quarantine review.
+              Manage listing exclusion overrides. Add ALLOW, HARD_BLOCK, or
+              SOFT_EXCLUDE overrides for specific listings.
             </p>
           </header>
 
-          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Migration Status
-            </h2>
-            <p className="mt-2 text-sm text-slate-700">
-              This route is a Stage 2 migration target. The full exclusions
-              quarantine tool lives at <code>/admin?tab=exclusions</code> and
-              will be fully migrated in a later phase.
-            </p>
-            <div className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
-              <p className="text-sm text-slate-600">
-                Current status: <strong>Read-only stub</strong>
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Legacy route <code>/admin/exclusions</code> now redirects here.
-              </p>
-            </div>
-          </section>
-
-          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-slate-900">
-              No exclusions found
-            </h2>
-            <p className="mt-2 text-sm text-slate-700">
-              The exclusions quarantine review will be available after full
-              migration of the admin exclusions panel to the rebuild lane.
-            </p>
-          </section>
+          {fetchError ? (
+            <section className="mt-6 rounded-lg border border-red-200 bg-red-50 p-6">
+              <h2 className="text-lg font-semibold text-red-900">
+                Database Error
+              </h2>
+              <p className="mt-2 text-sm text-red-700">{fetchError}</p>
+            </section>
+          ) : (
+            <ExclusionsToolClient
+              initialOverrides={overrides}
+              limit={limit}
+              kindFilter={kindFilter}
+            />
+          )}
         </div>
       </main>
     );

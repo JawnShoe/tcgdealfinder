@@ -661,6 +661,55 @@ test("Stage 2 migrate: /debug/exclusions redirects to /rebuild/ops/exclusions", 
   ).toBeVisible();
 });
 
+test("Stage 2 parity: /rebuild/ops/exclusions renders tool surface", async ({
+  page,
+}) => {
+  const url = `${baseURL}/rebuild/ops/exclusions`;
+
+  await page.goto(url, { waitUntil: "domcontentloaded" });
+
+  // Verify heading
+  await expect(
+    page.getByRole("heading", { name: "Exclusions", exact: true })
+  ).toBeVisible();
+
+  // Verify tool surface elements exist (either Add button or empty state)
+  const addButton = page.getByTestId("add-exclusion-button");
+  const emptyState = page.getByTestId("no-exclusions-message");
+
+  // At least one of these should be visible (real tool surface)
+  const hasAddButton = await addButton.isVisible().catch(() => false);
+  const hasEmptyState = await emptyState.isVisible().catch(() => false);
+
+  expect(hasAddButton || hasEmptyState).toBeTruthy();
+});
+
+test("Stage 2 parity: /api/rebuild/ops/exclusions returns 401 without auth", async ({
+  request,
+}) => {
+  const url = `${baseURL}/api/rebuild/ops/exclusions`;
+
+  // GET without auth cookie
+  const getResponse = await request.get(url);
+  expect(getResponse.status()).toBe(401);
+  const getBody = await getResponse.json();
+  expect(getBody.error).toBe("Unauthorized");
+
+  // POST without auth cookie
+  const postResponse = await request.post(url, {
+    data: { listingId: "test", overrideType: "ALLOW" },
+  });
+  expect(postResponse.status()).toBe(401);
+  const postBody = await postResponse.json();
+  expect(postBody.error).toBe("Unauthorized");
+
+  // DELETE without auth cookie
+  const deleteResponse = await request.delete(`${url}?listingId=test`);
+  expect(deleteResponse.status()).toBe(401);
+  const deleteBody = await deleteResponse.json();
+  expect(deleteBody.error).toBe("Unauthorized");
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

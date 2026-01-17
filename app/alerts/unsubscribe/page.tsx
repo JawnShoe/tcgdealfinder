@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 /**
  * /alerts/unsubscribe — Stage 1 Legacy Decommission
@@ -12,14 +12,11 @@ import { redirect } from "next/navigation";
  */
 
 type PageProps = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams?: Record<string, string | string[] | undefined>;
 };
 
-export default async function AlertsUnsubscribePage({
-  searchParams,
-}: PageProps) {
-  const params = await searchParams;
-  const tokenParam = params.token;
+export default function AlertsUnsubscribePage({ searchParams }: PageProps) {
+  const tokenParam = searchParams?.token;
   const token = typeof tokenParam === "string" ? tokenParam.trim() : "";
 
   // Build target URL with token if present
@@ -27,5 +24,5 @@ export default async function AlertsUnsubscribePage({
     ? `/api/rebuild/alerts/unsubscribe?token=${encodeURIComponent(token)}`
     : "/api/rebuild/alerts/unsubscribe";
 
-  redirect(targetUrl);
+  permanentRedirect(targetUrl);
 }

@@ -211,7 +211,7 @@ test("Stage 1 decommission: /alerts/unsubscribe page redirects to rebuild API en
   const expectedPath = `/api/rebuild/alerts/unsubscribe?token=${testToken}`;
 
   const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(307);
+  expect(response.status()).toBe(308);
   const location = response.headers()["location"];
   expect(location).toBeTruthy();
 
@@ -230,7 +230,7 @@ test("Stage 1 decommission: /alerts/unsubscribe page handles missing token grace
   const expectedPath = `/api/rebuild/alerts/unsubscribe`;
 
   const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(307);
+  expect(response.status()).toBe(308);
   const location = response.headers()["location"];
   expect(location).toBeTruthy();
 

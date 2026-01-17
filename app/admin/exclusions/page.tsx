@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 export default async function AdminExclusionsPage() {
-  redirect("/rebuild/ops/exclusions");
+  permanentRedirect("/rebuild/ops/exclusions");
 }

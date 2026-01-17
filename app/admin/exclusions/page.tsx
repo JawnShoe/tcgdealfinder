@@ -1,11 +1,5 @@
-import { notFound, redirect } from "next/navigation";
-
-import { isAdminAuthenticated } from "@/lib/adminAuth";
+import { redirect } from "next/navigation";
 
 export default async function AdminExclusionsPage() {
-  if (!process.env.ADMIN_SECRET || !isAdminAuthenticated()) {
-    notFound();
-  }
-
-  redirect("/admin?tab=exclusions");
+  redirect("/rebuild/ops/exclusions");
 }

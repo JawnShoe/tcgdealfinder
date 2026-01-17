@@ -461,6 +461,35 @@ test("Stage 2 decommission: /admin/login returns 404 (retired)", async ({
   expect(response.status()).toBe(404);
 });
 
+test("Stage 2 migrate: /admin/exclusions redirects to /rebuild/ops/exclusions", async ({
+  page,
+  request,
+}) => {
+  const legacyUrl = `${baseURL}/admin/exclusions`;
+  const expectedPath = "/rebuild/ops/exclusions";
+
+  // Verify 308 redirect with maxRedirects: 0
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  // Location can be absolute or relative
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+
+  // Verify browser navigation lands on rebuild ops exclusions and renders SSR heading
+  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(new RegExp(`/rebuild/ops/exclusions`));
+  await expect(
+    page.getByRole("heading", { name: "Exclusions", exact: true })
+  ).toBeVisible();
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

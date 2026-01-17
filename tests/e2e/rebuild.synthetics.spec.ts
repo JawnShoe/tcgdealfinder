@@ -519,6 +519,35 @@ test("Stage 2 migrate: /admin/blacklist redirects to /rebuild/ops/blacklist", as
   ).toBeVisible();
 });
 
+test("Stage 2 migrate: /admin/alerts redirects to /rebuild/ops/alerts", async ({
+  page,
+  request,
+}) => {
+  const legacyUrl = `${baseURL}/admin/alerts`;
+  const expectedPath = "/rebuild/ops/alerts";
+
+  // Verify 308 redirect with maxRedirects: 0
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  // Location can be absolute or relative
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+
+  // Verify browser navigation lands on rebuild ops alerts and renders SSR heading
+  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(new RegExp(`/rebuild/ops/alerts`));
+  await expect(
+    page.getByRole("heading", { name: "Alerts", exact: true })
+  ).toBeVisible();
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

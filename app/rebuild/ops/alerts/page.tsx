@@ -6,6 +6,8 @@ import {
 } from "@/lib/rebuild/observability/logging";
 import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
 import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
+import { listWatches, listRecentAlerts } from "@/lib/rebuild/data/alertsOps";
+import { AlertsToolClient } from "./AlertsToolClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -41,9 +43,34 @@ export default async function RebuildOpsAlertsPage() {
   let requestError: unknown;
 
   try {
+    // Fetch watches and alerts (safe - returns empty arrays on DB issues)
+    let watches: Awaited<ReturnType<typeof listWatches>> = [];
+    let alerts: Awaited<ReturnType<typeof listRecentAlerts>> = [];
+    let fetchError: string | null = null;
+    let isDbNotInitialized = false;
+
+    try {
+      [watches, alerts] = await Promise.all([
+        listWatches(),
+        listRecentAlerts(50),
+      ]);
+    } catch (err: unknown) {
+      // Check for missing table error (42P01 = undefined_table in PostgreSQL)
+      const pgError = err as { code?: string };
+      if (pgError.code === "42P01") {
+        isDbNotInitialized = true;
+        fetchError =
+          "Database not initialized (missing alerts_watchlist or alerts_log table)";
+      } else {
+        fetchError =
+          err instanceof Error ? err.message : "Failed to fetch alerts data";
+      }
+      console.error("[rebuild/ops/alerts] fetch error:", err);
+    }
+
     return (
       <main className="min-h-screen bg-slate-50">
-        <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
             Rebuild lane - Ops Alerts
           </div>
@@ -51,38 +78,34 @@ export default async function RebuildOpsAlertsPage() {
           <header className="rounded-lg border border-slate-200 bg-white p-6">
             <h1 className="text-2xl font-semibold text-slate-900">Alerts</h1>
             <p className="mt-2 text-sm text-slate-700">
-              Rebuild ops view for alerts watchlist management.
+              Manage alert watchlist rules. When a watched card meets the
+              threshold criteria, an alert is logged.
             </p>
           </header>
 
-          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Migration Status
-            </h2>
-            <p className="mt-2 text-sm text-slate-700">
-              This route is a Stage 2 migration target. The full alerts
-              watchlist tool lives at <code>/admin/alerts</code> and will be
-              fully migrated in a later phase.
-            </p>
-            <div className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
-              <p className="text-sm text-slate-600">
-                Current status: <strong>Read-only stub</strong>
+          {isDbNotInitialized ? (
+            <section
+              className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-6"
+              data-testid="db-not-initialized"
+            >
+              <h2 className="text-lg font-semibold text-amber-900">
+                Database Not Initialized
+              </h2>
+              <p className="mt-2 text-sm text-amber-700">
+                The alerts_watchlist or alerts_log table does not exist. Run
+                migrations to initialize the database.
               </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Legacy route <code>/admin/alerts</code> now redirects here.
-              </p>
-            </div>
-          </section>
-
-          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-slate-900">
-              No alerts found
-            </h2>
-            <p className="mt-2 text-sm text-slate-700">
-              The alerts watchlist tool will be available after full migration
-              of the admin alerts panel to the rebuild lane.
-            </p>
-          </section>
+            </section>
+          ) : fetchError ? (
+            <section className="mt-6 rounded-lg border border-red-200 bg-red-50 p-6">
+              <h2 className="text-lg font-semibold text-red-900">
+                Database Error
+              </h2>
+              <p className="mt-2 text-sm text-red-700">{fetchError}</p>
+            </section>
+          ) : (
+            <AlertsToolClient initialWatches={watches} initialAlerts={alerts} />
+          )}
         </div>
       </main>
     );

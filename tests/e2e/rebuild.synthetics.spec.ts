@@ -454,6 +454,13 @@ test("Stage 2 decommission: /debug/logout returns 404 (retired)", async ({
   expect(response.status()).toBe(404);
 });
 
+test("Stage 2 decommission: /admin/login returns 404 (retired)", async ({
+  request,
+}) => {
+  const response = await request.get(`${baseURL}/admin/login`);
+  expect(response.status()).toBe(404);
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

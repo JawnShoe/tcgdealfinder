@@ -751,6 +751,67 @@ test("Stage 2 parity: /api/rebuild/ops/exclusions returns 401 without auth", asy
   expect(deleteBody.error).toBe("Unauthorized");
 });
 
+test("Stage 2 parity: /rebuild/ops/blacklist renders tool surface", async ({
+  page,
+}) => {
+  const url = `${baseURL}/rebuild/ops/blacklist`;
+
+  await page.goto(url, { waitUntil: "domcontentloaded" });
+
+  // Verify heading is always present
+  await expect(
+    page.getByRole("heading", { name: "Blacklist", exact: true })
+  ).toBeVisible();
+
+  // Deterministic states - at least one must be visible:
+  // 1. Add button (tool ready)
+  // 2. Empty state message (tool ready, no data)
+  // 3. Database not initialized message (CI environment)
+  // 4. Database error message (connection issue)
+  const addButton = page.getByTestId("add-blacklist-button");
+  const emptyState = page.getByTestId("no-blacklist-message");
+  const dbNotInitialized = page.getByTestId("db-not-initialized");
+  const dbError = page.getByText(/database error/i);
+
+  const hasAddButton = await addButton.isVisible().catch(() => false);
+  const hasEmptyState = await emptyState.isVisible().catch(() => false);
+  const hasDbNotInitialized = await dbNotInitialized
+    .isVisible()
+    .catch(() => false);
+  const hasDbError = await dbError.isVisible().catch(() => false);
+
+  // At least one deterministic state should be visible
+  expect(
+    hasAddButton || hasEmptyState || hasDbNotInitialized || hasDbError
+  ).toBeTruthy();
+});
+
+test("Stage 2 parity: /api/rebuild/ops/blacklist returns 401 without auth", async ({
+  request,
+}) => {
+  const url = `${baseURL}/api/rebuild/ops/blacklist`;
+
+  // GET without auth cookie
+  const getResponse = await request.get(url);
+  expect(getResponse.status()).toBe(401);
+  const getBody = await getResponse.json();
+  expect(getBody.error).toBe("Unauthorized");
+
+  // POST without auth cookie
+  const postResponse = await request.post(url, {
+    data: { sellerUsername: "test_seller" },
+  });
+  expect(postResponse.status()).toBe(401);
+  const postBody = await postResponse.json();
+  expect(postBody.error).toBe("Unauthorized");
+
+  // DELETE without auth cookie
+  const deleteResponse = await request.delete(`${url}?sellerUsername=test`);
+  expect(deleteResponse.status()).toBe(401);
+  const deleteBody = await deleteResponse.json();
+  expect(deleteBody.error).toBe("Unauthorized");
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

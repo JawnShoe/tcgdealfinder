@@ -6,6 +6,8 @@ import {
 } from "@/lib/rebuild/observability/logging";
 import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
 import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
+import { listBlacklistedSellers } from "@/lib/rebuild/data/blacklist";
+import { BlacklistToolClient } from "./BlacklistToolClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -35,16 +37,54 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RebuildOpsBlacklistPage() {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default async function RebuildOpsBlacklistPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams;
+}) {
   const start = Date.now();
   const requestId = getRequestIdFromHeaders(headers());
   let status = 200;
   let requestError: unknown;
 
+  // Parse query params
+  const params = searchParams ?? {};
+  const limitParam = Array.isArray(params.limit)
+    ? params.limit[0]
+    : params.limit;
+  const limit = limitParam
+    ? Math.min(parseInt(limitParam, 10) || 100, 500)
+    : 100;
+
   try {
+    // Fetch sellers (safe - returns empty array on DB issues)
+    let sellers: Awaited<ReturnType<typeof listBlacklistedSellers>> = [];
+    let fetchError: string | null = null;
+    let isDbNotInitialized = false;
+
+    try {
+      sellers = await listBlacklistedSellers({
+        limit,
+      });
+    } catch (err: unknown) {
+      // Check for missing table error (42P01 = undefined_table in PostgreSQL)
+      const pgError = err as { code?: string };
+      if (pgError.code === "42P01") {
+        isDbNotInitialized = true;
+        fetchError =
+          "Database not initialized (missing seller_blacklist table)";
+      } else {
+        fetchError =
+          err instanceof Error ? err.message : "Failed to fetch sellers";
+      }
+      console.error("[rebuild/ops/blacklist] fetch error:", err);
+    }
+
     return (
       <main className="min-h-screen bg-slate-50">
-        <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
             Rebuild lane - Ops Blacklist
           </div>
@@ -52,38 +92,34 @@ export default async function RebuildOpsBlacklistPage() {
           <header className="rounded-lg border border-slate-200 bg-white p-6">
             <h1 className="text-2xl font-semibold text-slate-900">Blacklist</h1>
             <p className="mt-2 text-sm text-slate-700">
-              Rebuild ops view for blacklist seller management.
+              Manage blacklisted sellers. Blacklisting a seller prevents their
+              listings from appearing in search results.
             </p>
           </header>
 
-          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Migration Status
-            </h2>
-            <p className="mt-2 text-sm text-slate-700">
-              This route is a Stage 2 migration target. The full blacklist
-              management tool lives at <code>/admin?tab=blacklist</code> and
-              will be fully migrated in a later phase.
-            </p>
-            <div className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-3">
-              <p className="text-sm text-slate-600">
-                Current status: <strong>Read-only stub</strong>
+          {isDbNotInitialized ? (
+            <section
+              className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-6"
+              data-testid="db-not-initialized"
+            >
+              <h2 className="text-lg font-semibold text-amber-900">
+                Database Not Initialized
+              </h2>
+              <p className="mt-2 text-sm text-amber-700">
+                The seller_blacklist table does not exist. Run migrations to
+                initialize the database.
               </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Legacy route <code>/admin/blacklist</code> now redirects here.
-              </p>
-            </div>
-          </section>
-
-          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-slate-900">
-              No blacklist entries found
-            </h2>
-            <p className="mt-2 text-sm text-slate-700">
-              The blacklist management tool will be available after full
-              migration of the admin blacklist panel to the rebuild lane.
-            </p>
-          </section>
+            </section>
+          ) : fetchError ? (
+            <section className="mt-6 rounded-lg border border-red-200 bg-red-50 p-6">
+              <h2 className="text-lg font-semibold text-red-900">
+                Database Error
+              </h2>
+              <p className="mt-2 text-sm text-red-700">{fetchError}</p>
+            </section>
+          ) : (
+            <BlacklistToolClient initialSellers={sellers} limit={limit} />
+          )}
         </div>
       </main>
     );

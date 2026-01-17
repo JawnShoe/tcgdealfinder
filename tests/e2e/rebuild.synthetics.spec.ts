@@ -577,6 +577,61 @@ test("Stage 2 migrate: /admin/listings redirects to /rebuild/ops/listings", asyn
   ).toBeVisible();
 });
 
+test("Stage 2 migrate: /debug/login redirects to /api/rebuild/ops/login", async ({
+  request,
+}) => {
+  const testToken = "test-token-e2e-debug-login";
+  const legacyUrl = `${baseURL}/debug/login?token=${testToken}`;
+  const expectedPath = `/api/rebuild/ops/login?token=${testToken}`;
+
+  // Verify 308 redirect with maxRedirects: 0
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  // Location can be absolute or relative
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+});
+
+test("Stage 2 migrate: /debug/login preserves redirect query param", async ({
+  request,
+}) => {
+  const testToken = "test-token-e2e-debug-login-redirect";
+  const redirectTarget = "/rebuild/ops/exclusions";
+  const legacyUrl = `${baseURL}/debug/login?token=${testToken}&redirect=${encodeURIComponent(redirectTarget)}`;
+  const expectedPath = `/api/rebuild/ops/login?token=${testToken}&redirect=${encodeURIComponent(redirectTarget)}`;
+
+  // Verify 308 redirect with maxRedirects: 0
+  const response = await request.get(legacyUrl, { maxRedirects: 0 });
+  expect(response.status()).toBe(308);
+  const location = response.headers()["location"];
+  expect(location).toBeTruthy();
+
+  // Location can be absolute or relative
+  const resolvedLocation = location ?? "";
+  if (resolvedLocation.startsWith("http")) {
+    expect(resolvedLocation).toContain(expectedPath);
+  } else {
+    expect(resolvedLocation).toBe(expectedPath);
+  }
+});
+
+test("Stage 2 migrate: rebuild ops login returns 404 for invalid token", async ({
+  request,
+}) => {
+  const invalidToken = "invalid-token-does-not-exist";
+  const url = `${baseURL}/api/rebuild/ops/login?token=${invalidToken}`;
+
+  const response = await request.get(url);
+  expect(response.status()).toBe(404);
+});
+
 function extractMetaContent(body: string, name: string): string | null {
   const tagMatch = body.match(
     new RegExp(`<meta[^>]+name="${name}"[^>]*>`, "i")

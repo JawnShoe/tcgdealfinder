@@ -70,15 +70,24 @@ export default async function RebuildOpsExclusionsPage({
     // Fetch overrides (safe - returns empty array on DB issues)
     let overrides: Awaited<ReturnType<typeof listOverrides>> = [];
     let fetchError: string | null = null;
+    let isDbNotInitialized = false;
 
     try {
       overrides = await listOverrides({
         limit,
         overrideType: kindFilter,
       });
-    } catch (err) {
-      fetchError =
-        err instanceof Error ? err.message : "Failed to fetch overrides";
+    } catch (err: unknown) {
+      // Check for missing table error (42P01 = undefined_table in PostgreSQL)
+      const pgError = err as { code?: string };
+      if (pgError.code === "42P01") {
+        isDbNotInitialized = true;
+        fetchError =
+          "Database not initialized (missing listing_overrides table)";
+      } else {
+        fetchError =
+          err instanceof Error ? err.message : "Failed to fetch overrides";
+      }
       console.error("[rebuild/ops/exclusions] fetch error:", err);
     }
 
@@ -99,7 +108,20 @@ export default async function RebuildOpsExclusionsPage({
             </p>
           </header>
 
-          {fetchError ? (
+          {isDbNotInitialized ? (
+            <section
+              className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-6"
+              data-testid="db-not-initialized"
+            >
+              <h2 className="text-lg font-semibold text-amber-900">
+                Database Not Initialized
+              </h2>
+              <p className="mt-2 text-sm text-amber-700">
+                The listing_overrides table does not exist. Run migrations to
+                initialize the database.
+              </p>
+            </section>
+          ) : fetchError ? (
             <section className="mt-6 rounded-lg border border-red-200 bg-red-50 p-6">
               <h2 className="text-lg font-semibold text-red-900">
                 Database Error

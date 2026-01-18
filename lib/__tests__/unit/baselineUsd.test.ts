@@ -5,7 +5,7 @@ import {
   computeBaselineMedianUsd,
   computeTrimCount,
   computeTrimmedMedian,
-} from "../../baselineUsd";
+} from "../../rebuild/scripts/baselineUsd";
 
 test("computeTrimCount floors per-tail trim", () => {
   assert.equal(computeTrimCount(30, 5), 1);

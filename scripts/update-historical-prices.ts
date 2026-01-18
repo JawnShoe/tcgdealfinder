@@ -2,7 +2,7 @@ import "dotenv/config";
 import { pathToFileURL } from "url";
 
 import { query } from "../lib/db";
-import { computeBaselineMedianUsd } from "../lib/baselineUsd";
+import { computeBaselineMedianUsd } from "../lib/rebuild/scripts/baselineUsd";
 import {
   ensureCardLanguageColumn,
   ensureHistoricalMarketColumn,

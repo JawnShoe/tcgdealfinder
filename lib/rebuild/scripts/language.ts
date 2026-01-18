@@ -9,7 +9,9 @@ export type LanguageDetection = {
 const JAPANESE_SCRIPT_REGEX = /[\u3040-\u30FF\u4E00-\u9FFF\u3400-\u4DBF]/g;
 const JAPANESE_TOKENS = /\b(japanese|jpn|jp)\b/i;
 
-export function detectCardLanguage(title: string | null | undefined): LanguageDetection {
+export function detectCardLanguage(
+  title: string | null | undefined
+): LanguageDetection {
   if (!title) {
     return { lang: "UNKNOWN", confidence: "LOW", signals: [] };
   }

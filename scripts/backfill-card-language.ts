@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { query } from "../lib/db";
-import { detectCardLanguage } from "../lib/language";
+import { detectCardLanguage } from "../lib/rebuild/scripts/language";
 
 type CardRow = {
   id: number;
@@ -13,12 +13,15 @@ async function fetchCards(): Promise<CardRow[]> {
     `
       SELECT id, name, language
       FROM cards;
-    `,
+    `
   );
   return res.rows;
 }
 
-async function updateCardLanguage(cardId: number, language: string): Promise<void> {
+async function updateCardLanguage(
+  cardId: number,
+  language: string
+): Promise<void> {
   await query(
     `
       UPDATE cards
@@ -26,7 +29,7 @@ async function updateCardLanguage(cardId: number, language: string): Promise<voi
           updated_at = NOW()
       WHERE id = $2;
     `,
-    [language, cardId],
+    [language, cardId]
   );
 }
 

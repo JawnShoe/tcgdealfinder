@@ -28,7 +28,7 @@ import {
   ensureListingsIntegrityColumns,
   LISTINGS_INTEGRITY_MISSING_MESSAGE,
 } from "../lib/schema";
-import { fetchStorefrontInfo } from "../lib/ebayStorefront";
+import { fetchStorefrontInfo } from "../lib/rebuild/scripts/ebayStorefront";
 
 type SearchConfigRow = {
   card_id: number;

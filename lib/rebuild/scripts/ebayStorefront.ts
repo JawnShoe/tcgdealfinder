@@ -1,7 +1,7 @@
 "use server";
 
-import type { MarketCode } from "./markets";
-import { getAppAccessToken } from "./ebay";
+import type { MarketCode } from "../../markets";
+import { getAppAccessToken } from "../../ebay";
 
 export type StorefrontSource = "api" | "override";
 

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { detectCardLanguage } from "../../language";
+import { detectCardLanguage } from "../../rebuild/scripts/language";
 
 test("detects Japanese via script", () => {
   const result = detectCardLanguage("エーフィ VMAX ハイクラス");

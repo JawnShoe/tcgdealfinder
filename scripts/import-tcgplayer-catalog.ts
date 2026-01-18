@@ -6,7 +6,7 @@ import {
   fetchPokemonGroups,
   type TcgplayerGroup,
   type TcgplayerProduct,
-} from "../lib/tcgplayerClient";
+} from "../lib/rebuild/scripts/tcgplayerClient";
 
 const IMPORT_DELAY_MS = 250;
 
@@ -31,14 +31,14 @@ async function upsertCatalogSet(group: TcgplayerGroup): Promise<number> {
           updated_at = NOW()
       RETURNING id;
     `,
-    [group.groupId, group.name, group.abbreviation ?? null, releaseDate],
+    [group.groupId, group.name, group.abbreviation ?? null, releaseDate]
   );
   return result.rows[0].id;
 }
 
 async function upsertCatalogCard(
   catalogSetId: number,
-  product: TcgplayerProduct,
+  product: TcgplayerProduct
 ): Promise<void> {
   await query(
     `
@@ -74,7 +74,7 @@ async function upsertCatalogCard(
       product.supertype ?? null,
       product.subtypes && product.subtypes.length > 0 ? product.subtypes : null,
       product.imageUrl ?? null,
-    ],
+    ]
   );
 }
 
@@ -94,7 +94,7 @@ async function importCatalog(): Promise<void> {
     try {
       const catalogSetId = await upsertCatalogSet(group);
       console.log(
-        `(${index + 1}/${groups.length}) Upserting set: ${group.name} (group ${group.groupId})`,
+        `(${index + 1}/${groups.length}) Upserting set: ${group.name} (group ${group.groupId})`
       );
 
       const products = await fetchGroupProducts(group.groupId);
@@ -118,7 +118,9 @@ async function importCatalog(): Promise<void> {
   console.log(`Sets imported: ${groups.length}`);
   console.log(`Cards imported: ${totalCards}`);
   console.log(`Cards with image_url: ${cardsWithImages}`);
-  console.log(`Image coverage: ${totalCards > 0 ? ((cardsWithImages / totalCards) * 100).toFixed(1) : 0}%`);
+  console.log(
+    `Image coverage: ${totalCards > 0 ? ((cardsWithImages / totalCards) * 100).toFixed(1) : 0}%`
+  );
 
   // Verify known cards can be resolved
   await verifyKnownCards();
@@ -126,7 +128,7 @@ async function importCatalog(): Promise<void> {
 
 async function verifyKnownCards(): Promise<void> {
   console.log("\n=== VERIFYING KNOWN CARDS ===");
-  
+
   const testCards = [
     { name: "Giratina V", setName: "Lost Origin", number: "186" },
     { name: "Lugia V", setName: "Silver Tempest", number: "186" },
@@ -149,10 +151,14 @@ async function verifyKnownCards(): Promise<void> {
     );
 
     if (result.rows.length > 0) {
-      console.log(`✅ ${card.name} (${card.setName} #${card.number}): ${result.rows[0].card_name}`);
+      console.log(
+        `✅ ${card.name} (${card.setName} #${card.number}): ${result.rows[0].card_name}`
+      );
       console.log(`   ${result.rows[0].image_url}`);
     } else {
-      console.log(`❌ ${card.name} (${card.setName} #${card.number}): NOT FOUND`);
+      console.log(
+        `❌ ${card.name} (${card.setName} #${card.number}): NOT FOUND`
+      );
     }
   }
 }

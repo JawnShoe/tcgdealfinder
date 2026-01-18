@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 const API_BASE = "https://api.tcgplayer.com";
 
@@ -65,7 +65,9 @@ async function getAccessToken(): Promise<string> {
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Failed to obtain TCGplayer token: ${response.status} ${text}`);
+    throw new Error(
+      `Failed to obtain TCGplayer token: ${response.status} ${text}`
+    );
   }
 
   const data = (await response.json()) as TokenResponse;
@@ -106,7 +108,7 @@ export async function fetchPokemonGroups(): Promise<TcgplayerGroup[]> {
         name: group.name,
         abbreviation: group.abbreviation ?? null,
         publishedOn: group.publishedOn ?? null,
-      })),
+      }))
     );
     if (page.length < limit) {
       break;
@@ -137,8 +139,14 @@ function mapProduct(product: RawProduct): TcgplayerProduct {
     extended.set(entry.name.toLowerCase(), entry.value);
   }
   const supertype = extended.get("card type") ?? extended.get("type") ?? null;
-  const subtypeRaw = extended.get("subtype") ?? extended.get("subtypes") ?? null;
-  const subtypes = subtypeRaw ? subtypeRaw.split("/").map((value) => value.trim()).filter(Boolean) : undefined;
+  const subtypeRaw =
+    extended.get("subtype") ?? extended.get("subtypes") ?? null;
+  const subtypes = subtypeRaw
+    ? subtypeRaw
+        .split("/")
+        .map((value) => value.trim())
+        .filter(Boolean)
+    : undefined;
 
   return {
     productId: Number(product.productId),
@@ -152,7 +160,9 @@ function mapProduct(product: RawProduct): TcgplayerProduct {
   };
 }
 
-export async function fetchGroupProducts(groupId: number): Promise<TcgplayerProduct[]> {
+export async function fetchGroupProducts(
+  groupId: number
+): Promise<TcgplayerProduct[]> {
   const results: TcgplayerProduct[] = [];
   const limit = 500;
   let offset = 0;

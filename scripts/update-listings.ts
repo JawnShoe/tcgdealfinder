@@ -250,7 +250,7 @@ async function upsertListing(
   snapshotAt: Date
 ) {
   // Import FX conversion here to avoid circular deps
-  const { convertToUSD } = await import("../lib/fxRates");
+  const { convertToUSD } = await import("../lib/rebuild/scripts/fxRates");
   const { getExpectedCurrency } = await import("../lib/markets");
 
   const priceCad = listing.priceCad ?? (listing as any).price ?? null;

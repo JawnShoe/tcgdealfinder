@@ -2,7 +2,7 @@ import "dotenv/config";
 import { query } from "../lib/db.ts";
 import { fetchEbaySoldListings, isValidListingTitle } from "../lib/ebay.ts";
 import type { SoldListing } from "../lib/ebay.ts";
-import { convertToUSD } from "../lib/fxRates";
+import { convertToUSD } from "../lib/rebuild/scripts/fxRates";
 import {
   getExpectedCurrency,
   normalizeMarketCode,

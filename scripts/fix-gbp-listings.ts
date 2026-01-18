@@ -17,7 +17,7 @@ import {
   updateFXRate,
   validateFXRateDirection,
   invalidateFXCache,
-} from "../lib/fxRates";
+} from "../lib/rebuild/scripts/fxRates";
 
 const CORRECT_GBP_RATE = 1.35; // GBP→USD rate as of Dec 2025 (1 GBP ≈ 1.35 USD)
 

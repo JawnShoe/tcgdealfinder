@@ -28,7 +28,7 @@ import {
   getFXRates,
   upsertFXRates,
   validateFXRateDirection,
-} from "../lib/fxRates";
+} from "../lib/rebuild/scripts/fxRates";
 
 const PROVIDER = "OPEN_EXCHANGE_RATES";
 const CADENCE = "hourly";

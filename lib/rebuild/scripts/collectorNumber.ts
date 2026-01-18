@@ -125,9 +125,7 @@ function extractFromAspects(
   return null;
 }
 
-function extractFromTitle(
-  rawTitle: string
-): {
+function extractFromTitle(rawTitle: string): {
   raw: string;
   confidence: CollectorNumberConfidence;
   signal: string;

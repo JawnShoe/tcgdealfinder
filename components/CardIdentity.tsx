@@ -8,6 +8,7 @@ export type CardIdentityInfo = {
   setName: string | null;
   listingTitle: string | null;
   cardId: number | null;
+  listingId: string | null;
 };
 
 export function buildCardIdentityFromDeal(deal: Deal): CardIdentityInfo {
@@ -17,6 +18,7 @@ export function buildCardIdentityFromDeal(deal: Deal): CardIdentityInfo {
     setName: deal.card?.setName ?? deal.setName ?? null,
     listingTitle: deal.title ?? null,
     cardId: deal.card?.id ?? deal.cardId ?? null,
+    listingId: deal.listingId ?? null,
   };
 }
 
@@ -37,7 +39,7 @@ export function CardIdentityBlock({
   showViewCardLink = true,
   className = "",
 }: CardIdentityBlockProps) {
-  const { primary, setName, listingTitle, cardId } = identity;
+  const { primary, setName, listingTitle, listingId } = identity;
 
   return (
     <div
@@ -83,12 +85,12 @@ export function CardIdentityBlock({
           </span>
         </TooltipPopoverClientOnly>
       ) : null}
-      {showViewCardLink && cardId ? (
+      {showViewCardLink && listingId ? (
         <Link
-          href={`/cards/${cardId}`}
+          href={`/rebuild/listing/${encodeURIComponent(listingId)}`}
           className="text-xs font-medium text-slate-500 hover:text-slate-800"
         >
-          View card page
+          View listing
         </Link>
       ) : null}
     </div>

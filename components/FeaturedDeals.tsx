@@ -162,12 +162,12 @@ export function FeaturedDeals({ deals }: FeaturedDealsProps) {
                   >
                     View listing
                   </a>
-                  {deal.cardId && (
+                  {deal.listingId && (
                     <Link
-                      href={`/cards/${deal.cardId}`}
+                      href={`/rebuild/listing/${encodeURIComponent(deal.listingId)}`}
                       className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
                     >
-                      Card page
+                      Details
                     </Link>
                   )}
                 </div>

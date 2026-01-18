@@ -9,7 +9,7 @@ import {
   convertToUSD,
   __setFXCacheForTesting,
   type FXRate,
-} from "../../fxRates";
+} from "../../rebuild/scripts/fxRates";
 
 test("validateFXRateDirection: accepts rates within bounds", () => {
   assert.equal(validateFXRateDirection("GBP", 1.35), null);

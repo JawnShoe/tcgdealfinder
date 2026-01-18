@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { decideCollectorNumberRejection } from "../../update-listings";
-import type { CollectorNumberResult } from "../../../lib/collectorNumber";
+import type { CollectorNumberResult } from "../../../lib/rebuild/scripts/collectorNumber";
 
 const highCard: CollectorNumberResult = {
   raw: "215/203",

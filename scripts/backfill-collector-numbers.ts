@@ -3,7 +3,7 @@ import {
   extractCollectorNumber,
   normalizeCollectorNumber,
   type CollectorNumberConfidence,
-} from "../lib/collectorNumber";
+} from "../lib/rebuild/scripts/collectorNumber";
 
 async function backfillCards(): Promise<void> {
   const res = await query<{
@@ -36,7 +36,7 @@ async function backfillCards(): Promise<void> {
           collector_number_signals = CASE WHEN $2 IS NOT NULL THEN ARRAY['catalog'] ELSE ARRAY[]::text[] END
         WHERE id = $4;
       `,
-      [raw, norm, confidence, row.id],
+      [raw, norm, confidence, row.id]
     );
   }
   console.log(`Updated collector numbers for ${res.rows.length} cards.`);
@@ -59,7 +59,7 @@ async function backfillListings(): Promise<void> {
         ORDER BY id
         LIMIT $2;
       `,
-      [lastId, batchSize],
+      [lastId, batchSize]
     );
     if (res.rows.length === 0) {
       break;
@@ -77,7 +77,7 @@ async function backfillListings(): Promise<void> {
             detected_collector_number = $2
           WHERE id = $5;
         `,
-        [cn.raw, cn.norm, cn.confidence, cn.signals, row.id],
+        [cn.raw, cn.norm, cn.confidence, cn.signals, row.id]
       );
       lastId = row.id;
       processed += 1;

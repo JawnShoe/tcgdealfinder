@@ -22,7 +22,7 @@
  */
 
 import { query } from "../lib/db";
-import { queueAlertEmail } from "../lib/emailQueue";
+import { queueAlertEmail } from "../lib/rebuild/scripts/emailQueue";
 import {
   computeDiscountPercent,
   getDisplayDiscountPercent,

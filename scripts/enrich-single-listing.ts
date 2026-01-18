@@ -2,11 +2,11 @@
  * DEPRECATED: Uses Shopping API which is now disabled.
  *
  * This script will only return results for sellers with manual overrides
- * defined in lib/ebayStorefront.ts. API calls are blocked.
+ * defined in lib/rebuild/scripts/ebayStorefront.ts. API calls are blocked.
  */
 import "dotenv/config";
 import { query } from "../lib/db";
-import { fetchStorefrontInfo } from "../lib/ebayStorefront";
+import { fetchStorefrontInfo } from "../lib/rebuild/scripts/ebayStorefront";
 
 const listingId = process.argv[2];
 const market = process.argv[3] || "EBAY_US";

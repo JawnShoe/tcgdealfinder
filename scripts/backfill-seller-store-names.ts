@@ -6,14 +6,14 @@
  * enrichment is non-critical and has been disabled.
  *
  * If you need to run this script, you must first set SHOPPING_API_DISABLED=false
- * in lib/ebayStorefront.ts. This is NOT recommended for production use.
+ * in lib/rebuild/scripts/ebayStorefront.ts. This is NOT recommended for production use.
  *
  * Original usage:
  *   npx tsx scripts/backfill-seller-store-names.ts [--limit=50] [--market=EBAY_US] [--force]
  */
 
 import { query } from "../lib/db";
-import { fetchStorefrontInfo } from "../lib/ebayStorefront";
+import { fetchStorefrontInfo } from "../lib/rebuild/scripts/ebayStorefront";
 import type { MarketCode } from "../lib/markets";
 
 const DEPRECATION_WARNING = `
@@ -27,7 +27,7 @@ The fetchStorefrontInfo() function will return null for all sellers
 (except manual overrides). No API calls will be made.
 
 To re-enable (NOT recommended):
-  1. Edit lib/ebayStorefront.ts
+  1. Edit lib/rebuild/scripts/ebayStorefront.ts
   2. Set SHOPPING_API_DISABLED = false
   3. Run with small --limit values only
 

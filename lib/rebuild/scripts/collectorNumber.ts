@@ -21,16 +21,26 @@ const CONFIDENCE_ORDER: Record<CollectorNumberConfidence, number> = {
 
 const ASPECT_NAMES = new Set(
   ["card number", "collector number", "card #", "number"].map((value) =>
-    value.toLowerCase(),
-  ),
+    value.toLowerCase()
+  )
 );
 
-const PROMO_PREFIXES = ["SWSH", "SV", "SVP", "SM", "XY", "BW", "DP", "HGSS", "GG"];
+const PROMO_PREFIXES = [
+  "SWSH",
+  "SV",
+  "SVP",
+  "SM",
+  "XY",
+  "BW",
+  "DP",
+  "HGSS",
+  "GG",
+];
 const NEGATIVE_CONTEXT = /\b(PSA|BGS|BECKETT|CGC|BVG|BGA|PGS|1\/1|X\d+|LOT)\b/i;
 export const MAX_PLAIN_COLLECTOR_NUMBER = 999;
 
 export function normalizeCollectorNumber(
-  input: string | null | undefined,
+  input: string | null | undefined
 ): string | null {
   if (!input) return null;
   const cleaned = input
@@ -41,7 +51,7 @@ export function normalizeCollectorNumber(
 }
 
 export function extractCollectorNumber(
-  source: CollectorNumberSource,
+  source: CollectorNumberSource
 ): CollectorNumberResult {
   const signals: string[] = [];
 
@@ -50,7 +60,7 @@ export function extractCollectorNumber(
   const addCandidate = (
     raw: string,
     confidence: CollectorNumberConfidence,
-    signal: string,
+    signal: string
   ) => {
     const norm = normalizeCollectorNumber(raw);
     if (!norm) return;
@@ -63,7 +73,7 @@ export function extractCollectorNumber(
     addCandidate(
       fromAspects.raw,
       fromAspects.confidence,
-      `aspect:${fromAspects.signal}`,
+      `aspect:${fromAspects.signal}`
     );
   }
 
@@ -72,7 +82,7 @@ export function extractCollectorNumber(
     addCandidate(
       fromTitle.raw,
       fromTitle.confidence,
-      `title:${fromTitle.signal}`,
+      `title:${fromTitle.signal}`
     );
   }
 
@@ -81,8 +91,7 @@ export function extractCollectorNumber(
   }
 
   candidates.sort(
-    (a, b) =>
-      CONFIDENCE_ORDER[b.confidence] - CONFIDENCE_ORDER[a.confidence],
+    (a, b) => CONFIDENCE_ORDER[b.confidence] - CONFIDENCE_ORDER[a.confidence]
   );
   const best = candidates[0];
   return {
@@ -94,8 +103,12 @@ export function extractCollectorNumber(
 }
 
 function extractFromAspects(
-  aspects: Array<{ name?: string; value?: string }>,
-): { raw: string; confidence: CollectorNumberConfidence; signal: string } | null {
+  aspects: Array<{ name?: string; value?: string }>
+): {
+  raw: string;
+  confidence: CollectorNumberConfidence;
+  signal: string;
+} | null {
   for (const aspect of aspects) {
     const name = aspect.name?.trim();
     if (!name || !aspect.value) continue;
@@ -112,16 +125,21 @@ function extractFromAspects(
   return null;
 }
 
-function extractFromTitle(
-  rawTitle: string,
-): { raw: string; confidence: CollectorNumberConfidence; signal: string } | null {
+function extractFromTitle(rawTitle: string): {
+  raw: string;
+  confidence: CollectorNumberConfidence;
+  signal: string;
+} | null {
   if (!rawTitle) return null;
   const normalized = rawTitle.toUpperCase();
-  const signals: Array<{ raw: string; confidence: CollectorNumberConfidence; signal: string }> =
-    [];
+  const signals: Array<{
+    raw: string;
+    confidence: CollectorNumberConfidence;
+    signal: string;
+  }> = [];
 
   for (const match of normalized.matchAll(
-    /([A-Z]{0,3}\d{1,3}[A-Z]?)\s*\/\s*([A-Z]{0,3}\d{1,3}[A-Z]?)/g,
+    /([A-Z]{0,3}\d{1,3}[A-Z]?)\s*\/\s*([A-Z]{0,3}\d{1,3}[A-Z]?)/g
   )) {
     const left = match[1];
     const right = match[2];
@@ -138,7 +156,10 @@ function extractFromTitle(
   }
 
   for (const prefix of PROMO_PREFIXES) {
-    const promoPattern = new RegExp(`\\b${prefix}\\s*-?\\s*\\d{2,4}[A-Z]?\\b`, "i");
+    const promoPattern = new RegExp(
+      `\\b${prefix}\\s*-?\\s*\\d{2,4}[A-Z]?\\b`,
+      "i"
+    );
     const promoMatch = normalized.match(promoPattern);
     if (promoMatch) {
       const raw = promoMatch[0].replace(/\s|-/g, "");
@@ -168,7 +189,7 @@ function extractFromTitle(
     if (value > MAX_PLAIN_COLLECTOR_NUMBER) continue;
     const vicinity = normalized.slice(
       Math.max(0, (match.index ?? 0) - 6),
-      Math.min(normalized.length, (match.index ?? 0) + raw.length + 6),
+      Math.min(normalized.length, (match.index ?? 0) + raw.length + 6)
     );
     if (NEGATIVE_CONTEXT.test(vicinity)) continue;
     signals.push({
@@ -182,15 +203,14 @@ function extractFromTitle(
     return null;
   }
   signals.sort(
-    (a, b) =>
-      CONFIDENCE_ORDER[b.confidence] - CONFIDENCE_ORDER[a.confidence],
+    (a, b) => CONFIDENCE_ORDER[b.confidence] - CONFIDENCE_ORDER[a.confidence]
   );
   return signals[0];
 }
 
 function classifyValue(
   raw: string,
-  structured: boolean,
+  structured: boolean
 ): CollectorNumberConfidence {
   const normalized = raw.toUpperCase();
   if (/\d+\s*\/\s*\d+/.test(normalized)) {
@@ -210,7 +230,7 @@ function classifyValue(
 
 export function shouldRejectCollectorNumber(
   card: CollectorNumberResult,
-  listing: CollectorNumberResult,
+  listing: CollectorNumberResult
 ): { reject: boolean; detail?: string } {
   const cardRank = CONFIDENCE_ORDER[card.confidence];
   const listingRank = CONFIDENCE_ORDER[listing.confidence];

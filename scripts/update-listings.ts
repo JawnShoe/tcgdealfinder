@@ -16,7 +16,7 @@ import {
   shouldRejectCollectorNumber,
   type CollectorNumberConfidence,
   type CollectorNumberResult,
-} from "../lib/collectorNumber";
+} from "../lib/rebuild/scripts/collectorNumber";
 import {
   DEFAULT_MARKET,
   getExpectedCurrency,

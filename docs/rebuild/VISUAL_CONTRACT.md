@@ -278,7 +278,7 @@ Discovery v1 introduces minimal, data-first filtering controls and tightens lega
 **User-visible additions (Discovery):**
 
 - Filter controls added: price range (CAD), condition, language, min confidence threshold, seller substring.
-- List rows now include a concise trust summary line (confidence 0-100 + trust state) and freshness label; no deep drilldown on discovery.
+- List rows now include a concise trust summary line (confidence 0-100 + trust state) and freshness label; provenance drilldown remains available at the bottom of the page.
 - Invalid filter values return a deterministic 404 (Discovery-specific not-found state).
 
 **User-visible behavior changes (Legacy routes):**

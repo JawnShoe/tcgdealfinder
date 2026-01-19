@@ -35,16 +35,16 @@ These document operational procedures and policies (Repo Hardening Pack).
 
 ---
 
-## Design Documents (Advisory — Temporary)
+## Design Documents (Archived)
 
-These are planning artifacts for the phased redesign. They will be archived after Phase 1 and Phase 2 are completed.
+These planning artifacts for the phased redesign have been archived. They are preserved for historical reference only.
 
-| Document                                                              | Purpose                                                 | Status         |
-| --------------------------------------------------------------------- | ------------------------------------------------------- | -------------- |
-| [docs/design/DESIGN_AUDIT_2025-01.md](design/DESIGN_AUDIT_2025-01.md) | External expert design audit (advisory, non-executable) | Advisory       |
-| [docs/design/DESIGN_PHASES.md](design/DESIGN_PHASES.md)               | Locked phased redesign plan                             | Phase 1 ACTIVE |
+| Document                                                                              | Purpose                                                 | Status   |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------- |
+| [docs/archive/design/DESIGN_AUDIT_2025-01.md](archive/design/DESIGN_AUDIT_2025-01.md) | External expert design audit (advisory, non-executable) | Archived |
+| [docs/archive/design/DESIGN_PHASES.md](archive/design/DESIGN_PHASES.md)               | Locked phased redesign plan                             | Archived |
 
-**Note**: The audit is advisory only. All execution must be scoped via DESIGN_PHASES.md.
+**Note**: These documents are advisory only and preserved for historical reference.
 
 ---
 
@@ -114,28 +114,34 @@ CI runs only unit tests (`npm run test:unit`) to avoid requiring DATABASE_URL se
 
 ---
 
-## Rebaseline Artifacts
+## Rebaseline Artifacts (Archived)
 
-Baseline inventory and review plan for REBASELINE v1.
+Baseline inventory and review plan for REBASELINE v1 (completed). Archived for historical reference.
 
-| Document                                                                          | Purpose                                     | Status |
-| --------------------------------------------------------------------------------- | ------------------------------------------- | ------ |
-| [docs/rebaseline/REPO_PACKET_2025-12-29.md](rebaseline/REPO_PACKET_2025-12-29.md) | Complete repo inventory snapshot            | ACTIVE |
-| [docs/rebaseline/CRITICALITY_MAP.md](rebaseline/CRITICALITY_MAP.md)               | Folder criticality labels                   | ACTIVE |
-| [docs/rebaseline/MODULE_REVIEW_PLAN.md](rebaseline/MODULE_REVIEW_PLAN.md)         | Module review order and acceptance criteria | ACTIVE |
-| [docs/rebaseline/modules/](rebaseline/modules/)                                   | Module review docs (M01–M09)                | ACTIVE |
-| [docs/CLEANUP_INVENTORY.md](CLEANUP_INVENTORY.md)                                 | Repo-wide cleanup candidates (inventory)    | ACTIVE |
+| Document                                                                                          | Purpose                                     | Status   |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------- | -------- |
+| [docs/archive/rebaseline/REPO_PACKET_2025-12-29.md](archive/rebaseline/REPO_PACKET_2025-12-29.md) | Complete repo inventory snapshot            | Archived |
+| [docs/archive/rebaseline/CRITICALITY_MAP.md](archive/rebaseline/CRITICALITY_MAP.md)               | Folder criticality labels                   | Archived |
+| [docs/archive/rebaseline/MODULE_REVIEW_PLAN.md](archive/rebaseline/MODULE_REVIEW_PLAN.md)         | Module review order and acceptance criteria | Archived |
+| [docs/archive/rebaseline/modules/](archive/rebaseline/modules/)                                   | Module review docs (M01–M10)                | Archived |
+| [docs/CLEANUP_INVENTORY.md](CLEANUP_INVENTORY.md)                                                 | Repo-wide cleanup candidates (inventory)    | ACTIVE   |
 
 ---
 
 ## Historical Archive (Non-Executable)
 
-Completed implementation records and audits are preserved in `docs/archive/` for reference only. These documents are **not actionable** — they represent past work, superseded plans, or closed audits.
+Completed implementation records, audits, and planning artifacts are preserved in `docs/archive/` for reference only. These documents are **not actionable** — they represent past work, superseded plans, or closed audits.
 
-| Folder                                  | Contents                                                 |
-| --------------------------------------- | -------------------------------------------------------- |
-| [docs/archive/](archive/)               | Historical implementation records (13 files)             |
-| [docs/archive/audits/](archive/audits/) | Closed audit artifacts (2 superseded + 2025 full system) |
+| Folder                                          | Contents                                              |
+| ----------------------------------------------- | ----------------------------------------------------- |
+| [docs/archive/](archive/)                       | Historical implementation records                     |
+| [docs/archive/audits/](archive/audits/)         | Closed audit artifacts (2025 full system + inventory) |
+| [docs/archive/design/](archive/design/)         | Design audit and phases (archived)                    |
+| [docs/archive/plan/](archive/plan/)             | Implementation plans (Option A, sold data options)    |
+| [docs/archive/audit/](archive/audit/)           | Product truth philosophy audit                        |
+| [docs/archive/incidents/](archive/incidents/)   | Incident reports                                      |
+| [docs/archive/db/](archive/db/)                 | Database index audit                                  |
+| [docs/archive/rebaseline/](archive/rebaseline/) | REBASELINE v1 artifacts (repo packet, modules)        |
 
 See the [archive README](archive/README.md) for navigation.
 

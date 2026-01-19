@@ -57,6 +57,12 @@ Inference, memory recall, or conversational summaries are not allowed.
 - Rebuild pages MUST render a "data unavailable in this environment" empty state when DB is not configured.
 - Rebuild pages MUST NOT fail CI builds due to missing DB configuration.
 
+## Canonical Currency Contract (Rebuild Lane)
+
+- Canonical internal currency is USD only (`USD` cents). Non-USD currencies are boundary-only.
+- Currency conversion is allowed only at boundaries: input normalization and display formatting.
+- Core logic (scoring, ranking, persistence decisions, alerts evaluation) MUST operate on USD cents and MUST NOT perform CAD math or silently fall back on unexpected currency values.
+
 ## Rate Limiting / Abuse Contract (Rebuild Lane)
 
 Public routes:

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AlertDefinition } from "./alerts";
+import { cadCurrencyCode } from "@/lib/rebuild/currency/cad";
 
 const savedSearchSchema = z
   .object({
@@ -13,7 +14,7 @@ const priceThresholdSchema = z
     type: z.literal("price_threshold"),
     listingId: z.string().min(1),
     maxPrice: z.number().positive(),
-    currency: z.enum(["CAD", "USD", "NATIVE"]),
+    currency: z.enum([cadCurrencyCode, "USD", "NATIVE"]),
   })
   .strict();
 

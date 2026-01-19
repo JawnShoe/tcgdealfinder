@@ -1,6 +1,8 @@
 import type { ListingDomain } from "@/lib/rebuild/data/listingMapper";
 import type { CardLanguage } from "@/lib/rebuild/data/listingMapper";
 import { parsePreset, type Preset } from "@/lib/rebuild/prefs/rebuildPrefs";
+import { toUsdCentsFromCadDollars } from "@/lib/rebuild/currency/cad";
+import { toUsdCentsFromUsdDollars } from "@/lib/rebuild/currency/canonical";
 
 export const ALLOWED_CONDITIONS = ["NM", "LP", "MP", "HP", "DMG"] as const;
 export type Condition = (typeof ALLOWED_CONDITIONS)[number];
@@ -175,14 +177,25 @@ function matchesFilters(
   filters: DiscoveryFilters
 ): boolean {
   if (filters.priceMinCad != null || filters.priceMaxCad != null) {
-    const totalCad = deal.price.totalCad;
-    if (totalCad == null) {
+    const totalUsd = deal.price.totalUsd;
+    if (totalUsd == null) {
       return false;
     }
-    if (filters.priceMinCad != null && totalCad < filters.priceMinCad) {
+
+    const totalUsdCents = toUsdCentsFromUsdDollars(totalUsd);
+    const minUsdCents =
+      filters.priceMinCad != null
+        ? toUsdCentsFromCadDollars(filters.priceMinCad)
+        : null;
+    const maxUsdCents =
+      filters.priceMaxCad != null
+        ? toUsdCentsFromCadDollars(filters.priceMaxCad)
+        : null;
+
+    if (minUsdCents != null && totalUsdCents < minUsdCents) {
       return false;
     }
-    if (filters.priceMaxCad != null && totalCad > filters.priceMaxCad) {
+    if (maxUsdCents != null && totalUsdCents > maxUsdCents) {
       return false;
     }
   }

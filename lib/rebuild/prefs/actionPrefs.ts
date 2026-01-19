@@ -1,4 +1,6 @@
-export type RebuildBudgetCurrency = "CAD" | "USD" | "NATIVE";
+import { cadCurrencyCode } from "@/lib/rebuild/currency/cad";
+
+export type RebuildBudgetCurrency = typeof cadCurrencyCode | "USD" | "NATIVE";
 
 export type RebuildBudgetPreference = {
   max: number | null;
@@ -79,9 +81,9 @@ function parseCurrency(
 ): RebuildBudgetCurrency | null {
   if (!value) return null;
   const normalized = value.toUpperCase();
-  if (normalized === "CAD" || normalized === "USD" || normalized === "NATIVE") {
-    return normalized;
-  }
+  if (normalized === cadCurrencyCode) return cadCurrencyCode;
+  if (normalized === "USD") return "USD";
+  if (normalized === "NATIVE") return "NATIVE";
   return null;
 }
 

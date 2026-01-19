@@ -14,6 +14,12 @@ export const ALLOWED_CONFIDENCE_THRESHOLDS = ["any", "medium", "high"] as const;
 export type ConfidenceThreshold =
   (typeof ALLOWED_CONFIDENCE_THRESHOLDS)[number];
 
+export const DEFAULT_DISCOVERY_PAGE = 1;
+// Keep default page size aligned with existing /discovery behavior (was 25).
+export const DEFAULT_DISCOVERY_PAGE_SIZE = 25;
+export const MAX_DISCOVERY_PAGE_SIZE = 100;
+export const MAX_DISCOVERY_FETCH_LIMIT = 500;
+
 export type DiscoveryFilters = {
   priceMinCad: number | null;
   priceMaxCad: number | null;
@@ -23,9 +29,15 @@ export type DiscoveryFilters = {
   seller: string | null;
 };
 
+export type DiscoveryPagination = {
+  page: number;
+  pageSize: number;
+};
+
 export type DiscoveryQuery = {
   preset: Preset;
   filters: DiscoveryFilters;
+  pagination: DiscoveryPagination;
 };
 
 export type ParseDiscoveryQueryResult =
@@ -40,6 +52,33 @@ export const DEFAULT_DISCOVERY_FILTERS: DiscoveryFilters = {
   language: null,
   minConfidence: "any",
   seller: null,
+};
+
+export const DEFAULT_DISCOVERY_PAGINATION: DiscoveryPagination = {
+  page: DEFAULT_DISCOVERY_PAGE,
+  pageSize: DEFAULT_DISCOVERY_PAGE_SIZE,
+};
+
+export type DiscoveryFacets = {
+  /**
+   * Facets are computed after applying all filters (including the facet itself).
+   * This keeps the behavior deterministic and avoids changing the result set.
+   */
+  condition: Record<Condition, number> & { unknown: number };
+  language: Record<Language, number>;
+  confidence: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+};
+
+export type PaginatedDiscoveryResult = {
+  items: ListingDomain[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  facets: DiscoveryFacets;
 };
 
 type SearchParamsRecord = { [key: string]: string | string[] | undefined };
@@ -58,11 +97,14 @@ export function parseDiscoveryQuery(
     return { kind: "invalid_filters" };
   }
 
+  const pagination = parseDiscoveryPagination(searchParams);
+
   return {
     kind: "ok",
     query: {
       preset: presetResult,
       filters: filtersResult.filters,
+      pagination,
     },
   };
 }
@@ -94,6 +136,90 @@ export function filterDealsByDiscoveryQuery(
   return deals.filter((deal) => matchesFilters(deal, filters));
 }
 
+export function orderDealsForDiscovery(
+  deals: ListingDomain[],
+  preset: Preset
+): ListingDomain[] {
+  if (preset === "biggest-discount") {
+    return [...deals].sort((left, right) => {
+      const leftDiscount =
+        left.price.discountPercent ?? Number.NEGATIVE_INFINITY;
+      const rightDiscount =
+        right.price.discountPercent ?? Number.NEGATIVE_INFINITY;
+      if (leftDiscount !== rightDiscount) {
+        return rightDiscount - leftDiscount;
+      }
+
+      const leftUpdated = left.provenance.updatedAtISO ?? "";
+      const rightUpdated = right.provenance.updatedAtISO ?? "";
+      if (leftUpdated !== rightUpdated) {
+        return rightUpdated.localeCompare(leftUpdated);
+      }
+
+      return left.listingId.localeCompare(right.listingId);
+    });
+  }
+
+  // Preserve current behavior for other presets (DB ordering).
+  return deals;
+}
+
+export function computeDiscoveryFacets(
+  deals: ListingDomain[]
+): DiscoveryFacets {
+  const condition = Object.fromEntries(
+    ALLOWED_CONDITIONS.map((key) => [key, 0])
+  ) as Record<Condition, number>;
+  const language = Object.fromEntries(
+    ALLOWED_LANGUAGES.map((key) => [key, 0])
+  ) as Record<Language, number>;
+
+  const confidence = { high: 0, medium: 0, low: 0 };
+  let unknownCondition = 0;
+
+  for (const deal of deals) {
+    if (deal.condition && deal.condition in condition) {
+      condition[deal.condition as Condition] += 1;
+    } else {
+      unknownCondition += 1;
+    }
+
+    const dealLanguage = deal.language as Language;
+    if (dealLanguage in language) {
+      language[dealLanguage] += 1;
+    }
+
+    const label = deal.trust.confidence.label;
+    if (label === "high" || label === "medium" || label === "low") {
+      confidence[label] += 1;
+    }
+  }
+
+  return {
+    condition: { ...condition, unknown: unknownCondition },
+    language,
+    confidence,
+  };
+}
+
+export function paginateDiscoveryResults(
+  deals: ListingDomain[],
+  pagination: DiscoveryPagination
+): PaginatedDiscoveryResult {
+  const totalCount = deals.length;
+  const { page, pageSize } = pagination;
+  const offset = (page - 1) * pageSize;
+  const items = deals.slice(offset, offset + pageSize);
+
+  return {
+    items,
+    totalCount,
+    page,
+    pageSize,
+    facets: computeDiscoveryFacets(deals),
+  };
+}
+
 export function serializeDiscoveryFilters(filters: DiscoveryFilters): {
   priceMinCad: string | null;
   priceMaxCad: string | null;
@@ -113,6 +239,24 @@ export function serializeDiscoveryFilters(filters: DiscoveryFilters): {
       filters.minConfidence !== "any" ? filters.minConfidence : null,
     seller: filters.seller,
   };
+}
+
+function parseDiscoveryPagination(
+  searchParams: SearchParamsRecord
+): DiscoveryPagination {
+  const page = parseBoundedInt(first(searchParams.page), {
+    min: 1,
+    max: Number.POSITIVE_INFINITY,
+    fallback: DEFAULT_DISCOVERY_PAGINATION.page,
+  });
+
+  const pageSize = parseBoundedInt(first(searchParams.pageSize), {
+    min: 1,
+    max: MAX_DISCOVERY_PAGE_SIZE,
+    fallback: DEFAULT_DISCOVERY_PAGINATION.pageSize,
+  });
+
+  return { page, pageSize };
 }
 
 function parseDiscoveryFilters(
@@ -252,6 +396,29 @@ function parseNullableInt(input: string | null):
     return { kind: "invalid" };
   }
   return { kind: "ok", value: parsed };
+}
+
+function parseBoundedInt(
+  input: string | null,
+  opts: { min: number; max: number; fallback: number }
+): number {
+  if (input == null || input.trim() === "") {
+    return opts.fallback;
+  }
+  if (!/^\d+$/.test(input.trim())) {
+    return opts.fallback;
+  }
+
+  const parsed = Number(input.trim());
+  if (!Number.isFinite(parsed)) {
+    return opts.fallback;
+  }
+
+  if (parsed < opts.min) {
+    return opts.fallback;
+  }
+
+  return Math.min(parsed, opts.max);
 }
 
 function parseNullableEnum<const T extends readonly string[]>(

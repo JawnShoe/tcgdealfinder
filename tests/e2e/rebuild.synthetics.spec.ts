@@ -1222,6 +1222,44 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
   }
 });
 
+test("Discovery UX contract: filters render + empty state + reset returns results", async ({
+  page,
+}) => {
+  await page.goto(`${baseURL}/discovery`, { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByTestId("discovery-filters-bar")).toBeVisible();
+
+  const resultsCount = page.getByTestId("discovery-results-count");
+  await expect(resultsCount).toBeVisible();
+  const initialCountRaw = await resultsCount.getAttribute("data-count");
+  const initialCount = Number(initialCountRaw ?? NaN);
+  expect(Number.isFinite(initialCount)).toBeTruthy();
+  expect(initialCount).toBeGreaterThan(0);
+
+  await page.getByTestId("discovery-filter-min-price-cad").fill("99999999");
+  await page.getByTestId("discovery-filter-seller").fill("zzzzzzzzzz");
+  await page.getByTestId("discovery-filters-apply").click();
+
+  await expect(page).toHaveURL(/\/discovery\?/);
+  await expect(page.getByTestId("discovery-empty-state")).toBeVisible();
+  await expect(page.getByTestId("discovery-results-count")).toHaveAttribute(
+    "data-count",
+    "0"
+  );
+
+  await page.getByTestId("discovery-filters-clear").click();
+
+  await expect(page).toHaveURL(/\/discovery\/?$/);
+  await expect(page.getByTestId("discovery-empty-state")).toHaveCount(0);
+
+  const resetCountRaw = await page
+    .getByTestId("discovery-results-count")
+    .getAttribute("data-count");
+  const resetCount = Number(resetCountRaw ?? NaN);
+  expect(Number.isFinite(resetCount)).toBeTruthy();
+  expect(resetCount).toBeGreaterThan(0);
+});
+
 test("rebuild perceived speed: skeletons + priority hydration + intent prefetch", async ({
   page,
   request,

@@ -8,6 +8,7 @@ import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import ResilienceLabel from "@/components/rebuild/ResilienceLabel";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
+import { ensureRebuildCardsLanguageColumn } from "@/lib/rebuild/data/schema";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 import {
   dedupeDeals,
@@ -124,6 +125,12 @@ export default async function DiscoveryPage({
     }
 
     const isDbConfigured = isRebuildDbConfigured();
+    if (isDbConfigured) {
+      await ensureRebuildCardsLanguageColumn({
+        route: "/discovery",
+        requestId,
+      });
+    }
     const { deals, fetchedAtISO } = await getRecentDeals(25);
     const orderedDeals = sortDealsByPrefs(deals, prefs);
     const filteredDeals = filterDealsByDiscoveryQuery(orderedDeals, query);
@@ -179,14 +186,21 @@ export default async function DiscoveryPage({
               <h2 className="text-lg font-semibold text-slate-900">
                 Recent deals
               </h2>
-              <p className="text-xs text-slate-500">
+              <p
+                data-testid="discovery-results-count"
+                data-count={dedupedDeals.length}
+                className="text-xs text-slate-500"
+              >
                 {dedupedDeals.length} result
                 {dedupedDeals.length !== 1 ? "s" : ""}
               </p>
             </div>
 
             {dedupedDeals.length === 0 ? (
-              <div className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
+              <div
+                data-testid="discovery-empty-state"
+                className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center"
+              >
                 <p className="text-sm text-slate-600">
                   {isDbConfigured
                     ? "No deals available at this time."

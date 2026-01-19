@@ -117,6 +117,7 @@ export default function DiscoveryFiltersBar({
 
   return (
     <form
+      data-testid="discovery-filters-bar"
       className={`mt-4 rounded-lg border border-slate-200 bg-white px-4 py-3 ${className ?? ""}`}
       onSubmit={(event) => {
         event.preventDefault();
@@ -145,6 +146,7 @@ export default function DiscoveryFiltersBar({
           <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700">
             Min price (CAD)
             <input
+              data-testid="discovery-filter-min-price-cad"
               className="mt-1 block w-28 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700"
               inputMode="numeric"
               pattern="\\d*"
@@ -238,6 +240,7 @@ export default function DiscoveryFiltersBar({
           <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700">
             Seller
             <input
+              data-testid="discovery-filter-seller"
               className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700"
               value={seller}
               onChange={(event) => setSeller(event.target.value)}
@@ -247,12 +250,14 @@ export default function DiscoveryFiltersBar({
 
         <div className="flex gap-2">
           <button
+            data-testid="discovery-filters-apply"
             type="submit"
             className="rounded-md border border-slate-300 bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-800"
           >
             Apply
           </button>
           <button
+            data-testid="discovery-filters-clear"
             type="button"
             className="rounded-md border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             onClick={handleClear}

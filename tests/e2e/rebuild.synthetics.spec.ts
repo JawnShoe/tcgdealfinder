@@ -129,53 +129,20 @@ test("Stage 1 decommission: /search redirects to /rebuild/discovery", async ({
   await assertUiTrustSurfaces(page);
 });
 
-test("Stage 1 decommission: /sets redirects to /rebuild/discovery", async ({
-  page,
+// Stage 4: /sets stubs deleted - all requests return 404
+test("Stage 4 delete: /sets returns 404 (stubs removed)", async ({
   request,
 }) => {
-  const legacyUrl = `${baseURL}/sets`;
-  const expectedPath = "/rebuild/discovery";
-
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/rebuild/discovery`));
-  await assertUiTrustSurfaces(page);
+  const response = await request.get(`${baseURL}/sets`);
+  expect(response.status()).toBe(404);
 });
 
-test("Stage 1 decommission: /sets/[setId] redirects to /rebuild/discovery", async ({
-  page,
+test("Stage 4 delete: /sets/[setId] returns 404 (stubs removed)", async ({
   request,
 }) => {
-  // Use any setId - redirect is unconditional (degraded parity: set filter not supported)
-  const legacyUrl = `${baseURL}/sets/1`;
-  const expectedPath = "/rebuild/discovery";
-
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/rebuild/discovery`));
-  await assertUiTrustSurfaces(page);
+  // Any setId now returns 404 since stubs are deleted
+  const response = await request.get(`${baseURL}/sets/1`);
+  expect(response.status()).toBe(404);
 });
 
 test("Stage 1 decommission: /alerts redirects to /rebuild/alerts", async ({

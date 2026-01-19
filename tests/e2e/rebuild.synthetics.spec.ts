@@ -1222,6 +1222,42 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
   }
 });
 
+test("Discovery UX contract: filters render + empty state + reset returns results", async ({
+  page,
+}) => {
+  await page.goto(`${baseURL}/discovery?sort=newest`, {
+    waitUntil: "domcontentloaded",
+  });
+
+  await expect(page.getByTestId("discovery-filters-bar")).toBeVisible();
+
+  await expect(page.getByTestId("discovery-results-count")).toHaveAttribute(
+    "data-count",
+    /[1-9]\d*/
+  );
+
+  await page.goto(
+    `${baseURL}/discovery?sort=newest&minPriceCad=99999999&maxPriceCad=99999999`,
+    { waitUntil: "domcontentloaded" }
+  );
+
+  await expect(page.getByTestId("discovery-results-count")).toHaveAttribute(
+    "data-count",
+    "0"
+  );
+  await expect(page.getByTestId("discovery-empty-state")).toBeVisible({
+    timeout: 15000,
+  });
+
+  await page.goto(`${baseURL}/discovery?sort=newest`, {
+    waitUntil: "domcontentloaded",
+  });
+  await expect(page.getByTestId("discovery-results-count")).toHaveAttribute(
+    "data-count",
+    /[1-9]\d*/
+  );
+});
+
 test("rebuild perceived speed: skeletons + priority hydration + intent prefetch", async ({
   page,
   request,

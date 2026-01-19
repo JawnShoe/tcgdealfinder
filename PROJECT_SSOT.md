@@ -1,7 +1,7 @@
 # PROJECT SSOT — TCG Deal Finder
 
 **Last Updated**: 2026-01-05
-**Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080). **T2-6 merged (PR #175)**: Alerts subscribe/unsubscribe UX + APIs complete (flag-gated). **T2-7**: Alerts sending go-live gating complete (operator-safe, default-safe). **T2-8**: Alerts idempotency updated to one-email-per-listing. **P2.1**: Health job status + go-live schedule gate complete — `/api/health` exposes job freshness with OK/STALE signals; go-live gate documented in `docs/ENV_RUNBOOK.md`. **P2.2**: Index audit complete — no index changes needed at current scale (see `docs/db/INDEX_AUDIT_P2.2.md`). Re-run P2.2 when listings > 50k or /top-deals p95 > 500ms. **P2.3**: Closed — no true N+1 DB query patterns found; 60s cache + batching already prevents N+1 at DB level (evidence: cold-run DB logs on `/`, `/top-deals`, `/cards/[id]`, `/ending-soon`).
+**Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080). **T2-6 merged (PR #175)**: Alerts subscribe/unsubscribe UX + APIs complete (flag-gated). **T2-7**: Alerts sending go-live gating complete (operator-safe, default-safe). **T2-8**: Alerts idempotency updated to one-email-per-listing. **P2.1**: Health job status + go-live schedule gate complete — `/api/health` exposes job freshness with OK/STALE signals; go-live gate documented in `docs/ENV_RUNBOOK.md`. **P2.2**: Index audit complete — no index changes needed at current scale (see `docs/archive/db/INDEX_AUDIT_P2.2.md`). Re-run P2.2 when listings > 50k or /top-deals p95 > 500ms. **P2.3**: Closed — no true N+1 DB query patterns found; 60s cache + batching already prevents N+1 at DB level (evidence: cold-run DB logs on `/`, `/top-deals`, `/cards/[id]`, `/ending-soon`).
 
 **ACTIVE WORK**: P4.1 — Design Phase 1 (visual legitimacy, strictly non-functional)
 **Workstreams & Priorities**: `docs/WORKSTREAMS_MASTER.md`
@@ -97,14 +97,14 @@ _NOTE: Prior local-only Claude plan existed outside repo; no longer referenced. 
 - Restorepoint bundle for admin UI fixes (2025-12-22): `T:\Projects\restorepoints\admin-ui-8b6003c.bundle`.
 - Restorepoint bundle for pre-Tailwind v4 migration (2025-12-24): `t:\Projects\tcg-deal-finder-pre-tailwind-v4-migration.bundle` (HEAD: 1861b7f).
 - Job Silence Watchdog (2025-12-26): Added `.github/workflows/job-silence-watchdog.yml` to detect when scheduled data pipeline jobs have not run. Runs every 2 hours; checks `/api/health` freshness data; fails workflow if listings >2h stale or historical prices >26h stale. Distinguishes "job didn't run" from "job ran and failed". PR #66 (commit eea4de6).
-- Design Audit + Phases Docs (2025-12-27): Added `docs/design/DESIGN_AUDIT_2025-01.md` (external expert audit, advisory-only) and `docs/design/DESIGN_PHASES.md` (locked Phase 1 definition). Design Direction section added to SSOT as pointer. Classification: Docs-only (advisory planning artifacts, temporary). PR: #73 (merged). Merge commit: d21300c.
+- Design Audit + Phases Docs (2025-12-27): Added `docs/archive/design/DESIGN_AUDIT_2025-01.md` (external expert audit, advisory-only) and `docs/archive/design/DESIGN_PHASES.md` (locked Phase 1 definition). Design Direction section added to SSOT as pointer. Classification: Docs-only (advisory planning artifacts, temporary). PR: #73 (merged). Merge commit: d21300c.
 - Option A Phase 0 ƒ?" FX run instrumentation (2025-12-28): Added `migrations/009_option_a_fx_rate_runs.sql` and updated `scripts/update-fx-rates-auto.ts` to use Open Exchange Rates (env-only `OPEN_EXCHANGE_RATES_APP_ID`) with hard bounds + 5%/15% drift gating (hold last-known). `/api/health` now surfaces provider/cadence + last-success vs last-attempt status and listing invariant rates (`total_usd` null rate, shipping unknown rate). PR: #96 (merged).
 - Option A Phase 1 ƒ?" Listing snapshot + deterministic totals (2025-12-28): Added `migrations/010_option_a_listings_snapshot_fx_precision.sql` to introduce `snapshot_at`, `ingested_at`, `shipping_unknown`, `fx_status`, `fx_timestamp` and widen `total_usd`/`fx_rate_to_usd` precision. Updated `scripts/update-listings.ts` to compute deterministic totals even when shipping is unknown and to represent missing FX as `fx_status='MISSING'` without writing `total_usd`. Updated `lib/fxRates.ts` to return precise USD values (no display rounding). No ranking or UI feature changes in this phase. PR: #98 (merged).
 - Option A Phase 2 ƒ?" USD sold baselines (2025-12-28): Added `migrations/011_option_a_sold_fx_snapshot.sql` and `migrations/012_option_a_historical_baseline_usd.sql` to extend `ebay_sold_listings` with currency + FX snapshot fields and to add `historical_prices.baseline_median_usd` + baseline metadata (`baseline_sample_size_usd`, `baseline_window_days`, `baseline_outlier_trim_percent`, `baseline_status`). Updated `scripts/update-sold-listings.ts` to persist sold snapshots with deterministic totals + FX snapshot and updated `scripts/update-historical-prices.ts` to compute/persist `baseline_median_usd` from `ebay_sold_listings.total_usd` using the locked knobs (90d/180d fallback, min 30 comps, trim 5%). No ranking or UI feature changes in this phase; `baseline_median_usd` is not read by deal surfaces yet. PR: #102 (merged).
 - Track B — UI/SSR stability pass (2025-12-29): Historic USD display preserved; made deterministic to avoid hydration mismatch on `/`, `/top-deals`, and `/watchlist` (no client-side currency conversion/repair for Historic). PR: #109 (merged). Merge commit: df62aac.
 - Track B — Tooltip parity + deterministic "≈ USD" (2025-12-29): Eliminated "≈ USD" flicker (removed viewer-locale gating); restored 2-row price layout (price+discount pinned; optional "≈ USD" row); tooltip parity standardized (native `title=` removed where needed; tooltip component unified). PR: #110 (merged). Merge commit: dcb35ae.
 - P2.1 — Health job status + go-live schedule gate (2026-01-02): Enhanced `/api/health` to expose job freshness with deterministic OK/STALE/UNKNOWN signals for all pipeline jobs (listings, historical prices, sold listings, FX rates, alerts sending). Added `jobs` object with status, lastSuccessAt, ageHours, and staleThresholdHours per job. Documented explicit operator go-live gate in `docs/ENV_RUNBOOK.md` with pre-flight checklist and enable/rollback steps. Schedules remain disabled by default. PR: #181.
-- **STOP**: Sold baselines blocked pending approved sold-data source. See `docs/plan/SOLD_DATA_SOURCE_OPTIONS.md`.
+- **STOP**: Sold baselines blocked pending approved sold-data source. See `docs/archive/plan/SOLD_DATA_SOURCE_OPTIONS.md`.
 - eBay update (2025-12-28): eBay DTS ticket closed; eBay directed us to submit an Application Growth Check (AGC) for Marketplace Insights API access/rate limits. AGC packet: `docs/ops/EBAY_AGC_SUBMISSION_PACKET.md`. Link: https://developer.ebay.com/my/support/tickets?tab=app-check (AGC Reference #: 251228-000007).
 
 ### Security / Admin Access
@@ -276,8 +276,8 @@ It is advisory only and informs phased redesign planning.
 
 Canonical references:
 
-- `docs/design/DESIGN_AUDIT_2025-01.md`
-- `docs/design/DESIGN_PHASES.md`
+- `docs/archive/design/DESIGN_AUDIT_2025-01.md`
+- `docs/archive/design/DESIGN_PHASES.md`
 
 ---
 
@@ -509,16 +509,16 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 #### Rebaseline Progress
 
-- **M01** Dangerous scripts hardening — PRs: #123 — doc: `docs/rebaseline/modules/M01_DANGEROUS_SCRIPTS.md`
-- **M02** Data correctness review + negative price guard — PRs: #124, #125 — doc: `docs/rebaseline/modules/M02_DATA_CORRECTNESS.md`
-- **M03** Pricing/FX review + missing-rate signal + dev log dedupe — PRs: #126, #127, #128 — doc: `docs/rebaseline/modules/M03_PRICING_FX.md`
-- **M04** Dedup + canonical IDs review — PRs: #132 — doc: `docs/rebaseline/modules/M04_DEDUP_CANONICAL_IDS.md`
-- **M05** Scoring + confidence review — PRs: #134, #135 — doc: `docs/rebaseline/modules/M05_SCORING_CONFIDENCE.md`
-- **M06** Blacklist + overrides review — PRs: #136 — doc: `docs/rebaseline/modules/M06_BLACKLIST_OVERRIDES.md`
-- **M07** DB architecture + migrations review — PRs: #139 — doc: `docs/rebaseline/modules/M07_DB_ARCHITECTURE_MIGRATIONS.md`
-- **M08** GitHub workflows review + timeout hardening — PRs: #148 — doc: `docs/rebaseline/modules/M08_GITHUB_WORKFLOWS.md`
-- **M09** Docs review + governance inventory/deprecation pass — PRs: #151 — doc: `docs/rebaseline/modules/M09_DOCS_REVIEW.md`
-- **M10** Dead code candidates review — PRs: #152 — doc: `docs/rebaseline/modules/M10_DEAD_CODE_CANDIDATES.md`
+- **M01** Dangerous scripts hardening — PRs: #123 — doc: `docs/archive/rebaseline/modules/M01_DANGEROUS_SCRIPTS.md`
+- **M02** Data correctness review + negative price guard — PRs: #124, #125 — doc: `docs/archive/rebaseline/modules/M02_DATA_CORRECTNESS.md`
+- **M03** Pricing/FX review + missing-rate signal + dev log dedupe — PRs: #126, #127, #128 — doc: `docs/archive/rebaseline/modules/M03_PRICING_FX.md`
+- **M04** Dedup + canonical IDs review — PRs: #132 — doc: `docs/archive/rebaseline/modules/M04_DEDUP_CANONICAL_IDS.md`
+- **M05** Scoring + confidence review — PRs: #134, #135 — doc: `docs/archive/rebaseline/modules/M05_SCORING_CONFIDENCE.md`
+- **M06** Blacklist + overrides review — PRs: #136 — doc: `docs/archive/rebaseline/modules/M06_BLACKLIST_OVERRIDES.md`
+- **M07** DB architecture + migrations review — PRs: #139 — doc: `docs/archive/rebaseline/modules/M07_DB_ARCHITECTURE_MIGRATIONS.md`
+- **M08** GitHub workflows review + timeout hardening — PRs: #148 — doc: `docs/archive/rebaseline/modules/M08_GITHUB_WORKFLOWS.md`
+- **M09** Docs review + governance inventory/deprecation pass — PRs: #151 — doc: `docs/archive/rebaseline/modules/M09_DOCS_REVIEW.md`
+- **M10** Dead code candidates review — PRs: #152 — doc: `docs/archive/rebaseline/modules/M10_DEAD_CODE_CANDIDATES.md`
 
 #### Tier 2 Status: ✅ COMPLETE (MVP)
 

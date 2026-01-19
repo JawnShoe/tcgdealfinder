@@ -94,21 +94,12 @@ export function AlertsSubscribeClient({
           >
             Subscribe another email
           </button>
-          {initialCardId ? (
-            <Link
-              href={`/cards/${initialCardId}`}
-              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-            >
-              Back to card
-            </Link>
-          ) : (
-            <Link
-              href="/"
-              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-            >
-              Browse deals
-            </Link>
-          )}
+          <Link
+            href="/rebuild/discovery"
+            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+          >
+            Browse deals
+          </Link>
         </div>
       </div>
     );
@@ -157,8 +148,7 @@ export function AlertsSubscribeClient({
               />
             )}
             <p className="text-xs text-slate-500">
-              Find the card ID in the URL when viewing a card (e.g.,
-              /cards/123).
+              Find the card ID in the admin alerts tool.
             </p>
           </div>
 

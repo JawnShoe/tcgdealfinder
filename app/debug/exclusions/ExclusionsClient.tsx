@@ -54,16 +54,18 @@ async function applyOverride(
       credentials: "include", // Include cookies for auth
       body: JSON.stringify({ listingId, overrideType, reason }),
     });
-    
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
       return {
         success: false,
         error: errorData.error || `HTTP ${response.status}`,
         status: response.status,
       };
     }
-    
+
     return { success: true };
   } catch (error) {
     return {
@@ -73,22 +75,29 @@ async function applyOverride(
   }
 }
 
-async function removeOverride(listingId: string): Promise<{ success: boolean; error?: string; status?: number }> {
+async function removeOverride(
+  listingId: string
+): Promise<{ success: boolean; error?: string; status?: number }> {
   try {
-    const response = await fetch(`/api/debug/overrides?listingId=${encodeURIComponent(listingId)}`, {
-      method: "DELETE",
-      credentials: "include", // Include cookies for auth
-    });
-    
+    const response = await fetch(
+      `/api/debug/overrides?listingId=${encodeURIComponent(listingId)}`,
+      {
+        method: "DELETE",
+        credentials: "include", // Include cookies for auth
+      }
+    );
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
       return {
         success: false,
         error: errorData.error || `HTTP ${response.status}`,
         status: response.status,
       };
     }
-    
+
     return { success: true };
   } catch (error) {
     return {
@@ -98,16 +107,21 @@ async function removeOverride(listingId: string): Promise<{ success: boolean; er
   }
 }
 
-async function fetchOverrides(since: Date): Promise<Map<string, ListingOverride>> {
+async function fetchOverrides(
+  since: Date
+): Promise<Map<string, ListingOverride>> {
   try {
-    const response = await fetch(`/api/debug/overrides?since=${since.toISOString()}`, {
-      credentials: "include", // Include cookies for auth
-    });
+    const response = await fetch(
+      `/api/debug/overrides?since=${since.toISOString()}`,
+      {
+        credentials: "include", // Include cookies for auth
+      }
+    );
     if (!response.ok) return new Map();
-    
+
     const data = await response.json();
     const map = new Map<string, ListingOverride>();
-    
+
     for (const override of data.overrides || []) {
       map.set(override.listing_id, {
         listing_id: override.listing_id,
@@ -118,7 +132,7 @@ async function fetchOverrides(since: Date): Promise<Map<string, ListingOverride>
         expires_at: override.expires_at ? new Date(override.expires_at) : null,
       });
     }
-    
+
     return map;
   } catch {
     return new Map();
@@ -130,17 +144,17 @@ async function fetchOverrides(since: Date): Promise<Map<string, ListingOverride>
 // =============================================================================
 
 function formatCompactTime(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
   return `${month}-${day} ${hours}:${minutes}`;
 }
 
 function formatDateOnly(date: Date): string {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -158,7 +172,9 @@ export default function ExclusionsClient({
 }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
-  const [overrides, setOverrides] = useState<Map<string, ListingOverride>>(new Map());
+  const [overrides, setOverrides] = useState<Map<string, ListingOverride>>(
+    new Map()
+  );
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [loadingOverrides, setLoadingOverrides] = useState(enableOverrides);
   const [confirmModal, setConfirmModal] = useState<{
@@ -168,7 +184,9 @@ export default function ExclusionsClient({
   const [confirmNote, setConfirmNote] = useState("");
   const [showOverridesPanel, setShowOverridesPanel] = useState(false);
   const [allOverrides, setAllOverrides] = useState<EnrichedOverride[]>([]);
-  const [overrideFilter, setOverrideFilter] = useState<"all" | OverrideType>("all");
+  const [overrideFilter, setOverrideFilter] = useState<"all" | OverrideType>(
+    "all"
+  );
   const [overrideSearch, setOverrideSearch] = useState("");
   const [showAdminUnlock, setShowAdminUnlock] = useState(false);
   const [adminSecretInput, setAdminSecretInput] = useState("");
@@ -177,7 +195,7 @@ export default function ExclusionsClient({
   >("idle");
   const [adminUnlockError, setAdminUnlockError] = useState<string | null>(null);
   const isAdminUnlocked = adminUnlockStatus === "success";
-  
+
   // Load overrides on mount
   useEffect(() => {
     if (!enableOverrides) {
@@ -190,21 +208,21 @@ export default function ExclusionsClient({
       setLoadingOverrides(false);
     });
   }, [sinceDate, enableOverrides]);
-  
+
   // Load all overrides for panel
   useEffect(() => {
     if (enableOverrides && showOverridesPanel) {
       fetchAllOverrides();
     }
   }, [showOverridesPanel, enableOverrides]);
-  
+
   async function fetchAllOverrides() {
     try {
       const response = await fetch("/api/debug/overrides", {
         credentials: "include",
       });
       if (!response.ok) return;
-      
+
       const data = await response.json();
       setAllOverrides(data.overrides || []);
     } catch (error) {
@@ -230,11 +248,11 @@ export default function ExclusionsClient({
     } catch (error) {
       setAdminUnlockStatus("error");
       setAdminUnlockError(
-        error instanceof Error ? error.message : "Failed to unlock",
+        error instanceof Error ? error.message : "Failed to unlock"
       );
     }
   }
-  
+
   // Filter by search query
   const filteredListings = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -250,7 +268,7 @@ export default function ExclusionsClient({
         l.cardSetName?.toLowerCase().includes(q)
     );
   }, [listings, searchQuery]);
-  
+
   const toggleExpand = (id: number) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -262,22 +280,25 @@ export default function ExclusionsClient({
       return next;
     });
   };
-  
-  const showToast = (message: string, type: "success" | "error" = "success") => {
+
+  const showToast = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
     const id = `${Date.now()}-${Math.random()}`;
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
   };
-  
+
   const handleApplyOverride = async (
     listingId: string,
     overrideType: OverrideType,
     reason?: string
   ) => {
     const result = await applyOverride(listingId, overrideType, reason);
-    
+
     if (result.success) {
       // Optimistic update
       setOverrides((prev) => {
@@ -292,7 +313,7 @@ export default function ExclusionsClient({
         });
         return next;
       });
-      
+
       const label =
         overrideType === "ALLOW"
           ? "Allowed (live)"
@@ -307,10 +328,10 @@ export default function ExclusionsClient({
       showToast(errorMsg, "error");
     }
   };
-  
+
   const handleUndo = async (listingId: string) => {
     const result = await removeOverride(listingId);
-    
+
     if (result.success) {
       setOverrides((prev) => {
         const next = new Map(prev);
@@ -325,7 +346,7 @@ export default function ExclusionsClient({
       showToast(errorMsg, "error");
     }
   };
-  
+
   return (
     <div className={theme === "admin" ? "text-slate-900" : ""}>
       {showAdminTools ? (
@@ -389,7 +410,13 @@ export default function ExclusionsClient({
           }
         />
         {searchQuery && (
-          <p className={theme === "admin" ? "mt-1 text-xs text-slate-500" : "mt-1 text-xs text-slate-400"}>
+          <p
+            className={
+              theme === "admin"
+                ? "mt-1 text-xs text-slate-500"
+                : "mt-1 text-xs text-slate-400"
+            }
+          >
             Showing {filteredListings.length} of {listings.length} listings
           </p>
         )}
@@ -397,182 +424,227 @@ export default function ExclusionsClient({
       {/* Manual Overrides Panel */}
       {enableOverrides ? (
         <div className="mb-6 rounded-lg border border-amber-700/50 bg-slate-800/50">
-        <button
-          className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-800"
-          onClick={() => setShowOverridesPanel(!showOverridesPanel)}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-amber-400">📋 Manual Overrides</span>
-            <span className="rounded-full bg-amber-900/50 px-2 py-0.5 text-xs text-amber-300">
-              {allOverrides.length}
+          <button
+            className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-800"
+            onClick={() => setShowOverridesPanel(!showOverridesPanel)}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-amber-400">
+                📋 Manual Overrides
+              </span>
+              <span className="rounded-full bg-amber-900/50 px-2 py-0.5 text-xs text-amber-300">
+                {allOverrides.length}
+              </span>
+            </div>
+            <span className="text-slate-400">
+              {showOverridesPanel ? "▼" : "▶"}
             </span>
-          </div>
-          <span className="text-slate-400">{showOverridesPanel ? "▼" : "▶"}</span>
-        </button>
-        
-        {showOverridesPanel && (
-          <div className="border-t border-amber-700/30 p-4">
-            {/* Filters */}
-            <div className="mb-4 flex flex-wrap gap-3">
-              <select
-                value={overrideFilter}
-                onChange={(e) => setOverrideFilter(e.target.value as any)}
-                className="rounded border border-slate-600 bg-slate-900 px-3 py-1.5 text-sm text-slate-200"
-              >
-                <option value="all">All Types</option>
-                <option value="ALLOW">ALLOW</option>
-                <option value="HARD_BLOCK">HARD_BLOCK</option>
-                <option value="SOFT_EXCLUDE">SOFT_EXCLUDE</option>
-              </select>
-              
-              <input
-                type="text"
-                placeholder="Search by listing ID or title..."
-                value={overrideSearch}
-                onChange={(e) => setOverrideSearch(e.target.value)}
-                className="flex-1 rounded border border-slate-600 bg-slate-900 px-3 py-1.5 text-sm text-slate-200"
-              />
-            </div>
-            
-            {/* Overrides List */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b border-slate-700">
-                  <tr className="text-left text-xs text-slate-400">
-                    <th className="px-3 py-2">Time</th>
-                    <th className="px-3 py-2">Listing</th>
-                    <th className="px-3 py-2">Market</th>
-                    <th className="px-3 py-2">Price</th>
-                    <th className="px-3 py-2">Action</th>
-                    <th className="px-3 py-2">Reason</th>
-                    <th className="px-3 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-700/50">
-                  {allOverrides
-                    .filter((o) => overrideFilter === "all" || o.override_type === overrideFilter)
-                    .filter((o) => !overrideSearch || o.listing_id.includes(overrideSearch) || o.title?.toLowerCase().includes(overrideSearch.toLowerCase()))
-                    .map((override) => {
-                      const marketDisplay = override.market ? getMarketDisplay(override.market) : "—";
-                      
-                      // Parse prices from database (they come as strings)
-                      const totalPrice = override.total_price_cad ? parseFloat(String(override.total_price_cad)) : null;
-                      const itemPrice = override.price_cad ? parseFloat(String(override.price_cad)) : null;
-                      
-                      const priceStr = totalPrice
-                        ? `$${totalPrice.toFixed(2)}`
-                        : itemPrice
-                        ? `$${itemPrice.toFixed(2)}`
-                        : "—";
-                      
-                      return (
-                        <tr key={override.listing_id} className="text-slate-300">
-                          <td className="px-3 py-2 text-xs text-slate-400">
-                            {new Date(override.created_at).toLocaleString()}
-                          </td>
-                          <td className="px-3 py-2" style={{ maxWidth: "300px" }}>
-                            {override.title ? (
-                              <div>
-                                <a
-                                  href={override.url || `/cards/${override.card_id || ""}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="block truncate text-sm text-slate-200 hover:text-amber-400"
-                                  title={override.title}
-                                >
-                                  {override.title}
-                                </a>
-                                <div className="mt-0.5 font-mono text-xs text-slate-500">
-                                  ID: {override.listing_id}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="font-mono text-xs text-slate-400">
-                                {override.listing_id}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 text-xs">
-                            {override.market ? (
-                              <span>
-                                {marketDisplay}
-                              </span>
-                            ) : (
-                              <span className="text-slate-600">—</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 text-xs text-slate-300">
-                            {priceStr}
-                          </td>
-                          <td className="px-3 py-2">
-                            <span
-                              className={`rounded px-2 py-0.5 text-xs font-medium ${
-                                override.override_type === "ALLOW"
-                                  ? "bg-green-900/70 text-green-200"
-                                  : override.override_type === "HARD_BLOCK"
-                                  ? "bg-red-900/70 text-red-200"
-                                  : "bg-blue-900/70 text-blue-200"
-                              }`}
+          </button>
+
+          {showOverridesPanel && (
+            <div className="border-t border-amber-700/30 p-4">
+              {/* Filters */}
+              <div className="mb-4 flex flex-wrap gap-3">
+                <select
+                  value={overrideFilter}
+                  onChange={(e) => setOverrideFilter(e.target.value as any)}
+                  className="rounded border border-slate-600 bg-slate-900 px-3 py-1.5 text-sm text-slate-200"
+                >
+                  <option value="all">All Types</option>
+                  <option value="ALLOW">ALLOW</option>
+                  <option value="HARD_BLOCK">HARD_BLOCK</option>
+                  <option value="SOFT_EXCLUDE">SOFT_EXCLUDE</option>
+                </select>
+
+                <input
+                  type="text"
+                  placeholder="Search by listing ID or title..."
+                  value={overrideSearch}
+                  onChange={(e) => setOverrideSearch(e.target.value)}
+                  className="flex-1 rounded border border-slate-600 bg-slate-900 px-3 py-1.5 text-sm text-slate-200"
+                />
+              </div>
+
+              {/* Overrides List */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-slate-700">
+                    <tr className="text-left text-xs text-slate-400">
+                      <th className="px-3 py-2">Time</th>
+                      <th className="px-3 py-2">Listing</th>
+                      <th className="px-3 py-2">Market</th>
+                      <th className="px-3 py-2">Price</th>
+                      <th className="px-3 py-2">Action</th>
+                      <th className="px-3 py-2">Reason</th>
+                      <th className="px-3 py-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/50">
+                    {allOverrides
+                      .filter(
+                        (o) =>
+                          overrideFilter === "all" ||
+                          o.override_type === overrideFilter
+                      )
+                      .filter(
+                        (o) =>
+                          !overrideSearch ||
+                          o.listing_id.includes(overrideSearch) ||
+                          o.title
+                            ?.toLowerCase()
+                            .includes(overrideSearch.toLowerCase())
+                      )
+                      .map((override) => {
+                        const marketDisplay = override.market
+                          ? getMarketDisplay(override.market)
+                          : "—";
+
+                        // Parse prices from database (they come as strings)
+                        const totalPrice = override.total_price_cad
+                          ? parseFloat(String(override.total_price_cad))
+                          : null;
+                        const itemPrice = override.price_cad
+                          ? parseFloat(String(override.price_cad))
+                          : null;
+
+                        const priceStr = totalPrice
+                          ? `$${totalPrice.toFixed(2)}`
+                          : itemPrice
+                            ? `$${itemPrice.toFixed(2)}`
+                            : "—";
+
+                        return (
+                          <tr
+                            key={override.listing_id}
+                            className="text-slate-300"
+                          >
+                            <td className="px-3 py-2 text-xs text-slate-400">
+                              {new Date(override.created_at).toLocaleString()}
+                            </td>
+                            <td
+                              className="px-3 py-2"
+                              style={{ maxWidth: "300px" }}
                             >
-                              {override.override_type}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-xs text-slate-400" style={{ maxWidth: "200px" }}>
-                            <div className="truncate" title={override.reason || ""}>
-                              {override.reason || "—"}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2">
-                            <div className="flex gap-1.5">
-                              {override.url && (
-                                <a
-                                  href={override.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="rounded bg-blue-900/50 px-2 py-1 text-xs text-blue-300 transition hover:bg-blue-800/50"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  View
-                                </a>
+                              {override.title ? (
+                                <div>
+                                  <a
+                                    href={
+                                      override.url ||
+                                      `/rebuild/listing/${encodeURIComponent(override.listing_id)}`
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block truncate text-sm text-slate-200 hover:text-amber-400"
+                                    title={override.title}
+                                  >
+                                    {override.title}
+                                  </a>
+                                  <div className="mt-0.5 font-mono text-xs text-slate-500">
+                                    ID: {override.listing_id}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="font-mono text-xs text-slate-400">
+                                  {override.listing_id}
+                                </div>
                               )}
-                              <button
-                                className="rounded bg-slate-700 px-2 py-1 text-xs text-slate-300 transition hover:bg-slate-600"
-                                onClick={async () => {
-                                  const result = await removeOverride(override.listing_id);
-                                  if (result.success) {
-                                    showToast("Override removed", "success");
-                                    fetchAllOverrides();
-                                  } else {
-                                    showToast(`Failed: ${result.error}`, "error");
-                                  }
-                                }}
+                            </td>
+                            <td className="px-3 py-2 text-xs">
+                              {override.market ? (
+                                <span>{marketDisplay}</span>
+                              ) : (
+                                <span className="text-slate-600">—</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-slate-300">
+                              {priceStr}
+                            </td>
+                            <td className="px-3 py-2">
+                              <span
+                                className={`rounded px-2 py-0.5 text-xs font-medium ${
+                                  override.override_type === "ALLOW"
+                                    ? "bg-green-900/70 text-green-200"
+                                    : override.override_type === "HARD_BLOCK"
+                                      ? "bg-red-900/70 text-red-200"
+                                      : "bg-blue-900/70 text-blue-200"
+                                }`}
                               >
-                                ↺ Undo
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-              
-              {allOverrides.length === 0 && (
-                <div className="py-8 text-center text-slate-500">
-                  No manual overrides applied yet.
-                </div>
-              )}
+                                {override.override_type}
+                              </span>
+                            </td>
+                            <td
+                              className="px-3 py-2 text-xs text-slate-400"
+                              style={{ maxWidth: "200px" }}
+                            >
+                              <div
+                                className="truncate"
+                                title={override.reason || ""}
+                              >
+                                {override.reason || "—"}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="flex gap-1.5">
+                                {override.url && (
+                                  <a
+                                    href={override.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded bg-blue-900/50 px-2 py-1 text-xs text-blue-300 transition hover:bg-blue-800/50"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    View
+                                  </a>
+                                )}
+                                <button
+                                  className="rounded bg-slate-700 px-2 py-1 text-xs text-slate-300 transition hover:bg-slate-600"
+                                  onClick={async () => {
+                                    const result = await removeOverride(
+                                      override.listing_id
+                                    );
+                                    if (result.success) {
+                                      showToast("Override removed", "success");
+                                      fetchAllOverrides();
+                                    } else {
+                                      showToast(
+                                        `Failed: ${result.error}`,
+                                        "error"
+                                      );
+                                    }
+                                  }}
+                                >
+                                  ↺ Undo
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+
+                {allOverrides.length === 0 && (
+                  <div className="py-8 text-center text-slate-500">
+                    No manual overrides applied yet.
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       ) : null}
 
       {/* Results Count */}
-      <div className={theme === "admin" ? "mb-4 text-sm text-slate-500" : "mb-4 text-sm text-slate-400"}>
+      <div
+        className={
+          theme === "admin"
+            ? "mb-4 text-sm text-slate-500"
+            : "mb-4 text-sm text-slate-400"
+        }
+      >
         Displaying {filteredListings.length} excluded listings
       </div>
-      
+
       {/* Desktop Table */}
       <div
         className={
@@ -706,7 +778,7 @@ export default function ExclusionsClient({
           </tbody>
         </table>
       </div>
-      
+
       {/* Mobile Cards */}
       <div className="space-y-3 md:hidden">
         {filteredListings.map((listing) => (
@@ -723,7 +795,7 @@ export default function ExclusionsClient({
           />
         ))}
       </div>
-      
+
       {filteredListings.length === 0 && (
         <div
           className={
@@ -738,40 +810,48 @@ export default function ExclusionsClient({
 
       {/* Confirmation Modal */}
       {confirmModal && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
           onClick={() => setConfirmModal(null)}
         >
-          <div 
+          <div
             className="mx-4 w-full max-w-lg rounded-lg bg-slate-800 p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="mb-4 text-lg font-bold text-amber-400">
               Confirm Override Action
             </h3>
-            
+
             <div className="mb-4 space-y-2 text-sm">
               <div>
                 <span className="text-slate-400">Action:</span>{" "}
-                <span className={`font-bold ${
-                  confirmModal.action === "ALLOW" ? "text-green-400" :
-                  confirmModal.action === "HARD_BLOCK" ? "text-red-400" :
-                  "text-blue-400"
-                }`}>
+                <span
+                  className={`font-bold ${
+                    confirmModal.action === "ALLOW"
+                      ? "text-green-400"
+                      : confirmModal.action === "HARD_BLOCK"
+                        ? "text-red-400"
+                        : "text-blue-400"
+                  }`}
+                >
                   {confirmModal.action}
                 </span>
               </div>
-              
+
               <div>
                 <span className="text-slate-400">Listing:</span>{" "}
-                <span className="text-slate-200">{confirmModal.listing.title}</span>
+                <span className="text-slate-200">
+                  {confirmModal.listing.title}
+                </span>
               </div>
-              
+
               <div>
                 <span className="text-slate-400">Current Reason:</span>{" "}
-                <span className="text-amber-300">{confirmModal.listing.exclusionReason}</span>
+                <span className="text-amber-300">
+                  {confirmModal.listing.exclusionReason}
+                </span>
               </div>
-              
+
               {confirmModal.listing.exclusionHit && (
                 <div>
                   <span className="text-slate-400">Hit Pattern:</span>{" "}
@@ -780,18 +860,19 @@ export default function ExclusionsClient({
                   </span>
                 </div>
               )}
-              
+
               {confirmModal.listing.cardName && (
                 <div>
                   <span className="text-slate-400">Card:</span>{" "}
                   <span className="text-slate-200">
                     {confirmModal.listing.cardName}
-                    {confirmModal.listing.cardSetName && ` (${confirmModal.listing.cardSetName})`}
+                    {confirmModal.listing.cardSetName &&
+                      ` (${confirmModal.listing.cardSetName})`}
                   </span>
                 </div>
               )}
             </div>
-            
+
             <div className="mb-4">
               <label className="mb-1 block text-sm text-slate-400">
                 Note (optional):
@@ -805,7 +886,7 @@ export default function ExclusionsClient({
                 autoFocus
               />
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 className="flex-1 rounded bg-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-600"
@@ -821,8 +902,8 @@ export default function ExclusionsClient({
                   confirmModal.action === "ALLOW"
                     ? "bg-green-900 text-green-200 hover:bg-green-800"
                     : confirmModal.action === "HARD_BLOCK"
-                    ? "bg-red-900 text-red-200 hover:bg-red-800"
-                    : "bg-blue-900 text-blue-200 hover:bg-blue-800"
+                      ? "bg-red-900 text-red-200 hover:bg-red-800"
+                      : "bg-blue-900 text-blue-200 hover:bg-blue-800"
                 }`}
                 onClick={() => {
                   handleApplyOverride(
@@ -854,8 +935,8 @@ export default function ExclusionsClient({
               Admin unlock
             </h3>
             <p className="mb-4 text-xs text-slate-400">
-              Enter the admin secret to set a secure cookie. No secrets are stored
-              in URLs.
+              Enter the admin secret to set a secure cookie. No secrets are
+              stored in URLs.
             </p>
             <div className="space-y-3">
               <input
@@ -868,7 +949,8 @@ export default function ExclusionsClient({
               />
               {adminUnlockStatus === "success" ? (
                 <p className="text-xs text-emerald-400">
-                  Admin unlocked. You can open /admin/blacklist or /admin/listings.
+                  Admin unlocked. You can open /admin/blacklist or
+                  /admin/listings.
                 </p>
               ) : null}
               {adminUnlockError ? (
@@ -905,8 +987,8 @@ export default function ExclusionsClient({
               toast.type === "success"
                 ? "bg-green-900 text-green-100"
                 : toast.type === "error"
-                ? "bg-red-900 text-red-100"
-                : "bg-blue-900 text-blue-100"
+                  ? "bg-red-900 text-red-100"
+                  : "bg-blue-900 text-blue-100"
             }`}
           >
             {toast.message}
@@ -946,7 +1028,7 @@ function ListingRow({
     : listing.endsAt
       ? `ends: ${formatDateUTC(listing.endsAt)}`
       : "—";
-  
+
   const priceStr = listing.totalPriceCad
     ? `$${listing.totalPriceCad.toFixed(2)}`
     : listing.priceCad
@@ -965,8 +1047,9 @@ function ListingRow({
     : theme === "admin"
       ? "bg-emerald-100 text-emerald-700"
       : "bg-emerald-900/50 text-emerald-300";
-  const isExcluded = listing.exclusionKind === "hard" || listing.exclusionKind === "soft";
-  
+  const isExcluded =
+    listing.exclusionKind === "hard" || listing.exclusionKind === "soft";
+
   return (
     <>
       <tr
@@ -985,7 +1068,11 @@ function ListingRow({
           }
           title={timeStr}
         >
-          {listing.createdAt ? formatDateOnly(listing.createdAt) : listing.endsAt ? formatDateOnly(listing.endsAt) : "—"}
+          {listing.createdAt
+            ? formatDateOnly(listing.createdAt)
+            : listing.endsAt
+              ? formatDateOnly(listing.endsAt)
+              : "—"}
         </td>
         <td
           className={
@@ -1005,7 +1092,10 @@ function ListingRow({
         >
           {priceStr}
         </td>
-        <td className="overflow-hidden px-2 py-2 lg:px-3" style={{ maxWidth: "220px" }}>
+        <td
+          className="overflow-hidden px-2 py-2 lg:px-3"
+          style={{ maxWidth: "220px" }}
+        >
           <a
             href={listing.url}
             target="_blank"
@@ -1020,11 +1110,25 @@ function ListingRow({
           >
             {listing.title}
           </a>
-          <div className={theme === "admin" ? "text-[11px] text-slate-500" : "text-[11px] text-slate-500"}>
+          <div
+            className={
+              theme === "admin"
+                ? "text-[11px] text-slate-500"
+                : "text-[11px] text-slate-500"
+            }
+          >
             Seller: {sellerDisplay.displayName}
           </div>
-          <div className={theme === "admin" ? "mt-1 flex items-center gap-2 text-[11px] text-slate-500" : "mt-1 flex items-center gap-2 text-[11px] text-slate-400"}>
-            <span className={`rounded-full px-2 py-0.5 font-medium ${blacklistClass}`}>
+          <div
+            className={
+              theme === "admin"
+                ? "mt-1 flex items-center gap-2 text-[11px] text-slate-500"
+                : "mt-1 flex items-center gap-2 text-[11px] text-slate-400"
+            }
+          >
+            <span
+              className={`rounded-full px-2 py-0.5 font-medium ${blacklistClass}`}
+            >
               {blacklistLabel}
             </span>
             {isExcluded ? (
@@ -1040,7 +1144,13 @@ function ListingRow({
             ) : null}
           </div>
         </td>
-        <td className={theme === "admin" ? "overflow-hidden px-2 py-2 lg:px-3 text-slate-700" : "overflow-hidden px-2 py-2 lg:px-3"}>
+        <td
+          className={
+            theme === "admin"
+              ? "overflow-hidden px-2 py-2 lg:px-3 text-slate-700"
+              : "overflow-hidden px-2 py-2 lg:px-3"
+          }
+        >
           <KindBadge kind={listing.exclusionKind} theme={theme} />
         </td>
         <td className="overflow-hidden px-2 py-2 lg:px-3">
@@ -1048,7 +1158,11 @@ function ListingRow({
         </td>
         <td className="px-2 py-2 text-xs lg:px-3" style={{ maxWidth: "180px" }}>
           <div className="whitespace-normal break-words">
-            <span className={theme === "admin" ? "text-slate-600" : "text-slate-400"}>
+            <span
+              className={
+                theme === "admin" ? "text-slate-600" : "text-slate-400"
+              }
+            >
               {listing.exclusionReason}
             </span>
             {listing.exclusionHit && (
@@ -1067,13 +1181,17 @@ function ListingRow({
           style={{ maxWidth: "140px" }}
         >
           {listing.cardName ? (
-            <div 
-              className="truncate" 
-              title={`${listing.cardName}${listing.cardSetName ? ` (${listing.cardSetName}${listing.cardNumber ? ` #${listing.cardNumber}` : ''})` : ''}`}
+            <div
+              className="truncate"
+              title={`${listing.cardName}${listing.cardSetName ? ` (${listing.cardSetName}${listing.cardNumber ? ` #${listing.cardNumber}` : ""})` : ""}`}
             >
               {listing.cardName}
               {listing.cardSetName && (
-                <span className={theme === "admin" ? "text-slate-500" : "text-slate-500"}>
+                <span
+                  className={
+                    theme === "admin" ? "text-slate-500" : "text-slate-500"
+                  }
+                >
                   {" "}
                   ({listing.cardSetName}
                   {listing.cardNumber && ` #${listing.cardNumber}`})
@@ -1084,9 +1202,15 @@ function ListingRow({
             <span className="text-slate-600">—</span>
           )}
         </td>
-        <td className="overflow-hidden px-2 py-2 lg:px-3" style={{ width: "245px" }}>
+        <td
+          className="overflow-hidden px-2 py-2 lg:px-3"
+          style={{ width: "245px" }}
+        >
           {enableActions ? (
-            <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="flex flex-wrap items-center gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
               {override ? (
                 <button
                   className="rounded bg-slate-700 px-2 py-1 text-xs font-medium text-slate-300 transition hover:bg-slate-600 whitespace-nowrap"
@@ -1162,7 +1286,7 @@ function MobileCard({
     : listing.endsAt
       ? `ends: ${formatDateUTC(listing.endsAt)}`
       : "—";
-  
+
   const priceStr = listing.totalPriceCad
     ? `$${listing.totalPriceCad.toFixed(2)}`
     : listing.priceCad
@@ -1183,7 +1307,7 @@ function MobileCard({
       : "bg-emerald-900/50 text-emerald-300";
   const isExcluded =
     listing.exclusionKind === "hard" || listing.exclusionKind === "soft";
-  
+
   return (
     <div
       className={
@@ -1198,11 +1322,17 @@ function MobileCard({
           <KindBadge kind={listing.exclusionKind} theme={theme} />
           {override && <OverrideBadge override={override} theme={theme} />}
         </div>
-        <span className={theme === "admin" ? "text-xs text-slate-500" : "text-xs text-slate-500"}>
+        <span
+          className={
+            theme === "admin"
+              ? "text-xs text-slate-500"
+              : "text-xs text-slate-500"
+          }
+        >
           {timeStr}
         </span>
       </div>
-      
+
       <a
         href={listing.url}
         target="_blank"
@@ -1216,12 +1346,16 @@ function MobileCard({
       >
         {listing.title}
       </a>
-      
+
       <div className="mb-2 flex flex-wrap gap-2 text-xs">
-        <span className={theme === "admin" ? "text-slate-500" : "text-slate-400"}>
+        <span
+          className={theme === "admin" ? "text-slate-500" : "text-slate-400"}
+        >
           {marketDisplay}
         </span>
-        <span className={theme === "admin" ? "text-slate-700" : "text-slate-300"}>
+        <span
+          className={theme === "admin" ? "text-slate-700" : "text-slate-300"}
+        >
           {priceStr}
         </span>
         {listing.exclusionHit && (
@@ -1230,11 +1364,25 @@ function MobileCard({
           </span>
         )}
       </div>
-      <div className={theme === "admin" ? "mb-2 text-xs text-slate-500" : "mb-2 text-xs text-slate-500"}>
+      <div
+        className={
+          theme === "admin"
+            ? "mb-2 text-xs text-slate-500"
+            : "mb-2 text-xs text-slate-500"
+        }
+      >
         Seller: {sellerDisplay.displayName}
       </div>
-      <div className={theme === "admin" ? "mb-2 flex items-center gap-2 text-[11px] text-slate-500" : "mb-2 flex items-center gap-2 text-[11px] text-slate-400"}>
-        <span className={`rounded-full px-2 py-0.5 font-medium ${blacklistClass}`}>
+      <div
+        className={
+          theme === "admin"
+            ? "mb-2 flex items-center gap-2 text-[11px] text-slate-500"
+            : "mb-2 flex items-center gap-2 text-[11px] text-slate-400"
+        }
+      >
+        <span
+          className={`rounded-full px-2 py-0.5 font-medium ${blacklistClass}`}
+        >
           {blacklistLabel}
         </span>
         {isExcluded ? (
@@ -1249,15 +1397,24 @@ function MobileCard({
           </span>
         ) : null}
       </div>
-      
+
       {listing.cardName && (
-        <div className={theme === "admin" ? "mb-2 text-xs text-slate-500" : "mb-2 text-xs text-slate-500"}>
+        <div
+          className={
+            theme === "admin"
+              ? "mb-2 text-xs text-slate-500"
+              : "mb-2 text-xs text-slate-500"
+          }
+        >
           Card: {listing.cardName}
           {listing.cardSetName && ` (${listing.cardSetName})`}
         </div>
       )}
-      
-      <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+
+      <div
+        className="flex flex-wrap gap-2"
+        onClick={(e) => e.stopPropagation()}
+      >
         {enableActions ? (
           override ? (
             <button
@@ -1308,7 +1465,6 @@ function MobileCard({
   );
 }
 
-
 function OverrideBadge({
   override,
   theme,
@@ -1322,14 +1478,38 @@ function OverrideBadge({
   const config =
     theme === "admin"
       ? {
-          ALLOW: { bg: "bg-green-100", text: "text-green-700", label: allowLabel },
-          HARD_BLOCK: { bg: "bg-red-100", text: "text-red-700", label: "HARD BLOCK" },
-          SOFT_EXCLUDE: { bg: "bg-blue-100", text: "text-blue-700", label: "SOFT EXCLUDE" },
+          ALLOW: {
+            bg: "bg-green-100",
+            text: "text-green-700",
+            label: allowLabel,
+          },
+          HARD_BLOCK: {
+            bg: "bg-red-100",
+            text: "text-red-700",
+            label: "HARD BLOCK",
+          },
+          SOFT_EXCLUDE: {
+            bg: "bg-blue-100",
+            text: "text-blue-700",
+            label: "SOFT EXCLUDE",
+          },
         }
       : {
-          ALLOW: { bg: "bg-green-900/70", text: "text-green-200", label: allowLabel },
-          HARD_BLOCK: { bg: "bg-red-900/70", text: "text-red-200", label: "HARD BLOCK" },
-          SOFT_EXCLUDE: { bg: "bg-blue-900/70", text: "text-blue-200", label: "SOFT EXCLUDE" },
+          ALLOW: {
+            bg: "bg-green-900/70",
+            text: "text-green-200",
+            label: allowLabel,
+          },
+          HARD_BLOCK: {
+            bg: "bg-red-900/70",
+            text: "text-red-200",
+            label: "HARD BLOCK",
+          },
+          SOFT_EXCLUDE: {
+            bg: "bg-blue-900/70",
+            text: "text-blue-200",
+            label: "SOFT EXCLUDE",
+          },
         };
   const current = config[override.override_type];
 
@@ -1395,27 +1575,47 @@ function ExpandedDetails({
     <div className="grid gap-2 text-xs sm:grid-cols-2">
       <div>
         <span className="text-slate-500">Listing ID:</span>{" "}
-        <span className={theme === "admin" ? "font-mono text-slate-700" : "font-mono text-slate-300"}>
+        <span
+          className={
+            theme === "admin"
+              ? "font-mono text-slate-700"
+              : "font-mono text-slate-300"
+          }
+        >
           {listing.listingId}
         </span>
       </div>
       <div>
         <span className="text-slate-500">DB ID:</span>{" "}
-        <span className={theme === "admin" ? "font-mono text-slate-700" : "font-mono text-slate-300"}>
+        <span
+          className={
+            theme === "admin"
+              ? "font-mono text-slate-700"
+              : "font-mono text-slate-300"
+          }
+        >
           {listing.id}
         </span>
       </div>
       {listing.cardId && (
         <div>
           <span className="text-slate-500">Card ID:</span>{" "}
-          <span className={theme === "admin" ? "font-mono text-slate-700" : "font-mono text-slate-300"}>
+          <span
+            className={
+              theme === "admin"
+                ? "font-mono text-slate-700"
+                : "font-mono text-slate-300"
+            }
+          >
             {listing.cardId}
           </span>
         </div>
       )}
       <div>
         <span className="text-slate-500">Seller:</span>{" "}
-        <span className={theme === "admin" ? "text-slate-700" : "text-slate-300"}>
+        <span
+          className={theme === "admin" ? "text-slate-700" : "text-slate-300"}
+        >
           {sellerInfo.displayName}
         </span>
         {listing.sellerUsername &&
@@ -1428,7 +1628,9 @@ function ExpandedDetails({
       </div>
       <div className="sm:col-span-2">
         <span className="text-slate-500">Reason:</span>{" "}
-        <span className={theme === "admin" ? "text-slate-700" : "text-slate-300"}>
+        <span
+          className={theme === "admin" ? "text-slate-700" : "text-slate-300"}
+        >
           {listing.exclusionReason}
         </span>
       </div>

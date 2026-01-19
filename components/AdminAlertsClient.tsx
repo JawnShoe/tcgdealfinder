@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
@@ -69,16 +68,13 @@ function describeRule(watch: WatchRow) {
   return watch.thresholdType;
 }
 
-export function AdminAlertsClient({
-  watches,
-  alerts,
-}: Props) {
+export function AdminAlertsClient({ watches, alerts }: Props) {
   const router = useRouter();
   const [cardId, setCardId] = useState("");
   const [condition, setCondition] = useState("raw_nm");
-  const [thresholdType, setThresholdType] = useState<"price_below" | "discount_at_least">(
-    "price_below",
-  );
+  const [thresholdType, setThresholdType] = useState<
+    "price_below" | "discount_at_least"
+  >("price_below");
   const [thresholdValue, setThresholdValue] = useState("");
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -145,18 +141,14 @@ export function AdminAlertsClient({
   return (
     <div className="space-y-6">
       <div className="rounded border bg-white p-4">
-        <h1 className="text-xl font-semibold text-slate-900">
-          Admin – Alerts
-        </h1>
+        <h1 className="text-xl font-semibold text-slate-900">Admin – Alerts</h1>
         <p className="text-sm text-slate-600">
           {activeCount} active watches · {watches.length} total
         </p>
       </div>
 
       <div className="rounded border bg-white p-4">
-        <h2 className="mb-2 text-sm font-semibold text-slate-800">
-          New Watch
-        </h2>
+        <h2 className="mb-2 text-sm font-semibold text-slate-800">New Watch</h2>
         <form
           onSubmit={handleCreate}
           className="grid gap-3 text-sm text-slate-700 md:grid-cols-2"
@@ -186,7 +178,9 @@ export function AdminAlertsClient({
             <select
               value={thresholdType}
               onChange={(e) =>
-                setThresholdType(e.target.value as "price_below" | "discount_at_least")
+                setThresholdType(
+                  e.target.value as "price_below" | "discount_at_least"
+                )
               }
               className="rounded border px-2 py-1"
             >
@@ -226,9 +220,7 @@ export function AdminAlertsClient({
       </div>
 
       <div className="rounded border bg-white p-4">
-        <h2 className="mb-2 text-sm font-semibold text-slate-800">
-          Watchlist
-        </h2>
+        <h2 className="mb-2 text-sm font-semibold text-slate-800">Watchlist</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-xs md:text-sm">
             <thead>
@@ -265,20 +257,14 @@ export function AdminAlertsClient({
                           {watch.setName}
                           {watch.cardNumber ? ` · #${watch.cardNumber}` : ""}
                         </span>
-                        <Link
-                          href={`/cards/${watch.cardId}`}
-                          target="_blank"
-                          className="text-xs text-sky-600 transition hover:text-sky-800"
-                        >
-                          View card
-                        </Link>
+                        <span className="text-xs text-slate-400">
+                          Card ID: {watch.cardId}
+                        </span>
                       </div>
                     </td>
                     <td className="px-2 py-1">{watch.condition ?? "any"}</td>
                     <td className="px-2 py-1">{describeRule(watch)}</td>
-                    <td className="px-2 py-1">
-                      {watch.active ? "Yes" : "No"}
-                    </td>
+                    <td className="px-2 py-1">{watch.active ? "Yes" : "No"}</td>
                     <td className="px-2 py-1">
                       {formatDate(watch.lastTriggeredAt)}
                     </td>
@@ -287,9 +273,7 @@ export function AdminAlertsClient({
                         <button
                           type="button"
                           className="text-xs text-slate-700 transition hover:text-slate-900"
-                          onClick={() =>
-                            handleToggle(watch.id, !watch.active)
-                          }
+                          onClick={() => handleToggle(watch.id, !watch.active)}
                         >
                           {watch.active ? "Deactivate" : "Activate"}
                         </button>
@@ -351,18 +335,12 @@ export function AdminAlertsClient({
                           {alert.setName}
                           {alert.cardNumber ? ` · #${alert.cardNumber}` : ""}
                         </span>
-                        <Link
-                          href={`/cards/${alert.cardId}`}
-                          target="_blank"
-                          className="text-xs text-sky-600 transition hover:text-sky-800"
-                        >
-                          View card
-                        </Link>
+                        <span className="text-xs text-slate-400">
+                          Card ID: {alert.cardId}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-2 py-1">
-                      {alert.condition ?? "—"}
-                    </td>
+                    <td className="px-2 py-1">{alert.condition ?? "—"}</td>
                     <td className="px-2 py-1">
                       {formatCurrency(alert.totalPriceCad)}
                     </td>

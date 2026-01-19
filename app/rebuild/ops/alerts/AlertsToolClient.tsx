@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import type { WatchRow, AlertLogRow } from "@/lib/rebuild/data/alertsOps";
 
 type Props = {
@@ -353,13 +352,9 @@ export function AlertsToolClient({ initialWatches, initialAlerts }: Props) {
                           {watch.set_name}
                           {watch.card_number ? ` · #${watch.card_number}` : ""}
                         </span>
-                        <Link
-                          href={`/cards/${watch.card_id}`}
-                          target="_blank"
-                          className="text-xs text-sky-600 transition hover:text-sky-800"
-                        >
-                          View card
-                        </Link>
+                        <span className="text-xs text-slate-400">
+                          Card ID: {watch.card_id}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
@@ -464,13 +459,9 @@ export function AlertsToolClient({ initialWatches, initialAlerts }: Props) {
                           {alert.set_name}
                           {alert.card_number ? ` · #${alert.card_number}` : ""}
                         </span>
-                        <Link
-                          href={`/cards/${alert.card_id}`}
-                          target="_blank"
-                          className="text-xs text-sky-600 transition hover:text-sky-800"
-                        >
-                          View card
-                        </Link>
+                        <span className="text-xs text-slate-400">
+                          Card ID: {alert.card_id}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-700">

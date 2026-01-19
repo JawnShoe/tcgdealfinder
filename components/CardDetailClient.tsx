@@ -916,18 +916,17 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
               More from this set
             </h2>
             <Link
-              href={`/sets/${encodeURIComponent(card.setName)}#catalog-cards`}
+              href="/rebuild/discovery"
               className="text-sm text-slate-600 transition hover:text-slate-900"
             >
-              View set page →
+              Browse all deals →
             </Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {moreFromSet.map((relatedCard) => (
-              <Link
+              <div
                 key={relatedCard.id}
-                href={`/cards/${relatedCard.id}`}
-                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 transition hover:bg-slate-100"
+                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-slate-900">
@@ -939,20 +938,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                     </p>
                   )}
                 </div>
-                <svg
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  aria-hidden="true"
-                  className="h-4 w-4 flex-none stroke-slate-400"
-                  strokeWidth="1.5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M7 10h6m-3-3l3 3-3 3"
-                  />
-                </svg>
-              </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -1382,6 +1368,7 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
                                 setName: detail.card.setName ?? null,
                                 listingTitle: listing.title,
                                 cardId: detail.card.id,
+                                listingId: null,
                               }}
                               primaryHref={buildAffiliateUrl(listing.url ?? "")}
                               showListingTitle

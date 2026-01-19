@@ -220,3 +220,20 @@ Before approving any UI change, ask:
 "Would this still feel trustworthy if the prices were wrong?"
 
 If the answer is no - it violates the contract.
+
+## 12. Link Migration Log
+
+### 2026-01-18: Stage 4 Slice A - Link Target Updates
+
+All internal links previously pointing to `/cards/*` and `/sets/*` now point to rebuild equivalents:
+
+| Old Target     | New Target                      | Rationale                                        |
+| -------------- | ------------------------------- | ------------------------------------------------ |
+| `/cards/[id]`  | `/rebuild/listing/[listingId]`  | Listing-centric model; cards are a dimension     |
+| `/sets/[slug]` | `/rebuild/discovery` (filtered) | Sets surface via discovery filter, not own route |
+
+Components updated: `CardIdentity`, `FeaturedDeals`, `CardDetailClient`, `AlertsSubscribeClient`, `ExclusionsClient`.
+
+Admin tools (`AdminAlertsClient`, `AlertsToolClient`) now show static "Card ID:" text instead of clickable links (alerts are card-centric; no listingId available).
+
+No user-visible behavior change expected since these components are not currently rendered in active routes. Link targets prepared for future activation.

@@ -237,3 +237,14 @@ Components updated: `CardIdentity`, `FeaturedDeals`, `CardDetailClient`, `Alerts
 Admin tools (`AdminAlertsClient`, `AlertsToolClient`) now show static "Card ID:" text instead of clickable links (alerts are card-centric; no listingId available).
 
 No user-visible behavior change expected since these components are not currently rendered in active routes. Link targets prepared for future activation.
+
+### 2026-01-18: Stage 4 Slice C - /cards Stubs Deleted
+
+Route stubs for `/cards/*` have been removed. All requests to `/cards/*` now return 404.
+
+| Route            | Previous Behavior                    | New Behavior |
+| ---------------- | ------------------------------------ | ------------ |
+| `/cards/[id]`    | 308 redirect to `/rebuild/listing/*` | 404          |
+| `/cards/invalid` | 404                                  | 404          |
+
+Internal links were already migrated in Slice A (PR #353). This deletion completes the route removal.

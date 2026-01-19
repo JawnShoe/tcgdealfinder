@@ -25,6 +25,23 @@ test("buildDiscoveryUrl includes non-default sorts", () => {
   );
 });
 
+test("buildDiscoveryUrl serializes discovery filters", () => {
+  assert.equal(
+    buildDiscoveryUrl({
+      preset: "biggest-discount",
+      filters: {
+        priceMinCad: 10,
+        priceMaxCad: 250,
+        condition: "NM",
+        language: "EN",
+        minConfidence: "medium",
+        seller: "acme",
+      },
+    }),
+    "/discovery?sort=biggest-discount&minPriceCad=10&maxPriceCad=250&condition=NM&lang=EN&minConfidence=medium&seller=acme"
+  );
+});
+
 test("buildListingUrl encodes the listing id", () => {
   assert.equal(buildListingUrl({ id: "abc" }), "/rebuild/listing/abc");
   assert.equal(

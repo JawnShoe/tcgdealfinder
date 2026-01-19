@@ -3,9 +3,8 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
+import DiscoveryFiltersBar from "@/components/rebuild/DiscoveryFiltersBar";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
-import PreferencesBar from "@/components/rebuild/PreferencesBar";
-import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import ResilienceLabel from "@/components/rebuild/ResilienceLabel";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
@@ -17,10 +16,11 @@ import {
   getRequestIdFromHeaders,
   logRequest,
 } from "@/lib/rebuild/observability/logging";
+import { sortDealsByPrefs } from "@/lib/rebuild/prefs/rebuildPrefs";
 import {
-  parseRebuildPrefs,
-  sortDealsByPrefs,
-} from "@/lib/rebuild/prefs/rebuildPrefs";
+  filterDealsByDiscoveryQuery,
+  parseDiscoveryQuery,
+} from "@/lib/rebuild/discovery/discoveryQuery";
 import { evaluateResilience } from "@/lib/rebuild/resilience/evaluateResilience";
 import { buildDiscoveryCanonicalUrl } from "@/lib/rebuild/seo/canonical";
 import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
@@ -74,8 +74,8 @@ export default async function DiscoveryPage({
   let status = 200;
   let requestError: unknown;
 
-  const prefsResult = parseRebuildPrefs(searchParams ?? {});
-  if (prefsResult.kind !== "ok") {
+  const parsedQuery = parseDiscoveryQuery(searchParams ?? {});
+  if (parsedQuery.kind !== "ok") {
     status = 404;
     logRequest({
       level: "info",
@@ -84,12 +84,13 @@ export default async function DiscoveryPage({
       requestId,
       durationMs: Date.now() - start,
       status,
-      error: prefsResult,
+      error: parsedQuery,
     });
     notFound();
   }
 
-  const prefs = prefsResult.prefs;
+  const query = parsedQuery.query;
+  const prefs = { sort: query.preset };
 
   try {
     const isDiscoveryDisabled =
@@ -124,7 +125,8 @@ export default async function DiscoveryPage({
     const isDbConfigured = isRebuildDbConfigured();
     const { deals, fetchedAtISO } = await getRecentDeals(25);
     const orderedDeals = sortDealsByPrefs(deals, prefs);
-    const { deduped: dedupedDeals, duplicates } = dedupeDeals(orderedDeals);
+    const filteredDeals = filterDealsByDiscoveryQuery(orderedDeals, query);
+    const { deduped: dedupedDeals, duplicates } = dedupeDeals(filteredDeals);
     const ageSeconds = deals
       .map((deal) => deal.freshness.dataAgeSeconds)
       .filter((value): value is number => value != null);
@@ -139,14 +141,6 @@ export default async function DiscoveryPage({
       requiredFieldsPresent: !hasMissingAge,
       dataCount: deals.length,
     });
-
-    const provenanceFields = [
-      { label: "DB configured", value: isDbConfigured ? "yes" : "no" },
-    ];
-
-    if (isDbConfigured) {
-      provenanceFields.push({ label: "Data fetched at", value: fetchedAtISO });
-    }
 
     return (
       <main className="min-h-screen bg-slate-50">
@@ -167,7 +161,10 @@ export default async function DiscoveryPage({
             </p>
           </header>
 
-          <PreferencesBar initialSort={prefs.sort} />
+          <DiscoveryFiltersBar
+            initialPreset={query.preset}
+            initialFilters={query.filters}
+          />
 
           <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
             <div className="flex items-baseline justify-between">
@@ -187,6 +184,11 @@ export default async function DiscoveryPage({
                     ? "No deals available at this time."
                     : "Rebuild data source not configured in this environment."}
                 </p>
+                {isDbConfigured ? (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Try clearing filters or lowering the confidence threshold.
+                  </p>
+                ) : null}
               </div>
             ) : (
               <ul className="mt-4 divide-y divide-slate-100">
@@ -215,6 +217,12 @@ export default async function DiscoveryPage({
                             at{" "}
                             {deal.provenance.market ?? deal.provenance.source}
                           </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {deal.condition
+                              ? `Condition ${deal.condition}`
+                              : "Condition unknown"}{" "}
+                            • {deal.language} • {deal.freshness.dataAgeLabel}
+                          </p>
                           {duplicateCount > 0 ? (
                             <p className="mt-1 text-xs text-slate-500">
                               Also seen in {duplicateCount} other market
@@ -235,6 +243,10 @@ export default async function DiscoveryPage({
                           >
                             {deal.price.deltaDisplay}
                           </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Confidence {deal.trust.confidence.display} •{" "}
+                            {deal.trustAssessment.state.toLowerCase()}
+                          </p>
                           <ConfidenceBadge
                             label={deal.trust.confidence.label}
                           />
@@ -246,15 +258,11 @@ export default async function DiscoveryPage({
               </ul>
             )}
 
-            <ProvenanceDrilldown
-              className="mt-4"
-              summary={
-                isDbConfigured
-                  ? `Fetched at ${fetchedAtISO}`
-                  : "DB not configured"
-              }
-              fields={provenanceFields}
-            />
+            <p className="mt-4 text-xs text-slate-500">
+              {isDbConfigured
+                ? `Fetched at ${fetchedAtISO}`
+                : "DB not configured"}
+            </p>
           </section>
 
           <ComplianceDisclosure className="mt-6" />

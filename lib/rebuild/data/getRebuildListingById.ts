@@ -5,6 +5,7 @@ import {
   mapDbRowToListingDomain,
 } from "./listingMapper";
 import { isRebuildDbConfigured } from "./dataAvailability";
+import { ensureRebuildCardsLanguageColumn } from "./schema";
 
 const LISTING_ID_PATTERN = /^v1\|\d+\|0$/;
 
@@ -16,10 +17,13 @@ export async function getRebuildListingById(
   }
   const normalizedId = normalizeListingId(listingId);
   const numericId = parseNumericId(listingId);
+  const hasCardLanguage = await ensureRebuildCardsLanguageColumn();
 
   const result = await queryRebuild<DbListingRow>(
     `
       SELECT
+        l.card_id,
+        ${hasCardLanguage ? "c.language" : "NULL"} as card_language,
         l.listing_id,
         l.title,
         l.url,
@@ -45,6 +49,7 @@ export async function getRebuildListingById(
         l.updated_at,
         l.created_at
       FROM listings l
+      LEFT JOIN cards c ON c.id = l.card_id
       WHERE l.listing_id = $1 OR l.id = $2
       LIMIT 1;
     `,

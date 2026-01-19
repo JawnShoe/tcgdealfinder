@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buildDiscoveryUrl } from "@/lib/rebuild/urls";
 
 /**
  * SiteFooter — Phase 1: Visual Legitimacy
@@ -27,10 +28,16 @@ export function SiteFooter() {
             <Link href="/" className="hover:text-slate-700">
               Home
             </Link>
-            <Link href="/top-deals" className="hover:text-slate-700">
+            <Link
+              href={buildDiscoveryUrl({ preset: "biggest-discount" })}
+              className="hover:text-slate-700"
+            >
               Top Deals
             </Link>
-            <Link href="/ending-soon" className="hover:text-slate-700">
+            <Link
+              href={buildDiscoveryUrl({ preset: "endingSoon" })}
+              className="hover:text-slate-700"
+            >
               Ending Soon
             </Link>
             <Link href="/alerts" className="hover:text-slate-700">

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { buildDiscoveryUrl } from "@/lib/rebuild/urls";
 import dynamic from "next/dynamic";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -648,7 +649,13 @@ export default function CardDetailClient({ detail }: CardDetailClientProps) {
         <Link href="/" className="hover:text-slate-800">
           &larr; Home
         </Link>
-        <Link href="/newest" className="hover:text-slate-800">
+        <Link
+          href={buildDiscoveryUrl({
+            preset: "newest",
+            includeDefaultPreset: true,
+          })}
+          className="hover:text-slate-800"
+        >
           Newest listings
         </Link>
       </nav>

@@ -1,5 +1,6 @@
 import { permanentRedirect } from "next/navigation";
+import { buildDiscoveryUrl } from "@/lib/rebuild/urls";
 
 export default function EndingSoonRedirectPage() {
-  permanentRedirect("/discovery?sort=endingSoon");
+  permanentRedirect(buildDiscoveryUrl({ preset: "endingSoon" }));
 }

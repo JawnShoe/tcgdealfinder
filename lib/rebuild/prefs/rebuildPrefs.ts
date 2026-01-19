@@ -1,6 +1,14 @@
 import type { ListingDomain } from "@/lib/rebuild/data/listingMapper";
 
-export type RebuildSort = "newest" | "biggest-discount" | "endingSoon";
+export const ALLOWED_PRESETS = [
+  "newest",
+  "biggest-discount",
+  "endingSoon",
+] as const;
+
+export type Preset = (typeof ALLOWED_PRESETS)[number];
+
+export type RebuildSort = Preset;
 
 export type RebuildPrefs = {
   sort: RebuildSort;
@@ -17,26 +25,54 @@ export const REBUILD_SORT_OPTIONS: Array<{
   { value: "endingSoon", label: "Ending soon" },
 ];
 
+export function parsePreset(
+  input: string | null
+): Preset | { kind: "invalid" } {
+  if (input == null || input.trim() === "") {
+    return DEFAULT_REBUILD_SORT;
+  }
+
+  const normalized = input.trim();
+  if (normalized === "ending-soon" || normalized === "endingsoon") {
+    return "endingSoon";
+  }
+
+  if (ALLOWED_PRESETS.includes(normalized as Preset)) {
+    return normalized as Preset;
+  }
+
+  return { kind: "invalid" };
+}
+
 export function parseRebuildSortValue(
   value: string | null | undefined
 ): RebuildSort {
-  if (value === "biggest-discount") {
-    return "biggest-discount";
+  const parsed = parsePreset(value ?? null);
+  if (typeof parsed === "string") {
+    return parsed;
   }
-  if (value === "endingSoon") {
-    return "endingSoon";
-  }
-  return DEFAULT_REBUILD_SORT;
+  throw new Error(`Invalid discovery preset: ${value ?? "null"}`);
 }
+
+export type ParseRebuildPrefsResult =
+  | { kind: "ok"; prefs: RebuildPrefs }
+  | { kind: "invalid_preset" };
 
 export function parseRebuildPrefs(searchParams: {
   [key: string]: string | string[] | undefined;
-}): RebuildPrefs {
+}): ParseRebuildPrefsResult {
   const rawSort = searchParams.sort;
   const sortValue = Array.isArray(rawSort) ? rawSort[0] : rawSort;
+  const presetResult = parsePreset(sortValue ?? null);
+  if (typeof presetResult !== "string") {
+    return { kind: "invalid_preset" };
+  }
 
   return {
-    sort: parseRebuildSortValue(sortValue),
+    kind: "ok",
+    prefs: {
+      sort: presetResult,
+    },
   };
 }
 

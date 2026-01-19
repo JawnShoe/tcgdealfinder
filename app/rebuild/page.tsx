@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
@@ -25,6 +26,7 @@ import {
 } from "@/lib/rebuild/prefs/rebuildPrefs";
 import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
 import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
+import { buildListingUrl } from "@/lib/rebuild/urls";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -65,8 +67,24 @@ export default async function RebuildHomePage({
   let status = 200;
   let requestError: unknown;
 
+  const prefsResult = parseRebuildPrefs(searchParams ?? {});
+  if (prefsResult.kind !== "ok") {
+    status = 404;
+    logRequest({
+      level: "info",
+      msg: "rebuild.home.render",
+      route: "/rebuild",
+      requestId,
+      durationMs: Date.now() - start,
+      status,
+      error: prefsResult,
+    });
+    notFound();
+  }
+
+  const prefs = prefsResult.prefs;
+
   try {
-    const prefs = parseRebuildPrefs(searchParams ?? {});
     const isDbConfigured = isRebuildDbConfigured();
     const { deals, fetchedAtISO } = await getRecentDeals(10);
     const orderedDeals = sortDealsByPrefs(deals, prefs);
@@ -174,9 +192,7 @@ export default async function RebuildHomePage({
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
                           <IntentPrefetchLink
-                            href={`/rebuild/listing/${encodeURIComponent(
-                              deal.listingId
-                            )}`}
+                            href={buildListingUrl({ id: deal.listingId })}
                             className="text-sm font-medium text-slate-900 hover:text-slate-700"
                           >
                             {deal.title}

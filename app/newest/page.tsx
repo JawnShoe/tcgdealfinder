@@ -1,5 +1,8 @@
 import { permanentRedirect } from "next/navigation";
+import { buildDiscoveryUrl } from "@/lib/rebuild/urls";
 
 export default function NewestRedirectPage() {
-  permanentRedirect("/discovery?sort=newest");
+  permanentRedirect(
+    buildDiscoveryUrl({ preset: "newest", includeDefaultPreset: true })
+  );
 }

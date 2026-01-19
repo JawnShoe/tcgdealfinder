@@ -1,4 +1,5 @@
 import {
+  DEFAULT_REBUILD_SORT,
   parseRebuildPrefs,
   serializeRebuildPrefs,
 } from "@/lib/rebuild/prefs/rebuildPrefs";
@@ -16,7 +17,11 @@ export function buildCanonicalUrl(path: string): string {
 export function buildDiscoveryCanonicalUrl(
   searchParams: RebuildSearchParams
 ): string {
-  const prefs = parseRebuildPrefs(normalizeSearchParams(searchParams));
+  const prefsResult = parseRebuildPrefs(normalizeSearchParams(searchParams));
+  const prefs =
+    prefsResult.kind === "ok"
+      ? prefsResult.prefs
+      : { sort: DEFAULT_REBUILD_SORT };
   const canonicalParams = serializeRebuildPrefs(prefs);
   const query = canonicalParams.toString();
   const path = query ? `/rebuild/discovery?${query}` : "/rebuild/discovery";

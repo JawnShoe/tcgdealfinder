@@ -259,3 +259,14 @@ Route stubs for `/sets/*` have been removed. All requests to `/sets/*` now retur
 | `/sets/[setId]` | 308 redirect to `/rebuild/discovery` | 404          |
 
 Internal links were already migrated in Slice A (PR #353). This deletion completes the route removal.
+
+### 2026-01-19: Tier 0 - Discovery Preset Validation
+
+Discovery preset parsing is now centralized and rejects unknown values instead of silently falling back to the default preset.
+
+| Route / Param                       | Previous Behavior                          | New Behavior |
+| ----------------------------------- | ------------------------------------------ | ------------ |
+| `/discovery?sort=<unknown>`         | Rendered default preset (silently coerced) | 404          |
+| `/rebuild/discovery?sort=<unknown>` | Rendered default preset (silently coerced) | 404          |
+
+Allowed presets: `newest`, `biggest-discount`, `endingSoon` (aliases: `ending-soon`, `endingsoon`).

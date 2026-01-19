@@ -75,6 +75,7 @@ const BASE_LISTING: ListingDomain = {
     feedbackCount: 42,
     positivePercent: 99,
   },
+  language: "EN",
   condition: "NM",
   availability: "In stock",
   provenance: {

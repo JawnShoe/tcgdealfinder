@@ -28,81 +28,49 @@ function buildCanonicalDiscoveryUrl(searchParams?: URLSearchParams): string {
   );
 }
 
-test("Stage 1 decommission: /top-deals redirects to /discovery (top deals preset)", async ({
+test("Stage 1 delete: /top-deals returns 404 (legacy route removed)", async ({
   page,
   request,
 }) => {
   const legacyUrl = `${baseURL}/top-deals`;
-  const expectedPath = "/discovery?sort=biggest-discount";
 
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
+  const response = await request.get(legacyUrl);
+  expect(response.status()).toBe(404);
 
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(
-    new RegExp(`/discovery\\?sort=biggest-discount`)
-  );
-  await expect(page.getByLabel("Sort")).toHaveValue("biggest-discount");
-  await assertUiTrustSurfaces(page);
+  const pageResponse = await page.goto(legacyUrl, {
+    waitUntil: "domcontentloaded",
+  });
+  expect(pageResponse?.status()).toBe(404);
 });
 
-test("Stage 1 decommission: /newest redirects to /discovery (newest preset)", async ({
+test("Stage 1 delete: /newest returns 404 (legacy route removed)", async ({
   page,
   request,
 }) => {
   const legacyUrl = `${baseURL}/newest`;
-  const expectedPath = "/discovery?sort=newest";
 
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
+  const response = await request.get(legacyUrl);
+  expect(response.status()).toBe(404);
 
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/discovery\\?sort=newest`));
-  await expect(page.getByLabel("Sort")).toHaveValue("newest");
-  await assertUiTrustSurfaces(page);
+  const pageResponse = await page.goto(legacyUrl, {
+    waitUntil: "domcontentloaded",
+  });
+  expect(pageResponse?.status()).toBe(404);
 });
 
-test("Stage 1 decommission: /ending-soon redirects to /discovery (endingSoon preset)", async ({
+test("Stage 1 delete: /ending-soon returns 404 (legacy route removed)", async ({
   page,
   request,
 }) => {
   const legacyUrl = `${baseURL}/ending-soon`;
-  const expectedPath = "/discovery?sort=endingSoon";
 
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
+  const response = await request.get(legacyUrl);
+  expect(response.status()).toBe(404);
 
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/discovery\\?sort=endingSoon`));
-  await expect(page.getByLabel("Sort")).toHaveValue("endingSoon");
-  await assertUiTrustSurfaces(page);
+  const pageResponse = await page.goto(legacyUrl, {
+    waitUntil: "domcontentloaded",
+  });
+  expect(pageResponse?.status()).toBe(404);
 });
 
 test("Stage 1 decommission: /search redirects to /rebuild/discovery", async ({

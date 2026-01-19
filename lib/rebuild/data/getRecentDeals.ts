@@ -5,6 +5,7 @@ import {
   mapDbRowToListingDomain,
 } from "./listingMapper";
 import { isRebuildDbConfigured } from "./dataAvailability";
+import { ensureRebuildCardsLanguageColumn } from "./schema";
 
 const DEFAULT_LIMIT = 10;
 
@@ -27,10 +28,13 @@ export async function getRecentDeals(
     return { deals: [], total: 0, fetchedAtISO: now.toISOString() };
   }
   const safeLimit = Math.min(Math.max(1, limit), 50);
+  const hasCardLanguage = await ensureRebuildCardsLanguageColumn();
 
   const result = await queryRebuild<DbListingRow>(
     `
       SELECT
+        l.card_id,
+        ${hasCardLanguage ? "c.language" : "NULL"} as card_language,
         l.listing_id,
         l.title,
         l.url,
@@ -56,6 +60,7 @@ export async function getRecentDeals(
         l.updated_at,
         l.created_at
       FROM listings l
+      LEFT JOIN cards c ON c.id = l.card_id
       WHERE l.total_price_cad IS NOT NULL
         AND l.discount_percent IS NOT NULL
       ORDER BY l.updated_at DESC NULLS LAST

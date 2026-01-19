@@ -270,3 +270,23 @@ Discovery preset parsing is now centralized and rejects unknown values instead o
 | `/rebuild/discovery?sort=<unknown>` | Rendered default preset (silently coerced) | 404          |
 
 Allowed presets: `newest`, `biggest-discount`, `endingSoon` (aliases: `ending-soon`, `endingsoon`).
+
+### 2026-01-19: Discovery v1 - Filters + Legacy Discovery Deletion
+
+Discovery v1 introduces minimal, data-first filtering controls and tightens legacy discovery decommission behavior.
+
+**User-visible additions (Discovery):**
+
+- Filter controls added: price range (CAD), condition, language, min confidence threshold, seller substring.
+- List rows now include a concise trust summary line (confidence 0-100 + trust state) and freshness label; provenance drilldown remains available at the bottom of the page.
+- Invalid filter values return a deterministic 404 (Discovery-specific not-found state).
+
+**User-visible behavior changes (Legacy routes):**
+
+| Route          | Previous Behavior                                  | New Behavior |
+| -------------- | -------------------------------------------------- | ------------ |
+| `/top-deals`   | 308 redirect to `/discovery?sort=biggest-discount` | 404          |
+| `/newest`      | 308 redirect to `/discovery?sort=newest`           | 404          |
+| `/ending-soon` | 308 redirect to `/discovery?sort=endingSoon`       | 404          |
+
+Inbound navigation now links directly to `/discovery` presets (no legacy route entrypoints).

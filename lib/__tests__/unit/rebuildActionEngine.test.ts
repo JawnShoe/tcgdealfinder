@@ -34,6 +34,7 @@ function buildListingDomain(): ListingDomain {
       feedbackCount: 120,
       positivePercent: 99,
     },
+    language: "EN",
     condition: "near-mint",
     availability: "In stock",
     provenance: {

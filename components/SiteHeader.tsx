@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buildDiscoveryUrl } from "@/lib/rebuild/urls";
 
 /**
  * SiteHeader — Phase 1: Visual Legitimacy
@@ -48,13 +49,16 @@ export function SiteHeader() {
           {/* Navigation links */}
           <nav className="flex items-center gap-1 sm:gap-4 text-sm">
             <Link
-              href="/top-deals"
+              href={buildDiscoveryUrl({ preset: "biggest-discount" })}
               className="px-2 py-1 text-slate-800 hover:text-slate-900 rounded-md hover:bg-slate-100"
             >
               Top Deals
             </Link>
             <Link
-              href="/newest"
+              href={buildDiscoveryUrl({
+                preset: "newest",
+                includeDefaultPreset: true,
+              })}
               className="px-2 py-1 text-slate-800 hover:text-slate-900 rounded-md hover:bg-slate-100"
             >
               Newest

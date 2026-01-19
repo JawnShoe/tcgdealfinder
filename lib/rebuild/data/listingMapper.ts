@@ -44,6 +44,8 @@ export type Confidence = {
   display: string;
 };
 
+export type CardLanguage = "EN" | "JP" | "UNKNOWN";
+
 export type TrustMetadata = {
   confidence: Confidence;
   source: string;
@@ -71,6 +73,7 @@ export type ListingDomain = {
   price: PricePoint;
   seller: SellerSignal;
   condition: string | null;
+  language: CardLanguage;
   availability: string | null;
   provenance: Provenance;
   trust: TrustMetadata;
@@ -84,6 +87,8 @@ export type ListingDomain = {
 };
 
 export type DbListingRow = {
+  card_id: number | null;
+  card_language: string | null;
   listing_id: string;
   title: string;
   url: string | null;
@@ -230,6 +235,7 @@ export function mapDbRowToListingDomain(
   };
 
   const condition = row.condition_raw ?? null;
+  const language = normalizeCardLanguage(row.card_language);
 
   const intelligence = evaluateIntelligence({
     title: row.title,
@@ -245,6 +251,7 @@ export function mapDbRowToListingDomain(
     price,
     seller,
     condition,
+    language,
     availability:
       row.shipping_known === false ? "Shipping unknown" : "In stock",
     provenance: {
@@ -269,6 +276,12 @@ export function mapDbRowToListingDomain(
     riskFlags,
     intelligence,
   };
+}
+
+function normalizeCardLanguage(value: string | null): CardLanguage {
+  if (value === "EN") return "EN";
+  if (value === "JP") return "JP";
+  return "UNKNOWN";
 }
 
 function toDate(value: Date | string | null | undefined): Date | null {

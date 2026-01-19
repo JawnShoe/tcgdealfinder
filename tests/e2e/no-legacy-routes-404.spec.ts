@@ -7,6 +7,21 @@ test("no-legacy gate: /cards/[id] returns 404", async ({ request }) => {
   expect(response.status()).toBe(404);
 });
 
+test("no-legacy gate: /top-deals returns 404", async ({ request }) => {
+  const response = await request.get(`${baseURL}/top-deals`);
+  expect(response.status()).toBe(404);
+});
+
+test("no-legacy gate: /newest returns 404", async ({ request }) => {
+  const response = await request.get(`${baseURL}/newest`);
+  expect(response.status()).toBe(404);
+});
+
+test("no-legacy gate: /ending-soon returns 404", async ({ request }) => {
+  const response = await request.get(`${baseURL}/ending-soon`);
+  expect(response.status()).toBe(404);
+});
+
 test("no-legacy gate: /sets returns 404", async ({ request }) => {
   const response = await request.get(`${baseURL}/sets`);
   expect(response.status()).toBe(404);

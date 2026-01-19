@@ -100,6 +100,7 @@ test("listing JSON-LD includes required fields", () => {
         positivePercent: 99.8,
       },
       condition: "NM",
+      language: "EN",
       availability: "In stock",
       provenance: {
         source: "EBAY",

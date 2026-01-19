@@ -5,6 +5,7 @@ import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import DiscoveryFiltersBar from "@/components/rebuild/DiscoveryFiltersBar";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
+import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import ResilienceLabel from "@/components/rebuild/ResilienceLabel";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
@@ -142,6 +143,13 @@ export default async function DiscoveryPage({
       dataCount: deals.length,
     });
 
+    const provenanceFields = [
+      { label: "DB configured", value: isDbConfigured ? "yes" : "no" },
+    ];
+    if (isDbConfigured) {
+      provenanceFields.push({ label: "Data fetched at", value: fetchedAtISO });
+    }
+
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
@@ -258,11 +266,15 @@ export default async function DiscoveryPage({
               </ul>
             )}
 
-            <p className="mt-4 text-xs text-slate-500">
-              {isDbConfigured
-                ? `Fetched at ${fetchedAtISO}`
-                : "DB not configured"}
-            </p>
+            <ProvenanceDrilldown
+              className="mt-4"
+              summary={
+                isDbConfigured
+                  ? `Fetched at ${fetchedAtISO}`
+                  : "DB not configured"
+              }
+              fields={provenanceFields}
+            />
           </section>
 
           <ComplianceDisclosure className="mt-6" />

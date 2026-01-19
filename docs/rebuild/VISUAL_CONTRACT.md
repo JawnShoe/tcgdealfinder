@@ -248,3 +248,14 @@ Route stubs for `/cards/*` have been removed. All requests to `/cards/*` now ret
 | `/cards/invalid` | 404                                  | 404          |
 
 Internal links were already migrated in Slice A (PR #353). This deletion completes the route removal.
+
+### 2026-01-18: Stage 4 Slice D - /sets Stubs Deleted
+
+Route stubs for `/sets/*` have been removed. All requests to `/sets/*` now return 404.
+
+| Route           | Previous Behavior                    | New Behavior |
+| --------------- | ------------------------------------ | ------------ |
+| `/sets`         | 308 redirect to `/rebuild/discovery` | 404          |
+| `/sets/[setId]` | 308 redirect to `/rebuild/discovery` | 404          |
+
+Internal links were already migrated in Slice A (PR #353). This deletion completes the route removal.

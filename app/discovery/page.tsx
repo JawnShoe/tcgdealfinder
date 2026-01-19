@@ -18,9 +18,11 @@ import {
   getRequestIdFromHeaders,
   logRequest,
 } from "@/lib/rebuild/observability/logging";
-import { sortDealsByPrefs } from "@/lib/rebuild/prefs/rebuildPrefs";
 import {
   filterDealsByDiscoveryQuery,
+  MAX_DISCOVERY_FETCH_LIMIT,
+  orderDealsForDiscovery,
+  paginateDiscoveryResults,
   parseDiscoveryQuery,
 } from "@/lib/rebuild/discovery/discoveryQuery";
 import { evaluateResilience } from "@/lib/rebuild/resilience/evaluateResilience";
@@ -92,7 +94,6 @@ export default async function DiscoveryPage({
   }
 
   const query = parsedQuery.query;
-  const prefs = { sort: query.preset };
 
   try {
     const isDiscoveryDisabled =
@@ -131,10 +132,20 @@ export default async function DiscoveryPage({
         requestId,
       });
     }
-    const { deals, fetchedAtISO } = await getRecentDeals(25);
-    const orderedDeals = sortDealsByPrefs(deals, prefs);
+    const fetchLimit = Math.min(
+      query.pagination.page * query.pagination.pageSize,
+      MAX_DISCOVERY_FETCH_LIMIT
+    );
+
+    const { deals, fetchedAtISO } = await getRecentDeals(fetchLimit);
+    const orderedDeals = orderDealsForDiscovery(deals, query.preset);
     const filteredDeals = filterDealsByDiscoveryQuery(orderedDeals, query);
     const { deduped: dedupedDeals, duplicates } = dedupeDeals(filteredDeals);
+    const discoveryResult = paginateDiscoveryResults(
+      dedupedDeals,
+      query.pagination
+    );
+    const pageDeals = discoveryResult.items;
     const ageSeconds = deals
       .map((deal) => deal.freshness.dataAgeSeconds)
       .filter((value): value is number => value != null);
@@ -188,15 +199,15 @@ export default async function DiscoveryPage({
               </h2>
               <p
                 data-testid="discovery-results-count"
-                data-count={dedupedDeals.length}
+                data-count={pageDeals.length}
                 className="text-xs text-slate-500"
               >
-                {dedupedDeals.length} result
-                {dedupedDeals.length !== 1 ? "s" : ""}
+                {pageDeals.length} result
+                {pageDeals.length !== 1 ? "s" : ""}
               </p>
             </div>
 
-            {dedupedDeals.length === 0 ? (
+            {pageDeals.length === 0 ? (
               <div
                 data-testid="discovery-empty-state"
                 className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center"
@@ -214,7 +225,7 @@ export default async function DiscoveryPage({
               </div>
             ) : (
               <ul className="mt-4 divide-y divide-slate-100">
-                {dedupedDeals.map((deal) => {
+                {pageDeals.map((deal) => {
                   const duplicateGroup = duplicates.get(
                     normalizeListingKey(deal)
                   );

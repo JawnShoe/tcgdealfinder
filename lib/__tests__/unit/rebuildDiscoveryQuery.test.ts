@@ -3,8 +3,11 @@ import assert from "node:assert/strict";
 
 import type { ListingDomain } from "@/lib/rebuild/data/listingMapper";
 import {
+  computeDiscoveryFacets,
   filterDealsByDiscoveryQuery,
+  orderDealsForDiscovery,
   parseDiscoveryQuery,
+  paginateDiscoveryResults,
   type DiscoveryQuery,
 } from "@/lib/rebuild/discovery/discoveryQuery";
 import { toUsdCentsFromCadDollars } from "@/lib/rebuild/currency/cad";
@@ -87,6 +90,7 @@ function makeQuery(overrides?: Partial<DiscoveryQuery>): DiscoveryQuery {
       minConfidence: "any",
       seller: null,
     },
+    pagination: { page: 1, pageSize: 25 },
     ...overrides,
   };
 }
@@ -96,6 +100,8 @@ test("parseDiscoveryQuery defaults preset when missing", () => {
   assert.equal(result.kind, "ok");
   if (result.kind !== "ok") return;
   assert.equal(result.query.preset, "newest");
+  assert.equal(result.query.pagination.page, 1);
+  assert.equal(result.query.pagination.pageSize, 25);
 });
 
 test("parseDiscoveryQuery rejects invalid preset", () => {
@@ -111,6 +117,22 @@ test("parseDiscoveryQuery rejects invalid numeric filters", () => {
 test("parseDiscoveryQuery rejects inverted price range", () => {
   const result = parseDiscoveryQuery({ minPriceCad: "200", maxPriceCad: "10" });
   assert.equal(result.kind, "invalid_filters");
+});
+
+test("parseDiscoveryQuery normalizes invalid page and pageSize", () => {
+  const result = parseDiscoveryQuery({ page: "0", pageSize: "0" });
+  assert.equal(result.kind, "ok");
+  if (result.kind !== "ok") return;
+  assert.equal(result.query.pagination.page, 1);
+  assert.equal(result.query.pagination.pageSize, 25);
+});
+
+test("parseDiscoveryQuery caps pageSize to max", () => {
+  const result = parseDiscoveryQuery({ page: "2", pageSize: "999" });
+  assert.equal(result.kind, "ok");
+  if (result.kind !== "ok") return;
+  assert.equal(result.query.pagination.page, 2);
+  assert.equal(result.query.pagination.pageSize, 100);
 });
 
 test("filterDealsByDiscoveryQuery filters by min confidence threshold", () => {
@@ -214,4 +236,72 @@ test("filterDealsByDiscoveryQuery normalizes CAD price filters to USD internally
     filtered.map((deal) => deal.listingId),
     ["b"]
   );
+});
+
+test("orderDealsForDiscovery adds deterministic tie-breakers for biggest-discount", () => {
+  const base = makeDeal();
+  const deals = [
+    makeDeal({
+      listingId: "b",
+      price: { ...base.price, discountPercent: 10 },
+      provenance: { ...base.provenance, updatedAtISO: "2026-01-01T00:00:00Z" },
+    }),
+    makeDeal({
+      listingId: "a",
+      price: { ...base.price, discountPercent: 10 },
+      provenance: { ...base.provenance, updatedAtISO: "2026-01-02T00:00:00Z" },
+    }),
+    makeDeal({
+      listingId: "c",
+      price: { ...base.price, discountPercent: 20 },
+      provenance: { ...base.provenance, updatedAtISO: "2026-01-01T00:00:00Z" },
+    }),
+  ];
+
+  const ordered = orderDealsForDiscovery(deals, "biggest-discount");
+  assert.deepEqual(
+    ordered.map((deal) => deal.listingId),
+    ["c", "a", "b"]
+  );
+});
+
+test("computeDiscoveryFacets returns deterministic numeric counts", () => {
+  const base = makeDeal();
+  const deals = [
+    makeDeal({ listingId: "a", condition: "NM", language: "EN" }),
+    makeDeal({ listingId: "b", condition: "LP", language: "JP" }),
+    makeDeal({ listingId: "c", condition: null, language: "UNKNOWN" }),
+    makeDeal({
+      listingId: "d",
+      trust: {
+        ...base.trust,
+        confidence: { weight: 0.4, label: "low", display: "40 / 100" },
+      },
+    }),
+  ];
+
+  const facets = computeDiscoveryFacets(deals);
+  assert.equal(facets.condition.NM, 2);
+  assert.equal(facets.condition.LP, 1);
+  assert.equal(facets.condition.unknown, 1);
+  assert.equal(facets.language.EN, 2);
+  assert.equal(facets.language.JP, 1);
+  assert.equal(facets.language.UNKNOWN, 1);
+  assert.deepEqual(facets.confidence, { high: 3, medium: 0, low: 1 });
+});
+
+test("paginateDiscoveryResults computes facets without altering items list", () => {
+  const deals = [
+    makeDeal({ listingId: "a", condition: "NM" }),
+    makeDeal({ listingId: "b", condition: "LP" }),
+  ];
+
+  const result = paginateDiscoveryResults(deals, { page: 1, pageSize: 1 });
+  assert.deepEqual(
+    result.items.map((deal) => deal.listingId),
+    ["a"]
+  );
+  assert.equal(result.totalCount, 2);
+  assert.equal(result.facets.condition.NM, 1);
+  assert.equal(result.facets.condition.LP, 1);
 });

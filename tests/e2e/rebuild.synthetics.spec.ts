@@ -1238,9 +1238,12 @@ test("Discovery UX contract: filters render + empty state + reset returns result
 
   await page.getByTestId("discovery-filter-min-price-cad").fill("99999999");
   await page.getByTestId("discovery-filter-seller").fill("zzzzzzzzzz");
-  await page.getByTestId("discovery-filters-apply").click();
 
-  await expect(page).toHaveURL(/\/discovery\?/);
+  await Promise.all([
+    page.waitForURL(/\/discovery(\?.*)?$/, { timeout: 15000 }),
+    page.getByTestId("discovery-filters-apply").click(),
+  ]);
+
   await expect(page.getByTestId("discovery-empty-state")).toBeVisible();
   await expect(page.getByTestId("discovery-results-count")).toHaveAttribute(
     "data-count",

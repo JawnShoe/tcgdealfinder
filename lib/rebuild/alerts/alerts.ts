@@ -1,7 +1,15 @@
 import type { ListingDomain } from "@/lib/rebuild/data/listingMapper";
+import {
+  toUsdCentsFromUsdDollars,
+  type UsdCents,
+} from "@/lib/rebuild/currency/canonical";
+import {
+  cadCurrencyCode,
+  toUsdCentsFromCadDollars,
+} from "@/lib/rebuild/currency/cad";
 
 export type AlertType = "saved_search" | "price_threshold" | "trust_threshold";
-export type AlertCurrency = "CAD" | "USD" | "NATIVE";
+export type AlertCurrency = typeof cadCurrencyCode | "USD" | "NATIVE";
 
 export type SavedSearchAlert = {
   type: "saved_search";
@@ -75,20 +83,27 @@ function normalizeQuery(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function getListingPrice(
-  listing: ListingDomain,
-  currency: AlertCurrency
-): number | null {
-  if (currency === "CAD") {
-    return listing.price.totalCad ?? null;
+function normalizePriceThresholdToUsdCents(
+  alert: PriceThresholdAlert,
+  listing: ListingDomain
+): UsdCents | null {
+  if (alert.currency === "USD") {
+    return toUsdCentsFromUsdDollars(alert.maxPrice);
   }
-  if (currency === "USD") {
-    return listing.price.totalUsd ?? null;
+
+  if (alert.currency === cadCurrencyCode) {
+    return toUsdCentsFromCadDollars(alert.maxPrice);
   }
-  if (currency === "NATIVE") {
-    return listing.price.totalNative ?? null;
-  }
-  return null;
+
+  const listingTotalUsd = listing.price.totalUsd;
+  const listingTotalNative = listing.price.totalNative;
+  if (listingTotalUsd == null || listingTotalNative == null) return null;
+  if (!Number.isFinite(listingTotalUsd) || !Number.isFinite(listingTotalNative))
+    return null;
+  if (listingTotalNative <= 0) return null;
+
+  const rateToUsd = listingTotalUsd / listingTotalNative;
+  return toUsdCentsFromUsdDollars(alert.maxPrice * rateToUsd);
 }
 
 export function evaluatePriceThresholdAlert(
@@ -100,12 +115,18 @@ export function evaluatePriceThresholdAlert(
     return { shouldFire: false, reasons: gate.reasons };
   }
 
-  const price = getListingPrice(listing, alert.currency);
-  if (price == null) {
+  const listingTotalUsd = listing.price.totalUsd;
+  if (listingTotalUsd == null) {
     return { shouldFire: false, reasons: ["price_unavailable"] };
   }
 
-  if (price > alert.maxPrice) {
+  const thresholdUsdCents = normalizePriceThresholdToUsdCents(alert, listing);
+  if (thresholdUsdCents == null) {
+    return { shouldFire: false, reasons: ["price_unavailable"] };
+  }
+
+  const listingUsdCents = toUsdCentsFromUsdDollars(listingTotalUsd);
+  if (listingUsdCents > thresholdUsdCents) {
     return { shouldFire: false, reasons: ["price_above_threshold"] };
   }
 

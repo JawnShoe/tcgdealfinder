@@ -68,10 +68,7 @@ function buildFallbackKey(listing: ListingDomain): string {
     .toLowerCase();
   const title = listing.title.trim().toLowerCase();
   const amount =
-    listing.price.amount ??
-    listing.price.totalUsd ??
-    listing.price.totalCad ??
-    listing.price.totalNative;
+    listing.price.amount ?? listing.price.totalUsd ?? listing.price.totalNative;
   const currency = listing.price.currency ?? "unknown";
   const priceKey =
     amount == null ? `unknown:${currency}` : `${amount}:${currency}`;

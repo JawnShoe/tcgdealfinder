@@ -7,6 +7,8 @@ import {
   parseDiscoveryQuery,
   type DiscoveryQuery,
 } from "@/lib/rebuild/discovery/discoveryQuery";
+import { toUsdCentsFromCadDollars } from "@/lib/rebuild/currency/cad";
+import { toUsdCentsFromUsdDollars } from "@/lib/rebuild/currency/canonical";
 
 function makeDeal(overrides?: Partial<ListingDomain>): ListingDomain {
   return {
@@ -165,5 +167,51 @@ test("filterDealsByDiscoveryQuery filters by seller substring match", () => {
   assert.deepEqual(
     filtered.map((d) => d.listingId),
     ["a"]
+  );
+});
+
+test("filterDealsByDiscoveryQuery normalizes CAD price filters to USD internally", () => {
+  const base = makeDeal();
+  const deals = [
+    {
+      ...base,
+      listingId: "a",
+      price: {
+        ...base.price,
+        amount: 73,
+        currency: "USD",
+        totalUsd: 73,
+        display: "73.00 USD",
+      },
+    },
+    {
+      ...base,
+      listingId: "b",
+      price: {
+        ...base.price,
+        amount: 75,
+        currency: "USD",
+        totalUsd: 75,
+        display: "75.00 USD",
+      },
+    },
+  ];
+
+  const minCad = 100;
+  const filtered = filterDealsByDiscoveryQuery(
+    deals,
+    makeQuery({
+      filters: {
+        ...makeQuery().filters,
+        priceMinCad: minCad,
+      },
+    })
+  );
+
+  assert.equal(toUsdCentsFromCadDollars(minCad), 7400);
+  assert.equal(toUsdCentsFromUsdDollars(73), 7300);
+  assert.deepEqual(
+    filtered.map((deal) => deal.listingId),
+    ["b"]
   );
 });

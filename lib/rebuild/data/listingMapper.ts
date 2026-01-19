@@ -4,6 +4,7 @@ export type PricePoint = {
   totalCad: number | null;
   totalUsd: number | null;
   totalNative: number | null;
+  canonicalUsdCents?: UsdCents | null;
   discountPercent: number | null;
   display: string;
   deltaDisplay: string;
@@ -134,12 +135,24 @@ export function mapDbRowToListingDomain(
   const dataAgeLabel = formatAgeLabel(dataAgeSeconds);
 
   const totalCad = parseNullableNumber(row.total_price_cad);
-  const totalUsd = parseNullableNumber(row.total_usd);
+  const rawTotalUsd = parseNullableNumber(row.total_usd);
   const totalNative = parseNullableNumber(row.total_native);
   const currency = row.currency ?? null;
 
+  const canonicalUsdCents =
+    rawTotalUsd != null
+      ? toUsdCentsFromUsdDollars(rawTotalUsd)
+      : totalCad != null
+        ? toUsdCentsFromCadDollars(totalCad)
+        : null;
+  const totalUsd =
+    rawTotalUsd != null
+      ? rawTotalUsd
+      : canonicalUsdCents != null
+        ? toUsdDollarsFromUsdCents(canonicalUsdCents)
+        : null;
+
   const { amount, displayCurrency } = pickDisplayPrice({
-    totalCad,
     totalUsd,
     totalNative,
     currency,
@@ -219,6 +232,7 @@ export function mapDbRowToListingDomain(
     totalCad,
     totalUsd,
     totalNative,
+    canonicalUsdCents,
     discountPercent,
     display:
       amount != null && displayCurrency
@@ -330,7 +344,6 @@ function formatAgeLabel(ageSeconds: number): string {
 }
 
 function pickDisplayPrice(values: {
-  totalCad: number | null;
   totalUsd: number | null;
   totalNative: number | null;
   currency: string | null;
@@ -341,9 +354,6 @@ function pickDisplayPrice(values: {
   if (values.totalUsd != null) {
     return { amount: values.totalUsd, displayCurrency: "USD" };
   }
-  if (values.totalCad != null) {
-    return { amount: values.totalCad, displayCurrency: "CAD" };
-  }
   return { amount: null, displayCurrency: null };
 }
 import {
@@ -351,3 +361,9 @@ import {
   type TrustAssessment,
 } from "../trust/trustAssessment";
 import { evaluateIntelligence, type IntelligenceResult } from "../intelligence";
+import {
+  toUsdDollarsFromUsdCents,
+  toUsdCentsFromUsdDollars,
+  type UsdCents,
+} from "../currency/canonical";
+import { toUsdCentsFromCadDollars } from "../currency/cad";

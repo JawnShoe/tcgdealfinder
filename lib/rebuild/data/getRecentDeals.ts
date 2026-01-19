@@ -61,7 +61,7 @@ export async function getRecentDeals(
         l.created_at
       FROM listings l
       LEFT JOIN cards c ON c.id = l.card_id
-      WHERE l.total_price_cad IS NOT NULL
+      WHERE (l.total_usd IS NOT NULL OR l.total_price_cad IS NOT NULL)
         AND l.discount_percent IS NOT NULL
       ORDER BY l.updated_at DESC NULLS LAST
       LIMIT $1;

@@ -348,3 +348,29 @@ Rebuild list rows now support an "inspection mode" expansion pattern for deeper 
 - `data-testid="rebuild-deal-row"` (with `aria-expanded`)
 - `data-testid="rebuild-deal-row-title"`
 - `data-testid="rebuild-deal-row-expanded"` (must include class marker `rebuild-inspection-panel`)
+
+### 2026-01-20: Upgrade #2 - Discovery List Scan Power (Scan Hierarchy)
+
+Rebuild discovery rows must support fast scan triage (power users can evaluate dozens of deals without expanding rows).
+
+**Scan hierarchy (collapsed rows):**
+
+- Primary (visual anchor): Price (largest numeric; tabular-nums; never hidden).
+- Secondary (annotation): Discount as an interpreted note (e.g., `-18% vs market`), not a competing headline.
+- Subordinate (always visible, calm): Confidence, seller context, market/source, and freshness.
+
+**Unknown semantics (mandatory):**
+
+- Missing values render as `—` and must not collapse layout or remove columns.
+
+**Density + alignment (mandatory):**
+
+- Collapsed rows use a rigid grid/column layout so signals align across rows.
+- Row height must remain consistent across rows (no conditional collapsed-row lines for optional fields).
+
+**Sort-aware emphasis (presentation-only):**
+
+- Biggest discount: discount annotation gains emphasis.
+- Ending soon / Newest: freshness gains emphasis.
+
+This does not change ranking or query semantics; it only changes visual weight.

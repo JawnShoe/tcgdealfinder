@@ -299,6 +299,7 @@ export default async function RebuildDiscoveryPage({
             ) : (
               <ExpandableDealList
                 mode="discovery"
+                sortPreset={query.preset}
                 items={pageDeals.map((deal) => {
                   const duplicateGroup = duplicates.get(
                     normalizeListingKey(deal)

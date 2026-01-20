@@ -180,6 +180,7 @@ export default async function RebuildHomePage({
             ) : (
               <ExpandableDealList
                 mode="home"
+                sortPreset={prefs.sort}
                 items={dedupedDeals.map((deal) => {
                   const duplicateGroup = duplicates.get(
                     normalizeListingKey(deal)

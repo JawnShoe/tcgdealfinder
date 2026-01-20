@@ -17,12 +17,12 @@
 
 ### Portaled Tooltips (REQUIRED)
 
-| Component | usePortal | Reason |
-|-----------|-----------|---------|
-| Ends tooltips (5 locations) | `true` | Inside DealsTable overflow wrappers |
-| TrustedBadge | `true` | Inside table cells with overflow-x-clip |
-| WhyDealHint | Should be `true` | Can appear in table cells (future-proof) |
-| SellerSeenBadge | Should be `true` | Can appear in table cells (future-proof) |
+| Component                   | usePortal        | Reason                                   |
+| --------------------------- | ---------------- | ---------------------------------------- |
+| Ends tooltips (5 locations) | `true`           | Inside DealsTable overflow wrappers      |
+| TrustedBadge                | `true`           | Inside table cells with overflow-x-clip  |
+| WhyDealHint                 | Should be `true` | Can appear in table cells (future-proof) |
+| SellerSeenBadge             | Should be `true` | Can appear in table cells (future-proof) |
 
 ### Portal Behavior
 
@@ -40,23 +40,23 @@
 
 ### Size Definitions
 
-| Size | max-width | w-max | Use Case |
-|------|-----------|-------|----------|
-| `compact` | 240px | ✓ | Short hints (WhyDealHint: "well below typical price") |
-| `medium` | 280px | ✓ | Medium-length descriptions (TrustedBadge, SellerSeenBadge) |
-| `wide` | 320px | ✓ | Long explanations (if needed) |
-| `default` | 384px (24rem, max-w-sm) | ✗ | Legacy, avoid for new tooltips |
+| Size      | max-width               | w-max | Use Case                                                   |
+| --------- | ----------------------- | ----- | ---------------------------------------------------------- |
+| `compact` | 240px                   | ✓     | Short hints (WhyDealHint: "well below typical price")      |
+| `medium`  | 280px                   | ✓     | Medium-length descriptions (TrustedBadge, SellerSeenBadge) |
+| `wide`    | 320px                   | ✓     | Long explanations (if needed)                              |
+| `default` | 384px (24rem, max-w-sm) | ✗     | Legacy, avoid for new tooltips                             |
 
 **Key Detail**: `compact`/`medium`/`wide` include `w-max` (content-based width up to max), preventing aggressive wrapping. `default` lacks `w-max`, causing narrow tall columns—avoid unless intentional.
 
 ### Current Assignments
 
-| Component | Size | Rationale |
-|-----------|------|-----------|
-| Ends tooltips | `default` (inherited) | Single-line timestamp, ~160px actual width |
-| TrustedBadge | `medium` | ~280px max, prevents tall/skinny wrapping |
-| WhyDealHint | `compact` | Short hints, 240px max sufficient |
-| SellerSeenBadge | `medium` | ~200px content, medium provides comfortable margin |
+| Component       | Size                  | Rationale                                          |
+| --------------- | --------------------- | -------------------------------------------------- |
+| Ends tooltips   | `default` (inherited) | Single-line timestamp, ~160px actual width         |
+| TrustedBadge    | `medium`              | ~280px max, prevents tall/skinny wrapping          |
+| WhyDealHint     | `compact`             | Short hints, 240px max sufficient                  |
+| SellerSeenBadge | `medium`              | ~200px content, medium provides comfortable margin |
 
 ---
 
@@ -69,11 +69,14 @@
 ```typescript
 // Measure actual tooltip width if available, otherwise use fallback based on size
 const tooltipWidth = tooltipRef.current
-  ? tooltipRef.current.getBoundingClientRect().width  // ✅ MEASURED (accurate)
-  : size === "wide" ? 320
-    : size === "medium" ? 280
-    : size === "compact" ? 240
-    : 384; // Fallback to size-based max-widths
+  ? tooltipRef.current.getBoundingClientRect().width // ✅ MEASURED (accurate)
+  : size === "wide"
+    ? 320
+    : size === "medium"
+      ? 280
+      : size === "compact"
+        ? 240
+        : 384; // Fallback to size-based max-widths
 
 // Prevent tooltip from extending beyond right edge
 if (left + tooltipWidth > viewportWidth) {
@@ -87,6 +90,7 @@ if (left < 0) {
 ```
 
 **Why Measured Width?**
+
 - Ends tooltips with `whitespace-nowrap` are ~160px actual width (not 384px max)
 - Compact tooltips vary from 100px to 240px depending on content
 - Accurate measurement prevents over-conservative clamping (excessive left offset)
@@ -104,6 +108,7 @@ if (left < 0) {
 **Symptom**: Large empty area on single-line or first line of tooltip, caused by `min-w-[Npx]` constraint.
 
 **Example** (before fixes):
+
 - `min-w-[220px]` on content that's only ~150px wide → **70px blank-right space** on single line
 
 **Fix**: Remove `min-w-*` constraints. Use `size` prop + `w-max` instead.
@@ -113,6 +118,7 @@ if (left < 0) {
 **Symptom**: Shorter last line after text wrapping, natural consequence of word boundaries.
 
 **Example**:
+
 ```
 "Trusted seller: 98%+ positive    ← ~240px, fills width
 feedback, 20+ ratings"            ← ~150px, 130px blank-right
@@ -131,7 +137,9 @@ feedback, 20+ ratings"            ← ~150px, 130px blank-right
 ### Standard Pattern (DealsTable)
 
 ```tsx
-{/* Visibility wrapper */}
+{
+  /* Visibility wrapper */
+}
 <div className="hidden sm:block">
   {/* Outer: Prevents page-level horizontal scroll */}
   <div className="w-full overflow-x-clip">
@@ -142,10 +150,11 @@ feedback, 20+ ratings"            ← ~150px, 130px blank-right
       </table>
     </div>
   </div>
-</div>
+</div>;
 ```
 
 **Key Classes**:
+
 - **`overflow-x-clip`** (outer): Clips horizontal overflow, prevents page-level scrollbar
 - **`overflow-x-auto`** (inner): Allows horizontal scrolling within container
 - **`overflow-y-clip`** (inner): Prevents vertical scrollbar from table content
@@ -175,6 +184,7 @@ When adding new tooltips or tables, verify:
 ### Edge Case Testing
 
 Test tooltips at:
+
 - [ ] **Table edges**: First/last columns
 - [ ] **Near right viewport edge**: Trigger ~100px from right edge
 - [ ] **Mobile viewports**: 320px, 375px, 768px widths
@@ -186,9 +196,9 @@ Test tooltips at:
 
 Some components intentionally deviate from defaults for valid UX reasons:
 
-| Component | Divergence | Reason |
-|-----------|------------|--------|
-| (None currently) | - | - |
+| Component        | Divergence | Reason |
+| ---------------- | ---------- | ------ |
+| (None currently) | -          | -      |
 
 **Process**: If adding an intentional divergence, document it here with clear rationale.
 
@@ -206,6 +216,7 @@ Some components intentionally deviate from defaults for valid UX reasons:
 6. **28b8080**: Fixed TrustedBadge clipping (added `usePortal={true}`)
 
 **Root Causes of Loop**:
+
 - Lack of consistent portal policy (some tooltips portaled, others not)
 - Ad-hoc width constraints (`min-w-*`) instead of standardized sizes
 - Confusion between "forced blank space" (bug) vs "normal multi-line whitespace" (acceptable)
@@ -217,6 +228,7 @@ Some components intentionally deviate from defaults for valid UX reasons:
 ## 9. References
 
 **Implementation Files**:
+
 - [components/TooltipPopover.tsx](../../components/TooltipPopover.tsx) - Core tooltip component
 - [components/TrustedBadge.tsx](../../components/TrustedBadge.tsx) - Portaled medium-sized tooltip
 - [components/WhyDealHint.tsx](../../components/WhyDealHint.tsx) - Compact tooltip
@@ -225,6 +237,7 @@ Some components intentionally deviate from defaults for valid UX reasons:
 - [components/CardDetailClient.tsx](../../components/CardDetailClient.tsx) - Listings table overflow
 
 **Documentation**:
+
 - [PROJECT_SSOT.md](../../PROJECT_SSOT.md) - Historical changes log
 - [REGRESSION_CHECKLIST.md](../../REGRESSION_CHECKLIST.md) - Testing checklist
 

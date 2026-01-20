@@ -42,6 +42,36 @@ test("buildDiscoveryUrl serializes discovery filters", () => {
   );
 });
 
+test("buildDiscoveryUrl serializes pagination", () => {
+  assert.equal(
+    buildDiscoveryUrl({
+      preset: "newest",
+      pagination: { page: 2, pageSize: 50 },
+    }),
+    "/discovery?page=2&pageSize=50"
+  );
+});
+
+test("buildDiscoveryUrl omits default pagination values", () => {
+  assert.equal(
+    buildDiscoveryUrl({
+      preset: "newest",
+      pagination: { page: 1, pageSize: 25 },
+    }),
+    "/discovery"
+  );
+});
+
+test("buildDiscoveryUrl normalizes unexpected pageSize", () => {
+  assert.equal(
+    buildDiscoveryUrl({
+      preset: "endingSoon",
+      pagination: { page: 2, pageSize: 30 },
+    }),
+    "/discovery?sort=endingSoon&page=2"
+  );
+});
+
 test("buildListingUrl encodes the listing id", () => {
   assert.equal(buildListingUrl({ id: "abc" }), "/rebuild/listing/abc");
   assert.equal(

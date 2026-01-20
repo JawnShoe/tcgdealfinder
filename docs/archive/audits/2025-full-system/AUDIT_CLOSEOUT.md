@@ -14,16 +14,16 @@ Status: AUDIT COMPLETE
 
 ## 1. Phases Completed
 
-| Phase | Name                    | Deliverable                 | Status                 |
-| ----- | ----------------------- | --------------------------- | ---------------------- |
-| 1     | Inventory               | `AUDIT_REPO_INVENTORY.md`   | Complete               |
-| 2A    | Docs & Process Audit    | `AUDIT_DOCS_*.md` series    | Complete               |
-| 2B    | Docs Cleanup            | Deferred to workstream      | Intentionally deferred |
-| 3A    | Frontend & Rendering    | `AUDIT_CODE_FRONTEND.md`    | Complete               |
-| 3B    | Backend & API           | `AUDIT_CODE_BACKEND.md`     | Complete               |
-| 3C    | Data & DB Layer         | `AUDIT_CODE_DATA.md`        | Complete               |
-| 3D    | Ops, Pipelines & Alerts | `AUDIT_CODE_OPS.md`         | Complete               |
-| 4     | Clean-Slate Snapshot    | `CURRENT_STATE_SNAPSHOT.md` | Complete               |
+| Phase | Name                    | Deliverable                                                     | Status                 |
+| ----- | ----------------------- | --------------------------------------------------------------- | ---------------------- |
+| 1     | Inventory               | `docs/archive/audits/2026-01-inventory/REPO_INVENTORY_AUDIT.md` | Complete               |
+| 2A    | Docs & Process Audit    | `AUDIT_DOCS_*.md` series                                        | Complete               |
+| 2B    | Docs Cleanup            | Deferred to workstream                                          | Intentionally deferred |
+| 3A    | Frontend & Rendering    | `AUDIT_CODE_FRONTEND.md`                                        | Complete               |
+| 3B    | Backend & API           | `AUDIT_CODE_BACKEND.md`                                         | Complete               |
+| 3C    | Data & DB Layer         | `AUDIT_CODE_DATA.md`                                            | Complete               |
+| 3D    | Ops, Pipelines & Alerts | `AUDIT_CODE_OPS.md`                                             | Complete               |
+| 4     | Clean-Slate Snapshot    | `CURRENT_STATE_SNAPSHOT.md`                                     | Complete               |
 
 All planned audit phases have been executed.
 
@@ -35,21 +35,21 @@ All files under `docs/audit/_full-system-2025/` are **temporary audit artifacts*
 
 ### Files in This Directory
 
-| File                             | Purpose                     | Collapse Target   |
-| -------------------------------- | --------------------------- | ----------------- |
-| `AUDIT_REPO_INVENTORY.md`        | Phase 1 file inventory      | Archive           |
-| `AUDIT_DOCS_INVENTORY.md`        | Phase 2 docs inventory      | Archive           |
-| `AUDIT_DOCS_CLASSIFICATION.md`   | Phase 2 docs classification | Archive           |
-| `AUDIT_DOCS_ACTION_PLAN.md`      | Phase 2 action plan         | Archive           |
-| `AUDIT_WORKFLOWS_INVENTORY.md`   | Phase 2 workflows           | Archive           |
-| `AUDIT_EXTERNAL_DEPENDENCIES.md` | Phase 2 dependencies        | Archive           |
-| `AUDIT_OPEN_RISKS_RESOLUTION.md` | Phase 2 risk tracking       | Archive           |
-| `AUDIT_CODE_FRONTEND.md`         | Phase 3A frontend audit     | Archive           |
-| `AUDIT_CODE_BACKEND.md`          | Phase 3B backend audit      | Archive           |
-| `AUDIT_CODE_DATA.md`             | Phase 3C data audit         | Archive           |
-| `AUDIT_CODE_OPS.md`              | Phase 3D ops audit          | Archive           |
-| `CURRENT_STATE_SNAPSHOT.md`      | Phase 4 snapshot            | `PROJECT_SSOT.md` |
-| `AUDIT_CLOSEOUT.md`              | This file                   | Archive           |
+| File                                                            | Purpose                     | Collapse Target   |
+| --------------------------------------------------------------- | --------------------------- | ----------------- |
+| `docs/archive/audits/2026-01-inventory/REPO_INVENTORY_AUDIT.md` | Phase 1 file inventory      | Archive           |
+| `AUDIT_DOCS_INVENTORY.md`                                       | Phase 2 docs inventory      | Archive           |
+| `AUDIT_DOCS_CLASSIFICATION.md`                                  | Phase 2 docs classification | Archive           |
+| `AUDIT_DOCS_ACTION_PLAN.md`                                     | Phase 2 action plan         | Archive           |
+| `AUDIT_WORKFLOWS_INVENTORY.md`                                  | Phase 2 workflows           | Archive           |
+| `AUDIT_EXTERNAL_DEPENDENCIES.md`                                | Phase 2 dependencies        | Archive           |
+| `AUDIT_OPEN_RISKS_RESOLUTION.md`                                | Phase 2 risk tracking       | Archive           |
+| `AUDIT_CODE_FRONTEND.md`                                        | Phase 3A frontend audit     | Archive           |
+| `AUDIT_CODE_BACKEND.md`                                         | Phase 3B backend audit      | Archive           |
+| `AUDIT_CODE_DATA.md`                                            | Phase 3C data audit         | Archive           |
+| `AUDIT_CODE_OPS.md`                                             | Phase 3D ops audit          | Archive           |
+| `CURRENT_STATE_SNAPSHOT.md`                                     | Phase 4 snapshot            | `PROJECT_SSOT.md` |
+| `AUDIT_CLOSEOUT.md`                                             | This file                   | Archive           |
 
 ### Collapse Strategy
 

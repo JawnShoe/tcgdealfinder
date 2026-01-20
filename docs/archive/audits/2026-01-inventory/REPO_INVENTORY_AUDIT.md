@@ -196,16 +196,16 @@ scripts/
 
 ### Authoritative (Active, Maintained)
 
-| Path                                 | Purpose                  | Last Commit | Referenced By     |
-| ------------------------------------ | ------------------------ | ----------- | ----------------- |
-| `docs/INDEX.md`                      | Documentation map        | 2026-01-03  | CLAUDE.md         |
-| `docs/TIER2_ARCHITECTURE.md`         | Tier 2 architecture spec | 2026-01-02  | CLAUDE.md routing |
-| `docs/DB_MIGRATIONS_RUNBOOK.md`      | Migration procedures     | 2025-12-24  | CLAUDE.md routing |
-| `docs/ENV_RUNBOOK.md`                | Environment config       | 2026-01-02  | CLAUDE.md routing |
-| `docs/DEFINITION_OF_READY.md`        | Readiness checklist      | 2025-12-24  | CLAUDE.md routing |
-| `docs/RELEASES.md`                   | Release procedures       | 2025-12-24  | CLAUDE.md routing |
-| `docs/ui/UI_CONSISTENCY_CONTRACT.md` | UI governance            | 2025-12-23  | CLAUDE.md routing |
-| `docs/ui/TOOLTIP_INVENTORY.md`       | Tooltip catalog          | 2026-01-04  | UI contract       |
+| Path                                                | Purpose                  | Last Commit | Referenced By     |
+| --------------------------------------------------- | ------------------------ | ----------- | ----------------- |
+| `docs/INDEX.md`                                     | Documentation map        | 2026-01-03  | CLAUDE.md         |
+| `docs/TIER2_ARCHITECTURE.md`                        | Tier 2 architecture spec | 2026-01-02  | CLAUDE.md routing |
+| `docs/DB_MIGRATIONS_RUNBOOK.md`                     | Migration procedures     | 2025-12-24  | CLAUDE.md routing |
+| `docs/ENV_RUNBOOK.md`                               | Environment config       | 2026-01-02  | CLAUDE.md routing |
+| `docs/DEFINITION_OF_READY.md`                       | Readiness checklist      | 2025-12-24  | CLAUDE.md routing |
+| `docs/RELEASES.md`                                  | Release procedures       | 2025-12-24  | CLAUDE.md routing |
+| `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md` | UI governance            | 2025-12-23  | CLAUDE.md routing |
+| `docs/archive/ui-legacy/TOOLTIP_INVENTORY.md`       | Tooltip catalog          | 2026-01-04  | UI contract       |
 
 ### Operational (Reference)
 
@@ -417,3 +417,26 @@ $ git rev-parse origin/main
 | `.github/`    | 7     | 1              |
 | `types/`      | 2     | 0              |
 | `skills/`     | 5     | 3              |
+
+---
+
+## Appendix: 2025-12-26 Snapshot (merged)
+
+The following was merged from the archived Phase 1 repo inventory audit
+(December 2025), which has been removed to avoid maintaining two repo-inventory
+sources.
+
+### Tech Stack (as observed, 2025-12-26)
+
+| Layer         | Technology   | Version/Notes                            |
+| ------------- | ------------ | ---------------------------------------- |
+| Framework     | Next.js      | 14.2.35 (pinned)                         |
+| Language      | TypeScript   | 5.4.5                                    |
+| UI            | React        | 18.3.1                                   |
+| Styling       | Tailwind CSS | 4.1.18 (v4)                              |
+| Database      | PostgreSQL   | Via `pg` 8.11.5 (Neon implied from docs) |
+| Charts        | Recharts     | 3.5.1                                    |
+| Scraping      | Cheerio      | 1.1.2                                    |
+| Observability | Sentry       | @sentry/nextjs 10.32.1                   |
+| Node Runtime  | Node.js      | >=18.17.0 (20 used in CI)                |
+| Package Mgr   | npm          | package-lock.json present                |

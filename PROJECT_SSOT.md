@@ -846,7 +846,7 @@ Architecture doc: `docs/TIER2_ARCHITECTURE.md`
 ### UI Consistency Contract documentation
 
 - **Change**: Created formal documentation to prevent tooltip regression loops by defining consistent portal, sizing, and overflow policies.
-  - Added `docs/ui/UI_CONSISTENCY_CONTRACT.md` with:
+  - Added `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md` with:
     - Portal policy: Tooltips in overflow containers must use `usePortal={true}`
     - Size policy: 3 standardized sizes (compact/medium/wide) with exact max-widths
     - Acceptable whitespace definition: Forced min-width (bug) vs normal multi-line whitespace (acceptable)
@@ -887,7 +887,7 @@ Tooltip work is complete and locked. All regressions addressed across 6 commits:
 - ✅ Acceptable multi-line whitespace (short last line is normal, not a bug)
 - ✅ Viewport bounds constrained using measured tooltip width
 
-**Governing Document**: [docs/ui/UI_CONSISTENCY_CONTRACT.md](docs/ui/UI_CONSISTENCY_CONTRACT.md)
+**Governing Document**: [docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md](docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md)
 
 **STOP Rule**: No tooltip sizing churn or visual changes unless the separate "Tooltip Layout v2" workstream (see Backlog) is explicitly opened with:
 
@@ -1688,7 +1688,7 @@ Status Check:
 
 - Separate ticket/spec required before opening workstream
 - Updated verification matrix required for new layout patterns
-- UI Consistency Contract compliance checks (docs/ui/UI_CONSISTENCY_CONTRACT.md)
+- UI Consistency Contract compliance checks (docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md)
 - Explicit user approval to proceed
 
 **Hard Constraints** (MUST preserve):

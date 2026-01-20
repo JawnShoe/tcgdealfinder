@@ -1230,10 +1230,27 @@ test("Discovery UX contract: filters render + empty state + reset returns result
   });
 
   await expect(page.getByTestId("discovery-filters-bar")).toBeVisible();
+  await expect(page.getByTestId("discovery-facets")).toBeVisible();
+  await expect(page.getByTestId("discovery-pagination")).toBeVisible();
 
   await expect(page.getByTestId("discovery-results-count")).toHaveAttribute(
     "data-count",
     /[1-9]\d*/
+  );
+
+  await Promise.all([
+    page.waitForURL(/\/discovery(\?.*)?page=2/, { timeout: 15000 }),
+    page.getByTestId("discovery-pagination-next").click(),
+  ]);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page.getByTestId("discovery-results-count")).toHaveAttribute(
+    "data-count",
+    /\d+/
+  );
+
+  await page.getByTestId("discovery-pagination-prev").click();
+  await expect(page.getByTestId("discovery-pagination-page")).toContainText(
+    "Page 1"
   );
 
   await page.goto(

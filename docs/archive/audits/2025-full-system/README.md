@@ -24,21 +24,21 @@ See `CURRENT_STATE_SNAPSHOT.md` for the consolidated findings and `AUDIT_CLOSEOU
 
 ## Files in This Archive
 
-| File                           | Phase | Description                     |
-| ------------------------------ | ----- | ------------------------------- |
-| AUDIT_REPO_INVENTORY.md        | 1     | File inventory                  |
-| AUDIT_DOCS_INVENTORY.md        | 1     | Docs inventory                  |
-| AUDIT_WORKFLOWS_INVENTORY.md   | 1     | Workflows inventory             |
-| AUDIT_EXTERNAL_DEPENDENCIES.md | 1     | External systems inventory      |
-| AUDIT_DOCS_CLASSIFICATION.md   | 2     | Docs classification             |
-| AUDIT_DOCS_ACTION_PLAN.md      | 2     | Docs cleanup plan               |
-| AUDIT_OPEN_RISKS_RESOLUTION.md | 2     | Risk tracking                   |
-| AUDIT_CODE_FRONTEND.md         | 3A    | Frontend code audit             |
-| AUDIT_CODE_BACKEND.md          | 3B    | Backend/API code audit          |
-| AUDIT_CODE_DATA.md             | 3C    | Data/DB layer code audit        |
-| AUDIT_CODE_OPS.md              | 3D    | Ops/pipelines/alerts code audit |
-| CURRENT_STATE_SNAPSHOT.md      | 4     | Consolidated findings           |
-| AUDIT_CLOSEOUT.md              | 4     | Formal closeout                 |
+| File                                                          | Phase | Description                     |
+| ------------------------------------------------------------- | ----- | ------------------------------- |
+| docs/archive/audits/2026-01-inventory/REPO_INVENTORY_AUDIT.md | 1     | File inventory                  |
+| AUDIT_DOCS_INVENTORY.md                                       | 1     | Docs inventory                  |
+| AUDIT_WORKFLOWS_INVENTORY.md                                  | 1     | Workflows inventory             |
+| AUDIT_EXTERNAL_DEPENDENCIES.md                                | 1     | External systems inventory      |
+| AUDIT_DOCS_CLASSIFICATION.md                                  | 2     | Docs classification             |
+| AUDIT_DOCS_ACTION_PLAN.md                                     | 2     | Docs cleanup plan               |
+| AUDIT_OPEN_RISKS_RESOLUTION.md                                | 2     | Risk tracking                   |
+| AUDIT_CODE_FRONTEND.md                                        | 3A    | Frontend code audit             |
+| AUDIT_CODE_BACKEND.md                                         | 3B    | Backend/API code audit          |
+| AUDIT_CODE_DATA.md                                            | 3C    | Data/DB layer code audit        |
+| AUDIT_CODE_OPS.md                                             | 3D    | Ops/pipelines/alerts code audit |
+| CURRENT_STATE_SNAPSHOT.md                                     | 4     | Consolidated findings           |
+| AUDIT_CLOSEOUT.md                                             | 4     | Formal closeout                 |
 
 ---
 

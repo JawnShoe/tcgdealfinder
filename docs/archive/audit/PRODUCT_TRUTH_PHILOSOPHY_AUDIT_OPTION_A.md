@@ -156,7 +156,7 @@ Notes: Do not implement until explicitly approved.
 - Client-side state (e.g., watchlist v1) SHALL remain client-only per SSOT and SHALL NOT be treated as a source of price truth.
 - UI tooltip and overflow behavior SHALL comply with the LOCKED UI Consistency Contract and SHALL NOT be altered by this audit.
 
-**References**: `PROJECT_SSOT.md` (Stop rules; Watchlist v1; Deal Systems), `docs/ui/UI_CONSISTENCY_CONTRACT.md` (LOCKED), `docs/ENV_RUNBOOK.md` (build-time DB independence).
+**References**: `PROJECT_SSOT.md` (Stop rules; Watchlist v1; Deal Systems), `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md` (LOCKED), `docs/ENV_RUNBOOK.md` (build-time DB independence).
 
 ---
 
@@ -208,4 +208,4 @@ Notes: Do not implement until explicitly approved.
 - `PROJECT_SSOT.md` declares baselines are stored in CAD and rendered into USD at display time; this audit defines `baseline_median_usd` as the canonical baseline for Option A ranking truth, which is a documentation-level conflict to be reviewed, not resolved here.
 - `PROJECT_SSOT.md` includes FX validation direction-check heuristics; this audit defines robust FX validation via bounds + drift checks, which is a documentation-level conflict to be reviewed, not resolved here.
 - `docs/market-policy.md` is an active reference document that describes CAD-based normalization and supported markets; where it diverges from SSOT-locked Deal Systems, SSOT remains authoritative.
-- SSOT-locked UI governance (`docs/ui/UI_CONSISTENCY_CONTRACT.md`) remains binding; this audit does not authorize tooltip/layout behavior changes.
+- SSOT-locked UI governance (`docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md`) remains binding; this audit does not authorize tooltip/layout behavior changes.

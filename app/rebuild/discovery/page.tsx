@@ -320,9 +320,12 @@ export default async function RebuildDiscoveryPage({
               pageSize={discoveryResult.pageSize}
               totalCount={discoveryResult.totalCount}
             />
+          </section>
 
+          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-slate-900">Provenance</h2>
             <ProvenanceDrilldown
-              className="mt-4"
+              className="mt-3"
               summary={
                 isDbConfigured
                   ? `Fetched at ${fetchedAtISO}`

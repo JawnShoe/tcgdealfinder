@@ -19,11 +19,7 @@ type ExpandableDealListProps = {
 
 function shouldIgnoreRowToggle(eventTarget: EventTarget | null): boolean {
   if (!(eventTarget instanceof HTMLElement)) return false;
-  return Boolean(
-    eventTarget.closest(
-      'a,button,input,select,textarea,[role="button"],[role="link"]'
-    )
-  );
+  return Boolean(eventTarget.closest("a,button,input,select,textarea"));
 }
 
 export default function ExpandableDealList({

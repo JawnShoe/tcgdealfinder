@@ -19,19 +19,35 @@ test("rebuild discovery: scan grid columns + inspect expand remain deterministic
   await expect(firstRow.getByTestId("rebuild-deal-col-discount")).toBeVisible();
   await expect(firstRow.getByTestId("rebuild-deal-col-trust")).toBeVisible();
 
-  await expect(firstRow).toHaveCSS("display", "grid");
+  await expect
+    .poll(
+      async () =>
+        firstRow.evaluate(
+          (element) => window.getComputedStyle(element).display
+        ),
+      { timeout: 15000 }
+    )
+    .toBe("grid");
 
-  const templateColumns = await firstRow.evaluate((element) => {
-    return window.getComputedStyle(element).gridTemplateColumns;
-  });
-  expect(templateColumns).toBeTruthy();
-  expect(templateColumns).not.toBe("none");
+  await expect
+    .poll(
+      async () =>
+        firstRow.evaluate(
+          (element) => window.getComputedStyle(element).gridTemplateColumns
+        ),
+      { timeout: 15000 }
+    )
+    .not.toBe("none");
 
-  const trustColumn = firstRow.getByTestId("rebuild-deal-col-trust");
-  await trustColumn.click();
-  await expect(firstRow.getByTestId("rebuild-deal-row-expanded")).toBeVisible();
+  const templateColumns = await firstRow.evaluate(
+    (element) => window.getComputedStyle(element).gridTemplateColumns
+  );
+  expect(templateColumns.split(" ").length).toBeGreaterThanOrEqual(4);
 
   await firstRow.focus();
+  await page.keyboard.press("Enter");
+  await expect(firstRow.getByTestId("rebuild-deal-row-expanded")).toBeVisible();
+
   await page.keyboard.press("Escape");
   await expect(firstRow.getByTestId("rebuild-deal-row-expanded")).toHaveCount(
     0

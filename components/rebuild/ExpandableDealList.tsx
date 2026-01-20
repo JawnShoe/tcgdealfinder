@@ -76,7 +76,7 @@ export default function ExpandableDealList({
                 : "default";
 
         return (
-          <li key={listingId} className="py-2">
+          <li key={listingId} className="py-1">
             <div
               data-testid="rebuild-deal-row"
               data-listing-id={listingId}
@@ -85,7 +85,7 @@ export default function ExpandableDealList({
               tabIndex={0}
               aria-expanded={expanded}
               aria-controls={panelId}
-              className="grid grid-cols-1 rounded-md -mx-2 px-2 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem] lg:grid-cols-[minmax(0,1fr)_11rem_10rem_18rem]"
+              className="grid grid-cols-1 rounded-md -mx-2 px-2 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem] lg:grid-cols-[minmax(0,1fr)_12rem_10rem_18rem] 2xl:grid-cols-[minmax(0,1fr)_13rem_11rem_20rem]"
               onClick={(event) => {
                 if (shouldIgnoreRowToggle(event.target)) return;
                 toggleExpanded(listingId);
@@ -104,7 +104,7 @@ export default function ExpandableDealList({
                 }
               }}
             >
-              <div className="col-span-full grid grid-cols-1 items-start gap-x-6 gap-y-2 sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem] sm:items-center lg:grid-cols-[minmax(0,1fr)_11rem_10rem_18rem]">
+              <div className="col-span-full grid grid-cols-1 items-start gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem] sm:items-center lg:grid-cols-[minmax(0,1fr)_12rem_10rem_18rem] 2xl:grid-cols-[minmax(0,1fr)_13rem_11rem_20rem]">
                 <div
                   data-testid="rebuild-deal-col-identity"
                   className="min-w-0"
@@ -125,7 +125,7 @@ export default function ExpandableDealList({
 
                 <div
                   data-testid="rebuild-deal-col-price"
-                  className="text-right tabular-nums"
+                  className="whitespace-nowrap text-right tabular-nums"
                 >
                   <p className="text-lg font-semibold text-slate-900">
                     {deal.price.display === "Unavailable"
@@ -138,7 +138,7 @@ export default function ExpandableDealList({
 
                 <div
                   data-testid="rebuild-deal-col-discount"
-                  className="text-right tabular-nums"
+                  className="whitespace-nowrap text-right tabular-nums"
                 >
                   <p
                     className={`text-sm font-medium ${
@@ -166,33 +166,35 @@ export default function ExpandableDealList({
                   data-testid="rebuild-deal-col-trust"
                   className="grid gap-y-1 text-xs text-slate-500"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Confidence</span>
-                    <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 items-center justify-between gap-3">
+                    <span className="whitespace-nowrap">Confidence</span>
+                    <div className="flex min-w-0 items-center gap-2">
                       <span className="-mt-1">
                         <ConfidenceBadge label={deal.trust.confidence.label} />
                       </span>
-                      <span className="text-slate-400">
+                      <span className="whitespace-nowrap text-slate-400">
                         {confidenceScoreLabel}
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Trust</span>
-                    <span className="text-slate-700">
+                  <div className="flex min-w-0 items-center justify-between gap-3">
+                    <span className="whitespace-nowrap">Trust</span>
+                    <span className="min-w-0 truncate text-slate-700">
                       {deal.trustAssessment.state}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Seller</span>
-                    <span className="text-slate-700">{feedbackCountLabel}</span>
+                  <div className="flex min-w-0 items-center justify-between gap-3">
+                    <span className="whitespace-nowrap">Seller</span>
+                    <span className="min-w-0 truncate text-slate-700">
+                      {feedbackCountLabel}
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center justify-between gap-3">
                     <span
                       className={
                         emphasis === "freshness"
                           ? "font-medium text-slate-900"
-                          : undefined
+                          : "whitespace-nowrap"
                       }
                     >
                       Seen
@@ -200,8 +202,8 @@ export default function ExpandableDealList({
                     <span
                       className={
                         emphasis === "freshness"
-                          ? "font-medium text-slate-900"
-                          : "text-slate-700"
+                          ? "whitespace-nowrap font-medium text-slate-900"
+                          : "min-w-0 truncate whitespace-nowrap text-slate-700"
                       }
                     >
                       {ageLabel}

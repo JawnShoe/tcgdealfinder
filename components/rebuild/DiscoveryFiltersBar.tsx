@@ -56,7 +56,9 @@ export default function DiscoveryFiltersBar({
 
   const searchParamsKey = searchParams.toString();
   const queryFromUrl = useMemo(() => {
-    const parsed = parseDiscoveryQueryFromUrlSearchParams(searchParams);
+    const parsed = parseDiscoveryQueryFromUrlSearchParams(
+      new URLSearchParams(searchParamsKey)
+    );
     return parsed.kind === "ok" ? parsed.query : null;
   }, [searchParamsKey]);
 

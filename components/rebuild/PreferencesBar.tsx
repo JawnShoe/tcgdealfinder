@@ -24,7 +24,9 @@ export default function PreferencesBar({
 
   const searchParamsKey = searchParams.toString();
   const sortFromUrl = useMemo(() => {
-    const parsed = parseRebuildSortValue(searchParams.get("sort"));
+    const parsed = parseRebuildSortValue(
+      new URLSearchParams(searchParamsKey).get("sort")
+    );
     return parsed || initialSort;
   }, [searchParamsKey, initialSort]);
 

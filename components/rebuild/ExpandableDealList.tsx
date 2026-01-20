@@ -32,13 +32,14 @@ export default function ExpandableDealList({
   const [expandedListingId, setExpandedListingId] = useState<string | null>(
     null
   );
+  const [expandedConfidenceListingId, setExpandedConfidenceListingId] =
+    useState<string | null>(null);
 
   const baseId = useId();
 
-  const toggleExpanded = (listingId: string) => {
-    setExpandedListingId((current) =>
-      current === listingId ? null : listingId
-    );
+  const closeAllPanels = () => {
+    setExpandedListingId(null);
+    setExpandedConfidenceListingId(null);
   };
 
   return (
@@ -46,7 +47,9 @@ export default function ExpandableDealList({
       {items.map(({ deal, duplicateCount }) => {
         const listingId = deal.listingId;
         const expanded = expandedListingId === listingId;
+        const confidenceExpanded = expandedConfidenceListingId === listingId;
         const panelId = `${baseId}-${listingId}-inspection`;
+        const confidencePanelId = `${baseId}-${listingId}-confidence`;
         const sellerLabel = deal.seller.name ?? deal.seller.username ?? "—";
         const marketLabel = deal.provenance.market ?? deal.provenance.source;
         const conditionLabel = deal.condition ?? "—";
@@ -88,19 +91,25 @@ export default function ExpandableDealList({
               className="grid grid-cols-1 rounded-md -mx-2 px-2 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem] lg:grid-cols-[minmax(0,1fr)_12rem_10rem_18rem] 2xl:grid-cols-[minmax(0,1fr)_13rem_11rem_20rem]"
               onClick={(event) => {
                 if (shouldIgnoreRowToggle(event.target)) return;
-                toggleExpanded(listingId);
+                setExpandedConfidenceListingId(null);
+                setExpandedListingId((current) =>
+                  current === listingId ? null : listingId
+                );
               }}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   if (shouldIgnoreRowToggle(event.target)) return;
                   event.preventDefault();
-                  toggleExpanded(listingId);
+                  setExpandedConfidenceListingId(null);
+                  setExpandedListingId((current) =>
+                    current === listingId ? null : listingId
+                  );
                   return;
                 }
                 if (event.key === "Escape") {
                   if (!expanded) return;
                   event.preventDefault();
-                  setExpandedListingId(null);
+                  closeAllPanels();
                 }
               }}
             >
@@ -168,14 +177,46 @@ export default function ExpandableDealList({
                 >
                   <div className="flex min-w-0 items-center justify-between gap-3">
                     <span className="whitespace-nowrap">Confidence</span>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="-mt-1">
+                    <button
+                      type="button"
+                      data-testid="rebuild-confidence-button"
+                      aria-label={
+                        expanded
+                          ? "Toggle confidence details"
+                          : "Open confidence details"
+                      }
+                      aria-expanded={expanded && confidenceExpanded}
+                      aria-controls={confidencePanelId}
+                      className="inline-flex min-w-0 items-center gap-2 rounded-md px-1 py-0.5 text-left hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        if (!expanded) {
+                          setExpandedListingId(listingId);
+                          setExpandedConfidenceListingId(listingId);
+                          return;
+                        }
+
+                        setExpandedConfidenceListingId((current) =>
+                          current === listingId ? null : listingId
+                        );
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Escape") return;
+                        if (!expanded || !confidenceExpanded) return;
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setExpandedConfidenceListingId(null);
+                      }}
+                    >
+                      <span className="-mt-1 shrink-0">
                         <ConfidenceBadge label={deal.trust.confidence.label} />
                       </span>
-                      <span className="whitespace-nowrap text-slate-400">
+                      <span className="min-w-0 truncate whitespace-nowrap text-slate-400">
                         {confidenceScoreLabel}
                       </span>
-                    </div>
+                    </button>
                   </div>
                   <div className="flex min-w-0 items-center justify-between gap-3">
                     <span className="whitespace-nowrap">Trust</span>
@@ -217,6 +258,13 @@ export default function ExpandableDealList({
                   id={panelId}
                   data-testid="rebuild-deal-row-expanded"
                   className="rebuild-inspection-panel col-span-full mt-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700"
+                  onKeyDownCapture={(event) => {
+                    if (event.key !== "Escape") return;
+                    if (!confidenceExpanded) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setExpandedConfidenceListingId(null);
+                  }}
                 >
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
@@ -235,6 +283,109 @@ export default function ExpandableDealList({
                           {deal.trust.confidence.display}
                         </span>
                       </p>
+
+                      {confidenceExpanded ? (
+                        <div
+                          id={confidencePanelId}
+                          data-testid="rebuild-confidence-panel"
+                          className="mt-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+                        >
+                          <p className="font-semibold text-slate-800">
+                            Confidence
+                          </p>
+
+                          <dl className="mt-2 grid gap-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className="text-slate-500">Level</dt>
+                              <dd className="text-right font-medium text-slate-900">
+                                {deal.trust.confidence.label}
+                              </dd>
+                            </div>
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className="text-slate-500">Score</dt>
+                              <dd className="text-right font-medium text-slate-900">
+                                {deal.trust.confidence.display || "—"}
+                              </dd>
+                            </div>
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className="text-slate-500">Data age</dt>
+                              <dd className="text-right font-medium text-slate-900">
+                                {deal.trust.dataAgeLabel || "—"}
+                              </dd>
+                            </div>
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className="text-slate-500">Shipping</dt>
+                              <dd className="text-right font-medium text-slate-900">
+                                {deal.reliability.shippingKnown == null
+                                  ? "—"
+                                  : deal.reliability.shippingKnown
+                                    ? "Known"
+                                    : "Unknown"}
+                              </dd>
+                            </div>
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className="text-slate-500">Integrity</dt>
+                              <dd className="text-right font-medium text-slate-900">
+                                {deal.reliability.integrityStatus || "—"}
+                              </dd>
+                            </div>
+                            {deal.reliability.integrityReason ? (
+                              <div className="flex items-start justify-between gap-3">
+                                <dt className="text-slate-500">Reason</dt>
+                                <dd className="min-w-0 max-w-[16rem] truncate text-right font-medium text-slate-900">
+                                  {deal.reliability.integrityReason}
+                                </dd>
+                              </div>
+                            ) : null}
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className="text-slate-500">Risk flags</dt>
+                              <dd className="min-w-0 max-w-[16rem] truncate text-right font-medium text-slate-900">
+                                {deal.riskFlags.length
+                                  ? deal.riskFlags.join(", ")
+                                  : "—"}
+                              </dd>
+                            </div>
+                          </dl>
+
+                          <p className="mt-3 font-semibold text-slate-800">
+                            Transparency
+                          </p>
+                          <dl className="mt-2 grid gap-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className="text-slate-500">Fetched at</dt>
+                              <dd className="min-w-0 max-w-[18rem] truncate text-right font-mono text-[11px] text-slate-900">
+                                {deal.trust.fetchedAtISO || "—"}
+                              </dd>
+                            </div>
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className="text-slate-500">Source</dt>
+                              <dd className="min-w-0 max-w-[18rem] truncate text-right font-mono text-[11px] text-slate-900">
+                                {deal.trust.source || "—"}
+                              </dd>
+                            </div>
+                            <div className="flex items-start justify-between gap-3">
+                              <dt className="text-slate-500">Pipeline</dt>
+                              <dd className="min-w-0 max-w-[18rem] truncate text-right font-mono text-[11px] text-slate-900">
+                                {deal.transparency.pipelineVersion || "—"}
+                              </dd>
+                            </div>
+                          </dl>
+
+                          {deal.transparency.inputs.length ? (
+                            <div className="mt-3">
+                              <p className="font-semibold text-slate-800">
+                                Inputs (lite)
+                              </p>
+                              <ul className="mt-1 list-disc space-y-1 pl-4 text-slate-600">
+                                {deal.transparency.inputs.map((input) => (
+                                  <li key={input}>{input}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
                       <ul className="mt-2 list-disc space-y-1 pl-4 text-slate-600">
                         {(deal.trustAssessment.reasons.length
                           ? deal.trustAssessment.reasons

@@ -453,3 +453,31 @@ This upgrade finalizes the collapsed-row grid rhythm so the widened rebuild cont
 
 - Numeric columns are right-aligned, tabular, and non-wrapping.
 - Trust rows must not wrap into multi-line “stack chaos”; values truncate if needed to preserve stable collapsed-row height.
+
+### 2026-01-20: Feature - Credibility UI Lite (Confidence Drilldown)
+
+Confidence must explain itself without hover dependency and without mutating trust semantics post-hydration.
+
+**Interaction (expanded row only, mandatory):**
+
+- Confidence badge is an accessible `button` (`aria-label="Open confidence details"` or equivalent).
+- Click / Enter / Space toggles the drilldown panel.
+- Escape closes the drilldown panel (does not require collapsing the row).
+
+**Panel placement + stability (mandatory):**
+
+- Drilldown panel renders **inside** the existing expanded/inspection panel (`rebuild-inspection-panel`).
+- Collapsed row height MUST NOT change when toggling confidence (no inline expansion in collapsed rows).
+- No measurement-based animation; deterministic show/hide only.
+
+**Panel contents (lite, must be sourced from existing listing fields only):**
+
+- Header: “Confidence”
+- Current confidence label/value (whatever the listing already provides)
+- Contributing factors + values (only if fields exist; omit absent rows)
+- Transparency fields (fetched/seen timestamp + source/provenance identifiers where available)
+
+**Stable selectors (contract tests):**
+
+- `data-testid="rebuild-confidence-button"`
+- `data-testid="rebuild-confidence-panel"`

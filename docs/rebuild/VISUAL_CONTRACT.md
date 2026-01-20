@@ -374,3 +374,16 @@ Rebuild discovery rows must support fast scan triage (power users can evaluate d
 - Ending soon / Newest: freshness gains emphasis.
 
 This does not change ranking or query semantics; it only changes visual weight.
+
+### 2026-01-20: Upgrade #3 - Sort Correctness (URL Source-of-Truth)
+
+Rebuild sort controls must be deterministic and persistent (no "flash then reset").
+
+**Source-of-truth (mandatory):**
+
+- Sort preset is derived from URL search params and the UI must render that exact effective value.
+- Changing sort must update the URL immediately and persist across reload.
+
+**Interaction model (unchanged):**
+
+- This upgrade must not introduce new interactions; it only fixes correctness of existing sort controls.

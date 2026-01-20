@@ -21,12 +21,14 @@ export default function PreferencesBar({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [sort, setSort] = useState<RebuildSort>(initialSort);
 
-  const sortFromUrl = useMemo(
-    () => parseRebuildSortValue(searchParams.get("sort")),
-    [searchParams]
-  );
+  const searchParamsKey = searchParams.toString();
+  const sortFromUrl = useMemo(() => {
+    const parsed = parseRebuildSortValue(searchParams.get("sort"));
+    return parsed || initialSort;
+  }, [searchParamsKey, initialSort]);
+
+  const [sort, setSort] = useState<RebuildSort>(() => sortFromUrl);
 
   useEffect(() => {
     if (sortFromUrl !== sort) {

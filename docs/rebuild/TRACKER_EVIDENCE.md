@@ -142,9 +142,10 @@ expect(body).toContain("rebuild-db-v1");
 
 ## Track 0: Weekly Drift Audit
 
-| Track   | Item                              | Date       | Evidence (short)                                                                                                                                         | PR      |
-| ------- | --------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| Track 0 | Weekly Drift Audit - Rebuild Lane | 2026-01-09 | Catch-up audit performed across all rebuild routes; CI, contracts, synthetics, boundaries, and tracker/evidence consistency verified. No drift detected. | PR #281 |
+| Track   | Item                              | Date       | Evidence (short)                                                                                                                                                                                                                                                                                                                                                        | PR      |
+| ------- | --------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Track 0 | Weekly Drift Audit - Rebuild Lane | 2026-01-19 | Weekly audit per ADR-0007. Architectural boundaries clean (0 legacy↔rebuild imports). Contract compliance verified (ResilienceLabel SSR-visible with data-tier, evaluateResilience pure/deterministic). CI gates intact (Lint & Build, E2E Smoke, Synthetic Guarantee, Visual Regression/CLS, A11y Smoke, Perf Budget). Tracker/evidence consistent. No drift detected. | PR #368 |
+| Track 0 | Weekly Drift Audit - Rebuild Lane | 2026-01-09 | Catch-up audit performed across all rebuild routes; CI, contracts, synthetics, boundaries, and tracker/evidence consistency verified. No drift detected.                                                                                                                                                                                                                | PR #281 |
 
 ---
 

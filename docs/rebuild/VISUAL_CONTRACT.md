@@ -387,3 +387,21 @@ Rebuild sort controls must be deterministic and persistent (no "flash then reset
 **Interaction model (unchanged):**
 
 - This upgrade must not introduce new interactions; it only fixes correctness of existing sort controls.
+
+### 2026-01-20: Upgrade #4 - Rebuild Layout Widening (1440/1600 cap)
+
+Rebuild route content must not feel cramped on desktop while remaining calm and scan-first.
+
+**Rebuild-only scope (mandatory):**
+
+- Applies only to `/rebuild/**` routes. Legacy/global layout must remain unchanged.
+
+**Container sizing (mandatory):**
+
+- Centered container with desktop max-width cap `1440px`.
+- On very large screens (`2xl`), cap increases to `1600px`.
+- Gutters remain present (not edge-to-edge).
+
+**Width-caused alignment (allowed):**
+
+- If widening makes filter controls feel too spread out, controls may be locally constrained to preserve a cohesive cluster without changing behavior.

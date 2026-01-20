@@ -270,7 +270,7 @@ export default function DiscoveryFiltersBar({
           </label>
         </div>
 
-        <div className="min-w-[10rem] flex-1">
+        <div className="min-w-[10rem] w-full sm:w-72 lg:w-80">
           <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700">
             Seller
             <input

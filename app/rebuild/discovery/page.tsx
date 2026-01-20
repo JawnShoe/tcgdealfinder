@@ -101,7 +101,7 @@ export default async function RebuildDiscoveryPage({
     if (isDiscoveryDisabled) {
       return (
         <main className="min-h-screen bg-slate-50">
-          <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px]">
             <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
               Rebuild lane - Discovery temporarily disabled
             </div>
@@ -184,7 +184,7 @@ export default async function RebuildDiscoveryPage({
 
     return (
       <main className="min-h-screen bg-slate-50">
-        <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px]">
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
             Rebuild lane - Discovery (pipeline data)
           </div>

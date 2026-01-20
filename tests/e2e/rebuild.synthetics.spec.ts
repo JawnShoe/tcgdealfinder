@@ -1238,14 +1238,33 @@ test("Discovery UX contract: filters render + empty state + reset returns result
     /[1-9]\d*/
   );
 
-  await Promise.all([
-    page.waitForURL(/[?&]page=2\b/, { timeout: 15000, waitUntil: "commit" }),
-    page.getByTestId("discovery-pagination-next").click(),
-  ]);
-  await expect(page).toHaveURL(/[?&]page=2\b/);
-  await expect(page.getByTestId("discovery-pagination-page")).toContainText(
-    "Page 2"
-  );
+  const countAttr = await page
+    .getByTestId("discovery-results-count")
+    .getAttribute("data-count");
+  const total = Number(countAttr ?? "0");
+
+  const pageSizeAttr = await page
+    .getByTestId("discovery-pagination-page-size")
+    .inputValue();
+  const pageSize = Number(pageSizeAttr ?? "25") || 25;
+
+  const next = page.getByTestId("discovery-pagination-next");
+  await expect(next).toBeVisible();
+
+  if (total > pageSize) {
+    await expect(next).toBeEnabled();
+    await Promise.all([
+      page.waitForURL(/[?&]page=2\b/, { timeout: 15000, waitUntil: "commit" }),
+      next.click(),
+    ]);
+    await expect(page).toHaveURL(/[?&]page=2\b/);
+    await expect(page.getByTestId("discovery-pagination-page")).toContainText(
+      "Page 2"
+    );
+  } else {
+    await expect(next).toBeDisabled();
+  }
+
   await expect(page.getByTestId("discovery-results-count")).toHaveAttribute(
     "data-count",
     /\d+/

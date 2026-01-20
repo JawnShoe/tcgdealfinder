@@ -10,6 +10,7 @@ import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import ResilienceLabel from "@/components/rebuild/ResilienceLabel";
 import { evaluateResilience } from "@/lib/rebuild/resilience/evaluateResilience";
 import { SkeletonBlock } from "@/components/rebuild/Skeleton";
+import ExpandableDealList from "@/components/rebuild/ExpandableDealList";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
 import {
@@ -26,7 +27,6 @@ import {
 } from "@/lib/rebuild/prefs/rebuildPrefs";
 import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
 import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
-import { buildListingUrl } from "@/lib/rebuild/urls";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -178,61 +178,20 @@ export default async function RebuildHomePage({
                 </p>
               </div>
             ) : (
-              <ul className="mt-4 divide-y divide-slate-100">
-                {dedupedDeals.map((deal) => {
+              <ExpandableDealList
+                mode="home"
+                items={dedupedDeals.map((deal) => {
                   const duplicateGroup = duplicates.get(
                     normalizeListingKey(deal)
                   );
-                  const duplicateCount = duplicateGroup
-                    ? duplicateGroup.length - 1
-                    : 0;
-
-                  return (
-                    <li key={deal.listingId} className="py-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0 flex-1">
-                          <IntentPrefetchLink
-                            href={buildListingUrl({ id: deal.listingId })}
-                            className="text-sm font-medium text-slate-900 hover:text-slate-700"
-                          >
-                            {deal.title}
-                          </IntentPrefetchLink>
-                          <p className="mt-1 text-xs text-slate-500">
-                            {deal.seller.name ??
-                              deal.seller.username ??
-                              "Unknown"}{" "}
-                            at{" "}
-                            {deal.provenance.market ?? deal.provenance.source}
-                          </p>
-                          {duplicateCount > 0 ? (
-                            <p className="mt-1 text-xs text-slate-500">
-                              Also seen in {duplicateCount} other market
-                              {duplicateCount !== 1 ? "s" : ""}
-                            </p>
-                          ) : null}
-                        </div>
-                        <div className="flex-shrink-0 text-right">
-                          <p className="text-sm font-semibold text-slate-900">
-                            {deal.price.display}
-                          </p>
-                          <p
-                            className={`text-xs font-medium ${
-                              (deal.price.discountPercent ?? 0) < 0
-                                ? "text-emerald-700"
-                                : "text-slate-500"
-                            }`}
-                          >
-                            {deal.price.deltaDisplay}
-                          </p>
-                          <ConfidenceBadge
-                            label={deal.trust.confidence.label}
-                          />
-                        </div>
-                      </div>
-                    </li>
-                  );
+                  return {
+                    deal,
+                    duplicateCount: duplicateGroup
+                      ? duplicateGroup.length - 1
+                      : 0,
+                  };
                 })}
-              </ul>
+              />
             )}
 
             <ProvenanceDrilldown

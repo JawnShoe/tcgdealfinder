@@ -315,3 +315,36 @@ Discovery now surfaces pagination controls and server-computed facet counts on `
 - `data-testid="discovery-pagination-next"`
 - `data-testid="discovery-pagination-page"`
 - `data-testid="discovery-pagination-page-size"`
+
+### 2026-01-20: Upgrade #1 - Expandable Rows (Inspection Mode)
+
+Rebuild list rows now support an "inspection mode" expansion pattern for deeper trust + provenance context without leaving the list.
+
+**Interaction model (Discovery list rows):**
+
+- Row body click = Inspect (toggle expand/collapse).
+- Title click = Act (navigate to listing detail).
+- Only one row may be expanded at a time; expanding a new row auto-collapses the previous row.
+
+**Accessibility (non-negotiable):**
+
+- Focused row: Enter toggles expand/collapse.
+- Focused expanded row: Escape collapses.
+- No focus traps; links remain keyboard-navigable and do not trigger row toggle.
+
+**Expanded row content constraints:**
+
+- Allowed: trust/reliability explanation, price context, provenance/transparency fields, seller details when present.
+- Forbidden: images, carousels, or any "marketing" content.
+
+**Inspection-mode styling requirements (subtle, enterprise):**
+
+- Detail panel has tone-on-tone background shift and an inset border treatment.
+- Separation is achieved via rhythm/spacing, not flashy color or animation.
+- No height animations or measurement hacks; expansion must be deterministic.
+
+**Stable selectors (for contract tests):**
+
+- `data-testid="rebuild-deal-row"` (with `aria-expanded`)
+- `data-testid="rebuild-deal-row-title"`
+- `data-testid="rebuild-deal-row-expanded"` (must include class marker `rebuild-inspection-panel`)

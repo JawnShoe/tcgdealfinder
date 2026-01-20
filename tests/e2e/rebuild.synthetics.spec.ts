@@ -1239,10 +1239,13 @@ test("Discovery UX contract: filters render + empty state + reset returns result
   );
 
   await Promise.all([
-    page.waitForURL(/\/discovery(\?.*)?page=2/, { timeout: 15000 }),
+    page.waitForURL(/[?&]page=2\b/, { timeout: 15000, waitUntil: "commit" }),
     page.getByTestId("discovery-pagination-next").click(),
   ]);
-  await expect(page).toHaveURL(/page=2/);
+  await expect(page).toHaveURL(/[?&]page=2\b/);
+  await expect(page.getByTestId("discovery-pagination-page")).toContainText(
+    "Page 2"
+  );
   await expect(page.getByTestId("discovery-results-count")).toHaveAttribute(
     "data-count",
     /\d+/

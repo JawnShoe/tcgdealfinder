@@ -133,12 +133,7 @@ export default function ExpandableDealList({
                       : deal.price.display}
                   </p>
                   <p className="mt-0.5 text-xs text-slate-500">Historic</p>
-                  <p className="text-xs text-slate-700">
-                    {deal.price.historicDisplay === "Unavailable" ||
-                    deal.price.historicDisplay == null
-                      ? "—"
-                      : deal.price.historicDisplay}
-                  </p>
+                  <p className="text-xs text-slate-700">{"—"}</p>
                 </div>
 
                 <div

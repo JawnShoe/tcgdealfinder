@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { Preset } from "@/lib/rebuild/prefs/rebuildPrefs";
+import { parsePreset, type Preset } from "@/lib/rebuild/prefs/rebuildPrefs";
 import {
   ALLOWED_CONDITIONS,
   ALLOWED_CONFIDENCE_THRESHOLDS,
   ALLOWED_LANGUAGES,
   DEFAULT_DISCOVERY_FILTERS,
+  DEFAULT_DISCOVERY_PAGINATION,
   parseDiscoveryQueryFromUrlSearchParams,
   type ConfidenceThreshold,
   type Condition,
@@ -53,16 +54,17 @@ export default function DiscoveryFiltersBar({
   );
   const [seller, setSeller] = useState<string>(initialFilters.seller ?? "");
 
+  const searchParamsKey = searchParams.toString();
   const queryFromUrl = useMemo(() => {
-    const parsed = parseDiscoveryQueryFromUrlSearchParams(searchParams);
+    const parsed = parseDiscoveryQueryFromUrlSearchParams(
+      new URLSearchParams(searchParamsKey)
+    );
     return parsed.kind === "ok" ? parsed.query : null;
-  }, [searchParams]);
+  }, [searchParamsKey]);
 
   useEffect(() => {
     if (!queryFromUrl) return;
-    if (queryFromUrl.preset !== preset) {
-      setPreset(queryFromUrl.preset);
-    }
+    setPreset(queryFromUrl.preset);
     setPriceMinCad(
       queryFromUrl.filters.priceMinCad != null
         ? String(queryFromUrl.filters.priceMinCad)
@@ -77,25 +79,48 @@ export default function DiscoveryFiltersBar({
     setLanguage(queryFromUrl.filters.language ?? "");
     setMinConfidence(queryFromUrl.filters.minConfidence);
     setSeller(queryFromUrl.filters.seller ?? "");
-  }, [queryFromUrl, preset]);
+  }, [queryFromUrl, searchParamsKey]);
 
-  const basePath =
+  const basePath: "/discovery" | "/rebuild/discovery" =
     pathname === "/rebuild/discovery" ? "/rebuild/discovery" : "/discovery";
 
-  const handleApply = () => {
-    const next: DiscoveryFilters = {
-      ...DEFAULT_DISCOVERY_FILTERS,
-      priceMinCad: priceMinCad.trim() ? Number(priceMinCad.trim()) : null,
-      priceMaxCad: priceMaxCad.trim() ? Number(priceMaxCad.trim()) : null,
-      condition: condition || null,
-      language: language || null,
-      minConfidence,
-      seller: seller.trim() ? seller.trim() : null,
-    };
+  const effectivePagination =
+    queryFromUrl?.pagination ?? DEFAULT_DISCOVERY_PAGINATION;
 
-    router.replace(buildDiscoveryUrl({ preset, basePath, filters: next }), {
-      scroll: false,
-    });
+  const filtersFromState = (): DiscoveryFilters => ({
+    ...DEFAULT_DISCOVERY_FILTERS,
+    priceMinCad: priceMinCad.trim() ? Number(priceMinCad.trim()) : null,
+    priceMaxCad: priceMaxCad.trim() ? Number(priceMaxCad.trim()) : null,
+    condition: condition || null,
+    language: language || null,
+    minConfidence,
+    seller: seller.trim() ? seller.trim() : null,
+  });
+
+  const replaceWithPreset = (nextPreset: Preset) => {
+    router.replace(
+      buildDiscoveryUrl({
+        preset: nextPreset,
+        basePath,
+        filters: filtersFromState(),
+        pagination: { page: 1, pageSize: effectivePagination.pageSize },
+      }),
+      { scroll: false }
+    );
+  };
+
+  const handleApply = (form: HTMLFormElement) => {
+    const sortRaw = String(new FormData(form).get("sort") ?? "");
+    const presetResult = parsePreset(sortRaw);
+    const resolvedPreset =
+      typeof presetResult === "string" ? presetResult : DEFAULT_REBUILD_SORT;
+
+    replaceWithPreset(resolvedPreset);
+  };
+
+  const handlePresetChange = (nextPreset: Preset) => {
+    setPreset(nextPreset);
+    replaceWithPreset(nextPreset);
   };
 
   const handleClear = () => {
@@ -108,10 +133,15 @@ export default function DiscoveryFiltersBar({
     setSeller("");
 
     router.replace(
-      buildDiscoveryUrl({ preset: DEFAULT_REBUILD_SORT, basePath }),
-      {
-        scroll: false,
-      }
+      buildDiscoveryUrl({
+        preset: DEFAULT_REBUILD_SORT,
+        basePath,
+        pagination: {
+          page: 1,
+          pageSize: DEFAULT_DISCOVERY_PAGINATION.pageSize,
+        },
+      }),
+      { scroll: false }
     );
   };
 
@@ -121,7 +151,7 @@ export default function DiscoveryFiltersBar({
       className={`mt-4 rounded-lg border border-slate-200 bg-white px-4 py-3 ${className ?? ""}`}
       onSubmit={(event) => {
         event.preventDefault();
-        handleApply();
+        handleApply(event.currentTarget);
       }}
     >
       <div className="flex flex-wrap items-end gap-3">
@@ -129,9 +159,13 @@ export default function DiscoveryFiltersBar({
           <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700">
             Sort
             <select
+              data-testid="discovery-sort-select"
               className="mt-1 block rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700"
+              name="sort"
               value={preset}
-              onChange={(event) => setPreset(event.target.value as Preset)}
+              onChange={(event) =>
+                handlePresetChange(event.target.value as Preset)
+              }
             >
               {REBUILD_SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>

@@ -437,3 +437,19 @@ Rebuild list rows must support table-like scan speed with a stable, column-align
   - `data-testid="rebuild-deal-col-price"`
   - `data-testid="rebuild-deal-col-discount"`
   - `data-testid="rebuild-deal-col-trust"`
+
+### 2026-01-20: Upgrade - Scan Power Complete (Collapsed Row Desktop Rhythm)
+
+This upgrade finalizes the collapsed-row grid rhythm so the widened rebuild container reads as a dense, column-aligned scan surface (no “squished blocks”, no excessive gaps).
+
+**Desktop grid template (mandatory):**
+
+- Identity remains the flexible column: `minmax(0, 1fr)`.
+- Fixed scan columns (desktop):
+  - `lg`: Price `12rem`, Discount `10rem`, Trust `18rem`
+  - `2xl`: Price `13rem`, Discount `11rem`, Trust `20rem`
+
+**Column rhythm (mandatory):**
+
+- Numeric columns are right-aligned, tabular, and non-wrapping.
+- Trust rows must not wrap into multi-line “stack chaos”; values truncate if needed to preserve stable collapsed-row height.

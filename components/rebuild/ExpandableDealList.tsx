@@ -85,7 +85,7 @@ export default function ExpandableDealList({
               tabIndex={0}
               aria-expanded={expanded}
               aria-controls={panelId}
-              className="rounded-md -mx-2 px-2 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+              className="grid grid-cols-1 rounded-md -mx-2 px-2 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem] lg:grid-cols-[minmax(0,1fr)_11rem_10rem_18rem]"
               onClick={(event) => {
                 if (shouldIgnoreRowToggle(event.target)) return;
                 toggleExpanded(listingId);
@@ -104,8 +104,11 @@ export default function ExpandableDealList({
                 }
               }}
             >
-              <div className="grid grid-cols-[minmax(0,1fr)_9rem] items-start gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_11rem] sm:items-center">
-                <div className="min-w-0">
+              <div className="col-span-full grid grid-cols-1 items-start gap-x-6 gap-y-2 sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem] sm:items-center lg:grid-cols-[minmax(0,1fr)_11rem_10rem_18rem]">
+                <div
+                  data-testid="rebuild-deal-col-identity"
+                  className="min-w-0"
+                >
                   <IntentPrefetchLink
                     data-testid="rebuild-deal-row-title"
                     href={buildListingUrl({ id: listingId })}
@@ -120,16 +123,28 @@ export default function ExpandableDealList({
                   </p>
                 </div>
 
-                <div className="text-right tabular-nums">
-                  <p className="text-base font-semibold text-slate-900">
+                <div
+                  data-testid="rebuild-deal-col-price"
+                  className="text-right tabular-nums"
+                >
+                  <p className="text-lg font-semibold text-slate-900">
                     {deal.price.display === "Unavailable"
                       ? "—"
                       : deal.price.display}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-500">Historic: —</p>
+                  <p className="mt-0.5 text-xs text-slate-500">Historic</p>
+                  <p className="text-xs text-slate-700">
+                    {deal.price.historicDisplay === "Unavailable" ||
+                    deal.price.historicDisplay == null
+                      ? "—"
+                      : deal.price.historicDisplay}
+                  </p>
                 </div>
 
-                <div className="text-right tabular-nums sm:text-left">
+                <div
+                  data-testid="rebuild-deal-col-discount"
+                  className="text-right tabular-nums"
+                >
                   <p
                     className={`text-sm font-medium ${
                       discountPercent == null
@@ -152,7 +167,10 @@ export default function ExpandableDealList({
                   </p>
                 </div>
 
-                <div className="col-span-2 grid gap-y-1 text-xs text-slate-500 sm:col-span-1">
+                <div
+                  data-testid="rebuild-deal-col-trust"
+                  className="grid gap-y-1 text-xs text-slate-500"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <span>Confidence</span>
                     <div className="flex items-center gap-2">
@@ -201,7 +219,7 @@ export default function ExpandableDealList({
                 <div
                   id={panelId}
                   data-testid="rebuild-deal-row-expanded"
-                  className="rebuild-inspection-panel mt-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700"
+                  className="rebuild-inspection-panel col-span-full mt-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700"
                 >
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>

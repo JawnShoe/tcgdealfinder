@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useState } from "react";
 import type { ListingDomain } from "@/lib/rebuild/data/listingMapper";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
@@ -14,6 +14,7 @@ type ExpandableDealListItem = {
 type ExpandableDealListProps = {
   items: ExpandableDealListItem[];
   mode: "home" | "discovery";
+  sortPreset?: string;
   className?: string;
 };
 
@@ -25,6 +26,7 @@ function shouldIgnoreRowToggle(eventTarget: EventTarget | null): boolean {
 export default function ExpandableDealList({
   items,
   mode,
+  sortPreset,
   className,
 }: ExpandableDealListProps) {
   const [expandedListingId, setExpandedListingId] = useState<string | null>(
@@ -32,10 +34,6 @@ export default function ExpandableDealList({
   );
 
   const baseId = useId();
-  const itemByListingId = useMemo(
-    () => new Map(items.map((item) => [item.deal.listingId, item])),
-    [items]
-  );
 
   const toggleExpanded = (listingId: string) => {
     setExpandedListingId((current) =>
@@ -49,20 +47,45 @@ export default function ExpandableDealList({
         const listingId = deal.listingId;
         const expanded = expandedListingId === listingId;
         const panelId = `${baseId}-${listingId}-inspection`;
-        const sellerLabel =
-          deal.seller.name ?? deal.seller.username ?? "Unknown";
+        const sellerLabel = deal.seller.name ?? deal.seller.username ?? "—";
         const marketLabel = deal.provenance.market ?? deal.provenance.source;
+        const conditionLabel = deal.condition ?? "—";
+        const languageLabel = deal.language ?? "—";
+        const ageLabel = deal.freshness.dataAgeLabel || "—";
+        const feedbackCountLabel =
+          deal.seller.feedbackCount != null
+            ? `⭐ ${deal.seller.feedbackCount}+ sales`
+            : "—";
+        const discountPercent = deal.price.discountPercent;
+        const discountValueLabel =
+          discountPercent == null
+            ? "—"
+            : `${discountPercent > 0 ? "+" : ""}${discountPercent}%`;
+        const confidenceScoreLabel =
+          deal.trust.confidence.display === "Unknown"
+            ? "—"
+            : deal.trust.confidence.display || "—";
+
+        const emphasis =
+          sortPreset === "biggest-discount"
+            ? "discount"
+            : sortPreset === "endingSoon"
+              ? "freshness"
+              : sortPreset === "newest"
+                ? "freshness"
+                : "default";
 
         return (
-          <li key={listingId} className="py-3">
+          <li key={listingId} className="py-2">
             <div
               data-testid="rebuild-deal-row"
               data-listing-id={listingId}
+              data-mode={mode}
               role="button"
               tabIndex={0}
               aria-expanded={expanded}
               aria-controls={panelId}
-              className="rounded-md px-2 py-2 -mx-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+              className="rounded-md -mx-2 px-2 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
               onClick={(event) => {
                 if (shouldIgnoreRowToggle(event.target)) return;
                 toggleExpanded(listingId);
@@ -81,59 +104,96 @@ export default function ExpandableDealList({
                 }
               }}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
+              <div className="grid grid-cols-[minmax(0,1fr)_9rem] items-start gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_11rem] sm:items-center">
+                <div className="min-w-0">
                   <IntentPrefetchLink
                     data-testid="rebuild-deal-row-title"
                     href={buildListingUrl({ id: listingId })}
-                    className="text-sm font-medium text-slate-900 hover:text-slate-700"
+                    className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
                   >
                     {deal.title}
                   </IntentPrefetchLink>
 
-                  <p className="mt-1 text-xs text-slate-500">
-                    {sellerLabel} at {marketLabel}
+                  <p className="mt-1 truncate text-xs text-slate-500">
+                    {sellerLabel} · {marketLabel} · Condition: {conditionLabel}{" "}
+                    · Lang: {languageLabel}
                   </p>
-
-                  {mode === "discovery" ? (
-                    <p className="mt-1 text-xs text-slate-500">
-                      {deal.condition
-                        ? `Condition ${deal.condition}`
-                        : "Condition unknown"}{" "}
-                      · {deal.language} · {deal.freshness.dataAgeLabel}
-                    </p>
-                  ) : null}
-
-                  {duplicateCount > 0 ? (
-                    <p className="mt-1 text-xs text-slate-500">
-                      Also seen in {duplicateCount} other market
-                      {duplicateCount !== 1 ? "s" : ""}
-                    </p>
-                  ) : null}
                 </div>
 
-                <div className="flex-shrink-0 text-right">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {deal.price.display}
+                <div className="text-right tabular-nums">
+                  <p className="text-base font-semibold text-slate-900">
+                    {deal.price.display === "Unavailable"
+                      ? "—"
+                      : deal.price.display}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-500">Historic: —</p>
+                </div>
+
+                <div className="text-right tabular-nums sm:text-left">
+                  <p
+                    className={`text-sm font-medium ${
+                      discountPercent == null
+                        ? "text-slate-400"
+                        : discountPercent < 0
+                          ? "text-emerald-700"
+                          : "text-slate-700"
+                    }`}
+                  >
+                    {discountValueLabel}
                   </p>
                   <p
-                    className={`text-xs font-medium ${
-                      (deal.price.discountPercent ?? 0) < 0
-                        ? "text-emerald-700"
+                    className={`mt-0.5 text-xs ${
+                      emphasis === "discount"
+                        ? "font-medium text-slate-900"
                         : "text-slate-500"
                     }`}
                   >
-                    {deal.price.deltaDisplay}
+                    vs market
                   </p>
+                </div>
 
-                  {mode === "discovery" ? (
-                    <p className="mt-1 text-xs text-slate-500">
-                      Confidence {deal.trust.confidence.display} ·{" "}
-                      {deal.trustAssessment.state.toLowerCase()}
-                    </p>
-                  ) : null}
-
-                  <ConfidenceBadge label={deal.trust.confidence.label} />
+                <div className="col-span-2 grid gap-y-1 text-xs text-slate-500 sm:col-span-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Confidence</span>
+                    <div className="flex items-center gap-2">
+                      <span className="-mt-1">
+                        <ConfidenceBadge label={deal.trust.confidence.label} />
+                      </span>
+                      <span className="text-slate-400">
+                        {confidenceScoreLabel}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Trust</span>
+                    <span className="text-slate-700">
+                      {deal.trustAssessment.state}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Seller</span>
+                    <span className="text-slate-700">{feedbackCountLabel}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span
+                      className={
+                        emphasis === "freshness"
+                          ? "font-medium text-slate-900"
+                          : undefined
+                      }
+                    >
+                      Seen
+                    </span>
+                    <span
+                      className={
+                        emphasis === "freshness"
+                          ? "font-medium text-slate-900"
+                          : "text-slate-700"
+                      }
+                    >
+                      {ageLabel}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -179,7 +239,7 @@ export default function ExpandableDealList({
                         <span className="font-medium text-slate-900">
                           {deal.price.discountPercent != null
                             ? `${deal.price.discountPercent}%`
-                            : "Unknown"}
+                            : "—"}
                         </span>
                       </p>
                       <p className="mt-1">
@@ -197,13 +257,23 @@ export default function ExpandableDealList({
                       <p className="mt-1">
                         Updated at:{" "}
                         <span className="font-medium text-slate-900">
-                          {deal.provenance.updatedAtISO ?? "Unknown"}
+                          {deal.provenance.updatedAtISO ?? "—"}
                         </span>
                       </p>
                       <p className="mt-1">
                         Seller:{" "}
                         <span className="font-medium text-slate-900">
                           {deal.seller.username ?? sellerLabel}
+                        </span>
+                      </p>
+                      <p className="mt-1">
+                        Also seen in:{" "}
+                        <span className="font-medium text-slate-900">
+                          {duplicateCount > 0
+                            ? `${duplicateCount} other market${
+                                duplicateCount !== 1 ? "s" : ""
+                              }`
+                            : "—"}
                         </span>
                       </p>
                       <p className="mt-1">

@@ -4,6 +4,58 @@ This maps checked items in `docs/rebuild/REBUILD_TRACKER.md` to evidence. If evi
 
 ---
 
+## Legacy Feature Recovery Mapping
+
+This section maps capabilities from the **Decision Tagging Pass – Legacy Feature Recovery List** to rebuild state.
+
+**Definitions:**
+
+- **Recovery List Status** = verbatim from Decision Tagging Pass (Partial / Missing / Intentionally Dropped)
+- **Evidence** = PR numbers or "None"
+- **Parity Reviewed** = Yes / No (default No unless explicitly reviewed)
+
+### Rules
+
+A capability may only be marked **Recovered** when:
+
+1. Evidence exists in TRACKER_EVIDENCE.md
+2. A parity review decision has been explicitly recorded
+
+**Shipping code ≠ recovered.** "Partial" is allowed indefinitely until parity is reviewed or scope is changed.
+
+### Scan Power
+
+| Capability                              | Recovery List Status | Rebuild Surface / Notes                                                                                                    | Evidence (PR / Row)                      | Parity Reviewed |
+| --------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------- |
+| Scan many deals quickly with dense rows | Partial              | Rebuild rows exist but expandable-row UX, signal density, and scan speed have not been reviewed for parity with legacy     | #369, #370, #371, #372, #373, #374, #375 | No              |
+| See key deal metrics at a glance        | Partial              | Metrics exist but column layout, hierarchy, and visual weight have not been reviewed against legacy for comparable clarity | #369–#375                                | No              |
+| View confidence indicators              | Partial              | Confidence chip exists but clarity, prominence, and whether it inspires comparable user confidence has not been reviewed   | #369–#375                                | No              |
+| Trusted seller badge                    | Partial              | Badge exists but prominence, placement relative to other signals, and upgrade opportunities not yet reviewed               | #369–#375                                | No              |
+| Discount visual hierarchy               | Partial              | Color coding exists but visual weight and scan speed parity not reviewed                                                   | #369–#375                                | No              |
+
+### Trust / Explainability
+
+| Capability                                | Recovery List Status | Rebuild Surface / Notes                                                                                                       | Evidence (PR / Row) | Parity Reviewed |
+| ----------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------- | --------------- |
+| Understand confidence scoring methodology | Missing              | No user-facing methodology explanation found; tooltips provide labels but not explanation. PR #376 adds diagnostic drilldown. | #376                | No              |
+| See standardized missing value indicators | Partial              | "--" formatting exists but consistency and user confidence not reviewed                                                       | None                | No              |
+
+### Monitor / Alert Power
+
+| Capability                | Recovery List Status | Rebuild Surface / Notes                                                         | Evidence (PR / Row)  | Parity Reviewed |
+| ------------------------- | -------------------- | ------------------------------------------------------------------------------- | -------------------- | --------------- |
+| Subscribe to email alerts | Partial              | Alerts subscription exists in rebuild but UX parity and confidence not reviewed | #277 (Alerts UI row) | No              |
+
+### Intentionally Dropped
+
+| Capability                                              | Recovery List Status  | Rebuild Surface / Notes                                                                                                                                                            | Evidence (PR / Row)          | Parity Reviewed |
+| ------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | --------------- |
+| Investigate a specific card's market with price history | Intentionally Dropped | /cards/[cardId] explicitly deleted (404) during legacy decommission Stage 1; rebuild target is /rebuild/listing/[id] with different architecture (listing-centric vs card-centric) | LEGACY_QUARANTINE.md Stage 1 | N/A (Dropped)   |
+| Browse sets to discover deals within a set              | Intentionally Dropped | /sets and /sets/[setId] explicitly deleted (404) during legacy decommission Stage 1; rebuild target is /rebuild/discovery with set filter (degraded parity noted)                  | LEGACY_QUARANTINE.md Stage 1 | N/A (Dropped)   |
+| Watchlist capabilities                                  | Intentionally Dropped | /watchlist explicitly RETIRED during legacy decommission Stage 1; header link and star buttons removed; no rebuild watchlist surface                                               | LEGACY_QUARANTINE.md Stage 1 | N/A (Dropped)   |
+
+---
+
 ## Week 0: Setup & Weaponization
 
 | Tracker item                                      | PR         | File(s)                                                                                                                                                                                                           | Evidence (short)                                                                                                                                                                                  |

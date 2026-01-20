@@ -405,3 +405,35 @@ Rebuild route content must not feel cramped on desktop while remaining calm and 
 **Width-caused alignment (allowed):**
 
 - If widening makes filter controls feel too spread out, controls may be locally constrained to preserve a cohesive cluster without changing behavior.
+
+### 2026-01-20: Upgrade #5 - Scan Power Final (Column Grid + Rhythm)
+
+Rebuild list rows must support table-like scan speed with a stable, column-aligned grid (collapsed) and deterministic inspection mode (expanded).
+
+**Collapsed row grid anatomy (mandatory, desktop):**
+
+- 4 fixed columns aligned row-to-row:
+  - Identity (`rebuild-deal-col-identity`): title + subline.
+  - Price (`rebuild-deal-col-price`): dominant numeric; historic baseline subordinate.
+  - Discount (`rebuild-deal-col-discount`): discount percent + `vs market` annotation.
+  - Trust (`rebuild-deal-col-trust`): Confidence, Trust state, Seller, Seen (always visible; no hover dependency).
+
+**Dominant numeric rule (mandatory):**
+
+- Price is the visual anchor in the collapsed row (largest numeric weight).
+- Discount annotates; it must not visually compete with price.
+
+**Unknown semantics (mandatory):**
+
+- Missing numeric values render as `—` (never empty).
+- Row structure must remain stable (no conditional DOM churn that changes column layout/height per-row).
+
+**Selectors (contract tests):**
+
+- Row container: `data-testid="rebuild-deal-row"`
+- Expanded panel: `data-testid="rebuild-deal-row-expanded"` (includes class marker `rebuild-inspection-panel`)
+- Grid columns:
+  - `data-testid="rebuild-deal-col-identity"`
+  - `data-testid="rebuild-deal-col-price"`
+  - `data-testid="rebuild-deal-col-discount"`
+  - `data-testid="rebuild-deal-col-trust"`

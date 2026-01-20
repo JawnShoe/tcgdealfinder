@@ -229,7 +229,7 @@ git ls-files | grep -iE "tmp|temp|test" | head -30
 | **docs/db/**                                            |               |                                        |                    |                                                       |
 | `docs/db/INDEX_AUDIT_P2.2.md`                           | REFERENCE     | PROJECT_SSOT.md, WORKSTREAMS_MASTER.md | KEEP               | Recent P2.2 work product                              | LOW        |
 | **docs/ui/**                                            |               |                                        |                    |                                                       |
-| `docs/ui/UI_CONSISTENCY_CONTRACT.md`                    | REFERENCE     | docs/INDEX.md                          | KEEP               | Active UI governance                                  | LOW        |
+| `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md`     | REFERENCE     | docs/INDEX.md                          | KEEP               | Active UI governance                                  | LOW        |
 | **Runbooks (docs/)**                                    |               |                                        |                    |                                                       |
 | `docs/BACKUP_POLICY.md`                                 | REFERENCE     | docs/INDEX.md                          | KEEP               | Active operational runbook                            | LOW        |
 | `docs/ENV_RUNBOOK.md`                                   | REFERENCE     | docs/INDEX.md, PROJECT_SSOT.md         | KEEP               | Active operational runbook                            | LOW        |

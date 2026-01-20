@@ -7,6 +7,7 @@ import DiscoveryFiltersBar from "@/components/rebuild/DiscoveryFiltersBar";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import ResilienceLabel from "@/components/rebuild/ResilienceLabel";
+import DiscoveryPaginationControls from "@/components/rebuild/DiscoveryPaginationControls";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { ensureRebuildCardsLanguageColumn } from "@/lib/rebuild/data/schema";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
@@ -20,6 +21,7 @@ import {
 } from "@/lib/rebuild/observability/logging";
 import {
   filterDealsByDiscoveryQuery,
+  DEFAULT_DISCOVERY_PAGE_SIZE,
   MAX_DISCOVERY_FETCH_LIMIT,
   orderDealsForDiscovery,
   paginateDiscoveryResults,
@@ -132,8 +134,21 @@ export default async function DiscoveryPage({
         requestId,
       });
     }
+
+    const allowedPageSizes = [25, 50, 100] as const;
+    const normalizedPageSize = allowedPageSizes.includes(
+      query.pagination.pageSize as (typeof allowedPageSizes)[number]
+    )
+      ? query.pagination.pageSize
+      : DEFAULT_DISCOVERY_PAGE_SIZE;
+
+    const normalizedPagination = {
+      page: query.pagination.page,
+      pageSize: normalizedPageSize,
+    };
+
     const fetchLimit = Math.min(
-      query.pagination.page * query.pagination.pageSize,
+      normalizedPagination.page * normalizedPagination.pageSize,
       MAX_DISCOVERY_FETCH_LIMIT
     );
 
@@ -143,7 +158,7 @@ export default async function DiscoveryPage({
     const { deduped: dedupedDeals, duplicates } = dedupeDeals(filteredDeals);
     const discoveryResult = paginateDiscoveryResults(
       dedupedDeals,
-      query.pagination
+      normalizedPagination
     );
     const pageDeals = discoveryResult.items;
     const ageSeconds = deals
@@ -205,6 +220,65 @@ export default async function DiscoveryPage({
                 {pageDeals.length} result
                 {pageDeals.length !== 1 ? "s" : ""}
               </p>
+            </div>
+
+            <div
+              data-testid="discovery-facets"
+              className="mt-4 grid gap-3 rounded-md border border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-700 sm:grid-cols-3"
+            >
+              <div>
+                <p className="font-semibold text-slate-800">Condition</p>
+                {discoveryResult.facets?.condition ? (
+                  <ul className="mt-1 space-y-1">
+                    {Object.entries(discoveryResult.facets.condition).map(
+                      ([key, value]) => (
+                        <li key={key} className="flex justify-between gap-2">
+                          <span className="uppercase">{key}</span>
+                          <span>{value}</span>
+                        </li>
+                      )
+                    )}
+                  </ul>
+                ) : (
+                  <p className="mt-1 text-slate-500">Unavailable</p>
+                )}
+              </div>
+
+              <div>
+                <p className="font-semibold text-slate-800">Language</p>
+                {discoveryResult.facets?.language ? (
+                  <ul className="mt-1 space-y-1">
+                    {Object.entries(discoveryResult.facets.language).map(
+                      ([key, value]) => (
+                        <li key={key} className="flex justify-between gap-2">
+                          <span className="uppercase">{key}</span>
+                          <span>{value}</span>
+                        </li>
+                      )
+                    )}
+                  </ul>
+                ) : (
+                  <p className="mt-1 text-slate-500">Unavailable</p>
+                )}
+              </div>
+
+              <div>
+                <p className="font-semibold text-slate-800">Confidence</p>
+                {discoveryResult.facets?.confidence ? (
+                  <ul className="mt-1 space-y-1">
+                    {Object.entries(discoveryResult.facets.confidence).map(
+                      ([key, value]) => (
+                        <li key={key} className="flex justify-between gap-2">
+                          <span className="uppercase">{key}</span>
+                          <span>{value}</span>
+                        </li>
+                      )
+                    )}
+                  </ul>
+                ) : (
+                  <p className="mt-1 text-slate-500">Unavailable</p>
+                )}
+              </div>
             </div>
 
             {pageDeals.length === 0 ? (
@@ -290,6 +364,14 @@ export default async function DiscoveryPage({
                 })}
               </ul>
             )}
+
+            <DiscoveryPaginationControls
+              preset={query.preset}
+              filters={query.filters}
+              page={discoveryResult.page}
+              pageSize={discoveryResult.pageSize}
+              totalCount={discoveryResult.totalCount}
+            />
 
             <ProvenanceDrilldown
               className="mt-4"

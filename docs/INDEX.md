@@ -10,13 +10,13 @@
 
 These are the active, maintained source-of-truth files.
 
-| Document                                                            | Purpose                                                                            | Audience              |
-| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------- |
-| [PROJECT_SSOT.md](../PROJECT_SSOT.md)                               | **Single Source of Truth** - Project status, roadmap, completed work, active tasks | All contributors      |
-| [SHIFT_LOCK.md](../SHIFT_LOCK.md)                                   | Process gates and rules (DONE gate, SHIFT gate, Evidence gate, Secret hygiene)     | All contributors      |
-| [REGRESSION_CHECKLIST.md](../REGRESSION_CHECKLIST.md)               | Manual testing checklist for each release                                          | QA / Contributors     |
-| [docs/ui/UI_CONSISTENCY_CONTRACT.md](ui/UI_CONSISTENCY_CONTRACT.md) | UI tooltip/sizing governance (LOCKED)                                              | Frontend contributors |
-| [docs/TIER2_ARCHITECTURE.md](TIER2_ARCHITECTURE.md)                 | Tier 2 architecture: Alerts + DB-backed Watchlist (MVP)                            | All contributors      |
+| Document                                                                                          | Purpose                                                                            | Audience              |
+| ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------- |
+| [PROJECT_SSOT.md](../PROJECT_SSOT.md)                                                             | **Single Source of Truth** - Project status, roadmap, completed work, active tasks | All contributors      |
+| [SHIFT_LOCK.md](../SHIFT_LOCK.md)                                                                 | Process gates and rules (DONE gate, SHIFT gate, Evidence gate, Secret hygiene)     | All contributors      |
+| [REGRESSION_CHECKLIST.md](../REGRESSION_CHECKLIST.md)                                             | Manual testing checklist for each release                                          | QA / Contributors     |
+| [docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md](archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md) | UI tooltip/sizing governance (LOCKED)                                              | Frontend contributors |
+| [docs/TIER2_ARCHITECTURE.md](TIER2_ARCHITECTURE.md)                                               | Tier 2 architecture: Alerts + DB-backed Watchlist (MVP)                            | All contributors      |
 
 ---
 

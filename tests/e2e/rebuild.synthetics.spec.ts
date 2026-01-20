@@ -1230,11 +1230,59 @@ test("Discovery UX contract: filters render + empty state + reset returns result
   });
 
   await expect(page.getByTestId("discovery-filters-bar")).toBeVisible();
+  await expect(page.getByTestId("discovery-facets")).toBeVisible();
+  await expect(page.getByTestId("discovery-pagination")).toBeVisible();
 
   await expect(page.getByTestId("discovery-results-count")).toHaveAttribute(
     "data-count",
     /[1-9]\d*/
   );
+
+  const countAttr = await page
+    .getByTestId("discovery-results-count")
+    .getAttribute("data-count");
+  const total = Number(countAttr ?? "0");
+
+  const pageSizeAttr = await page
+    .getByTestId("discovery-pagination-page-size")
+    .inputValue();
+  const pageSize = Number(pageSizeAttr ?? "25") || 25;
+
+  const next = page.getByTestId("discovery-pagination-next");
+  const prev = page.getByTestId("discovery-pagination-prev");
+  await expect(next).toBeVisible();
+  await expect(prev).toBeVisible();
+
+  let didGoToPage2 = false;
+  if (total > pageSize) {
+    await expect(next).toBeEnabled();
+    await Promise.all([
+      page.waitForURL(/[?&]page=2\b/, { timeout: 15000, waitUntil: "commit" }),
+      next.click(),
+    ]);
+    await expect(page).toHaveURL(/[?&]page=2\b/);
+    await expect(page.getByTestId("discovery-pagination-page")).toContainText(
+      "Page 2"
+    );
+    didGoToPage2 = true;
+  } else {
+    await expect(next).toBeDisabled();
+  }
+
+  await expect(page.getByTestId("discovery-results-count")).toHaveAttribute(
+    "data-count",
+    /\d+/
+  );
+
+  if (didGoToPage2) {
+    await expect(prev).toBeEnabled();
+    await prev.click();
+    await expect(page.getByTestId("discovery-pagination-page")).toContainText(
+      "Page 1"
+    );
+  } else {
+    await expect(prev).toBeDisabled();
+  }
 
   await page.goto(
     `${baseURL}/discovery?sort=newest&minPriceCad=99999999&maxPriceCad=99999999`,

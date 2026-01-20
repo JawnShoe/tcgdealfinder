@@ -21,21 +21,21 @@
 
 All 13 files from `docs/audit/_full-system-2025/` were moved to `docs/archive/audits/2025-full-system/`:
 
-| File                           | Phase | Description                     |
-| ------------------------------ | ----- | ------------------------------- |
-| AUDIT_REPO_INVENTORY.md        | 1     | File inventory                  |
-| AUDIT_DOCS_INVENTORY.md        | 1     | Docs inventory                  |
-| AUDIT_WORKFLOWS_INVENTORY.md   | 1     | Workflows inventory             |
-| AUDIT_EXTERNAL_DEPENDENCIES.md | 1     | External systems inventory      |
-| AUDIT_DOCS_CLASSIFICATION.md   | 2     | Docs classification             |
-| AUDIT_DOCS_ACTION_PLAN.md      | 2     | Docs cleanup plan               |
-| AUDIT_OPEN_RISKS_RESOLUTION.md | 2     | Risk tracking                   |
-| AUDIT_CODE_FRONTEND.md         | 3A    | Frontend code audit             |
-| AUDIT_CODE_BACKEND.md          | 3B    | Backend/API code audit          |
-| AUDIT_CODE_DATA.md             | 3C    | Data/DB layer code audit        |
-| AUDIT_CODE_OPS.md              | 3D    | Ops/pipelines/alerts code audit |
-| CURRENT_STATE_SNAPSHOT.md      | 4     | Consolidated findings           |
-| AUDIT_CLOSEOUT.md              | 4     | Formal closeout                 |
+| File                                                          | Phase | Description                     |
+| ------------------------------------------------------------- | ----- | ------------------------------- |
+| docs/archive/audits/2026-01-inventory/REPO_INVENTORY_AUDIT.md | 1     | File inventory                  |
+| AUDIT_DOCS_INVENTORY.md                                       | 1     | Docs inventory                  |
+| AUDIT_WORKFLOWS_INVENTORY.md                                  | 1     | Workflows inventory             |
+| AUDIT_EXTERNAL_DEPENDENCIES.md                                | 1     | External systems inventory      |
+| AUDIT_DOCS_CLASSIFICATION.md                                  | 2     | Docs classification             |
+| AUDIT_DOCS_ACTION_PLAN.md                                     | 2     | Docs cleanup plan               |
+| AUDIT_OPEN_RISKS_RESOLUTION.md                                | 2     | Risk tracking                   |
+| AUDIT_CODE_FRONTEND.md                                        | 3A    | Frontend code audit             |
+| AUDIT_CODE_BACKEND.md                                         | 3B    | Backend/API code audit          |
+| AUDIT_CODE_DATA.md                                            | 3C    | Data/DB layer code audit        |
+| AUDIT_CODE_OPS.md                                             | 3D    | Ops/pipelines/alerts code audit |
+| CURRENT_STATE_SNAPSHOT.md                                     | 4     | Consolidated findings           |
+| AUDIT_CLOSEOUT.md                                             | 4     | Formal closeout                 |
 
 Each file received an archive header:
 
@@ -52,7 +52,7 @@ Each file received an archive header:
 - `PROJECT_SSOT.md` — Single Source of Truth
 - `SHIFT_LOCK.md` — Process gates
 - `REGRESSION_CHECKLIST.md` — Release testing
-- `docs/ui/UI_CONSISTENCY_CONTRACT.md` — UI governance
+- `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md` — UI governance
 
 ### Operational Runbooks (6)
 

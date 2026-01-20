@@ -58,11 +58,11 @@ This classification answers:
 
 ---
 
-## docs/ui/ Directory
+## docs/archive/ui-legacy/ Directory
 
-| Doc                                  | Category      | Audience | Status | Rationale                                               | Action |
-| ------------------------------------ | ------------- | -------- | ------ | ------------------------------------------------------- | ------ |
-| `docs/ui/UI_CONSISTENCY_CONTRACT.md` | Authoritative | Frontend | Active | LOCKED UI governance; referenced by SHIFT_LOCK and SSOT | Keep   |
+| Doc                                                 | Category      | Audience | Status | Rationale                                               | Action |
+| --------------------------------------------------- | ------------- | -------- | ------ | ------------------------------------------------------- | ------ |
+| `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md` | Authoritative | Frontend | Active | LOCKED UI governance; referenced by SHIFT_LOCK and SSOT | Keep   |
 
 ---
 

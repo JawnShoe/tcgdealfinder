@@ -290,3 +290,28 @@ Discovery v1 introduces minimal, data-first filtering controls and tightens lega
 | `/ending-soon` | 308 redirect to `/discovery?sort=endingSoon`       | 404          |
 
 Inbound navigation now links directly to `/discovery` presets (no legacy route entrypoints).
+
+### 2026-01-20: Discovery v1 - Pagination Controls + Facets Display
+
+Discovery now surfaces pagination controls and server-computed facet counts on `/discovery`.
+
+**User-visible additions (Discovery):**
+
+- Pagination controls render below the results list: Prev/Next buttons, current page display, and page size selector (25/50/100).
+- Facets block renders above the results list showing counts for: condition, language, confidence.
+
+**Pagination behavior (Discovery):**
+
+| Param      | Rule                                                     |
+| ---------- | -------------------------------------------------------- |
+| `page`     | Minimum 1 (default = 1)                                  |
+| `pageSize` | Allowed values 25/50/100 only; other values render as 25 |
+
+**New stable selectors (for contract tests):**
+
+- `data-testid="discovery-facets"`
+- `data-testid="discovery-pagination"`
+- `data-testid="discovery-pagination-prev"`
+- `data-testid="discovery-pagination-next"`
+- `data-testid="discovery-pagination-page"`
+- `data-testid="discovery-pagination-page-size"`

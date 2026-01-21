@@ -220,7 +220,7 @@ jobs:
 
       - name: Upload Playwright artifacts (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-artifacts-${{ github.job }}
           path: |
@@ -292,7 +292,7 @@ jobs:
 
       - name: Upload Playwright artifacts (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-artifacts-${{ github.job }}
           path: |
@@ -360,7 +360,7 @@ jobs:
 
       - name: Upload Playwright artifacts (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-artifacts-${{ github.job }}
           path: |
@@ -428,7 +428,7 @@ jobs:
 
       - name: Upload Playwright artifacts (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-artifacts-${{ github.job }}
           path: |

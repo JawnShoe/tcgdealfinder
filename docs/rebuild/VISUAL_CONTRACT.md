@@ -272,6 +272,40 @@ Alerts Subscription is a user-visible trust-to-action closure surface. This chan
 
 If the answer is no - it violates the contract.
 
+### 2026-01-21: Recovery - Alerts History (Public)
+
+Alerts History closes the legacy "recent triggered alerts" parity gap by providing a public, sanitized history view for rebuild users (not the ops/auth-gated tool).
+
+**Data contract (mandatory):**
+
+- Public endpoint: `GET /api/rebuild/alerts/history`
+- Returns only sanitized fields (no emails, no internal IDs, no raw query strings).
+- Time window: last ~36 hours.
+- Row limit: max 50.
+- Stable ordering: most recent first.
+
+**UI states (mandatory):**
+
+- Loading: visible "Loading recent alerts..."
+- Empty: "No alerts triggered recently."
+- Error: "Unable to load recent alerts." with a Retry button.
+- Populated: list of recent alerts with "what fired" and "when" (UTC is visible).
+
+**Accessibility (mandatory):**
+
+- History block has an accessible label and is keyboard navigable.
+- Retry control is a real button.
+
+**Selectors (contract tests):**
+
+- History root: `data-testid="rebuild-alerts-history"`
+- Loading: `data-testid="rebuild-alerts-history-loading"`
+- Empty: `data-testid="rebuild-alerts-history-empty"`
+- Error: `data-testid="rebuild-alerts-history-error"`
+- Retry: `data-testid="rebuild-alerts-history-retry"`
+- List: `data-testid="rebuild-alerts-history-list"`
+- Item: `data-testid="rebuild-alerts-history-item"`
+
 ### 2026-01-21: End-Time Clarity (Discovery Rows)
 
 End-time clarity closes the legacy “Ends” parity gap for rebuild discovery rows without introducing new semantics.

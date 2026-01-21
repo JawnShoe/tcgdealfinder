@@ -13,6 +13,7 @@ test("mapDbRowToListingDomain maps DB row into rebuild domain model", () => {
     listing_id: "v1|1234567890|0",
     title: "Example listing",
     url: "https://example.com/listing",
+    ends_at: new Date("2026-01-01T10:00:00Z"),
     total_price_cad: "150.00",
     total_usd: "110.00",
     total_native: "110.00",
@@ -43,6 +44,7 @@ test("mapDbRowToListingDomain maps DB row into rebuild domain model", () => {
   assert.equal(mapped.title, row.title);
   assert.equal(mapped.price.display, "110.00 USD");
   assert.equal(mapped.price.deltaDisplay, "-12.5%");
+  assert.equal(mapped.endsAtISO, "2026-01-01T10:00:00.000Z");
   assert.equal(mapped.trust.source, "EBAY");
   assert.equal(mapped.trust.confidence.label, "high");
   assert.equal(mapped.trust.dataAgeLabel, "5m");

@@ -27,6 +27,7 @@ export async function getRebuildListingById(
         l.listing_id,
         l.title,
         l.url,
+        l.ends_at,
         l.total_price_cad,
         l.total_usd,
         l.total_native,

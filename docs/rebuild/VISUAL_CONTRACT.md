@@ -481,3 +481,10 @@ Confidence must explain itself without hover dependency and without mutating tru
 
 - `data-testid="rebuild-confidence-button"`
 - `data-testid="rebuild-confidence-panel"`
+
+**Methodology explanation (additive):**
+
+- Drilldown includes a plain-English methodology section titled “How confidence is calculated”.
+- Diagnostic details remain present; no weights/math are exposed and no guarantees are changed.
+- Confidence describes price reliability (not deal quality); it is a brake when information is incomplete.
+- No layout contract changes beyond expanded-panel text (collapsed-row height invariant).

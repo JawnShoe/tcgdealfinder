@@ -32,6 +32,62 @@ function formatMarketIndicator(value: string | null | undefined): string {
   return "—";
 }
 
+function formatUtcTimestamp(date: Date): string {
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ] as const;
+  const year = date.getUTCFullYear();
+  const month = months[date.getUTCMonth()] ?? "Jan";
+  const day = date.getUTCDate();
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${month} ${day}, ${year} · ${hours}:${minutes} UTC`;
+}
+
+function getEndsDisplay(endsAtISO?: string | null): {
+  kind: "missing" | "ended" | "active";
+  relativeLabel: string;
+  absoluteLabel: string | null;
+} {
+  if (!endsAtISO) {
+    return { kind: "missing", relativeLabel: "—", absoluteLabel: null };
+  }
+  const parsed = new Date(endsAtISO);
+  if (Number.isNaN(parsed.getTime())) {
+    return { kind: "missing", relativeLabel: "—", absoluteLabel: null };
+  }
+
+  const diffMs = parsed.getTime() - Date.now();
+  if (diffMs <= 0) {
+    return {
+      kind: "ended",
+      relativeLabel: "Ended",
+      absoluteLabel: formatUtcTimestamp(parsed),
+    };
+  }
+
+  const totalMinutes = Math.max(1, Math.floor(diffMs / 60000));
+  const totalHours = Math.floor(totalMinutes / 60);
+  const relativeLabel = totalHours >= 1 ? `${totalHours}h` : `${totalMinutes}m`;
+
+  return {
+    kind: "active",
+    relativeLabel,
+    absoluteLabel: formatUtcTimestamp(parsed),
+  };
+}
+
 export default function ExpandableDealList({
   items,
   mode,
@@ -43,12 +99,16 @@ export default function ExpandableDealList({
   );
   const [expandedConfidenceListingId, setExpandedConfidenceListingId] =
     useState<string | null>(null);
+  const [endsTooltipListingId, setEndsTooltipListingId] = useState<
+    string | null
+  >(null);
 
   const baseId = useId();
 
   const closeAllPanels = () => {
     setExpandedListingId(null);
     setExpandedConfidenceListingId(null);
+    setEndsTooltipListingId(null);
   };
 
   return (
@@ -63,7 +123,8 @@ export default function ExpandableDealList({
         const marketIndicator = formatMarketIndicator(deal.provenance.market);
         const conditionLabel = deal.condition ?? "—";
         const languageLabel = deal.language ?? "—";
-        const ageLabel = deal.freshness.dataAgeLabel || "—";
+        const ageLabel = deal.freshness.dataAgeLabel || "-";
+        const endsDisplay = getEndsDisplay(deal.endsAtISO);
         const feedbackCountLabel =
           deal.seller.feedbackCount != null
             ? `⭐ ${deal.seller.feedbackCount}+ sales`
@@ -101,6 +162,7 @@ export default function ExpandableDealList({
               onClick={(event) => {
                 if (shouldIgnoreRowToggle(event.target)) return;
                 setExpandedConfidenceListingId(null);
+                setEndsTooltipListingId(null);
                 setExpandedListingId((current) =>
                   current === listingId ? null : listingId
                 );
@@ -110,6 +172,7 @@ export default function ExpandableDealList({
                   if (shouldIgnoreRowToggle(event.target)) return;
                   event.preventDefault();
                   setExpandedConfidenceListingId(null);
+                  setEndsTooltipListingId(null);
                   setExpandedListingId((current) =>
                     current === listingId ? null : listingId
                   );
@@ -274,6 +337,61 @@ export default function ExpandableDealList({
                     >
                       {ageLabel}
                     </span>
+                  </div>
+                  <div className="flex min-w-0 items-center justify-between gap-3">
+                    <span className="whitespace-nowrap">Ends</span>
+                    {endsDisplay.kind === "missing" ? (
+                      <span className="whitespace-nowrap text-slate-700">
+                        —
+                      </span>
+                    ) : (
+                      <span className="relative flex justify-end">
+                        <button
+                          type="button"
+                          data-testid="rebuild-ends-indicator"
+                          aria-label="View end time in UTC"
+                          className="whitespace-nowrap font-medium text-slate-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            setEndsTooltipListingId((current) =>
+                              current === listingId ? null : listingId
+                            );
+                          }}
+                          onFocus={() => setEndsTooltipListingId(listingId)}
+                          onBlur={() =>
+                            setEndsTooltipListingId((current) =>
+                              current === listingId ? null : current
+                            )
+                          }
+                          onMouseEnter={() =>
+                            setEndsTooltipListingId(listingId)
+                          }
+                          onMouseLeave={() =>
+                            setEndsTooltipListingId((current) =>
+                              current === listingId ? null : current
+                            )
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key !== "Escape") return;
+                            event.preventDefault();
+                            event.stopPropagation();
+                            setEndsTooltipListingId(null);
+                          }}
+                        >
+                          {endsDisplay.relativeLabel}
+                        </button>
+                        {endsTooltipListingId === listingId &&
+                        endsDisplay.absoluteLabel ? (
+                          <div
+                            data-testid="rebuild-ends-tooltip"
+                            className="absolute right-0 top-full z-10 mt-1 w-max max-w-[16rem] rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm"
+                          >
+                            Ends at: {endsDisplay.absoluteLabel}
+                          </div>
+                        ) : null}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

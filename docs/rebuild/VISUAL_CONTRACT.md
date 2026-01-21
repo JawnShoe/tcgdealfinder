@@ -272,6 +272,32 @@ Alerts Subscription is a user-visible trust-to-action closure surface. This chan
 
 If the answer is no - it violates the contract.
 
+### 2026-01-21: End-Time Clarity (Discovery Rows)
+
+End-time clarity closes the legacy “Ends” parity gap for rebuild discovery rows without introducing new semantics.
+
+**Data source (mandatory):**
+
+- Uses `ListingDomain.endsAtISO` (authoritative) derived from `listings.ends_at`.
+- No new backend fields or heuristics in the UI layer.
+
+**Behavior (mandatory):**
+
+- Compact relative indicator renders in-row (e.g., `10h`, `45m`, or `Ended`).
+- Exact UTC timestamp is revealed on hover and keyboard focus.
+- No timers / no live countdown updates.
+- CLS-safe: tooltip/reveal must not change row height.
+
+**Keyboard (mandatory):**
+
+- Tabbing to the ends indicator reveals the exact UTC timestamp.
+- Escape closes the reveal.
+
+**Selectors (contract tests):**
+
+- Ends indicator: `data-testid="rebuild-ends-indicator"`
+- Ends reveal/tooltip: `data-testid="rebuild-ends-tooltip"`
+
 ## 12. Link Migration Log
 
 ### 2026-01-18: Stage 4 Slice A - Link Target Updates

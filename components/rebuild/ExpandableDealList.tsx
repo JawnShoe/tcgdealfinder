@@ -24,6 +24,14 @@ function shouldIgnoreRowToggle(eventTarget: EventTarget | null): boolean {
   return Boolean(eventTarget.closest("a,button,input,select,textarea"));
 }
 
+function formatMarketIndicator(value: string | null | undefined): string {
+  if (!value) return "—";
+  const normalized = value.trim().toUpperCase();
+  if (normalized === "US") return "🇺🇸 US";
+  if (normalized === "CA") return "🇨🇦 CA";
+  return "—";
+}
+
 export default function ExpandableDealList({
   items,
   mode,
@@ -52,7 +60,7 @@ export default function ExpandableDealList({
         const panelId = `${baseId}-${listingId}-inspection`;
         const confidencePanelId = `${baseId}-${listingId}-confidence`;
         const sellerLabel = deal.seller.name ?? deal.seller.username ?? "—";
-        const marketLabel = deal.provenance.market ?? deal.provenance.source;
+        const marketIndicator = formatMarketIndicator(deal.provenance.market);
         const conditionLabel = deal.condition ?? "—";
         const languageLabel = deal.language ?? "—";
         const ageLabel = deal.freshness.dataAgeLabel || "—";
@@ -128,8 +136,14 @@ export default function ExpandableDealList({
                   </IntentPrefetchLink>
 
                   <p className="mt-1 truncate text-xs text-slate-500">
-                    {sellerLabel} · {marketLabel} · Condition: {conditionLabel}{" "}
-                    · Lang: {languageLabel}
+                    {sellerLabel} ·{" "}
+                    <span
+                      data-testid="rebuild-market-indicator"
+                      className="font-medium text-slate-600"
+                    >
+                      {marketIndicator}
+                    </span>{" "}
+                    · Condition: {conditionLabel} · Lang: {languageLabel}
                   </p>
                 </div>
 
@@ -221,9 +235,19 @@ export default function ExpandableDealList({
                   </div>
                   <div className="flex min-w-0 items-center justify-between gap-3">
                     <span className="whitespace-nowrap">Trust</span>
-                    <span className="min-w-0 truncate text-slate-700">
-                      {deal.trustAssessment.state}
-                    </span>
+                    {deal.trustAssessment.state === "VERIFIED" ? (
+                      <span
+                        data-testid="rebuild-trusted-badge"
+                        className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800"
+                      >
+                        <span aria-hidden="true">✓</span>
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="min-w-0 truncate text-slate-700">
+                        {deal.trustAssessment.state}
+                      </span>
+                    )}
                   </div>
                   <div className="flex min-w-0 items-center justify-between gap-3">
                     <span className="whitespace-nowrap">Seller</span>

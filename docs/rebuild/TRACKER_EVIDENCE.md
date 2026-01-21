@@ -25,20 +25,20 @@ A capability may only be marked **Recovered** when:
 
 ### Scan Power
 
-| Capability                              | Recovery List Status | Rebuild Surface / Notes                                                                                                    | Evidence (PR / Row)                      | Parity Reviewed |
-| --------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------- |
-| Scan many deals quickly with dense rows | Partial              | Rebuild rows exist but expandable-row UX, signal density, and scan speed have not been reviewed for parity with legacy     | #369, #370, #371, #372, #373, #374, #375 | No              |
-| See key deal metrics at a glance        | Partial              | Metrics exist but column layout, hierarchy, and visual weight have not been reviewed against legacy for comparable clarity | #369–#375                                | No              |
-| View confidence indicators              | Partial              | Confidence chip exists but clarity, prominence, and whether it inspires comparable user confidence has not been reviewed   | #369–#375                                | No              |
-| Trusted seller badge                    | Partial              | Badge exists but prominence, placement relative to other signals, and upgrade opportunities not yet reviewed               | #369–#375                                | No              |
-| Discount visual hierarchy               | Partial              | Color coding exists but visual weight and scan speed parity not reviewed                                                   | #369–#375                                | No              |
+| Capability                              | Recovery List Status | Rebuild Surface / Notes                                                                                                                                                     | Evidence (PR / Row)                      | Parity Reviewed |
+| --------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------- |
+| Scan many deals quickly with dense rows | Partial              | Rebuild rows exist but expandable-row UX, signal density, and scan speed have not been reviewed for parity with legacy. Parity not reviewed against legacy dense table.     | #369, #370, #371, #372, #373, #374, #375 | No              |
+| See key deal metrics at a glance        | Partial              | Metrics exist but column layout, hierarchy, and visual weight have not been reviewed against legacy for comparable clarity. Parity not reviewed against legacy dense table. | #369–#375                                | No              |
+| View confidence indicators              | Partial              | Confidence chip exists but clarity, prominence, and whether it inspires comparable user confidence has not been reviewed. Parity not reviewed against legacy dense table.   | #369–#375                                | No              |
+| Trusted seller badge                    | Partial              | Badge exists but prominence, placement relative to other signals, and upgrade opportunities not yet reviewed. Parity not reviewed against legacy dense table.               | #369–#375                                | No              |
+| Discount visual hierarchy               | Partial              | Color coding exists but visual weight and scan speed parity not reviewed. Parity not reviewed against legacy dense table.                                                   | #369–#375                                | No              |
 
 ### Trust / Explainability
 
-| Capability                                | Recovery List Status | Rebuild Surface / Notes                                                                                                       | Evidence (PR / Row) | Parity Reviewed |
-| ----------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------- | --------------- |
-| Understand confidence scoring methodology | Missing              | No user-facing methodology explanation found; tooltips provide labels but not explanation. PR #376 adds diagnostic drilldown. | #376                | No              |
-| See standardized missing value indicators | Partial              | "--" formatting exists but consistency and user confidence not reviewed                                                       | None                | No              |
+| Capability                                | Recovery List Status | Rebuild Surface / Notes                                                                                          | Evidence (PR / Row) | Parity Reviewed |
+| ----------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------- | --------------- |
+| Understand confidence scoring methodology | Recovered            | Plain-English methodology explanation is available in the confidence drilldown ("How confidence is calculated"). | #376 + this PR      | Yes             |
+| See standardized missing value indicators | Partial              | "--" formatting exists but consistency and user confidence not reviewed                                          | None                | No              |
 
 ### Monitor / Alert Power
 

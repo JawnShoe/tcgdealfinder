@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import type { ListingDomain } from "@/lib/rebuild/data/listingMapper";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
+import ConfidenceMethodology from "@/components/rebuild/ConfidenceMethodology";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import { buildListingUrl } from "@/lib/rebuild/urls";
 
@@ -383,6 +384,13 @@ export default function ExpandableDealList({
                               </ul>
                             </div>
                           ) : null}
+
+                          <p className="mt-3 font-semibold text-slate-800">
+                            How confidence is calculated
+                          </p>
+                          <div className="mt-2 grid gap-2 text-slate-700">
+                            <ConfidenceMethodology />
+                          </div>
                         </div>
                       ) : null}
 

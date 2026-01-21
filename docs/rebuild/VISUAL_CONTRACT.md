@@ -247,7 +247,56 @@ This recovery closes “Below parity” gaps for the rebuild Discovery list with
 - Market indicator: `data-testid="rebuild-market-indicator"`
 - Verified badge: `data-testid="rebuild-trusted-badge"`
 
+### 2026-01-21: Recovery - Alerts Subscription (Wave 2A)
+
+Alerts Subscription is a user-visible trust-to-action closure surface. This change adds a usable subscription form without introducing new trust semantics, scoring, or backend behavior.
+
+**Behavior (mandatory):**
+
+- Form is keyboard accessible (tab through inputs, Enter submits).
+- Explicit submit, clear error state, and explicit success state (no polling, no background refresh).
+- No silent defaults: the submitted payload must include all required fields explicitly.
+
+**Copy (mandatory):**
+
+- Success state message: "You'll only be emailed when a deal meets these conditions."
+
+**Selectors (contract tests):**
+
+- Form: `data-testid="rebuild-alerts-subscribe-form"`
+- Card ID input: `data-testid="rebuild-alerts-card-id"`
+- Email input: `data-testid="rebuild-alerts-email"`
+- Min discount input: `data-testid="rebuild-alerts-min-discount"`
+- Submit: `data-testid="rebuild-alerts-submit"`
+- Success state: `data-testid="rebuild-alerts-success"`
+
 If the answer is no - it violates the contract.
+
+### 2026-01-21: End-Time Clarity (Discovery Rows)
+
+End-time clarity closes the legacy “Ends” parity gap for rebuild discovery rows without introducing new semantics.
+
+**Data source (mandatory):**
+
+- Uses `ListingDomain.endsAtISO` (authoritative) derived from `listings.ends_at`.
+- No new backend fields or heuristics in the UI layer.
+
+**Behavior (mandatory):**
+
+- Compact relative indicator renders in-row (e.g., `10h`, `45m`, or `Ended`).
+- Exact UTC timestamp is revealed on hover and keyboard focus.
+- No timers / no live countdown updates.
+- CLS-safe: tooltip/reveal must not change row height.
+
+**Keyboard (mandatory):**
+
+- Tabbing to the ends indicator reveals the exact UTC timestamp.
+- Escape closes the reveal.
+
+**Selectors (contract tests):**
+
+- Ends indicator: `data-testid="rebuild-ends-indicator"`
+- Ends reveal/tooltip: `data-testid="rebuild-ends-tooltip"`
 
 ## 12. Link Migration Log
 

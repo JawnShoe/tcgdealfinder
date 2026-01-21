@@ -4,6 +4,7 @@ import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
 import ResilienceLabel from "@/components/rebuild/ResilienceLabel";
+import { isAlertsEnabled } from "@/lib/rebuild/alerts/featureFlags";
 import { evaluateResilience } from "@/lib/rebuild/resilience/evaluateResilience";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
 
 export default function RebuildAlertsPage() {
   const isDbConfigured = isRebuildDbConfigured();
-  const alertsAvailable = false;
+  const alertsAvailable = isDbConfigured && isAlertsEnabled();
   const alerts = [];
 
   // Evaluate resilience using the pure function
@@ -75,7 +76,7 @@ export default function RebuildAlertsPage() {
           </p>
         </header>
 
-        <AlertsShell isAvailable={alertsAvailable} alerts={alerts} />
+        <AlertsShell isAvailable={alertsAvailable} />
 
         <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
           <h2 className="text-sm font-semibold text-slate-900">Navigate</h2>

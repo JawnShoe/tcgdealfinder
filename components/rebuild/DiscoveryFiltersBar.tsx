@@ -7,6 +7,7 @@ import {
   ALLOWED_CONDITIONS,
   ALLOWED_CONFIDENCE_THRESHOLDS,
   ALLOWED_LANGUAGES,
+  ALLOWED_MARKETS,
   DEFAULT_DISCOVERY_FILTERS,
   DEFAULT_DISCOVERY_PAGINATION,
   parseDiscoveryQueryFromUrlSearchParams,
@@ -14,6 +15,7 @@ import {
   type Condition,
   type DiscoveryFilters,
   type Language,
+  type Market,
 } from "@/lib/rebuild/discovery/discoveryQuery";
 import {
   DEFAULT_REBUILD_SORT,
@@ -49,6 +51,9 @@ export default function DiscoveryFiltersBar({
   const [language, setLanguage] = useState<Language | "">(
     initialFilters.language ?? ""
   );
+  const [market, setMarket] = useState<Market | "">(
+    initialFilters.market ?? ""
+  );
   const [minConfidence, setMinConfidence] = useState<ConfidenceThreshold>(
     initialFilters.minConfidence
   );
@@ -77,6 +82,7 @@ export default function DiscoveryFiltersBar({
     );
     setCondition(queryFromUrl.filters.condition ?? "");
     setLanguage(queryFromUrl.filters.language ?? "");
+    setMarket(queryFromUrl.filters.market ?? "");
     setMinConfidence(queryFromUrl.filters.minConfidence);
     setSeller(queryFromUrl.filters.seller ?? "");
   }, [queryFromUrl, searchParamsKey]);
@@ -93,6 +99,7 @@ export default function DiscoveryFiltersBar({
     priceMaxCad: priceMaxCad.trim() ? Number(priceMaxCad.trim()) : null,
     condition: condition || null,
     language: language || null,
+    market: market || null,
     minConfidence,
     seller: seller.trim() ? seller.trim() : null,
   });
@@ -129,6 +136,7 @@ export default function DiscoveryFiltersBar({
     setPriceMaxCad("");
     setCondition("");
     setLanguage("");
+    setMarket("");
     setMinConfidence("any");
     setSeller("");
 
@@ -239,6 +247,25 @@ export default function DiscoveryFiltersBar({
             >
               <option value="">Any</option>
               {ALLOWED_LANGUAGES.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700">
+            Market
+            <select
+              data-testid="discovery-filter-market"
+              className="mt-1 block w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700"
+              value={market}
+              onChange={(event) => setMarket(event.target.value as Market | "")}
+            >
+              <option value="">Any</option>
+              {ALLOWED_MARKETS.map((value) => (
                 <option key={value} value={value}>
                   {value}
                 </option>

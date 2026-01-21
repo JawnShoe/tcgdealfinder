@@ -38,6 +38,7 @@ export function buildDiscoveryUrl({
       params.set("maxPriceCad", serialized.priceMaxCad);
     if (serialized.condition) params.set("condition", serialized.condition);
     if (serialized.language) params.set("lang", serialized.language);
+    if (serialized.market) params.set("market", serialized.market);
     if (serialized.minConfidence)
       params.set("minConfidence", serialized.minConfidence);
     if (serialized.seller) params.set("seller", serialized.seller);

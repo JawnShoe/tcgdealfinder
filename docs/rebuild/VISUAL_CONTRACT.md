@@ -219,6 +219,34 @@ Before approving any UI change, ask:
 
 "Would this still feel trustworthy if the prices were wrong?"
 
+---
+
+### 2026-01-21: Recovery - Discovery parity wave 1 (Market filter + VERIFIED badge + Market flag)
+
+This recovery closes “Below parity” gaps for the rebuild Discovery list without changing any backend/scoring semantics.
+
+**Market filter (US/CA, mandatory):**
+
+- Market is a keyboard-accessible `select` control on rebuild Discovery filters.
+- URL is source of truth: selecting a market and applying filters writes `market=US` or `market=CA` into the query string and persists on reload.
+- Clearing filters must remove `market` (back to “Any”).
+
+**Trusted seller badge (VERIFIED only, no new semantics):**
+
+- Badge renders **only** when `trustAssessment.state === "VERIFIED"`.
+- Badge meaning is visible without hover and does not change row height per-row (no conditional layout churn).
+
+**Market flag in rows (US/CA):**
+
+- Each row includes a compact market indicator (`🇺🇸 US` / `🇨🇦 CA`), with “—” when unknown.
+- Meaning must be obvious without hover; tooltips are optional and not required for comprehension.
+
+**Stable selectors (contract tests):**
+
+- Market filter: `data-testid="discovery-filter-market"`
+- Market indicator: `data-testid="rebuild-market-indicator"`
+- Verified badge: `data-testid="rebuild-trusted-badge"`
+
 If the answer is no - it violates the contract.
 
 ## 12. Link Migration Log

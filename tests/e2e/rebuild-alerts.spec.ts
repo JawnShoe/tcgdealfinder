@@ -113,13 +113,23 @@ test("rebuild alerts: subscription form submits and shows success state", async 
     });
   });
 
+  const historyResponsePromise = page.waitForResponse(
+    "**/api/rebuild/alerts/history"
+  );
   await page.goto("/rebuild/alerts", { waitUntil: "domcontentloaded" });
+  await historyResponsePromise;
 
   const form = page.getByTestId("rebuild-alerts-subscribe-form");
   await expect(form).toBeVisible({ timeout: 15000 });
 
-  await page.getByTestId("rebuild-alerts-card-id").fill("1");
-  await page.getByTestId("rebuild-alerts-email").fill("test@example.com");
+  const cardIdInput = page.getByTestId("rebuild-alerts-card-id");
+  const emailInput = page.getByTestId("rebuild-alerts-email");
+
+  await cardIdInput.fill("1");
+  await expect(cardIdInput).toHaveValue("1");
+
+  await emailInput.fill("test@example.com");
+  await expect(emailInput).toHaveValue("test@example.com");
   await expect(page.getByTestId("rebuild-alerts-min-discount")).toHaveValue(
     /\d+/
   );

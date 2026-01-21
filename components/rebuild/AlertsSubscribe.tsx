@@ -113,7 +113,6 @@ export default function AlertsSubscribe({ className }: AlertsSubscribeProps) {
             data-testid="rebuild-alerts-card-id"
             className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-700"
             inputMode="numeric"
-            pattern="\\d*"
             value={cardId}
             disabled={disabled}
             onChange={(event) =>
@@ -141,7 +140,6 @@ export default function AlertsSubscribe({ className }: AlertsSubscribeProps) {
             data-testid="rebuild-alerts-min-discount"
             className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-700"
             inputMode="numeric"
-            pattern="\\d*"
             value={minDiscountPercent}
             disabled={disabled}
             onChange={(event) =>

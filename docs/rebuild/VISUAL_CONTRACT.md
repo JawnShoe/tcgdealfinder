@@ -247,6 +247,29 @@ This recovery closes “Below parity” gaps for the rebuild Discovery list with
 - Market indicator: `data-testid="rebuild-market-indicator"`
 - Verified badge: `data-testid="rebuild-trusted-badge"`
 
+### 2026-01-21: Recovery - Alerts Subscription (Wave 2A)
+
+Alerts Subscription is a user-visible trust-to-action closure surface. This change adds a usable subscription form without introducing new trust semantics, scoring, or backend behavior.
+
+**Behavior (mandatory):**
+
+- Form is keyboard accessible (tab through inputs, Enter submits).
+- Explicit submit, clear error state, and explicit success state (no polling, no background refresh).
+- No silent defaults: the submitted payload must include all required fields explicitly.
+
+**Copy (mandatory):**
+
+- Success state message: "You'll only be emailed when a deal meets these conditions."
+
+**Selectors (contract tests):**
+
+- Form: `data-testid="rebuild-alerts-subscribe-form"`
+- Card ID input: `data-testid="rebuild-alerts-card-id"`
+- Email input: `data-testid="rebuild-alerts-email"`
+- Min discount input: `data-testid="rebuild-alerts-min-discount"`
+- Submit: `data-testid="rebuild-alerts-submit"`
+- Success state: `data-testid="rebuild-alerts-success"`
+
 If the answer is no - it violates the contract.
 
 ## 12. Link Migration Log

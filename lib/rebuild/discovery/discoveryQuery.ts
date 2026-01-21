@@ -28,7 +28,7 @@ export type DiscoveryFilters = {
   priceMaxCad: number | null;
   condition: Condition | null;
   language: Language | null;
-  market: Market | null;
+  market?: Market | null;
   minConfidence: ConfidenceThreshold;
   seller: string | null;
 };
@@ -241,7 +241,7 @@ export function serializeDiscoveryFilters(filters: DiscoveryFilters): {
       filters.priceMaxCad != null ? String(filters.priceMaxCad) : null,
     condition: filters.condition,
     language: filters.language,
-    market: filters.market,
+    market: filters.market ?? null,
     minConfidence:
       filters.minConfidence !== "any" ? filters.minConfidence : null,
     seller: filters.seller,

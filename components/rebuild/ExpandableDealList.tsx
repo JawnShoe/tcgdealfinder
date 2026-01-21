@@ -123,7 +123,7 @@ export default function ExpandableDealList({
         const marketIndicator = formatMarketIndicator(deal.provenance.market);
         const conditionLabel = deal.condition ?? "—";
         const languageLabel = deal.language ?? "—";
-        const ageLabel = deal.freshness.dataAgeLabel || "-";
+        const ageLabel = deal.freshness.dataAgeLabel || "—";
         const endsDisplay = getEndsDisplay(deal.endsAtISO);
         const feedbackCountLabel =
           deal.seller.feedbackCount != null

@@ -10,6 +10,9 @@ export type Condition = (typeof ALLOWED_CONDITIONS)[number];
 export const ALLOWED_LANGUAGES = ["EN", "JP", "UNKNOWN"] as const;
 export type Language = (typeof ALLOWED_LANGUAGES)[number];
 
+export const ALLOWED_MARKETS = ["US", "CA"] as const;
+export type Market = (typeof ALLOWED_MARKETS)[number];
+
 export const ALLOWED_CONFIDENCE_THRESHOLDS = ["any", "medium", "high"] as const;
 export type ConfidenceThreshold =
   (typeof ALLOWED_CONFIDENCE_THRESHOLDS)[number];
@@ -25,6 +28,7 @@ export type DiscoveryFilters = {
   priceMaxCad: number | null;
   condition: Condition | null;
   language: Language | null;
+  market?: Market | null;
   minConfidence: ConfidenceThreshold;
   seller: string | null;
 };
@@ -50,6 +54,7 @@ export const DEFAULT_DISCOVERY_FILTERS: DiscoveryFilters = {
   priceMaxCad: null,
   condition: null,
   language: null,
+  market: null,
   minConfidence: "any",
   seller: null,
 };
@@ -225,6 +230,7 @@ export function serializeDiscoveryFilters(filters: DiscoveryFilters): {
   priceMaxCad: string | null;
   condition: string | null;
   language: string | null;
+  market: string | null;
   minConfidence: string | null;
   seller: string | null;
 } {
@@ -235,6 +241,7 @@ export function serializeDiscoveryFilters(filters: DiscoveryFilters): {
       filters.priceMaxCad != null ? String(filters.priceMaxCad) : null,
     condition: filters.condition,
     language: filters.language,
+    market: filters.market ?? null,
     minConfidence:
       filters.minConfidence !== "any" ? filters.minConfidence : null,
     seller: filters.seller,
@@ -289,6 +296,11 @@ function parseDiscoveryFilters(
     return { kind: "invalid" };
   }
 
+  const market = parseNullableEnum(first(searchParams.market), ALLOWED_MARKETS);
+  if (market.kind === "invalid") {
+    return { kind: "invalid" };
+  }
+
   const minConfidence = parseNullableEnum(
     first(searchParams.minConfidence),
     ALLOWED_CONFIDENCE_THRESHOLDS
@@ -310,6 +322,7 @@ function parseDiscoveryFilters(
       priceMaxCad,
       condition: condition.value,
       language: language.value,
+      market: market.value,
       minConfidence: minConfidence.value ?? "any",
       seller: seller.value,
     },
@@ -353,6 +366,12 @@ function matchesFilters(
     if (deal.language !== (filters.language as CardLanguage)) return false;
   }
 
+  if (filters.market != null) {
+    if (normalizeMarket(deal.provenance.market) !== filters.market) {
+      return false;
+    }
+  }
+
   if (filters.minConfidence !== "any") {
     const weight = deal.trust.confidence.weight ?? 0;
     const min = filters.minConfidence === "high" ? 0.8 : 0.55;
@@ -372,6 +391,14 @@ function matchesFilters(
   }
 
   return true;
+}
+
+function normalizeMarket(value: string | null | undefined): Market | null {
+  if (!value) return null;
+  const normalized = value.trim().toUpperCase();
+  if (normalized === "US") return "US";
+  if (normalized === "CA") return "CA";
+  return null;
 }
 
 function first(value: string | string[] | undefined): string | null {

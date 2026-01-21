@@ -50,7 +50,7 @@
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/node": "^25.0.8",
+    "@types/node": "^25.0.9",
     "@types/pg": "^8.16.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

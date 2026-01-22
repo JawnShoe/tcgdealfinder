@@ -272,6 +272,40 @@ Alerts Subscription is a user-visible trust-to-action closure surface. This chan
 
 If the answer is no - it violates the contract.
 
+### 2026-01-21: Recovery - Alerts History (Public)
+
+Alerts History closes the legacy "recent triggered alerts" parity gap by providing a public, sanitized history view for rebuild users (not the ops/auth-gated tool).
+
+**Data contract (mandatory):**
+
+- Public endpoint: `GET /api/rebuild/alerts/history`
+- Returns only sanitized fields (no emails, no internal IDs, no raw query strings).
+- Time window: last ~36 hours.
+- Row limit: max 50.
+- Stable ordering: most recent first.
+
+**UI states (mandatory):**
+
+- Loading: visible "Loading recent alerts..."
+- Empty: "No alerts triggered recently."
+- Error: "Unable to load recent alerts." with a Retry button.
+- Populated: list of recent alerts with "what fired" and "when" (UTC is visible).
+
+**Accessibility (mandatory):**
+
+- History block has an accessible label and is keyboard navigable.
+- Retry control is a real button.
+
+**Selectors (contract tests):**
+
+- History root: `data-testid="rebuild-alerts-history"`
+- Loading: `data-testid="rebuild-alerts-history-loading"`
+- Empty: `data-testid="rebuild-alerts-history-empty"`
+- Error: `data-testid="rebuild-alerts-history-error"`
+- Retry: `data-testid="rebuild-alerts-history-retry"`
+- List: `data-testid="rebuild-alerts-history-list"`
+- Item: `data-testid="rebuild-alerts-history-item"`
+
 ### 2026-01-21: End-Time Clarity (Discovery Rows)
 
 End-time clarity closes the legacy “Ends” parity gap for rebuild discovery rows without introducing new semantics.
@@ -297,6 +331,48 @@ End-time clarity closes the legacy “Ends” parity gap for rebuild discovery r
 
 - Ends indicator: `data-testid="rebuild-ends-indicator"`
 - Ends reveal/tooltip: `data-testid="rebuild-ends-tooltip"`
+
+### 2026-01-21: Upgrade - Discovery — Cross-session Filter/Sort Persistence
+
+Discovery persistence is a user-visible preference improvement. It persists discovery controls across browser sessions while keeping the URL as the canonical/shareable source of truth.
+
+**What is persisted (mandatory):**
+
+- Sort preset (`sort`)
+- Filters that are already URL-controlled:
+  - `minPriceCad`, `maxPriceCad`, `condition`, `lang`, `market`, `minConfidence`, `seller`
+- Page size (`pageSize`)
+
+**What is NOT persisted (mandatory):**
+
+- Page number (`page`) (new sessions start at page 1)
+- Any PII (no emails, no freeform queries beyond existing URL params)
+
+**Precedence rules (mandatory):**
+
+- URL is SSOT: if the current URL has any discovery params, they win.
+- localStorage hydration is allowed only when the URL has no discovery params, and must apply once by updating the URL (no replace loops).
+
+**Reset behavior (mandatory):**
+
+- Clear/Reset must clear both the URL params and the persisted localStorage payload.
+
+**Safe degradation (mandatory):**
+
+- If localStorage is unavailable, corrupt, or version-mismatched: fall back to defaults with no crashes.
+
+**Storage key (mandatory):**
+
+- `rebuild.discovery.v1` (versioned)
+
+**Selectors (contract tests):**
+
+- Sort: `data-testid="discovery-sort-select"`
+- Filters bar: `data-testid="discovery-filters-bar"`
+- Market filter: `data-testid="discovery-filter-market"`
+- Apply: `data-testid="discovery-filters-apply"`
+- Clear: `data-testid="discovery-filters-clear"`
+- Page size: `data-testid="discovery-pagination-page-size"`
 
 ## 12. Link Migration Log
 

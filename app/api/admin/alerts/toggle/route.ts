@@ -4,7 +4,7 @@ import { query } from "../../../../../lib/db";
 import { checkAdminApiAuth } from "../../../../../lib/adminAuth";
 
 export async function POST(request: Request) {
-  const auth = checkAdminApiAuth(request);
+  const auth = await checkAdminApiAuth(request);
   if (!auth.authorized) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -17,10 +17,7 @@ export async function POST(request: Request) {
   }
 
   if (typeof body.id !== "number" || typeof body.active !== "boolean") {
-    return NextResponse.json(
-      { error: "Invalid payload" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
   await query(
@@ -29,7 +26,7 @@ export async function POST(request: Request) {
       SET active = $2
       WHERE id = $1;
     `,
-    [body.id, body.active],
+    [body.id, body.active]
   );
 
   return NextResponse.json({ ok: true });

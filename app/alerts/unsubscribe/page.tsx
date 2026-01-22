@@ -12,11 +12,14 @@ import { permanentRedirect } from "next/navigation";
  */
 
 type PageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default function AlertsUnsubscribePage({ searchParams }: PageProps) {
-  const tokenParam = searchParams?.token;
+export default async function AlertsUnsubscribePage({
+  searchParams,
+}: PageProps) {
+  const sp = searchParams ? await searchParams : {};
+  const tokenParam = sp.token;
   const token = typeof tokenParam === "string" ? tokenParam.trim() : "";
 
   // Build target URL with token if present

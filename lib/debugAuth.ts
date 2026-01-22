@@ -65,7 +65,9 @@ export function validateRawToken(token: string | null | undefined): boolean {
 /**
  * Validate the cookie hash against the expected hash.
  */
-export function validateCookieHash(cookieValue: string | null | undefined): boolean {
+export function validateCookieHash(
+  cookieValue: string | null | undefined
+): boolean {
   const expectedHash = getExpectedHash();
   if (!expectedHash || !cookieValue) {
     return false;
@@ -88,59 +90,59 @@ export type AuthResult = {
 /**
  * Check debug authentication from multiple sources.
  * Priority: cookie > header > query param
- * 
+ *
  * If valid via query param, returns shouldSetCookieAndRedirect = true
  * so the caller can set the cookie and redirect to a clean URL.
  */
-export function checkDebugAuth(
+export async function checkDebugAuth(
   searchParams: Record<string, string | string[] | undefined>
-): AuthResult {
+): Promise<AuthResult> {
   const expectedHash = getExpectedHash();
-  
+
   // If no token configured, deny all
   if (!expectedHash) {
     return { valid: false, source: null, shouldSetCookieAndRedirect: false };
   }
-  
+
   // 1. Check cookie first (preferred)
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const cookieValue = cookieStore.get(DEBUG_ADMIN_COOKIE)?.value;
-  
+
   // Debug logging
   const allCookies = cookieStore.getAll();
   console.log("[DEBUG] checkDebugAuth - Cookies:", {
     targetCookie: DEBUG_ADMIN_COOKIE,
     cookieValue: cookieValue ? `${cookieValue.substring(0, 8)}...` : null,
-    allCookieNames: allCookies.map(c => c.name),
+    allCookieNames: allCookies.map((c) => c.name),
     expectedHash: expectedHash ? `${expectedHash.substring(0, 8)}...` : null,
   });
-  
+
   if (cookieValue && validateCookieHash(cookieValue)) {
     console.log("[DEBUG] checkDebugAuth - Cookie valid");
     return { valid: true, source: "cookie", shouldSetCookieAndRedirect: false };
   }
-  
+
   // 2. Check x-debug-token header
-  const headersList = headers();
+  const headersList = await headers();
   const headerToken = headersList.get("x-debug-token");
   if (validateRawToken(headerToken)) {
     return { valid: true, source: "header", shouldSetCookieAndRedirect: false };
   }
-  
+
   // 3. Check query param (if valid, we'll set cookie and redirect)
   const queryToken = Array.isArray(searchParams.token)
     ? searchParams.token[0]
     : searchParams.token;
-  
+
   if (validateRawToken(queryToken)) {
-    return { 
-      valid: true, 
-      source: "query", 
+    return {
+      valid: true,
+      source: "query",
       shouldSetCookieAndRedirect: true,
       queryToken,
     };
   }
-  
+
   return { valid: false, source: null, shouldSetCookieAndRedirect: false };
 }
 
@@ -154,7 +156,7 @@ export function checkDebugAuth(
 export function setDebugCookie(response: NextResponse): void {
   const expectedHash = getExpectedHash();
   if (!expectedHash) return;
-  
+
   const options = getCookieOptions();
   response.cookies.set(DEBUG_ADMIN_COOKIE, expectedHash, options);
 }
@@ -173,9 +175,12 @@ export function clearDebugCookie(response: NextResponse): void {
  * Create a redirect response that sets the debug cookie.
  */
 export function createLoginRedirect(redirectTo: string): NextResponse {
-  const response = NextResponse.redirect(new URL(redirectTo, "http://localhost:3000"), {
-    status: 302,
-  });
+  const response = NextResponse.redirect(
+    new URL(redirectTo, "http://localhost:3000"),
+    {
+      status: 302,
+    }
+  );
   setDebugCookie(response);
   return response;
 }

@@ -4,7 +4,7 @@ import { query } from "../../../../../lib/db";
 import { checkAdminApiAuth } from "../../../../../lib/adminAuth";
 
 export async function POST(request: Request) {
-  const auth = checkAdminApiAuth(request);
+  const auth = await checkAdminApiAuth(request);
   if (!auth.authorized) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -27,13 +27,11 @@ export async function POST(request: Request) {
   if (
     typeof cardId !== "number" ||
     !condition ||
-    (thresholdType !== "price_below" && thresholdType !== "discount_at_least") ||
+    (thresholdType !== "price_below" &&
+      thresholdType !== "discount_at_least") ||
     typeof thresholdValue !== "number"
   ) {
-    return NextResponse.json(
-      { error: "Invalid payload" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
   await query(
@@ -49,7 +47,7 @@ export async function POST(request: Request) {
       )
       VALUES ($1, $2, $3, $4, TRUE, $5, NOW());
     `,
-    [cardId, condition, thresholdType, thresholdValue, note ?? null],
+    [cardId, condition, thresholdType, thresholdValue, note ?? null]
   );
 
   return NextResponse.json({ ok: true });

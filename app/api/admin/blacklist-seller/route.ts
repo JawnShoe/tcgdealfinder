@@ -4,7 +4,7 @@ import { query } from "../../../../lib/db";
 import { checkAdminApiAuth } from "../../../../lib/adminAuth";
 
 export async function POST(request: Request) {
-  const auth = checkAdminApiAuth(request);
+  const auth = await checkAdminApiAuth(request);
   if (!auth.authorized) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -13,17 +13,14 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   const sellerUsername = body.sellerUsername?.toLowerCase().trim();
   if (!sellerUsername) {
     return NextResponse.json(
       { error: "sellerUsername is required" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -33,7 +30,7 @@ export async function POST(request: Request) {
       VALUES ($1)
       ON CONFLICT (seller_username) DO NOTHING;
     `,
-    [sellerUsername],
+    [sellerUsername]
   );
 
   await query(
@@ -56,7 +53,7 @@ export async function POST(request: Request) {
         'manual_seller_blacklist'
       FROM removed;
     `,
-    [sellerUsername],
+    [sellerUsername]
   );
 
   return NextResponse.json({ ok: true });

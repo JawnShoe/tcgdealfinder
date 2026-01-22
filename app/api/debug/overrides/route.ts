@@ -14,9 +14,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   searchParams.forEach((value, key) => {
     params[key] = value;
   });
-  
-  const auth = checkDebugAuth(params);
-  
+
+  const auth = await checkDebugAuth(params);
+
   // Debug logging
   if (!auth.valid) {
     console.log("[DEBUG] POST /api/debug/overrides - Auth failed:", {
@@ -26,13 +26,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
     return new NextResponse("Not Found", { status: 404 });
   }
-  
+
   console.log("[DEBUG] POST /api/debug/overrides - Auth success:", auth.source);
-  
+
   try {
     const body = await request.json();
     const { listingId, overrideType, reason, createdBy, expiresAt } = body;
-    
+
     // Validate required fields
     if (!listingId || !overrideType) {
       return NextResponse.json(
@@ -40,16 +40,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 400 }
       );
     }
-    
+
     // Validate override type
     const validTypes: OverrideType[] = ["ALLOW", "HARD_BLOCK", "SOFT_EXCLUDE"];
     if (!validTypes.includes(overrideType)) {
       return NextResponse.json(
-        { error: `Invalid overrideType. Must be one of: ${validTypes.join(", ")}` },
+        {
+          error: `Invalid overrideType. Must be one of: ${validTypes.join(", ")}`,
+        },
         { status: 400 }
       );
     }
-    
+
     // Upsert override
     const result = await query<ListingOverride>(
       `INSERT INTO listing_overrides (listing_id, override_type, reason, created_by, expires_at)
@@ -62,9 +64,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
          expires_at = $5,
          created_at = NOW()
        RETURNING *`,
-      [listingId, overrideType, reason || null, createdBy || "debug", expiresAt || null]
+      [
+        listingId,
+        overrideType,
+        reason || null,
+        createdBy || "debug",
+        expiresAt || null,
+      ]
     );
-    
+
     return NextResponse.json({
       success: true,
       override: result.rows[0],
@@ -89,17 +97,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   searchParams.forEach((value, key) => {
     params[key] = value;
   });
-  
-  const auth = checkDebugAuth(params);
+
+  const auth = await checkDebugAuth(params);
   if (!auth.valid) {
     return new NextResponse("Not Found", { status: 404 });
   }
-  
+
   try {
     const since = searchParams.get("since");
     const overrideType = searchParams.get("overrideType");
     const limit = parseInt(searchParams.get("limit") || "100", 10);
-    
+
     // Join with listings table to get listing details
     // listing_id format is "v1|{market}|{id}|{variant}", need to extract the numeric ID
     let queryStr = `
@@ -123,34 +131,37 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     `;
     const queryParams: any[] = [];
     let paramIndex = 1;
-    
+
     // Filter by date
     if (since) {
       queryStr += ` AND lo.created_at >= $${paramIndex}`;
       queryParams.push(since);
       paramIndex++;
     }
-    
+
     // Filter by type
     if (overrideType) {
       queryStr += ` AND lo.override_type = $${paramIndex}`;
       queryParams.push(overrideType);
       paramIndex++;
     }
-    
+
     // Order and limit
     queryStr += ` ORDER BY lo.created_at DESC LIMIT $${paramIndex}`;
     queryParams.push(limit);
-    
+
     const result = await query<any>(queryStr, queryParams);
-    
+
     // Debug logging
     if (result.rows.length > 0) {
-      console.log("[DEBUG] GET /api/debug/overrides - Sample row:", JSON.stringify(result.rows[0], null, 2));
+      console.log(
+        "[DEBUG] GET /api/debug/overrides - Sample row:",
+        JSON.stringify(result.rows[0], null, 2)
+      );
       console.log("[DEBUG] Fields present:", Object.keys(result.rows[0]));
     }
     console.log("[DEBUG] Total overrides returned:", result.rows.length);
-    
+
     return NextResponse.json({
       success: true,
       overrides: result.rows,
@@ -176,34 +187,34 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
   searchParams.forEach((value, key) => {
     params[key] = value;
   });
-  
-  const auth = checkDebugAuth(params);
+
+  const auth = await checkDebugAuth(params);
   if (!auth.valid) {
     return new NextResponse("Not Found", { status: 404 });
   }
-  
+
   try {
     const listingId = searchParams.get("listingId");
-    
+
     if (!listingId) {
       return NextResponse.json(
         { error: "Missing required parameter: listingId" },
         { status: 400 }
       );
     }
-    
+
     const result = await query(
       "DELETE FROM listing_overrides WHERE listing_id = $1 RETURNING *",
       [listingId]
     );
-    
+
     if (result.rows.length === 0) {
       return NextResponse.json(
         { error: "Override not found" },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({
       success: true,
       message: "Override removed",

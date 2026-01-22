@@ -12,8 +12,8 @@ import {
 // AUTH HELPER
 // =============================================================================
 
-function checkOpsAuth(): boolean {
-  const cookieStore = cookies();
+async function checkOpsAuth(): Promise<boolean> {
+  const cookieStore = await cookies();
   const cookieValue = cookieStore.get(DEBUG_ADMIN_COOKIE)?.value;
   return validateCookieHash(cookieValue);
 }
@@ -23,7 +23,7 @@ function checkOpsAuth(): boolean {
 // =============================================================================
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  if (!checkOpsAuth()) {
+  if (!(await checkOpsAuth())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 // =============================================================================
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (!checkOpsAuth()) {
+  if (!(await checkOpsAuth())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 // =============================================================================
 
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
-  if (!checkOpsAuth()) {
+  if (!(await checkOpsAuth())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

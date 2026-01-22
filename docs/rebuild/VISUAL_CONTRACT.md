@@ -332,6 +332,48 @@ End-time clarity closes the legacy “Ends” parity gap for rebuild discovery r
 - Ends indicator: `data-testid="rebuild-ends-indicator"`
 - Ends reveal/tooltip: `data-testid="rebuild-ends-tooltip"`
 
+### 2026-01-21: Upgrade - Discovery — Cross-session Filter/Sort Persistence
+
+Discovery persistence is a user-visible preference improvement. It persists discovery controls across browser sessions while keeping the URL as the canonical/shareable source of truth.
+
+**What is persisted (mandatory):**
+
+- Sort preset (`sort`)
+- Filters that are already URL-controlled:
+  - `minPriceCad`, `maxPriceCad`, `condition`, `lang`, `market`, `minConfidence`, `seller`
+- Page size (`pageSize`)
+
+**What is NOT persisted (mandatory):**
+
+- Page number (`page`) (new sessions start at page 1)
+- Any PII (no emails, no freeform queries beyond existing URL params)
+
+**Precedence rules (mandatory):**
+
+- URL is SSOT: if the current URL has any discovery params, they win.
+- localStorage hydration is allowed only when the URL has no discovery params, and must apply once by updating the URL (no replace loops).
+
+**Reset behavior (mandatory):**
+
+- Clear/Reset must clear both the URL params and the persisted localStorage payload.
+
+**Safe degradation (mandatory):**
+
+- If localStorage is unavailable, corrupt, or version-mismatched: fall back to defaults with no crashes.
+
+**Storage key (mandatory):**
+
+- `rebuild.discovery.v1` (versioned)
+
+**Selectors (contract tests):**
+
+- Sort: `data-testid="discovery-sort-select"`
+- Filters bar: `data-testid="discovery-filters-bar"`
+- Market filter: `data-testid="discovery-filter-market"`
+- Apply: `data-testid="discovery-filters-apply"`
+- Clear: `data-testid="discovery-filters-clear"`
+- Page size: `data-testid="discovery-pagination-page-size"`
+
 ## 12. Link Migration Log
 
 ### 2026-01-18: Stage 4 Slice A - Link Target Updates

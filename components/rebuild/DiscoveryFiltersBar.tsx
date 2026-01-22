@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { parsePreset, type Preset } from "@/lib/rebuild/prefs/rebuildPrefs";
 import {
@@ -22,6 +22,11 @@ import {
   REBUILD_SORT_OPTIONS,
 } from "@/lib/rebuild/prefs/rebuildPrefs";
 import { buildDiscoveryUrl } from "@/lib/rebuild/urls";
+import {
+  clearDiscoveryPersistence,
+  readDiscoveryPersistence,
+  writeDiscoveryPersistence,
+} from "@/lib/rebuild/discovery/discoveryPersistence";
 
 type DiscoveryFiltersBarProps = {
   initialPreset: Preset;
@@ -67,6 +72,9 @@ export default function DiscoveryFiltersBar({
     return parsed.kind === "ok" ? parsed.query : null;
   }, [searchParamsKey]);
 
+  const hydrationAttemptedRef = useRef(false);
+  const skipNextPersistRef = useRef(false);
+
   useEffect(() => {
     if (!queryFromUrl) return;
     setPreset(queryFromUrl.preset);
@@ -89,6 +97,57 @@ export default function DiscoveryFiltersBar({
 
   const basePath: "/discovery" | "/rebuild/discovery" =
     pathname === "/rebuild/discovery" ? "/rebuild/discovery" : "/discovery";
+
+  useEffect(() => {
+    if (hydrationAttemptedRef.current) return;
+    hydrationAttemptedRef.current = true;
+
+    const windowSearchKey =
+      typeof window !== "undefined" && window.location.search.startsWith("?")
+        ? window.location.search.slice(1)
+        : "";
+
+    if (windowSearchKey) return;
+
+    const persisted = readDiscoveryPersistence();
+    if (!persisted) return;
+
+    const nextUrl = buildDiscoveryUrl({
+      preset: persisted.preset,
+      basePath,
+      filters: persisted.filters,
+      pagination: { page: 1, pageSize: persisted.pageSize },
+    });
+
+    if (nextUrl === basePath) return;
+
+    skipNextPersistRef.current = true;
+    router.replace(nextUrl, { scroll: false });
+  }, [basePath, router]);
+
+  useEffect(() => {
+    if (!queryFromUrl) return;
+    if (!hydrationAttemptedRef.current) return;
+
+    const windowSearchKey =
+      typeof window !== "undefined" && window.location.search.startsWith("?")
+        ? window.location.search.slice(1)
+        : "";
+
+    if (windowSearchKey !== searchParamsKey) return;
+    if (!windowSearchKey) return;
+
+    if (skipNextPersistRef.current) {
+      skipNextPersistRef.current = false;
+      return;
+    }
+
+    writeDiscoveryPersistence({
+      preset: queryFromUrl.preset,
+      filters: queryFromUrl.filters,
+      pageSize: queryFromUrl.pagination.pageSize,
+    });
+  }, [queryFromUrl, searchParamsKey]);
 
   const effectivePagination =
     queryFromUrl?.pagination ?? DEFAULT_DISCOVERY_PAGINATION;
@@ -140,6 +199,7 @@ export default function DiscoveryFiltersBar({
     setMinConfidence("any");
     setSeller("");
 
+    clearDiscoveryPersistence();
     router.replace(
       buildDiscoveryUrl({
         preset: DEFAULT_REBUILD_SORT,

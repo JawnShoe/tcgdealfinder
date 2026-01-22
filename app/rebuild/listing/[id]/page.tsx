@@ -22,7 +22,7 @@ import { buildListingJsonLd } from "@/lib/rebuild/seo/structuredData";
 import { computePredictiveSignals } from "@/lib/rebuild/signals/predictiveSignals";
 
 type PageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 const listingDescription =
@@ -31,8 +31,9 @@ const listingDescription =
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const listing = await getRebuildListingById(params.id);
-  const canonical = buildListingCanonicalUrl(params.id);
+  const { id } = await params;
+  const listing = await getRebuildListingById(id);
+  const canonical = buildListingCanonicalUrl(id);
   const title = buildListingTitle(listing?.title);
   const description = listing
     ? `Rebuild listing detail for ${listing.title} with trust signals.`
@@ -68,6 +69,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
   let requestError: unknown;
 
   try {
+    const { id } = await params;
     const isListingDisabled =
       process.env.KILL_FEATURE_REBUILD_LISTING_DETAIL === "1";
     if (isListingDisabled) {
@@ -95,9 +97,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
       );
     }
     const isDbConfigured = isRebuildDbConfigured();
-    const listing = isDbConfigured
-      ? await getRebuildListingById(params.id)
-      : null;
+    const listing = isDbConfigured ? await getRebuildListingById(id) : null;
 
     // Evaluate resilience using the pure function
     const dataAgeMs =
@@ -152,7 +152,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
             <div className="rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
               <p className="text-sm text-slate-600">
                 No listing data found for ID{" "}
-                <span className="font-mono text-slate-700">{params.id}</span>.
+                <span className="font-mono text-slate-700">{id}</span>.
               </p>
             </div>
           </div>
@@ -222,7 +222,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
               {listing.title}
             </h1>
             <p className="mt-1 text-sm text-slate-900">
-              Listing ID: <span className="font-mono">{params.id}</span>
+              Listing ID: <span className="font-mono">{id}</span>
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <IntentPrefetchLink

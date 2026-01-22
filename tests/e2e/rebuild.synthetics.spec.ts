@@ -73,28 +73,11 @@ test("Stage 1 delete: /ending-soon returns 404 (legacy route removed)", async ({
   expect(pageResponse?.status()).toBe(404);
 });
 
-test("Stage 1 decommission: /search redirects to /rebuild/discovery", async ({
-  page,
+test("Stage 5 delete: /search returns 404 (redirect stub removed)", async ({
   request,
 }) => {
-  const legacyUrl = `${baseURL}/search`;
-  const expectedPath = "/rebuild/discovery";
-
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/rebuild/discovery`));
-  await assertUiTrustSurfaces(page);
+  const response = await request.get(`${baseURL}/search`);
+  expect(response.status()).toBe(404);
 });
 
 // Stage 4: /sets stubs deleted - all requests return 404
@@ -113,29 +96,11 @@ test("Stage 4 delete: /sets/[setId] returns 404 (stubs removed)", async ({
   expect(response.status()).toBe(404);
 });
 
-test("Stage 1 decommission: /alerts redirects to /rebuild/alerts", async ({
-  page,
+test("Stage 5 delete: /alerts returns 404 (redirect stub removed)", async ({
   request,
 }) => {
-  const legacyUrl = `${baseURL}/alerts`;
-  const expectedPath = "/rebuild/alerts";
-
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/rebuild/alerts`));
-  await assertUiTrustSurfaces(page);
-  await assertAlertsHeading(page);
+  const response = await request.get(`${baseURL}/alerts`);
+  expect(response.status()).toBe(404);
 });
 
 test("Stage 1 decommission: /alerts/unsubscribe page redirects to rebuild API endpoint", async ({
@@ -269,28 +234,11 @@ test("Rebuild subscribe endpoint: returns deterministic validation error for mis
   expect(body.error).toMatch(/valid email address|Alerts are not enabled/i);
 });
 
-test("Stage 1 decommission: /watchlist redirects to /rebuild/discovery", async ({
-  page,
+test("Stage 5 delete: /watchlist returns 404 (redirect stub removed)", async ({
   request,
 }) => {
-  const legacyUrl = `${baseURL}/watchlist`;
-  const expectedPath = "/rebuild/discovery";
-
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/rebuild/discovery`));
-  await assertUiTrustSurfaces(page);
+  const response = await request.get(`${baseURL}/watchlist`);
+  expect(response.status()).toBe(404);
 });
 
 test("Stage 1 decommission: header does not contain Watchlist link", async ({
@@ -360,165 +308,39 @@ test("Stage 2 decommission: /admin/login returns 404 (retired)", async ({
   expect(response.status()).toBe(404);
 });
 
-test("Stage 2 migrate: /admin/exclusions redirects to /rebuild/ops/exclusions", async ({
-  page,
+test("Stage 5 delete: /admin/exclusions returns 404 (redirect stub removed)", async ({
   request,
 }) => {
-  const legacyUrl = `${baseURL}/admin/exclusions`;
-  const expectedPath = "/rebuild/ops/exclusions";
-
-  // Verify 308 redirect with maxRedirects: 0
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  // Location can be absolute or relative
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  // Verify browser navigation lands on rebuild ops exclusions and renders SSR heading
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/rebuild/ops/exclusions`));
-  await expect(
-    page.getByRole("heading", { name: "Exclusions", exact: true })
-  ).toBeVisible();
+  const response = await request.get(`${baseURL}/admin/exclusions`);
+  expect(response.status()).toBe(404);
 });
 
-test("Stage 2 migrate: /admin/blacklist redirects to /rebuild/ops/blacklist", async ({
-  page,
+test("Stage 5 delete: /admin/blacklist returns 404 (redirect stub removed)", async ({
   request,
 }) => {
-  const legacyUrl = `${baseURL}/admin/blacklist`;
-  const expectedPath = "/rebuild/ops/blacklist";
-
-  // Verify 308 redirect with maxRedirects: 0
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  // Location can be absolute or relative
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  // Verify browser navigation lands on rebuild ops blacklist and renders SSR heading
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/rebuild/ops/blacklist`));
-  await expect(
-    page.getByRole("heading", { name: "Blacklist", exact: true })
-  ).toBeVisible();
+  const response = await request.get(`${baseURL}/admin/blacklist`);
+  expect(response.status()).toBe(404);
 });
 
-test("Stage 2 migrate: /admin/alerts redirects to /rebuild/ops/alerts", async ({
-  page,
+test("Stage 5 delete: /admin/alerts returns 404 (redirect stub removed)", async ({
   request,
 }) => {
-  const legacyUrl = `${baseURL}/admin/alerts`;
-  const expectedPath = "/rebuild/ops/alerts";
-
-  // Verify 308 redirect with maxRedirects: 0
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  // Location can be absolute or relative
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  // Verify browser navigation lands on rebuild ops alerts and renders SSR heading
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/rebuild/ops/alerts`));
-  await expect(
-    page.getByRole("heading", { name: "Alerts", exact: true })
-  ).toBeVisible();
+  const response = await request.get(`${baseURL}/admin/alerts`);
+  expect(response.status()).toBe(404);
 });
 
-test("Stage 2 migrate: /admin/listings redirects to /rebuild/ops/listings", async ({
-  page,
+test("Stage 5 delete: /admin/listings returns 404 (redirect stub removed)", async ({
   request,
 }) => {
-  const legacyUrl = `${baseURL}/admin/listings`;
-  const expectedPath = "/rebuild/ops/listings";
-
-  // Verify 308 redirect with maxRedirects: 0
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  // Location can be absolute or relative
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  // Verify browser navigation lands on rebuild ops listings and renders SSR heading
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/rebuild/ops/listings`));
-  await expect(
-    page.getByRole("heading", { name: "Listings", exact: true })
-  ).toBeVisible();
+  const response = await request.get(`${baseURL}/admin/listings`);
+  expect(response.status()).toBe(404);
 });
 
-test("Stage 2 migrate: /debug/login redirects to /api/rebuild/ops/login", async ({
+test("Stage 5 delete: /debug/login returns 404 (redirect stub removed)", async ({
   request,
 }) => {
-  const testToken = "test-token-e2e-debug-login";
-  const legacyUrl = `${baseURL}/debug/login?token=${testToken}`;
-  const expectedPath = `/api/rebuild/ops/login?token=${testToken}`;
-
-  // Verify 308 redirect with maxRedirects: 0
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  // Location can be absolute or relative
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-});
-
-test("Stage 2 migrate: /debug/login preserves redirect query param", async ({
-  request,
-}) => {
-  const testToken = "test-token-e2e-debug-login-redirect";
-  const redirectTarget = "/rebuild/ops/exclusions";
-  const legacyUrl = `${baseURL}/debug/login?token=${testToken}&redirect=${encodeURIComponent(redirectTarget)}`;
-  const expectedPath = `/api/rebuild/ops/login?token=${testToken}&redirect=${encodeURIComponent(redirectTarget)}`;
-
-  // Verify 308 redirect with maxRedirects: 0
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  // Location can be absolute or relative
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
+  const response = await request.get(`${baseURL}/debug/login`);
+  expect(response.status()).toBe(404);
 });
 
 test("Stage 2 migrate: rebuild ops login returns 404 for invalid token", async ({
@@ -560,33 +382,11 @@ test("Stage 2 migrate: /debug/exclusions redirects to /rebuild/ops/exclusions", 
   ).toBeVisible();
 });
 
-test("Stage 2 migrate: /admin redirects to /rebuild/ops", async ({
-  page,
+test("Stage 5 delete: /admin returns 404 (redirect stub removed)", async ({
   request,
 }) => {
-  const legacyUrl = `${baseURL}/admin`;
-  const expectedPath = "/rebuild/ops";
-
-  // Verify 308 redirect with maxRedirects: 0
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
-
-  // Location can be absolute or relative
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
-
-  // Verify browser navigation lands on rebuild ops and renders SSR heading
-  await page.goto(legacyUrl, { waitUntil: "domcontentloaded" });
-  await expect(page).toHaveURL(new RegExp(`/rebuild/ops`));
-  await expect(
-    page.getByRole("heading", { name: "Rebuild Ops", exact: true })
-  ).toBeVisible();
+  const response = await request.get(`${baseURL}/admin`);
+  expect(response.status()).toBe(404);
 });
 
 test("Stage 2 parity: /rebuild/ops/exclusions renders tool surface", async ({

@@ -41,7 +41,7 @@ type SearchParams = Record<string, string | string[] | undefined>;
 export default async function RebuildOpsListingsPage({
   searchParams,
 }: {
-  searchParams?: SearchParams;
+  searchParams?: Promise<SearchParams>;
 }) {
   const start = Date.now();
   const headersList = await headers();
@@ -50,7 +50,7 @@ export default async function RebuildOpsListingsPage({
   let requestError: unknown;
 
   // Parse query params
-  const params = searchParams ?? {};
+  const params = searchParams ? await searchParams : {};
   const limitParam = Array.isArray(params.limit)
     ? params.limit[0]
     : params.limit;

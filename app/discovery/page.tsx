@@ -37,7 +37,7 @@ const discoveryDescription =
   "Browse recent deals from the rebuild pipeline with trust signals.";
 
 type DiscoveryPageProps = {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 function toCanonicalDiscoveryUrl(url: string): string {
@@ -47,9 +47,8 @@ function toCanonicalDiscoveryUrl(url: string): string {
 export async function generateMetadata({
   searchParams,
 }: DiscoveryPageProps): Promise<Metadata> {
-  const canonical = toCanonicalDiscoveryUrl(
-    buildDiscoveryCanonicalUrl(searchParams)
-  );
+  const sp = searchParams ? await searchParams : {};
+  const canonical = toCanonicalDiscoveryUrl(buildDiscoveryCanonicalUrl(sp));
   return {
     title: discoveryTitle,
     description: discoveryDescription,
@@ -81,7 +80,8 @@ export default async function DiscoveryPage({
   let status = 200;
   let requestError: unknown;
 
-  const parsedQuery = parseDiscoveryQuery(searchParams ?? {});
+  const sp = searchParams ? await searchParams : {};
+  const parsedQuery = parseDiscoveryQuery(sp);
   if (parsedQuery.kind !== "ok") {
     status = 404;
     logRequest({

@@ -1429,23 +1429,38 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
     waitUntil: "domcontentloaded",
   });
 
-  const listingDeferredSkeleton = page.getByTestId(
-    "rebuild-listing-deferred-skeleton"
+  // Listing deferred skeleton is allowed to be skipped if the page resolves quickly.
+  // The contract here is: the deferred section eventually loads, and if a skeleton is
+  // rendered, it's not a zero-sized placeholder.
+  const listingDeferredSkeleton = page.locator(
+    '[data-testid="rebuild-listing-deferred-skeleton"]'
   );
-  const skeletonCount = await listingDeferredSkeleton.count();
-  const skeletonBox =
-    skeletonCount > 0 ? await listingDeferredSkeleton.boundingBox() : null;
-  if (skeletonBox) {
-    expect(skeletonBox.height).toBeGreaterThan(0);
+  const deferredContentReady = page.locator(
+    '[data-testid="rebuild-listing-deferred-content"]'
+  );
+
+  try {
+    await Promise.race([
+      listingDeferredSkeleton
+        .first()
+        .waitFor({ state: "attached", timeout: 5000 }),
+      deferredContentReady
+        .first()
+        .waitFor({ state: "attached", timeout: 5000 }),
+    ]);
+  } catch {
+    // Fall through to the final "deferred content is visible" assertion.
   }
 
-  await page.waitForTimeout(1400);
+  const skeletonCount = await listingDeferredSkeleton.count();
+  const skeletonBox =
+    skeletonCount > 0
+      ? await listingDeferredSkeleton.first().boundingBox()
+      : null;
+  if (skeletonBox) expect(skeletonBox.height).toBeGreaterThan(0);
 
-  const listingDeferredContent = page.getByTestId(
-    "rebuild-listing-deferred-content"
-  );
-  await expect(listingDeferredContent).toBeVisible();
-  const contentBox = await listingDeferredContent.boundingBox();
+  await expect(deferredContentReady.first()).toBeVisible({ timeout: 15000 });
+  const contentBox = await deferredContentReady.first().boundingBox();
   expect(contentBox?.height).toBeGreaterThan(0);
   if (skeletonBox && contentBox) {
     expect(

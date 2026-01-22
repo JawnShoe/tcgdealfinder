@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import Link from "next/link";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
-import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
-import OutboundDealLink from "@/components/rebuild/OutboundDealLink";
 import PredictiveSignalsPanel from "@/components/rebuild/PredictiveSignalsPanel";
 import PriorityHydration from "@/components/rebuild/PriorityHydration";
 import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
@@ -27,6 +26,30 @@ type PageProps = {
 
 const listingDescription =
   "Rebuild listing detail with pricing, trust signals, and provenance.";
+
+const AFFILIATE_PARAMS = new Set([
+  "mkevt",
+  "mkcid",
+  "mkrid",
+  "campid",
+  "customid",
+  "toolid",
+  "siteid",
+]);
+
+function hasAffiliateParams(href: string): boolean {
+  try {
+    const url = new URL(href);
+    for (const key of AFFILIATE_PARAMS) {
+      if (url.searchParams.has(key)) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
 
 export async function generateMetadata({
   params,
@@ -195,6 +218,9 @@ export default async function RebuildListingPage({ params }: PageProps) {
 
     const predictiveSignals = computePredictiveSignals(listing);
     const listingJsonLd = buildListingJsonLd(listing);
+    const hasAffiliateLink = listing.url
+      ? hasAffiliateParams(listing.url)
+      : false;
 
     return (
       <main className="min-h-screen bg-slate-50">
@@ -225,20 +251,29 @@ export default async function RebuildListingPage({ params }: PageProps) {
               Listing ID: <span className="font-mono">{id}</span>
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <IntentPrefetchLink
+              <Link
                 href="/rebuild/discovery"
+                data-intent-prefetch="true"
                 className="text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
               >
                 Back to Discovery
-              </IntentPrefetchLink>
+              </Link>
               {listing.url ? (
-                <OutboundDealLink
-                  href={listing.url}
-                  listingId={listing.listingId}
-                  className="text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
-                >
-                  View original listing
-                </OutboundDealLink>
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  <a
+                    href={listing.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow sponsored"
+                    className="text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
+                  >
+                    View original listing
+                  </a>
+                  {hasAffiliateLink ? (
+                    <span className="text-xs text-slate-500">
+                      Affiliate link
+                    </span>
+                  ) : null}
+                </span>
               ) : null}
             </div>
           </header>

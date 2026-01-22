@@ -36,7 +36,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!hasIntegrityColumns) {
     return NextResponse.json(
       { error: LISTINGS_INTEGRITY_MISSING_MESSAGE },
-      { status: 500 },
+      { status: 500 }
     );
   }
   const params: Record<string, string | string[] | undefined> = {};
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     params[key] = value;
   });
 
-  const auth = checkDebugAuth(params);
+  const auth = await checkDebugAuth(params);
   if (!auth.valid) {
     return new NextResponse("Not Found", { status: 404 });
   }
@@ -54,12 +54,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const defaultSince = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const sinceDate = sinceParam ? new Date(sinceParam) : defaultSince;
-  const limit = limitParam ? Math.min(500, Math.max(1, Number(limitParam))) : 200;
+  const limit = limitParam
+    ? Math.min(500, Math.max(1, Number(limitParam)))
+    : 200;
 
   if (Number.isNaN(sinceDate.getTime())) {
     return NextResponse.json(
       { error: "Invalid since parameter" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -93,7 +95,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       ORDER BY l.updated_at DESC
       LIMIT $2;
     `,
-    [sinceDate, limit],
+    [sinceDate, limit]
   );
 
   const listings = rows.rows.map((row) => ({

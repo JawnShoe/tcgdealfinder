@@ -38,7 +38,8 @@ export const metadata: Metadata = {
 
 export default async function RebuildOpsAlertsPage() {
   const start = Date.now();
-  const requestId = getRequestIdFromHeaders(headers());
+  const headersList = await headers();
+  const requestId = getRequestIdFromHeaders(headersList);
   let status = 200;
   let requestError: unknown;
 

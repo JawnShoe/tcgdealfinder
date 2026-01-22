@@ -76,7 +76,8 @@ export default async function DiscoveryPage({
   searchParams,
 }: DiscoveryPageProps) {
   const start = Date.now();
-  const requestId = getRequestIdFromHeaders(headers());
+  const headersList = await headers();
+  const requestId = getRequestIdFromHeaders(headersList);
   let status = 200;
   let requestError: unknown;
 

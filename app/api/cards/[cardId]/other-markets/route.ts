@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { query } from "../../../../../lib/db";
 import { convertCad } from "../../../../../lib/money";
@@ -280,8 +280,8 @@ function mapListingRow(row: ListingDbRow): ListingRow {
 }
 
 export async function GET(
-  request: Request,
-  { params }: { params: { cardId: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ cardId: string }> }
 ) {
   const hasIntegrityColumns = await ensureListingsIntegrityColumns();
   if (!hasIntegrityColumns) {
@@ -289,7 +289,8 @@ export async function GET(
       status: 500,
     });
   }
-  const cardId = Number(params.cardId);
+  const { cardId: rawCardId } = await params;
+  const cardId = Number(rawCardId);
   if (!Number.isFinite(cardId)) {
     return NextResponse.json({ error: "Invalid cardId" }, { status: 400 });
   }

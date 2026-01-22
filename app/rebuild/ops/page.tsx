@@ -82,7 +82,8 @@ type RouteResilienceStatus = {
 
 export default async function RebuildOpsPage() {
   const start = Date.now();
-  const requestId = getRequestIdFromHeaders(headers());
+  const headersList = await headers();
+  const requestId = getRequestIdFromHeaders(headersList);
   let status = 200;
   let requestError: unknown;
 

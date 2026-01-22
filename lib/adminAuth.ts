@@ -97,8 +97,9 @@ export function verifyAdminToken(token: string): boolean {
   }
 }
 
-export function isAdminAuthenticated(): boolean {
-  const cookieValue = cookies().get(ADMIN_AUTH_COOKIE)?.value;
+export async function isAdminAuthenticated(): Promise<boolean> {
+  const cookieStore = await cookies();
+  const cookieValue = cookieStore.get(ADMIN_AUTH_COOKIE)?.value;
   if (!cookieValue) {
     return false;
   }
@@ -121,11 +122,12 @@ export function setAdminAuthCookie(response: NextResponse): boolean {
   return true;
 }
 
-export function checkAdminApiAuth(request: Request): {
+export async function checkAdminApiAuth(request: Request): Promise<{
   authorized: boolean;
   source: "cookie" | "header" | null;
-} {
-  const cookieValue = cookies().get(ADMIN_AUTH_COOKIE)?.value;
+}> {
+  const cookieStore = await cookies();
+  const cookieValue = cookieStore.get(ADMIN_AUTH_COOKIE)?.value;
   if (cookieValue && verifyAdminToken(cookieValue)) {
     return { authorized: true, source: "cookie" };
   }

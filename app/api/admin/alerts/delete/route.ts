@@ -4,7 +4,7 @@ import { query } from "../../../../../lib/db";
 import { checkAdminApiAuth } from "../../../../../lib/adminAuth";
 
 export async function POST(request: Request) {
-  const auth = checkAdminApiAuth(request);
+  const auth = await checkAdminApiAuth(request);
   if (!auth.authorized) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       DELETE FROM alerts_watchlist
       WHERE id = $1;
     `,
-    [body.id],
+    [body.id]
   );
 
   return NextResponse.json({ ok: true });

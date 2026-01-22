@@ -9,7 +9,7 @@ const ALLOWED_REASONS = new Set([
 ]);
 
 export async function POST(request: Request) {
-  const auth = checkAdminApiAuth(request);
+  const auth = await checkAdminApiAuth(request);
   if (!auth.authorized) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -18,29 +18,27 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const listingId = typeof body.listingId === "string"
-    ? body.listingId.trim()
-    : "";
+  const listingId =
+    typeof body.listingId === "string" ? body.listingId.trim() : "";
   if (!listingId) {
     return NextResponse.json(
       { error: "listingId is required" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  const rejectReason = typeof body.rejectReason === "string"
-    ? body.rejectReason.trim()
-    : "";
+  const rejectReason =
+    typeof body.rejectReason === "string" ? body.rejectReason.trim() : "";
   if (!ALLOWED_REASONS.has(rejectReason)) {
     return NextResponse.json(
-      { error: "rejectReason must be language_mismatch or collector_number_mismatch" },
-      { status: 400 },
+      {
+        error:
+          "rejectReason must be language_mismatch or collector_number_mismatch",
+      },
+      { status: 400 }
     );
   }
 
@@ -54,21 +52,18 @@ export async function POST(request: Request) {
       WHERE listing_id = $1
       LIMIT 1;
     `,
-    [listingId],
+    [listingId]
   );
 
   const listing = listingRes.rows[0];
   if (!listing) {
-    return NextResponse.json(
-      { error: "Listing not found" },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
   if (listing.match_reject_reason !== rejectReason) {
     return NextResponse.json(
       { error: "Listing reject reason does not match requested override" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -84,7 +79,7 @@ export async function POST(request: Request) {
             created_by = EXCLUDED.created_by,
             expires_at = EXCLUDED.expires_at;
     `,
-    [listingId, overrideReason],
+    [listingId, overrideReason]
   );
 
   return NextResponse.json({ ok: true });

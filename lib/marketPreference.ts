@@ -14,7 +14,7 @@ const COUNTRY_TO_MARKET: Record<string, MarketCode> = {
 };
 
 export function parseMarketPreference(
-  value: string | null | undefined,
+  value: string | null | undefined
 ): MarketPreference | null {
   if (!value) return null;
   const upper = value.toUpperCase().trim();
@@ -26,12 +26,13 @@ export function parseMarketPreference(
   if (upper === "US" || upper === "USA") return "EBAY_US";
   if (upper === "CA" || upper === "CAN" || upper === "CANADA") return "EBAY_CA";
   if (upper === "GB" || upper === "UK") return "EBAY_GB";
-  if (upper === "AU" || upper === "AUS" || upper === "AUSTRALIA") return "EBAY_AU";
+  if (upper === "AU" || upper === "AUS" || upper === "AUSTRALIA")
+    return "EBAY_AU";
   return null;
 }
 
 export function mapCountryToMarket(
-  country: string | null | undefined,
+  country: string | null | undefined
 ): MarketCode | null {
   if (!country) return null;
   const upper = country.toUpperCase().trim();
@@ -41,7 +42,7 @@ export function mapCountryToMarket(
 
 export function resolveMarketPreference(
   cookieValue: string | null | undefined,
-  geoCountry: string | null | undefined,
+  geoCountry: string | null | undefined
 ): MarketPreference {
   const cookieMarket = parseMarketPreference(cookieValue);
   if (cookieMarket) return cookieMarket;
@@ -58,7 +59,8 @@ export function getGeoCountryFromHeaders(headers: Headers): string | null {
 }
 
 export function getGeoCountryFromRequest(req: NextRequest): string | null {
-  const direct = req.geo?.country;
+  const direct = (req as unknown as { geo?: { country?: string } }).geo
+    ?.country;
   if (direct) return direct;
   return getGeoCountryFromHeaders(req.headers);
 }

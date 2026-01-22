@@ -56,18 +56,20 @@ export const metadata: Metadata = {
 };
 
 type RebuildHomePageProps = {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 export default async function RebuildHomePage({
   searchParams,
 }: RebuildHomePageProps) {
   const start = Date.now();
-  const requestId = getRequestIdFromHeaders(headers());
+  const headersList = await headers();
+  const requestId = getRequestIdFromHeaders(headersList);
   let status = 200;
   let requestError: unknown;
 
-  const prefsResult = parseRebuildPrefs(searchParams ?? {});
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const prefsResult = parseRebuildPrefs(resolvedSearchParams);
   if (prefsResult.kind !== "ok") {
     status = 404;
     logRequest({

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { query } from "../../../../lib/db";
 
@@ -11,16 +11,14 @@ interface HistoricalRow {
 }
 
 export async function GET(
-  _request: Request,
-  { params }: { params: { cardId: string } },
+  _request: NextRequest,
+  { params }: { params: Promise<{ cardId: string }> }
 ) {
-  const cardId = Number(params.cardId);
+  const { cardId: rawCardId } = await params;
+  const cardId = Number(rawCardId);
 
   if (!Number.isFinite(cardId)) {
-    return NextResponse.json(
-      { error: "Invalid card id" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid card id" }, { status: 400 });
   }
 
   const res = await query<HistoricalRow>(
@@ -39,15 +37,13 @@ export async function GET(
       ORDER BY price_date ASC
       LIMIT ${MAX_HISTORY_DAYS};
     `,
-    [cardId],
+    [cardId]
   );
 
   const points = res.rows
     .map((row) => {
-      const median =
-        row.median_price != null ? Number(row.median_price) : null;
-      const sample =
-        row.sample_size != null ? Number(row.sample_size) : null;
+      const median = row.median_price != null ? Number(row.median_price) : null;
+      const sample = row.sample_size != null ? Number(row.sample_size) : null;
 
       if (
         median == null ||
@@ -65,10 +61,8 @@ export async function GET(
       };
     })
     .filter(
-      (
-        point,
-      ): point is { date: string; median: number; sample: number } =>
-        point !== null,
+      (point): point is { date: string; median: number; sample: number } =>
+        point !== null
     );
 
   return NextResponse.json(points);

@@ -4,7 +4,7 @@ import { query } from "../../../../lib/db";
 import { checkAdminApiAuth } from "../../../../lib/adminAuth";
 
 export async function POST(request: Request) {
-  const auth = checkAdminApiAuth(request);
+  const auth = await checkAdminApiAuth(request);
   if (!auth.authorized) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
@@ -13,17 +13,14 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   const listingId = body.listingId;
   if (!listingId || Number.isNaN(Number(listingId))) {
     return NextResponse.json(
       { error: "listingId is required" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -38,15 +35,12 @@ export async function POST(request: Request) {
       WHERE id = $1
       LIMIT 1;
     `,
-    [listingId],
+    [listingId]
   );
 
   const listing = listingRes.rows[0];
   if (!listing) {
-    return NextResponse.json(
-      { error: "Listing not found" },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
   await query(
@@ -59,12 +53,7 @@ export async function POST(request: Request) {
       )
       VALUES ($1, $2, $3, $4);
     `,
-    [
-      listing.listing_id,
-      listing.seller_username,
-      listing.title,
-      "manual_hide",
-    ],
+    [listing.listing_id, listing.seller_username, listing.title, "manual_hide"]
   );
 
   await query(
@@ -72,7 +61,7 @@ export async function POST(request: Request) {
       DELETE FROM listings
       WHERE id = $1;
     `,
-    [listingId],
+    [listingId]
   );
 
   return NextResponse.json({ ok: true });

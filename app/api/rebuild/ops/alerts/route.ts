@@ -168,7 +168,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 // =============================================================================
 
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
-  if (!checkOpsAuth()) {
+  if (!(await checkOpsAuth())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

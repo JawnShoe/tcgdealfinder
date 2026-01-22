@@ -98,7 +98,7 @@ export type ColumnSpec = {
   cellClassName: string;
   width?: string; // e.g., "w-[280px]" or undefined for flexible
   renderCell: (vm: DealViewModel, options?: RenderOptions) => JSX.Element;
-  // Sort metadata (optional, only used by TopDealsClient and CardDetailClient)
+  // Sort metadata (optional, used by table components with sorting)
   sortable?: boolean;
   sortKey?: keyof DealViewModel;
   defaultDirection?: "asc" | "desc";

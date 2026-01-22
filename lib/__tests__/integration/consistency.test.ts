@@ -367,7 +367,7 @@ test("formatEndsAt returns -- for null/undefined/invalid", () => {
 
 /**
  * Test 15: buildDealViewModel produces consistent field names
- * This test ensures DealsTable can rely on these fields
+ * This test ensures deal table rendering can rely on these fields
  */
 test("buildDealViewModel includes all required fields for table rendering", () => {
   const testDeal: Deal = {

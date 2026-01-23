@@ -637,7 +637,48 @@ Confidence must explain itself without hover dependency and without mutating tru
 
 **Methodology explanation (additive):**
 
-- Drilldown includes a plain-English methodology section titled “How confidence is calculated”.
+- Drilldown includes a plain-English methodology section titled "How confidence is calculated".
 - Diagnostic details remain present; no weights/math are exposed and no guarantees are changed.
 - Confidence describes price reliability (not deal quality); it is a brake when information is incomplete.
 - No layout contract changes beyond expanded-panel text (collapsed-row height invariant).
+
+### 2026-01-22: Homepage Visual Legitimacy — Trust-Forward Consumer
+
+This change applies consumer-facing visual polish to the `/rebuild` homepage only. Trust semantics are unchanged.
+
+**Homepage visual intent:**
+
+- H1: "Today's Best Deals"
+- Subline: "Price-checked against market data • Seller-verified • Updated regularly"
+- Removed from Home: "Rebuild lane", "pipeline data", amber warning banners
+
+**Progressive disclosure rule (Home only):**
+
+- **Default row (collapsed):** Card name, Discount % (hero), Price, Confidence badge, Freshness, Seller + feedback count
+- **First expand:** "Deal Quality" panel with plain-English content only:
+  - Confidence level + one-line explanation
+  - Seller verification + history
+  - Price context vs market
+  - Freshness ("Last checked X ago")
+  - Links: "View full details", "How confidence is calculated →"
+
+**Home expansion MUST NOT show:**
+
+- Risk flag enums (e.g., `MISSING_CONFIDENCE_WEIGHT`)
+- Pipeline names (e.g., `rebuild-db-v1`)
+- "Inputs (lite)" sections
+- ISO timestamps
+- Multi-paragraph methodology blocks
+- Transparency/debug blocks
+
+**Where deep trust explanation lives:**
+
+- Listing detail page (`/rebuild/listing/[id]`)
+- Explicit secondary link ("How confidence is calculated →")
+
+**Trust semantics unchanged:**
+
+- No ranking, filtering, or scoring logic changes
+- Confidence/freshness/provenance still derived server-side
+- Existing trust surface contracts (ResilienceLabel, Confidence badge) preserved
+- Discovery page (`/rebuild/discovery`) unaffected by this change

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
 import PreferencesBar from "@/components/rebuild/PreferencesBar";
@@ -30,9 +29,9 @@ import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-const homeTitle = buildRebuildTitle("Home");
+const homeTitle = buildRebuildTitle("Today's Best Deals");
 const homeDescription =
-  "Rebuild home for TCG Deal Finder with recent deals and trust signals.";
+  "Price-checked against market data. Seller-verified. Updated regularly.";
 
 export const metadata: Metadata = {
   title: homeTitle,
@@ -118,24 +117,22 @@ export default async function RebuildHomePage({
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px]">
-          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-            Rebuild lane - Home (pipeline data)
-          </div>
+          <header className="rounded-lg border border-slate-200 bg-white p-6">
+            <h1 className="text-2xl font-semibold text-slate-900">
+              Today&apos;s Best Deals
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Price-checked against market data • Seller-verified • Updated
+              regularly
+            </p>
+          </header>
+
+          {/* ResilienceLabel kept for trust surface contract compliance */}
           <ResilienceLabel
-            className="mb-6"
+            className="mt-4"
             tier={resilienceResult.tier}
             explanation={resilienceResult.explanation}
           />
-
-          <header className="rounded-lg border border-slate-200 bg-white p-6">
-            <h1 className="text-2xl font-semibold text-slate-900">
-              TCG Deal Finder
-            </h1>
-            <p className="mt-2 text-sm text-slate-700">
-              Find trading card deals with transparent pricing and confidence
-              signals.
-            </p>
-          </header>
 
           <PreferencesBar initialSort={prefs.sort} />
 

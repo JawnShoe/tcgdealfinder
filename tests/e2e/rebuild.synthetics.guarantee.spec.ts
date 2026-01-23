@@ -29,6 +29,14 @@ function assertLoadingSkeletonSourceFile(
   expect(body).toMatch(/<SkeletonBlock[^>]*className="[^"]*\bh-/);
 }
 
+/**
+ * Check if a URL is the rebuild homepage (not discovery or other sub-routes).
+ */
+function isRebuildHomepage(url: string): boolean {
+  const path = new URL(url).pathname;
+  return path === "/rebuild" || path === "/rebuild/";
+}
+
 async function assertSsrIsNotShellOnly(
   request: APIRequestContext,
   url: string,
@@ -40,9 +48,25 @@ async function assertSsrIsNotShellOnly(
   const response = await request.get(url);
   expect(response.status(), `${routeLabel}: expected 200`).toBe(200);
   const body = await response.text();
-  expect(body, `${routeLabel}: expected rebuild banner SSR`).toContain(
-    "Rebuild lane"
-  );
+
+  // Homepage uses consumer-friendly copy (no "Rebuild lane" banner).
+  // Other routes still show "Rebuild lane" for transparency.
+  if (isRebuildHomepage(url)) {
+    // Homepage SSR contract: deferred skeleton marker OR resilience label
+    const hasHomeSkeleton = body.includes(
+      'data-testid="rebuild-home-deferred-skeleton"'
+    );
+    const hasResilienceLabel = body.includes('data-testid="resilience-label"');
+    expect(
+      hasHomeSkeleton || hasResilienceLabel,
+      `${routeLabel}: expected homepage SSR marker (skeleton or resilience label)`
+    ).toBeTruthy();
+  } else {
+    expect(body, `${routeLabel}: expected rebuild banner SSR`).toContain(
+      "Rebuild lane"
+    );
+  }
+
   if (expectCompliance) {
     expect(body, `${routeLabel}: expected compliance disclosure SSR`).toContain(
       complianceCopy

@@ -627,9 +627,27 @@ function extractMetaContent(body: string, name: string): string | null {
   return contentMatch?.[1] ?? null;
 }
 
+/**
+ * Decode common HTML entities in a string.
+ * Covers the entities Next.js uses for title escaping.
+ */
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&apos;/g, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/gi, "'") // hex entity for apostrophe
+    .replace(/&quot;/g, '"')
+    .replace(/&#34;/g, '"')
+    .replace(/&#x22;/gi, '"') // hex entity for quote
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&"); // amp last to avoid double-decode
+}
+
 function extractTitle(body: string): string | null {
   const match = body.match(/<title>([^<]+)<\/title>/i);
-  return match?.[1] ?? null;
+  if (!match?.[1]) return null;
+  return decodeHtmlEntities(match[1]);
 }
 
 function extractMetaProperty(body: string, property: string): string | null {
@@ -963,7 +981,7 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
       const jsonLd = extractJsonLdObjects(body);
       expect(findJsonLdByType(jsonLd, "WebApplication")).toBeTruthy();
       const title = extractTitle(body);
-      expect(title).toBe(buildRebuildTitle("Home"));
+      expect(title).toBe(buildRebuildTitle("Today's Best Deals"));
     } else if (route.startsWith("/rebuild/listing/")) {
       assertSeoBasics(body, {
         canonical: buildListingCanonicalUrl(listingId),

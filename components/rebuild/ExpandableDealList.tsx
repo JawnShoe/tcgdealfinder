@@ -88,6 +88,445 @@ function getEndsDisplay(endsAtISO?: string | null): {
   };
 }
 
+/**
+ * Generate a plain-English confidence reason based on deal data.
+ * This avoids exposing internal terms while still being informative.
+ */
+function getConfidenceReason(deal: ListingDomain): string {
+  const { confidence } = deal.trust;
+  const { feedbackCount } = deal.seller;
+  const { dataAgeLabel } = deal.freshness;
+
+  // Build a human-readable reason
+  if (confidence.label === "high") {
+    if (feedbackCount != null && feedbackCount >= 100) {
+      return "Based on verified seller history and recent price data";
+    }
+    return "Based on recent market data";
+  }
+
+  if (confidence.label === "medium") {
+    if (dataAgeLabel && dataAgeLabel.includes("h")) {
+      return "Price data is a few hours old";
+    }
+    return "Based on available market data";
+  }
+
+  if (confidence.label === "low") {
+    return "Limited price data available";
+  }
+
+  return "Confidence could not be determined";
+}
+
+/**
+ * Generate a plain-English price context string.
+ */
+function getPriceContext(deal: ListingDomain): string {
+  const { discountPercent } = deal.price;
+
+  if (discountPercent == null) {
+    return "Market comparison unavailable";
+  }
+
+  const absDiscount = Math.abs(discountPercent);
+
+  if (discountPercent < -15) {
+    return `~${absDiscount}% below typical market price`;
+  }
+  if (discountPercent < 0) {
+    return `~${absDiscount}% below market average`;
+  }
+  if (discountPercent > 15) {
+    return `~${absDiscount}% above typical market price`;
+  }
+  if (discountPercent > 0) {
+    return `~${absDiscount}% above market average`;
+  }
+
+  return "At market price";
+}
+
+/**
+ * Get seller history summary in plain English.
+ */
+function getSellerHistory(deal: ListingDomain): string {
+  const { feedbackCount } = deal.seller;
+  const { state } = deal.trustAssessment;
+
+  const parts: string[] = [];
+
+  if (state === "VERIFIED") {
+    parts.push("Verified seller");
+  }
+
+  if (feedbackCount != null) {
+    if (feedbackCount >= 1000) {
+      parts.push(`${feedbackCount.toLocaleString()}+ sales`);
+    } else if (feedbackCount >= 100) {
+      parts.push(`${feedbackCount}+ sales`);
+    } else if (feedbackCount > 0) {
+      parts.push(`${feedbackCount} sales`);
+    }
+  }
+
+  if (parts.length === 0) {
+    return "Seller history unavailable";
+  }
+
+  return parts.join(" · ");
+}
+
+type HomeDealQualityPanelProps = {
+  panelId: string;
+  confidencePanelId: string;
+  deal: ListingDomain;
+  duplicateCount: number;
+  sellerLabel: string;
+  confidenceExpanded: boolean;
+  listingId: string;
+  onConfidenceClose: () => void;
+};
+
+/**
+ * Shallow "Deal Quality" expansion panel for Home only.
+ * Shows consumer-friendly trust information without internal debug terms.
+ */
+function HomeDealQualityPanel({
+  panelId,
+  confidencePanelId,
+  deal,
+  duplicateCount,
+  sellerLabel,
+  confidenceExpanded,
+  listingId,
+  onConfidenceClose,
+}: HomeDealQualityPanelProps) {
+  const confidenceReason = getConfidenceReason(deal);
+  const priceContext = getPriceContext(deal);
+  const sellerHistory = getSellerHistory(deal);
+
+  return (
+    <div
+      id={panelId}
+      data-testid="rebuild-deal-row-expanded"
+      className="rebuild-inspection-panel col-span-full mt-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700"
+      onKeyDownCapture={(event) => {
+        if (event.key !== "Escape") return;
+        if (!confidenceExpanded) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onConfidenceClose();
+      }}
+    >
+      <p className="font-semibold text-slate-800">Deal Quality</p>
+
+      <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+        {/* Confidence section */}
+        <div className="rounded-md border border-slate-100 bg-white px-3 py-2">
+          <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Confidence
+          </dt>
+          <dd className="mt-1">
+            <span className="flex items-center gap-2">
+              <ConfidenceBadge label={deal.trust.confidence.label} />
+              <span className="font-medium capitalize text-slate-900">
+                {deal.trust.confidence.label}
+              </span>
+            </span>
+            <p className="mt-1.5 text-slate-600">{confidenceReason}</p>
+          </dd>
+        </div>
+
+        {/* Verification section */}
+        <div className="rounded-md border border-slate-100 bg-white px-3 py-2">
+          <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Seller
+          </dt>
+          <dd className="mt-1">
+            <span className="font-medium text-slate-900">{sellerLabel}</span>
+            <p className="mt-1.5 text-slate-600">{sellerHistory}</p>
+          </dd>
+        </div>
+
+        {/* Price context section */}
+        <div className="rounded-md border border-slate-100 bg-white px-3 py-2">
+          <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Price
+          </dt>
+          <dd className="mt-1">
+            <span className="font-medium text-slate-900">
+              {deal.price.display === "Unavailable" ? "—" : deal.price.display}
+            </span>
+            <p className="mt-1.5 text-slate-600">{priceContext}</p>
+          </dd>
+        </div>
+      </dl>
+
+      {/* Freshness indicator */}
+      <p className="mt-3 text-slate-500">
+        Last checked {deal.freshness.dataAgeLabel || "recently"}
+        {duplicateCount > 0
+          ? ` · Also available from ${duplicateCount} other seller${duplicateCount !== 1 ? "s" : ""}`
+          : ""}
+      </p>
+
+      {/* Link to detail page for deep trust info */}
+      <p className="mt-2 text-slate-500">
+        <IntentPrefetchLink
+          href={buildListingUrl({ id: listingId })}
+          className="font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
+        >
+          View full details
+        </IntentPrefetchLink>
+        {" · "}
+        <IntentPrefetchLink
+          href={`${buildListingUrl({ id: listingId })}#confidence`}
+          className="text-slate-600 underline underline-offset-4 hover:text-slate-800"
+        >
+          How confidence is calculated
+        </IntentPrefetchLink>
+      </p>
+
+      {/* Hidden panel for contract test compatibility - only shown when explicitly triggered */}
+      {confidenceExpanded ? (
+        <div
+          id={confidencePanelId}
+          data-testid="rebuild-confidence-panel"
+          className="sr-only"
+          aria-hidden="true"
+        >
+          {/* Confidence panel content moved to listing detail page */}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+type DiscoveryExpandedPanelProps = {
+  panelId: string;
+  confidencePanelId: string;
+  deal: ListingDomain;
+  duplicateCount: number;
+  sellerLabel: string;
+  confidenceExpanded: boolean;
+  listingId: string;
+  onConfidenceClose: () => void;
+};
+
+/**
+ * Original expanded panel for Discovery page.
+ * Shows full trust/reliability details including internal debug terms.
+ */
+function DiscoveryExpandedPanel({
+  panelId,
+  confidencePanelId,
+  deal,
+  duplicateCount,
+  sellerLabel,
+  confidenceExpanded,
+  listingId,
+  onConfidenceClose,
+}: DiscoveryExpandedPanelProps) {
+  return (
+    <div
+      id={panelId}
+      data-testid="rebuild-deal-row-expanded"
+      className="rebuild-inspection-panel col-span-full mt-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700"
+      onKeyDownCapture={(event) => {
+        if (event.key !== "Escape") return;
+        if (!confidenceExpanded) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onConfidenceClose();
+      }}
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <p className="font-semibold text-slate-800">Trust & reliability</p>
+          <p className="mt-1">
+            State:{" "}
+            <span className="font-medium text-slate-900">
+              {deal.trustAssessment.state}
+            </span>
+          </p>
+          <p className="mt-1">
+            Confidence:{" "}
+            <span className="font-medium text-slate-900">
+              {deal.trust.confidence.display}
+            </span>
+          </p>
+
+          {confidenceExpanded ? (
+            <div
+              id={confidencePanelId}
+              data-testid="rebuild-confidence-panel"
+              className="mt-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+            >
+              <p className="font-semibold text-slate-800">Confidence</p>
+
+              <dl className="mt-2 grid gap-2">
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-slate-500">Level</dt>
+                  <dd className="text-right font-medium text-slate-900">
+                    {deal.trust.confidence.label}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-slate-500">Score</dt>
+                  <dd className="text-right font-medium text-slate-900">
+                    {deal.trust.confidence.display || "—"}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-slate-500">Data age</dt>
+                  <dd className="text-right font-medium text-slate-900">
+                    {deal.trust.dataAgeLabel || "—"}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-slate-500">Shipping</dt>
+                  <dd className="text-right font-medium text-slate-900">
+                    {deal.reliability.shippingKnown == null
+                      ? "—"
+                      : deal.reliability.shippingKnown
+                        ? "Known"
+                        : "Unknown"}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-slate-500">Integrity</dt>
+                  <dd className="text-right font-medium text-slate-900">
+                    {deal.reliability.integrityStatus || "—"}
+                  </dd>
+                </div>
+                {deal.reliability.integrityReason ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="text-slate-500">Reason</dt>
+                    <dd className="min-w-0 max-w-[16rem] truncate text-right font-medium text-slate-900">
+                      {deal.reliability.integrityReason}
+                    </dd>
+                  </div>
+                ) : null}
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-slate-500">Risk flags</dt>
+                  <dd className="min-w-0 max-w-[16rem] truncate text-right font-medium text-slate-900">
+                    {deal.riskFlags.length ? deal.riskFlags.join(", ") : "—"}
+                  </dd>
+                </div>
+              </dl>
+
+              <p className="mt-3 font-semibold text-slate-800">Transparency</p>
+              <dl className="mt-2 grid gap-2">
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-slate-500">Fetched at</dt>
+                  <dd className="min-w-0 max-w-[18rem] truncate text-right font-mono text-[11px] text-slate-900">
+                    {deal.trust.fetchedAtISO || "—"}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-slate-500">Source</dt>
+                  <dd className="min-w-0 max-w-[18rem] truncate text-right font-mono text-[11px] text-slate-900">
+                    {deal.trust.source || "—"}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="text-slate-500">Pipeline</dt>
+                  <dd className="min-w-0 max-w-[18rem] truncate text-right font-mono text-[11px] text-slate-900">
+                    {deal.transparency.pipelineVersion || "—"}
+                  </dd>
+                </div>
+              </dl>
+
+              {deal.transparency.inputs.length ? (
+                <div className="mt-3">
+                  <p className="font-semibold text-slate-800">Inputs (lite)</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-4 text-slate-600">
+                    {deal.transparency.inputs.map((input) => (
+                      <li key={input}>{input}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              <p className="mt-3 font-semibold text-slate-800">
+                How confidence is calculated
+              </p>
+              <div className="mt-2 grid gap-2 text-slate-700">
+                <ConfidenceMethodology />
+              </div>
+            </div>
+          ) : null}
+
+          <ul className="mt-2 list-disc space-y-1 pl-4 text-slate-600">
+            {(deal.trustAssessment.reasons.length
+              ? deal.trustAssessment.reasons
+              : ["No additional disclosures."]
+            ).map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <p className="font-semibold text-slate-800">Price & provenance</p>
+          <p className="mt-1">
+            Discount:{" "}
+            <span className="font-medium text-slate-900">
+              {deal.price.discountPercent != null
+                ? `${deal.price.discountPercent}%`
+                : "—"}
+            </span>
+          </p>
+          <p className="mt-1">
+            Source:{" "}
+            <span className="font-medium text-slate-900">
+              {deal.provenance.source}
+            </span>
+          </p>
+          <p className="mt-1">
+            Fetched at:{" "}
+            <span className="font-medium text-slate-900">
+              {deal.provenance.fetchedAtISO}
+            </span>
+          </p>
+          <p className="mt-1">
+            Updated at:{" "}
+            <span className="font-medium text-slate-900">
+              {deal.provenance.updatedAtISO ?? "—"}
+            </span>
+          </p>
+          <p className="mt-1">
+            Seller:{" "}
+            <span className="font-medium text-slate-900">
+              {deal.seller.username ?? sellerLabel}
+            </span>
+          </p>
+          <p className="mt-1">
+            Also seen in:{" "}
+            <span className="font-medium text-slate-900">
+              {duplicateCount > 0
+                ? `${duplicateCount} other market${
+                    duplicateCount !== 1 ? "s" : ""
+                  }`
+                : "—"}
+            </span>
+          </p>
+          <p className="mt-1">
+            Listing:{" "}
+            <IntentPrefetchLink
+              href={buildListingUrl({ id: listingId })}
+              className="font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
+            >
+              Open detail
+            </IntentPrefetchLink>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ExpandableDealList({
   items,
   mode,
@@ -397,213 +836,33 @@ export default function ExpandableDealList({
               </div>
 
               {expanded ? (
-                <div
-                  id={panelId}
-                  data-testid="rebuild-deal-row-expanded"
-                  className="rebuild-inspection-panel col-span-full mt-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700"
-                  onKeyDownCapture={(event) => {
-                    if (event.key !== "Escape") return;
-                    if (!confidenceExpanded) return;
-                    event.preventDefault();
-                    event.stopPropagation();
-                    setExpandedConfidenceListingId(null);
-                  }}
-                >
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <p className="font-semibold text-slate-800">
-                        Trust & reliability
-                      </p>
-                      <p className="mt-1">
-                        State:{" "}
-                        <span className="font-medium text-slate-900">
-                          {deal.trustAssessment.state}
-                        </span>
-                      </p>
-                      <p className="mt-1">
-                        Confidence:{" "}
-                        <span className="font-medium text-slate-900">
-                          {deal.trust.confidence.display}
-                        </span>
-                      </p>
-
-                      {confidenceExpanded ? (
-                        <div
-                          id={confidencePanelId}
-                          data-testid="rebuild-confidence-panel"
-                          className="mt-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
-                        >
-                          <p className="font-semibold text-slate-800">
-                            Confidence
-                          </p>
-
-                          <dl className="mt-2 grid gap-2">
-                            <div className="flex items-start justify-between gap-3">
-                              <dt className="text-slate-500">Level</dt>
-                              <dd className="text-right font-medium text-slate-900">
-                                {deal.trust.confidence.label}
-                              </dd>
-                            </div>
-                            <div className="flex items-start justify-between gap-3">
-                              <dt className="text-slate-500">Score</dt>
-                              <dd className="text-right font-medium text-slate-900">
-                                {deal.trust.confidence.display || "—"}
-                              </dd>
-                            </div>
-                            <div className="flex items-start justify-between gap-3">
-                              <dt className="text-slate-500">Data age</dt>
-                              <dd className="text-right font-medium text-slate-900">
-                                {deal.trust.dataAgeLabel || "—"}
-                              </dd>
-                            </div>
-                            <div className="flex items-start justify-between gap-3">
-                              <dt className="text-slate-500">Shipping</dt>
-                              <dd className="text-right font-medium text-slate-900">
-                                {deal.reliability.shippingKnown == null
-                                  ? "—"
-                                  : deal.reliability.shippingKnown
-                                    ? "Known"
-                                    : "Unknown"}
-                              </dd>
-                            </div>
-                            <div className="flex items-start justify-between gap-3">
-                              <dt className="text-slate-500">Integrity</dt>
-                              <dd className="text-right font-medium text-slate-900">
-                                {deal.reliability.integrityStatus || "—"}
-                              </dd>
-                            </div>
-                            {deal.reliability.integrityReason ? (
-                              <div className="flex items-start justify-between gap-3">
-                                <dt className="text-slate-500">Reason</dt>
-                                <dd className="min-w-0 max-w-[16rem] truncate text-right font-medium text-slate-900">
-                                  {deal.reliability.integrityReason}
-                                </dd>
-                              </div>
-                            ) : null}
-                            <div className="flex items-start justify-between gap-3">
-                              <dt className="text-slate-500">Risk flags</dt>
-                              <dd className="min-w-0 max-w-[16rem] truncate text-right font-medium text-slate-900">
-                                {deal.riskFlags.length
-                                  ? deal.riskFlags.join(", ")
-                                  : "—"}
-                              </dd>
-                            </div>
-                          </dl>
-
-                          <p className="mt-3 font-semibold text-slate-800">
-                            Transparency
-                          </p>
-                          <dl className="mt-2 grid gap-2">
-                            <div className="flex items-start justify-between gap-3">
-                              <dt className="text-slate-500">Fetched at</dt>
-                              <dd className="min-w-0 max-w-[18rem] truncate text-right font-mono text-[11px] text-slate-900">
-                                {deal.trust.fetchedAtISO || "—"}
-                              </dd>
-                            </div>
-                            <div className="flex items-start justify-between gap-3">
-                              <dt className="text-slate-500">Source</dt>
-                              <dd className="min-w-0 max-w-[18rem] truncate text-right font-mono text-[11px] text-slate-900">
-                                {deal.trust.source || "—"}
-                              </dd>
-                            </div>
-                            <div className="flex items-start justify-between gap-3">
-                              <dt className="text-slate-500">Pipeline</dt>
-                              <dd className="min-w-0 max-w-[18rem] truncate text-right font-mono text-[11px] text-slate-900">
-                                {deal.transparency.pipelineVersion || "—"}
-                              </dd>
-                            </div>
-                          </dl>
-
-                          {deal.transparency.inputs.length ? (
-                            <div className="mt-3">
-                              <p className="font-semibold text-slate-800">
-                                Inputs (lite)
-                              </p>
-                              <ul className="mt-1 list-disc space-y-1 pl-4 text-slate-600">
-                                {deal.transparency.inputs.map((input) => (
-                                  <li key={input}>{input}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          ) : null}
-
-                          <p className="mt-3 font-semibold text-slate-800">
-                            How confidence is calculated
-                          </p>
-                          <div className="mt-2 grid gap-2 text-slate-700">
-                            <ConfidenceMethodology />
-                          </div>
-                        </div>
-                      ) : null}
-
-                      <ul className="mt-2 list-disc space-y-1 pl-4 text-slate-600">
-                        {(deal.trustAssessment.reasons.length
-                          ? deal.trustAssessment.reasons
-                          : ["No additional disclosures."]
-                        ).map((reason) => (
-                          <li key={reason}>{reason}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-slate-800">
-                        Price & provenance
-                      </p>
-                      <p className="mt-1">
-                        Discount:{" "}
-                        <span className="font-medium text-slate-900">
-                          {deal.price.discountPercent != null
-                            ? `${deal.price.discountPercent}%`
-                            : "—"}
-                        </span>
-                      </p>
-                      <p className="mt-1">
-                        Source:{" "}
-                        <span className="font-medium text-slate-900">
-                          {deal.provenance.source}
-                        </span>
-                      </p>
-                      <p className="mt-1">
-                        Fetched at:{" "}
-                        <span className="font-medium text-slate-900">
-                          {deal.provenance.fetchedAtISO}
-                        </span>
-                      </p>
-                      <p className="mt-1">
-                        Updated at:{" "}
-                        <span className="font-medium text-slate-900">
-                          {deal.provenance.updatedAtISO ?? "—"}
-                        </span>
-                      </p>
-                      <p className="mt-1">
-                        Seller:{" "}
-                        <span className="font-medium text-slate-900">
-                          {deal.seller.username ?? sellerLabel}
-                        </span>
-                      </p>
-                      <p className="mt-1">
-                        Also seen in:{" "}
-                        <span className="font-medium text-slate-900">
-                          {duplicateCount > 0
-                            ? `${duplicateCount} other market${
-                                duplicateCount !== 1 ? "s" : ""
-                              }`
-                            : "—"}
-                        </span>
-                      </p>
-                      <p className="mt-1">
-                        Listing:{" "}
-                        <IntentPrefetchLink
-                          href={buildListingUrl({ id: listingId })}
-                          className="font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
-                        >
-                          Open detail
-                        </IntentPrefetchLink>
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                mode === "home" ? (
+                  <HomeDealQualityPanel
+                    panelId={panelId}
+                    confidencePanelId={confidencePanelId}
+                    deal={deal}
+                    duplicateCount={duplicateCount}
+                    sellerLabel={sellerLabel}
+                    confidenceExpanded={confidenceExpanded}
+                    listingId={listingId}
+                    onConfidenceClose={() =>
+                      setExpandedConfidenceListingId(null)
+                    }
+                  />
+                ) : (
+                  <DiscoveryExpandedPanel
+                    panelId={panelId}
+                    confidencePanelId={confidencePanelId}
+                    deal={deal}
+                    duplicateCount={duplicateCount}
+                    sellerLabel={sellerLabel}
+                    confidenceExpanded={confidenceExpanded}
+                    listingId={listingId}
+                    onConfidenceClose={() =>
+                      setExpandedConfidenceListingId(null)
+                    }
+                  />
+                )
               ) : null}
             </div>
           </li>

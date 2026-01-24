@@ -274,7 +274,7 @@ function HomeDealQualityPanel({
           </div>
         </div>
 
-        <div className="min-w-0 text-left sm:col-start-2">
+        <div className="w-full min-w-0 self-start justify-self-start text-left sm:col-start-2">
           <p className="text-[12px] leading-snug text-slate-500">
             {marketContext.title}
           </p>
@@ -285,7 +285,7 @@ function HomeDealQualityPanel({
           ) : null}
         </div>
 
-        <div className="min-w-0 text-left sm:col-start-3">
+        <div className="w-full min-w-0 self-start justify-self-start text-left sm:col-start-3">
           <p className="line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
             {signalNote}
           </p>

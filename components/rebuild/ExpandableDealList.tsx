@@ -705,9 +705,11 @@ export default function ExpandableDealList({
               {/* Chevron column */}
               <div className="hidden items-center justify-center sm:flex">
                 <span
-                  className={`text-slate-400 transition-transform ${
-                    expanded ? "rotate-180" : ""
-                  }`}
+                  className={`transition-transform ${
+                    mode === "home"
+                      ? "text-xs leading-none text-slate-400"
+                      : "text-slate-400"
+                  } ${expanded ? "rotate-180" : ""}`}
                 >
                   ▼
                 </span>

@@ -91,6 +91,9 @@ export default async function RebuildHomePage({
           body > header {
             display: none;
           }
+          .rebuild-sort-inline > p {
+            display: none;
+          }
         `}</style>
         <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px]">
           <header className="rounded-lg border border-slate-100 bg-white/80 px-6 py-4">
@@ -103,17 +106,19 @@ export default async function RebuildHomePage({
             </p>
           </header>
 
-          <PreferencesBar initialSort={prefs.sort} />
-
           <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Recent deals
-              </h2>
-              <p className="text-xs text-slate-500">
-                {dedupedDeals.length} result
-                {dedupedDeals.length !== 1 ? "s" : ""}
-              </p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-slate-900">Deals</h2>
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-slate-500">
+                  {dedupedDeals.length} result
+                  {dedupedDeals.length !== 1 ? "s" : ""}
+                </p>
+                <PreferencesBar
+                  initialSort={prefs.sort}
+                  className="rebuild-sort-inline mt-0 border-0 bg-transparent px-0 py-0"
+                />
+              </div>
             </div>
 
             {dedupedDeals.length === 0 ? (

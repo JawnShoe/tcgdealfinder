@@ -156,29 +156,47 @@ function getConfidenceReason(deal: ListingDomain): string {
 /**
  * Generate a plain-English price context string.
  */
-function getPriceContext(deal: ListingDomain): string {
-  const { discountPercent } = deal.price;
-
-  if (discountPercent == null) {
-    return "Market comparison unavailable";
+function getMarketContext(deal: ListingDomain): {
+  title: string;
+  summary: string;
+} {
+  if (deal.price.discountPercent == null) {
+    return {
+      title: "No market data",
+      summary: "Discount signal not computed for this listing.",
+    };
   }
 
-  const absDiscount = Math.abs(discountPercent);
+  return {
+    title: "Market baseline available",
+    summary: "Discount signal computed from available market data.",
+  };
+}
 
-  if (discountPercent < -15) {
-    return `~${absDiscount}% below typical market price`;
-  }
-  if (discountPercent < 0) {
-    return `~${absDiscount}% below market average`;
-  }
-  if (discountPercent > 15) {
-    return `~${absDiscount}% above typical market price`;
-  }
-  if (discountPercent > 0) {
-    return `~${absDiscount}% above market average`;
+function getSignalNote(deal: ListingDomain, duplicateCount: number): string {
+  if (
+    deal.trust.confidence.label === "low" ||
+    deal.trust.confidence.label === "unknown" ||
+    deal.price.discountPercent == null
+  ) {
+    return "Discount signal unreliable (no market match)";
   }
 
-  return "At market price";
+  if (deal.riskFlags.includes("INTEGRITY_FLAGGED")) {
+    return "Integrity flagged by reliability checks";
+  }
+
+  if (deal.riskFlags.includes("SHIPPING_UNKNOWN")) {
+    return "Shipping cost unknown";
+  }
+
+  if (duplicateCount > 0) {
+    return `Also seen in ${duplicateCount} other market${
+      duplicateCount === 1 ? "" : "s"
+    }`;
+  }
+
+  return "More context soon";
 }
 
 type HomeDealQualityPanelProps = {
@@ -207,6 +225,7 @@ function HomeDealQualityPanel({
   panelId,
   confidencePanelId,
   deal,
+  duplicateCount,
   sellerLabel,
   sellerUrl,
   confidenceExpanded,
@@ -214,13 +233,14 @@ function HomeDealQualityPanel({
   onConfidenceClose,
 }: HomeDealQualityPanelProps) {
   const confidenceReason = getConfidenceReason(deal);
-  const priceContext = getPriceContext(deal);
+  const marketContext = getMarketContext(deal);
+  const signalNote = getSignalNote(deal, duplicateCount);
 
   return (
     <div
       id={panelId}
       data-testid="rebuild-deal-row-expanded"
-      className="rebuild-inspection-panel col-span-full mt-2 grid grid-cols-1 gap-4 text-xs text-slate-700 sm:grid-cols-3"
+      className="rebuild-inspection-panel col-span-full -mx-2 mt-2 border-t border-slate-100 pt-2"
       onKeyDownCapture={(event) => {
         if (event.key !== "Escape") return;
         if (!confidenceExpanded) return;
@@ -229,51 +249,94 @@ function HomeDealQualityPanel({
         onConfidenceClose();
       }}
     >
-      {/* Confidence section */}
-      <div className="flex items-start gap-2">
-        <ConfidenceBadge label={deal.trust.confidence.label} />
-        <div>
-          <span className="font-medium capitalize text-slate-900">
-            {deal.trust.confidence.label === "unknown"
-              ? "Unknown"
-              : deal.trust.confidence.label}
-          </span>
-          <p className="mt-0.5 text-slate-500">{confidenceReason}</p>
+      <div
+        className={`grid ${GRID_COLS} ${GRID_GAP} ${ROW_PADDING} pb-2 text-xs`}
+      >
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-start gap-2">
+            <ConfidenceBadge label={deal.trust.confidence.label} />
+            <div className="min-w-0">
+              <p
+                className="truncate font-medium capitalize text-slate-900"
+                title={
+                  deal.trust.confidence.label === "unknown"
+                    ? "Unknown"
+                    : deal.trust.confidence.label
+                }
+              >
+                {deal.trust.confidence.label === "unknown"
+                  ? "Unknown"
+                  : deal.trust.confidence.label}
+              </p>
+              <p
+                className="mt-0.5 truncate text-slate-500"
+                title={confidenceReason}
+              >
+                {confidenceReason}
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Price context section */}
-      <div>
-        <p className="font-medium text-slate-700">
-          {deal.price.discountPercent == null ? "No market data" : "Price"}
-        </p>
-        <p className="text-slate-500">
-          {deal.price.discountPercent == null ? "—" : deal.price.display}
-        </p>
-        <p className="mt-0.5 text-slate-500">{priceContext}</p>
-      </div>
+        <div className="min-w-0 text-right">
+          <p
+            className="truncate font-medium text-slate-700"
+            title={marketContext.title}
+          >
+            {marketContext.title}
+          </p>
+          <p
+            className="mt-0.5 truncate text-slate-500"
+            title={marketContext.summary}
+          >
+            {marketContext.summary}
+          </p>
+        </div>
 
-      {/* Provenance section */}
-      <div>
-        <p className="font-medium text-slate-700">Provenance</p>
-        <p className="text-slate-500">Source: {deal.provenance.source}</p>
-        <p className="text-slate-500">Checked: {ageLabel}</p>
-        <p className="text-slate-500">
-          Store:{" "}
-          {sellerUrl ? (
-            <a
-              href={sellerUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-slate-700 hover:underline"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {sellerLabel}
-            </a>
-          ) : (
-            sellerLabel
-          )}
-        </p>
+        <div className="min-w-0 text-right">
+          <p className="truncate font-medium text-slate-700" title="Notes">
+            Notes
+          </p>
+          <p className="mt-0.5 truncate text-slate-500" title={signalNote}>
+            {signalNote}
+          </p>
+        </div>
+
+        <div className="min-w-0 text-right">
+          <p className="truncate font-medium text-slate-700" title="Provenance">
+            Provenance
+          </p>
+          <p
+            className="mt-0.5 truncate text-slate-500"
+            title={`Source: ${deal.provenance.source}`}
+          >
+            Source: {deal.provenance.source}
+          </p>
+          <p
+            className="mt-0.5 truncate text-slate-500"
+            title={`Checked: ${ageLabel}`}
+          >
+            Checked: {ageLabel}
+          </p>
+          <p className="mt-0.5 truncate text-slate-500" title={sellerLabel}>
+            Store:{" "}
+            {sellerUrl ? (
+              <a
+                href={sellerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-700 hover:text-slate-900 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {sellerLabel}
+              </a>
+            ) : (
+              sellerLabel
+            )}
+          </p>
+        </div>
+
+        <div className="hidden sm:block" aria-hidden="true" />
       </div>
 
       {/* Hidden panel for contract test compatibility */}

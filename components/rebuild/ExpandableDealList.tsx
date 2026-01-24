@@ -703,9 +703,11 @@ export default function ExpandableDealList({
                     ? "—"
                     : deal.price.display}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  {marketIndicator}
-                </p>
+                {mode === "home" && marketIndicator === "—" ? null : (
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {marketIndicator}
+                  </p>
+                )}
               </div>
 
               {/* Discount column */}

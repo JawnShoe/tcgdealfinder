@@ -290,7 +290,10 @@ function HomeDealQualityPanel({
 
         <div className="min-w-0 text-right sm:col-start-4">
           <p className="text-[12px] leading-snug text-slate-500">
-            {deal.provenance.source} · Checked {ageLabel}
+            Source: {deal.provenance.source}
+          </p>
+          <p className="mt-0.5 text-[12px] leading-snug text-slate-500">
+            Updated: {ageLabel}
           </p>
           <p className="mt-0.5 truncate text-[12px] leading-snug text-slate-500">
             Store:{" "}

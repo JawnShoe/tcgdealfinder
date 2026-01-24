@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
-import PreferencesBar from "@/components/rebuild/PreferencesBar";
 import ExpandableDealList from "@/components/rebuild/ExpandableDealList";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
@@ -119,22 +118,22 @@ export default async function RebuildHomePage({
           </header>
 
           <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-            <div className="grid grid-cols-1 items-center gap-x-4 gap-y-2 px-2 -mx-2 pb-2 sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem_1.25rem] lg:grid-cols-[minmax(0,1fr)_12rem_10rem_18rem_1.25rem] 2xl:grid-cols-[minmax(0,1fr)_13rem_11rem_20rem_1.25rem]">
-              <h2 className="text-sm font-semibold text-slate-900">Deals</h2>
-              <div className="hidden sm:block" aria-hidden="true" />
-              <div className="hidden sm:block" aria-hidden="true" />
-              <div className="flex items-center justify-end gap-4 text-sm leading-none text-slate-500">
-                <span>
-                  {dedupedDeals.length} result
-                  {dedupedDeals.length !== 1 ? "s" : ""}
-                </span>
-                <PreferencesBar
-                  initialSort={prefs.sort}
-                  className="rebuild-sort-inline mt-0 border-0 bg-transparent px-0 py-0"
-                />
-              </div>
-              <div className="hidden sm:block" aria-hidden="true" />
-            </div>
+            <ExpandableDealList
+              mode="home"
+              sortPreset={prefs.sort}
+              initialSort={prefs.sort}
+              items={dedupedDeals.map((deal) => {
+                const duplicateGroup = duplicates.get(
+                  normalizeListingKey(deal)
+                );
+                return {
+                  deal,
+                  duplicateCount: duplicateGroup
+                    ? duplicateGroup.length - 1
+                    : 0,
+                };
+              })}
+            />
 
             {dedupedDeals.length === 0 ? (
               <div className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
@@ -144,23 +143,7 @@ export default async function RebuildHomePage({
                     : "Rebuild data source not configured in this environment."}
                 </p>
               </div>
-            ) : (
-              <ExpandableDealList
-                mode="home"
-                sortPreset={prefs.sort}
-                items={dedupedDeals.map((deal) => {
-                  const duplicateGroup = duplicates.get(
-                    normalizeListingKey(deal)
-                  );
-                  return {
-                    deal,
-                    duplicateCount: duplicateGroup
-                      ? duplicateGroup.length - 1
-                      : 0,
-                  };
-                })}
-              />
-            )}
+            ) : null}
           </section>
 
           <ComplianceDisclosure className="mt-6" />

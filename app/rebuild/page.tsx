@@ -97,11 +97,14 @@ export default async function RebuildHomePage({
           .rebuild-sort-inline label {
             align-items: center;
             line-height: 1;
+            font-size: 0.875rem;
+            gap: 0.5rem;
           }
           .rebuild-sort-inline select {
-            height: 24px;
+            height: 28px;
             padding-top: 0;
             padding-bottom: 0;
+            font-size: 0.875rem;
           }
         `}</style>
         <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px]">
@@ -118,8 +121,8 @@ export default async function RebuildHomePage({
           <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-slate-900">Deals</h2>
-              <div className="flex items-center gap-3">
-                <p className="text-xs leading-none text-slate-500">
+              <div className="flex items-center gap-4">
+                <p className="text-sm leading-none text-slate-500">
                   {dedupedDeals.length} result
                   {dedupedDeals.length !== 1 ? "s" : ""}
                 </p>

@@ -75,6 +75,7 @@ export type ListingDomain = {
   price: PricePoint;
   seller: SellerSignal;
   condition: string | null;
+  setName: string | null;
   language: CardLanguage;
   availability: string | null;
   provenance: Provenance;
@@ -91,6 +92,7 @@ export type ListingDomain = {
 export type DbListingRow = {
   card_id: number | null;
   card_language: string | null;
+  set_name: string | null;
   listing_id: string;
   title: string;
   url: string | null;
@@ -268,6 +270,7 @@ export function mapDbRowToListingDomain(
     price,
     seller,
     condition,
+    setName: row.set_name ?? null,
     language,
     availability:
       row.shipping_known === false ? "Shipping unknown" : "In stock",

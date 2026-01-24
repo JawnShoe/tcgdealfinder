@@ -35,6 +35,7 @@ function makeDeal(overrides?: Partial<ListingDomain>): ListingDomain {
       positivePercent: 99.9,
     },
     condition: "NM",
+    setName: "Evolving Skies",
     language: "EN",
     availability: "In stock",
     provenance: {

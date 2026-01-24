@@ -90,21 +90,6 @@ export default async function RebuildHomePage({
           body > header {
             display: none;
           }
-          .rebuild-sort-inline > p {
-            display: none;
-          }
-          .rebuild-sort-inline label {
-            align-items: center;
-            line-height: 1;
-            font-size: 0.875rem;
-            gap: 0.5rem;
-          }
-          .rebuild-sort-inline select {
-            height: 28px;
-            padding-top: 0;
-            padding-bottom: 0;
-            font-size: 0.875rem;
-          }
         `}</style>
         <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px]">
           <header className="rounded-lg border border-slate-100 bg-white/80 px-6 py-4">

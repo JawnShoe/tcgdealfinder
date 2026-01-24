@@ -5,8 +5,8 @@ import type { ListingDomain } from "@/lib/rebuild/data/listingMapper";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ConfidenceMethodology from "@/components/rebuild/ConfidenceMethodology";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
-import PreferencesBar from "@/components/rebuild/PreferencesBar";
 import type { RebuildSort } from "@/lib/rebuild/prefs/rebuildPrefs";
+import { REBUILD_SORT_OPTIONS } from "@/lib/rebuild/prefs/rebuildPrefs";
 import { buildListingUrl } from "@/lib/rebuild/urls";
 
 // Shared grid primitive - prevents column drift between collapsed/expanded
@@ -568,6 +568,9 @@ export default function ExpandableDealList({
   );
   const [expandedConfidenceListingId, setExpandedConfidenceListingId] =
     useState<string | null>(null);
+  const [homeSort, setHomeSort] = useState<RebuildSort | null>(
+    mode === "home" ? (initialSort ?? null) : null
+  );
 
   const baseId = useId();
 
@@ -588,16 +591,33 @@ export default function ExpandableDealList({
           <div className="hidden sm:block sm:col-start-2" aria-hidden="true" />
           <div className="hidden sm:block sm:col-start-3" aria-hidden="true" />
           <div className="min-w-0 sm:col-start-4">
-            <div className="flex items-center justify-end gap-4 text-sm leading-none text-slate-500">
-              <span>
-                {items.length} result
-                {items.length !== 1 ? "s" : ""}
+            <div className="flex items-center justify-end gap-6 self-center leading-none">
+              <span className="text-sm text-slate-500">
+                {items.length} result{items.length !== 1 ? "s" : ""}
               </span>
-              {initialSort ? (
-                <PreferencesBar
-                  initialSort={initialSort}
-                  className="rebuild-sort-inline mt-0 border-0 bg-transparent px-0 py-0"
-                />
+              {homeSort ? (
+                <label className="flex items-center gap-2 text-sm leading-none text-slate-500">
+                  <span className="text-sm text-slate-500">Sort</span>
+                  <select
+                    aria-label="Sort deals"
+                    className="h-7 rounded-md border border-slate-300 bg-white px-2 py-0 text-sm leading-none text-slate-700"
+                    value={homeSort}
+                    onChange={(event) => {
+                      const nextSort = event.target.value as RebuildSort;
+                      setHomeSort(nextSort);
+                      const url = new URL(window.location.href);
+                      url.searchParams.set("sort", nextSort);
+                      window.location.assign(url.toString());
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {REBUILD_SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               ) : null}
             </div>
           </div>
@@ -682,13 +702,26 @@ export default function ExpandableDealList({
                     data-testid="rebuild-deal-col-identity"
                     className="min-w-0"
                   >
-                    <IntentPrefetchLink
-                      data-testid="rebuild-deal-row-title"
-                      href={buildListingUrl({ id: listingId })}
-                      className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
-                    >
-                      {deal.title}
-                    </IntentPrefetchLink>
+                    {mode === "home" && deal.url ? (
+                      <a
+                        data-testid="rebuild-deal-row-title"
+                        href={deal.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {deal.title}
+                      </a>
+                    ) : (
+                      <IntentPrefetchLink
+                        data-testid="rebuild-deal-row-title"
+                        href={buildListingUrl({ id: listingId })}
+                        className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
+                      >
+                        {deal.title}
+                      </IntentPrefetchLink>
+                    )}
 
                     <p className="mt-1 truncate text-xs text-slate-500">
                       {[deal.setName, conditionLabel, languageLabel]

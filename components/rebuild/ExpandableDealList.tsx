@@ -29,13 +29,17 @@ function getGridColsForMode(mode: "home" | "discovery") {
 function DealRowGrid({
   children,
   className,
+  mode,
 }: {
   children: React.ReactNode;
   className?: string;
+  mode: "home" | "discovery";
 }) {
   return (
     <div
-      className={`grid ${GRID_COLS} ${GRID_GAP} ${ROW_PADDING} ${className ?? ""}`}
+      className={`grid ${getGridColsForMode(
+        mode
+      )} ${GRID_GAP} ${ROW_PADDING} ${className ?? ""}`}
     >
       {children}
     </div>
@@ -240,12 +244,8 @@ function HomeDealQualityPanel({
         onConfidenceClose();
       }}
     >
-      <div
-        className={`grid ${getGridColsForMode(
-          "home"
-        )} ${GRID_GAP} ${ROW_PADDING} gap-y-1 pb-1 text-xs`}
-      >
-        <div className="min-w-0">
+      <DealRowGrid mode="home" className="gap-y-1 pb-1 text-xs">
+        <div className="min-w-0 sm:col-start-1">
           <div className="flex min-w-0 items-start gap-2">
             <ConfidenceBadge label={deal.trust.confidence.label} />
             <div className="min-w-0">
@@ -271,7 +271,7 @@ function HomeDealQualityPanel({
           </div>
         </div>
 
-        <div className="min-w-0 text-left">
+        <div className="min-w-0 text-left sm:col-start-2">
           <p className="text-[12px] leading-snug text-slate-500">
             {marketContext.title}
           </p>
@@ -282,13 +282,13 @@ function HomeDealQualityPanel({
           ) : null}
         </div>
 
-        <div className="min-w-0 text-left">
+        <div className="min-w-0 text-left sm:col-start-3">
           <p className="line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
             {signalNote}
           </p>
         </div>
 
-        <div className="min-w-0 text-right">
+        <div className="min-w-0 text-right sm:col-start-4">
           <p className="text-[12px] leading-snug text-slate-500">
             {deal.provenance.source} · Checked {ageLabel}
           </p>
@@ -311,7 +311,7 @@ function HomeDealQualityPanel({
         </div>
 
         <div className="hidden sm:block" aria-hidden="true" />
-      </div>
+      </DealRowGrid>
 
       {/* Hidden panel for contract test compatibility */}
       {confidenceExpanded ? (

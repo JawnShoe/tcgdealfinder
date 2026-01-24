@@ -247,7 +247,7 @@ function HomeDealQualityPanel({
         onConfidenceClose();
       }}
     >
-      <DealRowGrid mode="home" className="gap-y-1 pb-1 text-xs">
+      <DealRowGrid mode="home" className="pb-1 text-xs">
         <div className="min-w-0 sm:col-start-1">
           <div className="flex min-w-0 items-start gap-2">
             <ConfidenceBadge label={deal.trust.confidence.label} />
@@ -316,7 +316,7 @@ function HomeDealQualityPanel({
           </p>
         </div>
 
-        <div className="hidden sm:block" aria-hidden="true" />
+        <div className="hidden sm:block sm:col-start-5" aria-hidden="true" />
       </DealRowGrid>
 
       {/* Hidden panel for contract test compatibility */}

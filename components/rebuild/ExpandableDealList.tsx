@@ -276,7 +276,7 @@ function HomeDealQualityPanel({
 
         <div
           data-testid="home-expanded-col2"
-          className="flex w-full min-w-0 flex-col items-end self-start justify-self-end pr-2 text-right sm:col-start-2"
+          className="flex w-full min-w-0 flex-col items-end self-start text-right sm:col-start-2"
         >
           <p className="w-full text-right text-[12px] leading-snug text-slate-500">
             {marketContext.title}
@@ -290,7 +290,7 @@ function HomeDealQualityPanel({
 
         <div
           data-testid="home-expanded-col3"
-          className="flex w-full min-w-0 flex-col items-end self-start justify-self-end pr-2 text-right sm:col-start-3"
+          className="flex w-full min-w-0 flex-col items-end self-start text-right sm:col-start-3"
         >
           <p className="w-full line-clamp-2 break-words text-right text-[12px] leading-snug text-slate-500">
             {signalNote}

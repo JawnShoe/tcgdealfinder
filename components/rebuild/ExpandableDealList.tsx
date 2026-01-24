@@ -107,6 +107,24 @@ function formatUtcTimestamp(date: Date): string {
   return `${month} ${day}, ${year} · ${hours}:${minutes} UTC`;
 }
 
+function getListingThumbnailUrl(deal: ListingDomain): string | null {
+  const record = deal as unknown as Record<string, unknown>;
+  const candidates = [
+    record.thumbnailUrl,
+    record.imageUrl,
+    record.thumbnail_url,
+    record.image_url,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim() !== "") {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
 function getEndsDisplay(endsAtISO?: string | null): {
   kind: "missing" | "ended" | "active";
   relativeLabel: string;
@@ -233,6 +251,7 @@ function HomeDealQualityPanel({
   const confidenceReason = getConfidenceReason(deal);
   const marketContext = getMarketContext(deal);
   const signalNote = getSignalNote(deal);
+  const thumbnailUrl = getListingThumbnailUrl(deal);
 
   return (
     <div
@@ -249,27 +268,46 @@ function HomeDealQualityPanel({
     >
       <DealRowGrid mode="home" className="pb-1 text-xs">
         <div className="min-w-0 sm:col-start-1">
-          <div className="flex min-w-0 items-start gap-2">
-            <ConfidenceBadge label={deal.trust.confidence.label} />
-            <div className="min-w-0">
-              <p
-                className="truncate font-medium capitalize text-slate-900"
-                title={
-                  deal.trust.confidence.label === "unknown"
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-100">
+              <div className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-400">
+                No image
+              </div>
+              {thumbnailUrl ? (
+                <img
+                  src={thumbnailUrl}
+                  loading="lazy"
+                  decoding="async"
+                  alt={deal.title}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : null}
+            </div>
+            <div className="flex min-w-0 items-start gap-2">
+              <ConfidenceBadge label={deal.trust.confidence.label} />
+              <div className="min-w-0">
+                <p
+                  className="truncate font-medium capitalize text-slate-900"
+                  title={
+                    deal.trust.confidence.label === "unknown"
+                      ? "Unknown"
+                      : deal.trust.confidence.label
+                  }
+                >
+                  {deal.trust.confidence.label === "unknown"
                     ? "Unknown"
-                    : deal.trust.confidence.label
-                }
-              >
-                {deal.trust.confidence.label === "unknown"
-                  ? "Unknown"
-                  : deal.trust.confidence.label}
-              </p>
-              <p
-                className="mt-0.5 truncate text-slate-500"
-                title={confidenceReason}
-              >
-                {confidenceReason}
-              </p>
+                    : deal.trust.confidence.label}
+                </p>
+                <p
+                  className="mt-0.5 truncate text-slate-500"
+                  title={confidenceReason}
+                >
+                  {confidenceReason}
+                </p>
+              </div>
             </div>
           </div>
         </div>

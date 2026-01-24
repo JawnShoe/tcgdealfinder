@@ -787,7 +787,7 @@ export default function ExpandableDealList({
                 <span
                   className={`transition-transform ${
                     mode === "home"
-                      ? "text-[12px] leading-none text-slate-400 opacity-70"
+                      ? "text-[10px] leading-none text-slate-400 opacity-70"
                       : "text-slate-400"
                   } ${expanded ? "rotate-180" : ""}`}
                 >

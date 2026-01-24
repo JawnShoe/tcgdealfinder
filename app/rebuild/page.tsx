@@ -87,7 +87,7 @@ export default async function RebuildHomePage({
 
     return (
       <main className="min-h-screen bg-slate-50">
-        <style jsx global>{`
+        <style>{`
           body > header {
             display: none;
           }

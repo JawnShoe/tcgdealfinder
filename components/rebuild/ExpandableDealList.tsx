@@ -668,13 +668,21 @@ export default function ExpandableDealList({
                 data-testid="rebuild-deal-col-seller"
                 className="min-w-0 text-right text-xs"
               >
-                <p className="truncate font-medium text-slate-900">
+                <p
+                  className={`truncate font-medium ${
+                    mode === "home" ? "text-slate-700" : "text-slate-900"
+                  }`}
+                >
                   {sellerUrl ? (
                     <a
                       href={sellerUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:underline"
+                      className={
+                        mode === "home"
+                          ? "text-slate-700 hover:text-slate-900 hover:underline"
+                          : "hover:underline"
+                      }
                       onClick={(e) => e.stopPropagation()}
                     >
                       {sellerLabel}

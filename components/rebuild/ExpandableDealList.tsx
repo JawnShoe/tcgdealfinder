@@ -169,42 +169,24 @@ function getConfidenceReason(deal: ListingDomain): string {
  */
 function getMarketContext(deal: ListingDomain): {
   title: string;
-  summary: string;
+  summary: string | null;
 } {
   if (deal.price.discountPercent == null) {
     return {
-      title: "No market data",
-      summary: "Discount signal not computed for this listing.",
+      title: "No market match",
+      summary: null,
     };
   }
 
   return {
-    title: "Market baseline available",
-    summary: "Discount signal computed from available market data.",
+    title: "Market data available",
+    summary: null,
   };
 }
 
-function getSignalNote(deal: ListingDomain, duplicateCount: number): string {
-  if (
-    deal.trust.confidence.label === "low" ||
-    deal.trust.confidence.label === "unknown" ||
-    deal.price.discountPercent == null
-  ) {
-    return "Discount signal unreliable (no market match)";
-  }
-
-  if (deal.riskFlags.includes("INTEGRITY_FLAGGED")) {
-    return "Integrity flagged by reliability checks";
-  }
-
-  if (deal.riskFlags.includes("SHIPPING_UNKNOWN")) {
-    return "Shipping cost unknown";
-  }
-
-  if (duplicateCount > 0) {
-    return `Also seen in ${duplicateCount} other market${
-      duplicateCount === 1 ? "" : "s"
-    }`;
+function getSignalNote(deal: ListingDomain): string {
+  if (deal.price.discountPercent == null) {
+    return "Signal unreliable (no market match)";
   }
 
   return "More context soon";
@@ -214,7 +196,6 @@ type HomeDealQualityPanelProps = {
   panelId: string;
   confidencePanelId: string;
   deal: ListingDomain;
-  duplicateCount: number;
   sellerLabel: string;
   sellerUrl: string | null;
   confidenceExpanded: boolean;
@@ -236,7 +217,6 @@ function HomeDealQualityPanel({
   panelId,
   confidencePanelId,
   deal,
-  duplicateCount,
   sellerLabel,
   sellerUrl,
   confidenceExpanded,
@@ -245,13 +225,13 @@ function HomeDealQualityPanel({
 }: HomeDealQualityPanelProps) {
   const confidenceReason = getConfidenceReason(deal);
   const marketContext = getMarketContext(deal);
-  const signalNote = getSignalNote(deal, duplicateCount);
+  const signalNote = getSignalNote(deal);
 
   return (
     <div
       id={panelId}
       data-testid="rebuild-deal-row-expanded"
-      className="rebuild-inspection-panel col-span-full -mx-2 mt-2 border-t border-slate-100 pt-2"
+      className="rebuild-inspection-panel col-span-full -mx-2 mt-1 border-t border-slate-100 pt-1"
       onKeyDownCapture={(event) => {
         if (event.key !== "Escape") return;
         if (!confidenceExpanded) return;
@@ -263,7 +243,7 @@ function HomeDealQualityPanel({
       <div
         className={`grid ${getGridColsForMode(
           "home"
-        )} ${GRID_GAP} ${ROW_PADDING} pb-2 text-xs`}
+        )} ${GRID_GAP} ${ROW_PADDING} gap-y-1 pb-1 text-xs`}
       >
         <div className="min-w-0">
           <div className="flex min-w-0 items-start gap-2">
@@ -291,41 +271,28 @@ function HomeDealQualityPanel({
           </div>
         </div>
 
-        <div className="min-w-0 text-right">
-          <p className="font-medium text-[12px] leading-snug text-slate-700">
+        <div className="min-w-0 text-left">
+          <p className="text-[12px] leading-snug text-slate-500">
             {marketContext.title}
           </p>
-          <p className="mt-0.5 line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
-            {marketContext.summary}
-          </p>
+          {marketContext.summary ? (
+            <p className="mt-0.5 line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
+              {marketContext.summary}
+            </p>
+          ) : null}
         </div>
 
-        <div className="min-w-0 text-right">
-          <p className="font-medium text-[12px] leading-snug text-slate-700">
-            Notes
-          </p>
-          <p className="mt-0.5 line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
+        <div className="min-w-0 text-left">
+          <p className="line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
             {signalNote}
           </p>
         </div>
 
         <div className="min-w-0 text-right">
-          <p className="truncate font-medium text-slate-700" title="Provenance">
-            Provenance
+          <p className="text-[12px] leading-snug text-slate-500">
+            {deal.provenance.source} · Checked {ageLabel}
           </p>
-          <p
-            className="mt-0.5 truncate text-slate-500"
-            title={`Source: ${deal.provenance.source}`}
-          >
-            Source: {deal.provenance.source}
-          </p>
-          <p
-            className="mt-0.5 truncate text-slate-500"
-            title={`Checked: ${ageLabel}`}
-          >
-            Checked: {ageLabel}
-          </p>
-          <p className="mt-0.5 truncate text-slate-500" title={sellerLabel}>
+          <p className="mt-0.5 truncate text-[12px] leading-snug text-slate-500">
             Store:{" "}
             {sellerUrl ? (
               <a
@@ -803,7 +770,6 @@ export default function ExpandableDealList({
                     panelId={panelId}
                     confidencePanelId={confidencePanelId}
                     deal={deal}
-                    duplicateCount={duplicateCount}
                     sellerLabel={sellerLabel}
                     sellerUrl={sellerUrl}
                     confidenceExpanded={confidenceExpanded}

@@ -12,8 +12,19 @@ const GRID_COLS_SM = "sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem_2rem]";
 const GRID_COLS_LG = "lg:grid-cols-[minmax(0,1fr)_12rem_10rem_18rem_2rem]";
 const GRID_COLS_2XL = "2xl:grid-cols-[minmax(0,1fr)_13rem_11rem_20rem_2rem]";
 const GRID_COLS = `grid-cols-1 ${GRID_COLS_SM} ${GRID_COLS_LG} ${GRID_COLS_2XL}`;
+const GRID_COLS_HOME_SM =
+  "sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem_1.25rem]";
+const GRID_COLS_HOME_LG =
+  "lg:grid-cols-[minmax(0,1fr)_12rem_10rem_18rem_1.25rem]";
+const GRID_COLS_HOME_2XL =
+  "2xl:grid-cols-[minmax(0,1fr)_13rem_11rem_20rem_1.25rem]";
+const GRID_COLS_HOME = `grid-cols-1 ${GRID_COLS_HOME_SM} ${GRID_COLS_HOME_LG} ${GRID_COLS_HOME_2XL}`;
 const GRID_GAP = "gap-x-4 gap-y-2";
 const ROW_PADDING = "px-2";
+
+function getGridColsForMode(mode: "home" | "discovery") {
+  return mode === "home" ? GRID_COLS_HOME : GRID_COLS;
+}
 
 function DealRowGrid({
   children,
@@ -250,7 +261,9 @@ function HomeDealQualityPanel({
       }}
     >
       <div
-        className={`grid ${GRID_COLS} ${GRID_GAP} ${ROW_PADDING} pb-2 text-xs`}
+        className={`grid ${getGridColsForMode(
+          "home"
+        )} ${GRID_GAP} ${ROW_PADDING} pb-2 text-xs`}
       >
         <div className="min-w-0">
           <div className="flex min-w-0 items-start gap-2">
@@ -638,7 +651,9 @@ export default function ExpandableDealList({
               tabIndex={0}
               aria-expanded={expanded}
               aria-controls={panelId}
-              className={`grid ${GRID_COLS} ${GRID_GAP} ${ROW_PADDING} -mx-2 rounded-md py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400`}
+              className={`grid ${getGridColsForMode(
+                mode
+              )} ${GRID_GAP} ${ROW_PADDING} -mx-2 rounded-md py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400`}
               onClick={(event) => {
                 if (shouldIgnoreRowToggle(event.target)) return;
                 setExpandedConfidenceListingId(null);
@@ -778,7 +793,7 @@ export default function ExpandableDealList({
                 <span
                   className={`transition-transform ${
                     mode === "home"
-                      ? "text-xs leading-none text-slate-400"
+                      ? "text-[12px] leading-none text-slate-400 opacity-70"
                       : "text-slate-400"
                   } ${expanded ? "rotate-180" : ""}`}
                 >

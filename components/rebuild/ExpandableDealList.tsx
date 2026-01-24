@@ -274,19 +274,25 @@ function HomeDealQualityPanel({
           </div>
         </div>
 
-        <div className="w-full min-w-0 self-start justify-self-start text-left sm:col-start-2">
-          <p className="text-[12px] leading-snug text-slate-500">
+        <div
+          data-testid="home-expanded-col2"
+          className="flex w-full min-w-0 flex-col items-start self-start justify-self-start text-left sm:col-start-2"
+        >
+          <p className="w-full text-[12px] leading-snug text-slate-500">
             {marketContext.title}
           </p>
           {marketContext.summary ? (
-            <p className="mt-0.5 line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
+            <p className="mt-0.5 w-full line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
               {marketContext.summary}
             </p>
           ) : null}
         </div>
 
-        <div className="w-full min-w-0 self-start justify-self-start text-left sm:col-start-3">
-          <p className="line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
+        <div
+          data-testid="home-expanded-col3"
+          className="flex w-full min-w-0 flex-col items-start self-start justify-self-start text-left sm:col-start-3"
+        >
+          <p className="w-full line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
             {signalNote}
           </p>
         </div>

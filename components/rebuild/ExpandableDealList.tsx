@@ -292,25 +292,19 @@ function HomeDealQualityPanel({
         </div>
 
         <div className="min-w-0 text-right">
-          <p
-            className="truncate font-medium text-slate-700"
-            title={marketContext.title}
-          >
+          <p className="font-medium text-[12px] leading-snug text-slate-700">
             {marketContext.title}
           </p>
-          <p
-            className="mt-0.5 truncate text-slate-500"
-            title={marketContext.summary}
-          >
+          <p className="mt-0.5 line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
             {marketContext.summary}
           </p>
         </div>
 
         <div className="min-w-0 text-right">
-          <p className="truncate font-medium text-slate-700" title="Notes">
+          <p className="font-medium text-[12px] leading-snug text-slate-700">
             Notes
           </p>
-          <p className="mt-0.5 truncate text-slate-500" title={signalNote}>
+          <p className="mt-0.5 line-clamp-2 break-words text-[12px] leading-snug text-slate-500">
             {signalNote}
           </p>
         </div>

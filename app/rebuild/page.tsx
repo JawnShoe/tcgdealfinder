@@ -87,8 +87,14 @@ export default async function RebuildHomePage({
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px]">
-          <header className="rounded-lg border border-slate-100 bg-white/80 px-6 py-4">
-            <span className="sr-only">Rebuild lane</span>
+          <header
+            role="banner"
+            data-testid="rebuild-banner"
+            className="rounded-lg border border-slate-100 bg-white/80 px-6 py-4"
+          >
+            <div className="text-xs font-medium text-slate-600">
+              Rebuild lane
+            </div>
             <h1 className="text-2xl font-semibold text-slate-900">
               Today&apos;s Best Deals
             </h1>

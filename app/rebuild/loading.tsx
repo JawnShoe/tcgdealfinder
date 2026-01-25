@@ -6,25 +6,32 @@ export default function RebuildHomeLoading() {
       className="min-h-screen bg-slate-50"
       data-testid="rebuild-loading-home"
     >
-      <span className="sr-only">Rebuild lane</span>
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6 rounded-lg border border-slate-200 bg-slate-100 px-4 py-3">
-          <SkeletonBlock className="h-4 w-48" />
-        </div>
+        <header
+          role="banner"
+          data-testid="rebuild-banner"
+          className="mb-6 rounded-lg border border-slate-200 bg-slate-100 px-4 py-3"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-xs font-medium text-slate-700">
+              Rebuild lane
+            </span>
+            <div className="flex items-center gap-3 text-sm text-slate-600">
+              <span className="font-medium text-slate-700">Resilience</span>
+              <span
+                data-testid="resilience-label"
+                data-tier="UNAVAILABLE"
+                className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+              >
+                UNAVAILABLE
+              </span>
+            </div>
+          </div>
+        </header>
 
         <header className="rounded-lg border border-slate-200 bg-white p-6">
           <SkeletonBlock className="h-6 w-40" />
           <SkeletonBlock className="mt-3 h-4 w-72" />
-          <div className="mt-4 flex items-center gap-3 text-sm text-slate-600">
-            <span className="font-medium text-slate-700">Resilience</span>
-            <span
-              data-testid="resilience-label"
-              data-tier="UNAVAILABLE"
-              className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
-            >
-              UNAVAILABLE
-            </span>
-          </div>
         </header>
 
         <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">

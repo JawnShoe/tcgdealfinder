@@ -7,11 +7,7 @@ export default function RebuildHomeLoading() {
       data-testid="rebuild-loading-home"
     >
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <header
-          role="banner"
-          data-testid="rebuild-banner"
-          className="mb-6 rounded-lg border border-slate-200 bg-slate-100 px-4 py-3"
-        >
+        <section className="mb-6 rounded-lg border border-slate-200 bg-slate-100 px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs font-medium text-slate-700">
               Rebuild lane
@@ -27,7 +23,7 @@ export default function RebuildHomeLoading() {
               </span>
             </div>
           </div>
-        </header>
+        </section>
 
         <header className="rounded-lg border border-slate-200 bg-white p-6">
           <SkeletonBlock className="h-6 w-40" />

@@ -952,17 +952,20 @@ export default function ExpandableDealList({
         </ul>
       )}
 
-      <details className="mt-6 rounded-md border border-slate-100 bg-slate-50/60 px-4 py-3 text-sm text-slate-700">
-        <summary className="cursor-pointer list-none font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden">
-          Provenance
-        </summary>
-        <div className="mt-2 text-xs leading-snug text-slate-600">
-          <p>
-            Deals are derived from marketplace listings and enriched with market
-            baselines where available.
-          </p>
-        </div>
-      </details>
+      {mode === "home" ? (
+        <details className="mt-6 rounded-md border border-slate-100 bg-slate-50/60 px-4 py-3 text-sm text-slate-700">
+          <summary className="cursor-pointer list-none font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden">
+            Provenance
+          </summary>
+          <div className="mt-2 text-xs leading-snug text-slate-600">
+            <p>Fetched at: —</p>
+            <p className="mt-2">
+              Deals are derived from marketplace listings and enriched with
+              market baselines where available.
+            </p>
+          </div>
+        </details>
+      ) : null}
 
       {mode === "home" ? (
         homeDeferredReady ? (

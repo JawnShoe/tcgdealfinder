@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { ListingDomain } from "@/lib/rebuild/data/listingMapper";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ConfidenceMethodology from "@/components/rebuild/ConfidenceMethodology";
@@ -276,6 +276,8 @@ function HomeDealQualityPanel({
               {thumbnailUrl ? (
                 <img
                   src={thumbnailUrl}
+                  width={56}
+                  height={56}
                   loading="lazy"
                   decoding="async"
                   alt={deal.title}
@@ -615,8 +617,14 @@ export default function ExpandableDealList({
   const [homeSort, setHomeSort] = useState<RebuildSort | null>(
     mode === "home" ? (initialSort ?? null) : null
   );
+  const [homeDeferredReady, setHomeDeferredReady] = useState(false);
 
   const baseId = useId();
+
+  useEffect(() => {
+    if (mode !== "home") return;
+    setHomeDeferredReady(true);
+  }, [mode]);
 
   const closeAllPanels = () => {
     setExpandedListingId(null);
@@ -920,6 +928,41 @@ export default function ExpandableDealList({
             );
           })}
         </ul>
+      ) : null}
+      {mode === "home" ? (
+        homeDeferredReady ? (
+          <div data-testid="rebuild-home-deferred-content" className="mt-6">
+            <nav
+              data-testid="rebuild-home-nav"
+              className="flex items-center justify-end gap-6 text-sm text-slate-600"
+            >
+              <IntentPrefetchLink
+                href="/rebuild/discovery"
+                className="hover:text-slate-900 hover:underline"
+              >
+                Browse deals
+              </IntentPrefetchLink>
+              <IntentPrefetchLink
+                href="/rebuild/alerts"
+                className="hover:text-slate-900 hover:underline"
+              >
+                Alerts
+              </IntentPrefetchLink>
+              <IntentPrefetchLink
+                href="/rebuild/ops"
+                className="hover:text-slate-900 hover:underline"
+              >
+                Ops
+              </IntentPrefetchLink>
+            </nav>
+          </div>
+        ) : (
+          <div
+            data-testid="rebuild-home-deferred-skeleton"
+            className="mt-6 h-8 w-full rounded-md bg-slate-50"
+            aria-hidden="true"
+          />
+        )
       ) : null}
     </>
   );

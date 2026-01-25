@@ -88,6 +88,7 @@ export default async function RebuildHomePage({
       <main className="min-h-screen bg-slate-50">
         <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px]">
           <header className="rounded-lg border border-slate-100 bg-white/80 px-6 py-4">
+            <span className="sr-only">Rebuild lane</span>
             <h1 className="text-2xl font-semibold text-slate-900">
               Today&apos;s Best Deals
             </h1>
@@ -95,6 +96,16 @@ export default async function RebuildHomePage({
               Price-checked against market data · Seller data enriched ·
               Continuously refreshed
             </p>
+            <div className="mt-3 flex items-center gap-3 text-sm text-slate-600">
+              <span className="font-medium text-slate-700">Resilience</span>
+              <span
+                data-testid="resilience-label"
+                data-tier={isDbConfigured ? "LIVE" : "UNAVAILABLE"}
+                className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+              >
+                {isDbConfigured ? "LIVE" : "UNAVAILABLE"}
+              </span>
+            </div>
           </header>
 
           <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">

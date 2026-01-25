@@ -894,7 +894,63 @@ export default function ExpandableDealList({
             );
           })}
         </ul>
-      ) : null}
+      ) : (
+        <ul className={`mt-4 divide-y divide-slate-100 ${className ?? ""}`}>
+          <li key="placeholder" className="py-1">
+            <details className="group" data-testid="home-deal-details">
+              <summary
+                data-testid="rebuild-deal-row"
+                data-listing-id="placeholder"
+                data-mode={mode}
+                aria-controls={`${baseId}-placeholder-inspection`}
+                className={`list-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden grid ${getGridColsForMode(
+                  mode
+                )} ${GRID_GAP} ${ROW_PADDING} -mx-2 rounded-md py-1.5`}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-slate-400">
+                    Loading deals…
+                  </p>
+                  <p className="mt-1 truncate text-xs text-slate-300">—</p>
+                </div>
+
+                <div className="whitespace-nowrap text-right tabular-nums">
+                  <p className="text-lg font-semibold text-slate-200">—</p>
+                </div>
+
+                <div className="whitespace-nowrap text-right tabular-nums">
+                  <p className="text-sm font-medium text-slate-200">—</p>
+                  <p className="mt-0.5 text-xs text-slate-200">vs market</p>
+                </div>
+
+                <div className="min-w-0 text-right text-xs">
+                  <p className="truncate font-medium text-slate-300">—</p>
+                  <p className="mt-0.5 text-slate-200">—</p>
+                </div>
+
+                <div className="hidden items-center justify-center sm:flex">
+                  <span
+                    className={`transition-transform group-open:rotate-180 ${
+                      mode === "home"
+                        ? "text-[8px] leading-none text-slate-400 opacity-60"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    ▼
+                  </span>
+                </div>
+              </summary>
+
+              <div
+                id={`${baseId}-placeholder-inspection`}
+                className="rebuild-inspection-panel col-span-full -mx-2 mt-1 border-t border-slate-100 pt-2 text-xs text-slate-500"
+              >
+                Deal details will appear once data is available.
+              </div>
+            </details>
+          </li>
+        </ul>
+      )}
 
       <details className="mt-6 rounded-md border border-slate-100 bg-slate-50/60 px-4 py-3 text-sm text-slate-700">
         <summary className="cursor-pointer list-none font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden">

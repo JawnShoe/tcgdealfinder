@@ -105,7 +105,7 @@ export default async function RebuildHomePage({
                 data-tier={isDbConfigured ? "LIVE" : "UNAVAILABLE"}
                 className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
               >
-                {isDbConfigured ? "LIVE" : "UNAVAILABLE"}
+                Resilience: {isDbConfigured ? "LIVE" : "UNAVAILABLE"}
               </span>
             </div>
           </section>

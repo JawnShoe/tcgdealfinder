@@ -19,7 +19,7 @@ export default function RebuildHomeLoading() {
                 data-tier="UNAVAILABLE"
                 className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
               >
-                UNAVAILABLE
+                Resilience: UNAVAILABLE
               </span>
             </div>
           </div>

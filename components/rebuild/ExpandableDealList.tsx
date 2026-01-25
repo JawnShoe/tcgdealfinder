@@ -71,11 +71,6 @@ type ExpandableDealListProps = {
   className?: string;
 };
 
-function shouldIgnoreRowToggle(eventTarget: EventTarget | null): boolean {
-  if (!(eventTarget instanceof HTMLElement)) return false;
-  return Boolean(eventTarget.closest("a,button,input,select,textarea"));
-}
-
 function formatMarketIndicator(value: string | null | undefined): string {
   if (!value) return "—";
   const normalized = value.trim().toUpperCase();
@@ -609,9 +604,6 @@ export default function ExpandableDealList({
   initialSort,
   className,
 }: ExpandableDealListProps) {
-  const [expandedListingId, setExpandedListingId] = useState<string | null>(
-    null
-  );
   const [expandedConfidenceListingId, setExpandedConfidenceListingId] =
     useState<string | null>(null);
   const [homeSort, setHomeSort] = useState<RebuildSort | null>(
@@ -625,11 +617,6 @@ export default function ExpandableDealList({
     if (mode !== "home") return;
     setHomeDeferredReady(true);
   }, [mode]);
-
-  const closeAllPanels = () => {
-    setExpandedListingId(null);
-    setExpandedConfidenceListingId(null);
-  };
 
   const hasItems = items.length > 0;
 
@@ -680,7 +667,6 @@ export default function ExpandableDealList({
         <ul className={`mt-4 divide-y divide-slate-100 ${className ?? ""}`}>
           {items.map(({ deal, duplicateCount }) => {
             const listingId = deal.listingId;
-            const expanded = expandedListingId === listingId;
             const confidenceExpanded =
               expandedConfidenceListingId === listingId;
             const panelId = `${baseId}-${listingId}-inspection`;
@@ -714,221 +700,214 @@ export default function ExpandableDealList({
 
             return (
               <li key={listingId} className="py-1">
-                <div
-                  data-testid="rebuild-deal-row"
-                  data-listing-id={listingId}
-                  data-mode={mode}
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={expanded}
-                  aria-controls={panelId}
-                  className={`grid ${getGridColsForMode(
-                    mode
-                  )} ${GRID_GAP} ${ROW_PADDING} -mx-2 rounded-md py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400`}
-                  onClick={(event) => {
-                    if (shouldIgnoreRowToggle(event.target)) return;
-                    setExpandedConfidenceListingId(null);
-                    setExpandedListingId((current) =>
-                      current === listingId ? null : listingId
-                    );
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      if (shouldIgnoreRowToggle(event.target)) return;
-                      event.preventDefault();
-                      setExpandedConfidenceListingId(null);
-                      setExpandedListingId((current) =>
-                        current === listingId ? null : listingId
-                      );
-                      return;
-                    }
-                    if (event.key === "Escape") {
-                      if (!expanded) return;
-                      event.preventDefault();
-                      closeAllPanels();
-                    }
-                  }}
-                >
-                  {/* Identity column: title + set-line */}
-                  <div
-                    data-testid="rebuild-deal-col-identity"
-                    className="min-w-0"
+                <details className="group" data-testid="home-deal-details">
+                  <summary
+                    data-testid="rebuild-deal-row"
+                    data-listing-id={listingId}
+                    data-mode={mode}
+                    aria-controls={panelId}
+                    className={`list-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden grid ${getGridColsForMode(
+                      mode
+                    )} ${GRID_GAP} ${ROW_PADDING} -mx-2 rounded-md py-1.5`}
                   >
-                    {mode === "home" && deal.url ? (
-                      <a
-                        data-testid="rebuild-deal-row-title"
-                        href={deal.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {deal.title}
-                      </a>
-                    ) : (
-                      <IntentPrefetchLink
-                        data-testid="rebuild-deal-row-title"
-                        href={buildListingUrl({ id: listingId })}
-                        className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
-                      >
-                        {deal.title}
-                      </IntentPrefetchLink>
-                    )}
-
-                    <p className="mt-1 truncate text-xs text-slate-500">
-                      {[deal.setName, conditionLabel, languageLabel]
-                        .filter((v) => {
-                          if (!v || v === "—" || v === "UNKNOWN") return false;
-                          if (v.toLowerCase() === "graded") return false;
-                          return true;
-                        })
-                        .join(" · ") || "—"}
-                    </p>
-                  </div>
-
-                  {/* Price column */}
-                  <div
-                    data-testid="rebuild-deal-col-price"
-                    className="whitespace-nowrap text-right tabular-nums"
-                  >
-                    <p className="text-lg font-semibold text-slate-900">
-                      {deal.price.display === "Unavailable"
-                        ? "—"
-                        : deal.price.display}
-                    </p>
-                    {mode === "home" && marketIndicator === "—" ? null : (
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {marketIndicator}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Discount column */}
-                  <div
-                    data-testid="rebuild-deal-col-discount"
-                    className="whitespace-nowrap text-right tabular-nums"
-                  >
-                    <p
-                      className={`text-sm font-medium ${
-                        discountPercent == null
-                          ? "text-slate-400"
-                          : discountPercent < 0
-                            ? "text-emerald-700"
-                            : "text-slate-700"
-                      }`}
+                    {/* Identity column: title + set-line */}
+                    <div
+                      data-testid="rebuild-deal-col-identity"
+                      className="min-w-0"
                     >
-                      {discountValueLabel}
-                    </p>
-                    <p
-                      className={`mt-0.5 text-xs ${
-                        emphasis === "discount"
-                          ? "font-medium text-slate-900"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      vs market
-                    </p>
-                  </div>
-
-                  {/* Seller column */}
-                  <div
-                    data-testid="rebuild-deal-col-seller"
-                    className="min-w-0 text-right text-xs"
-                  >
-                    <p
-                      className={`truncate font-medium ${
-                        mode === "home" ? "text-slate-700" : "text-slate-900"
-                      }`}
-                    >
-                      {sellerUrl ? (
+                      {mode === "home" && deal.url ? (
                         <a
-                          href={sellerUrl}
+                          data-testid="rebuild-deal-row-title"
+                          href={deal.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={
-                            mode === "home"
-                              ? "text-slate-700 hover:text-slate-900 hover:underline"
-                              : "hover:underline"
-                          }
+                          className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {sellerLabel}
+                          {deal.title}
                         </a>
                       ) : (
-                        sellerLabel
+                        <span
+                          className="block"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <IntentPrefetchLink
+                            data-testid="rebuild-deal-row-title"
+                            href={buildListingUrl({ id: listingId })}
+                            className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
+                          >
+                            {deal.title}
+                          </IntentPrefetchLink>
+                        </span>
                       )}
-                    </p>
-                    <p className="mt-0.5 text-slate-500">
-                      {deal.seller.feedbackCount != null &&
-                      deal.seller.positivePercent != null ? (
-                        <span>
-                          ★ {deal.seller.feedbackCount.toLocaleString()} (
-                          {deal.seller.positivePercent.toFixed(1)}%)
-                        </span>
-                      ) : deal.seller.feedbackCount != null ? (
-                        <span>
-                          ★ {deal.seller.feedbackCount.toLocaleString()}
-                        </span>
-                      ) : deal.seller.positivePercent != null ? (
-                        <span>
-                          {deal.seller.positivePercent.toFixed(1)}% positive
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </p>
-                  </div>
 
-                  {/* Chevron column */}
-                  <div className="hidden items-center justify-center sm:flex">
-                    <span
-                      className={`transition-transform ${
-                        mode === "home"
-                          ? "text-[8px] leading-none text-slate-400 opacity-60"
-                          : "text-slate-400"
-                      } ${expanded ? "rotate-180" : ""}`}
+                      <p className="mt-1 truncate text-xs text-slate-500">
+                        {[deal.setName, conditionLabel, languageLabel]
+                          .filter((v) => {
+                            if (!v || v === "—" || v === "UNKNOWN")
+                              return false;
+                            if (v.toLowerCase() === "graded") return false;
+                            return true;
+                          })
+                          .join(" · ") || "—"}
+                      </p>
+                    </div>
+
+                    {/* Price column */}
+                    <div
+                      data-testid="rebuild-deal-col-price"
+                      className="whitespace-nowrap text-right tabular-nums"
                     >
-                      ▼
-                    </span>
-                  </div>
+                      <p className="text-lg font-semibold text-slate-900">
+                        {deal.price.display === "Unavailable"
+                          ? "—"
+                          : deal.price.display}
+                      </p>
+                      {mode === "home" && marketIndicator === "—" ? null : (
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {marketIndicator}
+                        </p>
+                      )}
+                    </div>
 
-                  {expanded ? (
-                    mode === "home" ? (
-                      <HomeDealQualityPanel
-                        panelId={panelId}
-                        confidencePanelId={confidencePanelId}
-                        deal={deal}
-                        sellerLabel={sellerLabel}
-                        sellerUrl={sellerUrl}
-                        confidenceExpanded={confidenceExpanded}
-                        listingId={listingId}
-                        ageLabel={ageLabel}
-                        endsDisplay={endsDisplay}
-                        onConfidenceClose={() =>
-                          setExpandedConfidenceListingId(null)
-                        }
-                      />
-                    ) : (
-                      <DiscoveryExpandedPanel
-                        panelId={panelId}
-                        confidencePanelId={confidencePanelId}
-                        deal={deal}
-                        duplicateCount={duplicateCount}
-                        sellerLabel={sellerLabel}
-                        confidenceExpanded={confidenceExpanded}
-                        listingId={listingId}
-                        onConfidenceClose={() =>
-                          setExpandedConfidenceListingId(null)
-                        }
-                      />
-                    )
-                  ) : null}
-                </div>
+                    {/* Discount column */}
+                    <div
+                      data-testid="rebuild-deal-col-discount"
+                      className="whitespace-nowrap text-right tabular-nums"
+                    >
+                      <p
+                        className={`text-sm font-medium ${
+                          discountPercent == null
+                            ? "text-slate-400"
+                            : discountPercent < 0
+                              ? "text-emerald-700"
+                              : "text-slate-700"
+                        }`}
+                      >
+                        {discountValueLabel}
+                      </p>
+                      <p
+                        className={`mt-0.5 text-xs ${
+                          emphasis === "discount"
+                            ? "font-medium text-slate-900"
+                            : "text-slate-500"
+                        }`}
+                      >
+                        vs market
+                      </p>
+                    </div>
+
+                    {/* Seller column */}
+                    <div
+                      data-testid="rebuild-deal-col-seller"
+                      className="min-w-0 text-right text-xs"
+                    >
+                      <p
+                        className={`truncate font-medium ${
+                          mode === "home" ? "text-slate-700" : "text-slate-900"
+                        }`}
+                      >
+                        {sellerUrl ? (
+                          <a
+                            href={sellerUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={
+                              mode === "home"
+                                ? "text-slate-700 hover:text-slate-900 hover:underline"
+                                : "hover:underline"
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {sellerLabel}
+                          </a>
+                        ) : (
+                          sellerLabel
+                        )}
+                      </p>
+                      <p className="mt-0.5 text-slate-500">
+                        {deal.seller.feedbackCount != null &&
+                        deal.seller.positivePercent != null ? (
+                          <span>
+                            ★ {deal.seller.feedbackCount.toLocaleString()} (
+                            {deal.seller.positivePercent.toFixed(1)}%)
+                          </span>
+                        ) : deal.seller.feedbackCount != null ? (
+                          <span>
+                            ★ {deal.seller.feedbackCount.toLocaleString()}
+                          </span>
+                        ) : deal.seller.positivePercent != null ? (
+                          <span>
+                            {deal.seller.positivePercent.toFixed(1)}% positive
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Chevron column */}
+                    <div className="hidden items-center justify-center sm:flex">
+                      <span
+                        className={`transition-transform group-open:rotate-180 ${
+                          mode === "home"
+                            ? "text-[8px] leading-none text-slate-400 opacity-60"
+                            : "text-slate-400"
+                        }`}
+                      >
+                        ▼
+                      </span>
+                    </div>
+                  </summary>
+
+                  {mode === "home" ? (
+                    <HomeDealQualityPanel
+                      panelId={panelId}
+                      confidencePanelId={confidencePanelId}
+                      deal={deal}
+                      sellerLabel={sellerLabel}
+                      sellerUrl={sellerUrl}
+                      confidenceExpanded={confidenceExpanded}
+                      listingId={listingId}
+                      ageLabel={ageLabel}
+                      endsDisplay={endsDisplay}
+                      onConfidenceClose={() =>
+                        setExpandedConfidenceListingId(null)
+                      }
+                    />
+                  ) : (
+                    <DiscoveryExpandedPanel
+                      panelId={panelId}
+                      confidencePanelId={confidencePanelId}
+                      deal={deal}
+                      duplicateCount={duplicateCount}
+                      sellerLabel={sellerLabel}
+                      confidenceExpanded={confidenceExpanded}
+                      listingId={listingId}
+                      onConfidenceClose={() =>
+                        setExpandedConfidenceListingId(null)
+                      }
+                    />
+                  )}
+                </details>
               </li>
             );
           })}
         </ul>
       ) : null}
+
+      <details className="mt-6 rounded-md border border-slate-100 bg-slate-50/60 px-4 py-3 text-sm text-slate-700">
+        <summary className="cursor-pointer list-none font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden">
+          Provenance
+        </summary>
+        <div className="mt-2 text-xs leading-snug text-slate-600">
+          <p>
+            Deals are derived from marketplace listings and enriched with market
+            baselines where available.
+          </p>
+        </div>
+      </details>
+
       {mode === "home" ? (
         homeDeferredReady ? (
           <div data-testid="rebuild-home-deferred-content" className="mt-6">

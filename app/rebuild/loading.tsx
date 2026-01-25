@@ -14,6 +14,15 @@ export default function RebuildHomeLoading() {
         <header className="rounded-lg border border-slate-200 bg-white p-6">
           <SkeletonBlock className="h-6 w-40" />
           <SkeletonBlock className="mt-3 h-4 w-72" />
+          <div className="mt-4 flex items-center gap-3">
+            <span
+              data-testid="resilience-label"
+              data-tier="UNAVAILABLE"
+              className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+            >
+              UNAVAILABLE
+            </span>
+          </div>
         </header>
 
         <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
@@ -36,6 +45,12 @@ export default function RebuildHomeLoading() {
           </div>
           <SkeletonBlock className="mt-4 h-3 w-40" />
         </section>
+
+        <div
+          data-testid="rebuild-home-deferred-skeleton"
+          className="mt-6 h-8 w-full rounded-md bg-slate-50"
+          aria-hidden="true"
+        />
 
         <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
           <SkeletonBlock className="h-5 w-40" />

@@ -27,6 +27,8 @@ export interface ListingOverrideWithDetails extends ListingOverride {
 // LIST OVERRIDES
 // =============================================================================
 
+let warnedMissingListingOverridesTable = false;
+
 export async function listOverrides(options?: {
   limit?: number;
   overrideType?: OverrideType;
@@ -69,8 +71,27 @@ export async function listOverrides(options?: {
   sql += ` ORDER BY lo.created_at DESC LIMIT $${paramIndex}`;
   queryParams.push(limit);
 
-  const result = await query<ListingOverrideWithDetails>(sql, queryParams);
-  return result.rows;
+  try {
+    const result = await query<ListingOverrideWithDetails>(sql, queryParams);
+    return result.rows;
+  } catch (error) {
+    const code =
+      typeof error === "object" && error != null && "code" in error
+        ? String((error as { code?: unknown }).code ?? "")
+        : "";
+
+    if (code === "42P01") {
+      if (!warnedMissingListingOverridesTable) {
+        warnedMissingListingOverridesTable = true;
+        console.warn(
+          "[rebuild][ops] listing_overrides missing (42P01); returning empty overrides list."
+        );
+      }
+      return [];
+    }
+
+    throw error;
+  }
 }
 
 // =============================================================================

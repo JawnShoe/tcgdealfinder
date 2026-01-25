@@ -28,6 +28,7 @@ test("mapDbRowToListingDomain derives USD totals from legacy CAD column", () => 
   const row: DbListingRow = {
     card_id: 1,
     card_language: "EN",
+    set_name: "Evolving Skies",
     listing_id: "listing-1",
     title: "Example listing",
     url: "https://example.com/listing",

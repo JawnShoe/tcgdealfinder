@@ -77,6 +77,7 @@ const BASE_LISTING: ListingDomain = {
   },
   language: "EN",
   condition: "NM",
+  setName: "Evolving Skies",
   availability: "In stock",
   provenance: {
     source: "EBAY",

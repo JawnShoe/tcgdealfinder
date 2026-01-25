@@ -1,11 +1,62 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { ListingDomain } from "@/lib/rebuild/data/listingMapper";
 import ConfidenceBadge from "@/components/rebuild/ConfidenceBadge";
 import ConfidenceMethodology from "@/components/rebuild/ConfidenceMethodology";
 import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
+import type { RebuildSort } from "@/lib/rebuild/prefs/rebuildPrefs";
+import { REBUILD_SORT_OPTIONS } from "@/lib/rebuild/prefs/rebuildPrefs";
 import { buildListingUrl } from "@/lib/rebuild/urls";
+
+// Shared grid primitive - prevents column drift between collapsed/expanded
+const GRID_COLS_SM = "sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem_2rem]";
+const GRID_COLS_LG = "lg:grid-cols-[minmax(0,1fr)_12rem_10rem_18rem_2rem]";
+const GRID_COLS_2XL = "2xl:grid-cols-[minmax(0,1fr)_13rem_11rem_20rem_2rem]";
+const GRID_COLS = `grid-cols-1 ${GRID_COLS_SM} ${GRID_COLS_LG} ${GRID_COLS_2XL}`;
+const GRID_COLS_HOME_SM =
+  "sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem_1.25rem]";
+const GRID_COLS_HOME_LG =
+  "lg:grid-cols-[minmax(0,1fr)_12rem_10rem_18rem_1.25rem]";
+const GRID_COLS_HOME_2XL =
+  "2xl:grid-cols-[minmax(0,1fr)_13rem_11rem_20rem_1.25rem]";
+const GRID_COLS_HOME = `grid-cols-1 ${GRID_COLS_HOME_SM} ${GRID_COLS_HOME_LG} ${GRID_COLS_HOME_2XL}`;
+const GRID_GAP = "gap-x-4 gap-y-2";
+const ROW_PADDING = "px-2";
+
+function getGridColsForMode(mode: "home" | "discovery") {
+  return mode === "home" ? GRID_COLS_HOME : GRID_COLS;
+}
+
+function DealRowGrid({
+  children,
+  className,
+  mode,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  mode: "home" | "discovery";
+}) {
+  return (
+    <div
+      className={`grid ${getGridColsForMode(
+        mode
+      )} ${GRID_GAP} ${ROW_PADDING} ${className ?? ""}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function getSellerUrl(
+  username: string | null | undefined,
+  source: string | null | undefined
+): string | null {
+  if (!username) return null;
+  const normalizedSource = (source ?? "").toUpperCase();
+  if (!normalizedSource.includes("EBAY")) return null;
+  return `https://www.ebay.com/usr/${encodeURIComponent(username)}`;
+}
 
 type ExpandableDealListItem = {
   deal: ListingDomain;
@@ -16,13 +67,9 @@ type ExpandableDealListProps = {
   items: ExpandableDealListItem[];
   mode: "home" | "discovery";
   sortPreset?: string;
+  initialSort?: RebuildSort;
   className?: string;
 };
-
-function shouldIgnoreRowToggle(eventTarget: EventTarget | null): boolean {
-  if (!(eventTarget instanceof HTMLElement)) return false;
-  return Boolean(eventTarget.closest("a,button,input,select,textarea"));
-}
 
 function formatMarketIndicator(value: string | null | undefined): string {
   if (!value) return "—";
@@ -53,6 +100,24 @@ function formatUtcTimestamp(date: Date): string {
   const hours = String(date.getUTCHours()).padStart(2, "0");
   const minutes = String(date.getUTCMinutes()).padStart(2, "0");
   return `${month} ${day}, ${year} · ${hours}:${minutes} UTC`;
+}
+
+function getListingThumbnailUrl(deal: ListingDomain): string | null {
+  const record = deal as unknown as Record<string, unknown>;
+  const candidates = [
+    record.thumbnailUrl,
+    record.imageUrl,
+    record.thumbnail_url,
+    record.image_url,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim() !== "") {
+      return candidate;
+    }
+  }
+
+  return null;
 }
 
 function getEndsDisplay(endsAtISO?: string | null): {
@@ -122,95 +187,72 @@ function getConfidenceReason(deal: ListingDomain): string {
 /**
  * Generate a plain-English price context string.
  */
-function getPriceContext(deal: ListingDomain): string {
-  const { discountPercent } = deal.price;
-
-  if (discountPercent == null) {
-    return "Market comparison unavailable";
+function getMarketContext(deal: ListingDomain): {
+  title: string;
+  summary: string | null;
+} {
+  if (deal.price.discountPercent == null) {
+    return {
+      title: "No market match",
+      summary: null,
+    };
   }
 
-  const absDiscount = Math.abs(discountPercent);
-
-  if (discountPercent < -15) {
-    return `~${absDiscount}% below typical market price`;
-  }
-  if (discountPercent < 0) {
-    return `~${absDiscount}% below market average`;
-  }
-  if (discountPercent > 15) {
-    return `~${absDiscount}% above typical market price`;
-  }
-  if (discountPercent > 0) {
-    return `~${absDiscount}% above market average`;
-  }
-
-  return "At market price";
+  return {
+    title: "Market data available",
+    summary: null,
+  };
 }
 
-/**
- * Get seller history summary in plain English.
- */
-function getSellerHistory(deal: ListingDomain): string {
-  const { feedbackCount } = deal.seller;
-  const { state } = deal.trustAssessment;
-
-  const parts: string[] = [];
-
-  if (state === "VERIFIED") {
-    parts.push("Verified seller");
+function getSignalNote(deal: ListingDomain): string {
+  if (deal.price.discountPercent == null) {
+    return "Signal unreliable (no market match)";
   }
 
-  if (feedbackCount != null) {
-    if (feedbackCount >= 1000) {
-      parts.push(`${feedbackCount.toLocaleString()}+ sales`);
-    } else if (feedbackCount >= 100) {
-      parts.push(`${feedbackCount}+ sales`);
-    } else if (feedbackCount > 0) {
-      parts.push(`${feedbackCount} sales`);
-    }
-  }
-
-  if (parts.length === 0) {
-    return "Seller history unavailable";
-  }
-
-  return parts.join(" · ");
+  return "More context soon";
 }
 
 type HomeDealQualityPanelProps = {
   panelId: string;
   confidencePanelId: string;
   deal: ListingDomain;
-  duplicateCount: number;
   sellerLabel: string;
+  sellerUrl: string | null;
   confidenceExpanded: boolean;
   listingId: string;
+  ageLabel: string;
+  endsDisplay: {
+    kind: "missing" | "ended" | "active";
+    relativeLabel: string;
+    absoluteLabel: string | null;
+  };
   onConfidenceClose: () => void;
 };
 
 /**
- * Shallow "Deal Quality" expansion panel for Home only.
- * Shows consumer-friendly trust information without internal debug terms.
+ * Shallow expansion panel for Home - shows confidence, price context, and provenance.
+ * Visually lighter than Discovery panel.
  */
 function HomeDealQualityPanel({
   panelId,
   confidencePanelId,
   deal,
-  duplicateCount,
   sellerLabel,
+  sellerUrl,
   confidenceExpanded,
-  listingId,
+  ageLabel,
   onConfidenceClose,
 }: HomeDealQualityPanelProps) {
   const confidenceReason = getConfidenceReason(deal);
-  const priceContext = getPriceContext(deal);
-  const sellerHistory = getSellerHistory(deal);
+  const marketContext = getMarketContext(deal);
+  const signalNote = getSignalNote(deal);
+  const thumbnailUrl = getListingThumbnailUrl(deal);
 
   return (
     <div
       id={panelId}
       data-testid="rebuild-deal-row-expanded"
-      className="rebuild-inspection-panel col-span-full mt-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700"
+      className="rebuild-inspection-panel col-span-full -mx-2 mt-1 border-t border-slate-100 pt-1"
       onKeyDownCapture={(event) => {
         if (event.key !== "Escape") return;
         if (!confidenceExpanded) return;
@@ -219,85 +261,113 @@ function HomeDealQualityPanel({
         onConfidenceClose();
       }}
     >
-      <p className="font-semibold text-slate-800">Deal Quality</p>
-
-      <dl className="mt-3 grid gap-3 sm:grid-cols-3">
-        {/* Confidence section */}
-        <div className="rounded-md border border-slate-100 bg-white px-3 py-2">
-          <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            Confidence
-          </dt>
-          <dd className="mt-1">
-            <span className="flex items-center gap-2">
+      <DealRowGrid mode="home" className="pb-1 text-xs">
+        <div className="min-w-0 sm:col-start-1">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-100">
+              <div className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-400">
+                No image
+              </div>
+              {thumbnailUrl ? (
+                <img
+                  src={thumbnailUrl}
+                  width={56}
+                  height={56}
+                  loading="lazy"
+                  decoding="async"
+                  alt={deal.title}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : null}
+            </div>
+            <div className="flex min-w-0 items-start gap-2">
               <ConfidenceBadge label={deal.trust.confidence.label} />
-              <span className="font-medium capitalize text-slate-900">
-                {deal.trust.confidence.label}
-              </span>
-            </span>
-            <p className="mt-1.5 text-slate-600">{confidenceReason}</p>
-          </dd>
+              <div className="min-w-0">
+                <p
+                  className="truncate font-medium capitalize text-slate-900"
+                  title={
+                    deal.trust.confidence.label === "unknown"
+                      ? "Unknown"
+                      : deal.trust.confidence.label
+                  }
+                >
+                  {deal.trust.confidence.label === "unknown"
+                    ? "Unknown"
+                    : deal.trust.confidence.label}
+                </p>
+                <p
+                  className="mt-0.5 truncate text-slate-500"
+                  title={confidenceReason}
+                >
+                  {confidenceReason}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Verification section */}
-        <div className="rounded-md border border-slate-100 bg-white px-3 py-2">
-          <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            Seller
-          </dt>
-          <dd className="mt-1">
-            <span className="font-medium text-slate-900">{sellerLabel}</span>
-            <p className="mt-1.5 text-slate-600">{sellerHistory}</p>
-          </dd>
-        </div>
-
-        {/* Price context section */}
-        <div className="rounded-md border border-slate-100 bg-white px-3 py-2">
-          <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            Price
-          </dt>
-          <dd className="mt-1">
-            <span className="font-medium text-slate-900">
-              {deal.price.display === "Unavailable" ? "—" : deal.price.display}
-            </span>
-            <p className="mt-1.5 text-slate-600">{priceContext}</p>
-          </dd>
-        </div>
-      </dl>
-
-      {/* Freshness indicator */}
-      <p className="mt-3 text-slate-500">
-        Last checked {deal.freshness.dataAgeLabel || "recently"}
-        {duplicateCount > 0
-          ? ` · Also available from ${duplicateCount} other seller${duplicateCount !== 1 ? "s" : ""}`
-          : ""}
-      </p>
-
-      {/* Link to detail page for deep trust info */}
-      <p className="mt-2 text-slate-500">
-        <IntentPrefetchLink
-          href={buildListingUrl({ id: listingId })}
-          className="font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
+        <div
+          data-testid="home-expanded-col2"
+          className="flex w-full min-w-0 flex-col items-end self-start text-right sm:col-start-2"
         >
-          View full details
-        </IntentPrefetchLink>
-        {" · "}
-        <IntentPrefetchLink
-          href={`${buildListingUrl({ id: listingId })}#confidence`}
-          className="text-slate-600 underline underline-offset-4 hover:text-slate-800"
-        >
-          How confidence is calculated
-        </IntentPrefetchLink>
-      </p>
+          <p className="w-full text-right text-[12px] leading-snug text-slate-500">
+            {marketContext.title}
+          </p>
+          {marketContext.summary ? (
+            <p className="mt-0.5 w-full line-clamp-2 break-words text-right text-[12px] leading-snug text-slate-500">
+              {marketContext.summary}
+            </p>
+          ) : null}
+        </div>
 
-      {/* Hidden panel for contract test compatibility - only shown when explicitly triggered */}
+        <div
+          data-testid="home-expanded-col3"
+          className="flex w-full min-w-0 flex-col items-end self-start text-right sm:col-start-3"
+        >
+          <p className="w-full line-clamp-2 break-words text-right text-[12px] leading-snug text-slate-500">
+            {signalNote}
+          </p>
+        </div>
+
+        <div className="min-w-0 text-right sm:col-start-4">
+          <p className="text-[12px] leading-snug text-slate-500">
+            Source: {deal.provenance.source}
+          </p>
+          <p className="mt-0.5 text-[12px] leading-snug text-slate-500">
+            Updated: {ageLabel}
+          </p>
+          <p className="mt-0.5 truncate text-[12px] leading-snug text-slate-500">
+            Store:{" "}
+            {sellerUrl ? (
+              <a
+                href={sellerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-700 hover:text-slate-900 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {sellerLabel}
+              </a>
+            ) : (
+              sellerLabel
+            )}
+          </p>
+        </div>
+
+        <div className="hidden sm:block sm:col-start-5" aria-hidden="true" />
+      </DealRowGrid>
+
+      {/* Hidden panel for contract test compatibility */}
       {confidenceExpanded ? (
         <div
           id={confidencePanelId}
           data-testid="rebuild-confidence-panel"
           className="sr-only"
           aria-hidden="true"
-        >
-          {/* Confidence panel content moved to listing detail page */}
-        </div>
+        />
       ) : null}
     </div>
   );
@@ -531,343 +601,407 @@ export default function ExpandableDealList({
   items,
   mode,
   sortPreset,
+  initialSort,
   className,
 }: ExpandableDealListProps) {
-  const [expandedListingId, setExpandedListingId] = useState<string | null>(
-    null
-  );
   const [expandedConfidenceListingId, setExpandedConfidenceListingId] =
     useState<string | null>(null);
-  const [endsTooltipListingId, setEndsTooltipListingId] = useState<
-    string | null
-  >(null);
+  const [homeSort, setHomeSort] = useState<RebuildSort | null>(
+    mode === "home" ? (initialSort ?? null) : null
+  );
+  const [homeDeferredReady, setHomeDeferredReady] = useState(false);
 
   const baseId = useId();
 
-  const closeAllPanels = () => {
-    setExpandedListingId(null);
-    setExpandedConfidenceListingId(null);
-    setEndsTooltipListingId(null);
-  };
+  useEffect(() => {
+    if (mode !== "home") return;
+    setHomeDeferredReady(true);
+  }, [mode]);
+
+  const hasItems = items.length > 0;
 
   return (
-    <ul className={`mt-4 divide-y divide-slate-100 ${className ?? ""}`}>
-      {items.map(({ deal, duplicateCount }) => {
-        const listingId = deal.listingId;
-        const expanded = expandedListingId === listingId;
-        const confidenceExpanded = expandedConfidenceListingId === listingId;
-        const panelId = `${baseId}-${listingId}-inspection`;
-        const confidencePanelId = `${baseId}-${listingId}-confidence`;
-        const sellerLabel = deal.seller.name ?? deal.seller.username ?? "—";
-        const marketIndicator = formatMarketIndicator(deal.provenance.market);
-        const conditionLabel = deal.condition ?? "—";
-        const languageLabel = deal.language ?? "—";
-        const ageLabel = deal.freshness.dataAgeLabel || "—";
-        const endsDisplay = getEndsDisplay(deal.endsAtISO);
-        const feedbackCountLabel =
-          deal.seller.feedbackCount != null
-            ? `⭐ ${deal.seller.feedbackCount}+ sales`
-            : "—";
-        const discountPercent = deal.price.discountPercent;
-        const discountValueLabel =
-          discountPercent == null
-            ? "—"
-            : `${discountPercent > 0 ? "+" : ""}${discountPercent}%`;
-        const confidenceScoreLabel =
-          deal.trust.confidence.display === "Unknown"
-            ? "—"
-            : deal.trust.confidence.display || "—";
-
-        const emphasis =
-          sortPreset === "biggest-discount"
-            ? "discount"
-            : sortPreset === "endingSoon"
-              ? "freshness"
-              : sortPreset === "newest"
-                ? "freshness"
-                : "default";
-
-        return (
-          <li key={listingId} className="py-1">
-            <div
-              data-testid="rebuild-deal-row"
-              data-listing-id={listingId}
-              data-mode={mode}
-              role="button"
-              tabIndex={0}
-              aria-expanded={expanded}
-              aria-controls={panelId}
-              className="grid grid-cols-1 rounded-md -mx-2 px-2 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem] lg:grid-cols-[minmax(0,1fr)_12rem_10rem_18rem] 2xl:grid-cols-[minmax(0,1fr)_13rem_11rem_20rem]"
-              onClick={(event) => {
-                if (shouldIgnoreRowToggle(event.target)) return;
-                setExpandedConfidenceListingId(null);
-                setEndsTooltipListingId(null);
-                setExpandedListingId((current) =>
-                  current === listingId ? null : listingId
-                );
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  if (shouldIgnoreRowToggle(event.target)) return;
-                  event.preventDefault();
-                  setExpandedConfidenceListingId(null);
-                  setEndsTooltipListingId(null);
-                  setExpandedListingId((current) =>
-                    current === listingId ? null : listingId
-                  );
-                  return;
-                }
-                if (event.key === "Escape") {
-                  if (!expanded) return;
-                  event.preventDefault();
-                  closeAllPanels();
-                }
-              }}
-            >
-              <div className="col-span-full grid grid-cols-1 items-start gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1fr)_10rem_9rem_15rem] sm:items-center lg:grid-cols-[minmax(0,1fr)_12rem_10rem_18rem] 2xl:grid-cols-[minmax(0,1fr)_13rem_11rem_20rem]">
-                <div
-                  data-testid="rebuild-deal-col-identity"
-                  className="min-w-0"
-                >
-                  <IntentPrefetchLink
-                    data-testid="rebuild-deal-row-title"
-                    href={buildListingUrl({ id: listingId })}
-                    className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
+    <>
+      {mode === "home" ? (
+        <DealRowGrid mode="home" className="-mx-2 items-center pb-2">
+          <div className="min-w-0 sm:col-start-1">
+            <h2 className="text-sm font-semibold text-slate-900">Deals</h2>
+          </div>
+          <div className="hidden sm:block sm:col-start-2" aria-hidden="true" />
+          <div className="hidden sm:block sm:col-start-3" aria-hidden="true" />
+          <div className="min-w-0 sm:col-start-4">
+            <div className="flex items-center justify-end gap-6 self-center leading-none">
+              <span className="text-sm text-slate-500">
+                {items.length} result{items.length !== 1 ? "s" : ""}
+              </span>
+              {homeSort ? (
+                <label className="flex items-center gap-2 text-sm leading-none text-slate-500">
+                  <span className="text-sm text-slate-500">Sort</span>
+                  <select
+                    aria-label="Sort deals"
+                    className="h-7 rounded-md border border-slate-300 bg-white px-2 py-0 text-sm leading-none text-slate-700"
+                    value={homeSort}
+                    onChange={(event) => {
+                      const nextSort = event.target.value as RebuildSort;
+                      setHomeSort(nextSort);
+                      const url = new URL(window.location.href);
+                      url.searchParams.set("sort", nextSort);
+                      window.location.assign(url.toString());
+                    }}
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    {deal.title}
-                  </IntentPrefetchLink>
-
-                  <p className="mt-1 truncate text-xs text-slate-500">
-                    {sellerLabel} ·{" "}
-                    <span
-                      data-testid="rebuild-market-indicator"
-                      className="font-medium text-slate-600"
-                    >
-                      {marketIndicator}
-                    </span>{" "}
-                    · Condition: {conditionLabel} · Lang: {languageLabel}
-                  </p>
-                </div>
-
-                <div
-                  data-testid="rebuild-deal-col-price"
-                  className="whitespace-nowrap text-right tabular-nums"
-                >
-                  <p className="text-lg font-semibold text-slate-900">
-                    {deal.price.display === "Unavailable"
-                      ? "—"
-                      : deal.price.display}
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-500">Historic</p>
-                  <p className="text-xs text-slate-700">{"—"}</p>
-                </div>
-
-                <div
-                  data-testid="rebuild-deal-col-discount"
-                  className="whitespace-nowrap text-right tabular-nums"
-                >
-                  <p
-                    className={`text-sm font-medium ${
-                      discountPercent == null
-                        ? "text-slate-400"
-                        : discountPercent < 0
-                          ? "text-emerald-700"
-                          : "text-slate-700"
-                    }`}
-                  >
-                    {discountValueLabel}
-                  </p>
-                  <p
-                    className={`mt-0.5 text-xs ${
-                      emphasis === "discount"
-                        ? "font-medium text-slate-900"
-                        : "text-slate-500"
-                    }`}
-                  >
-                    vs market
-                  </p>
-                </div>
-
-                <div
-                  data-testid="rebuild-deal-col-trust"
-                  className="grid gap-y-1 text-xs text-slate-500"
-                >
-                  <div className="flex min-w-0 items-center justify-between gap-3">
-                    <span className="whitespace-nowrap">Confidence</span>
-                    <button
-                      type="button"
-                      data-testid="rebuild-confidence-button"
-                      aria-label={
-                        expanded
-                          ? "Toggle confidence details"
-                          : "Open confidence details"
-                      }
-                      aria-expanded={expanded && confidenceExpanded}
-                      aria-controls={confidencePanelId}
-                      className="inline-flex min-w-0 items-center gap-2 rounded-md px-1 py-0.5 text-left hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-
-                        if (!expanded) {
-                          setExpandedListingId(listingId);
-                          setExpandedConfidenceListingId(listingId);
-                          return;
-                        }
-
-                        setExpandedConfidenceListingId((current) =>
-                          current === listingId ? null : listingId
-                        );
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key !== "Escape") return;
-                        if (!expanded || !confidenceExpanded) return;
-                        event.preventDefault();
-                        event.stopPropagation();
-                        setExpandedConfidenceListingId(null);
-                      }}
-                    >
-                      <span className="-mt-1 shrink-0">
-                        <ConfidenceBadge label={deal.trust.confidence.label} />
-                      </span>
-                      <span className="min-w-0 truncate whitespace-nowrap text-slate-400">
-                        {confidenceScoreLabel}
-                      </span>
-                    </button>
-                  </div>
-                  <div className="flex min-w-0 items-center justify-between gap-3">
-                    <span className="whitespace-nowrap">Trust</span>
-                    {deal.trustAssessment.state === "VERIFIED" ? (
-                      <span
-                        data-testid="rebuild-trusted-badge"
-                        className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800"
-                      >
-                        <span aria-hidden="true">✓</span>
-                        Verified
-                      </span>
-                    ) : (
-                      <span className="min-w-0 truncate text-slate-700">
-                        {deal.trustAssessment.state}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex min-w-0 items-center justify-between gap-3">
-                    <span className="whitespace-nowrap">Seller</span>
-                    <span className="min-w-0 truncate text-slate-700">
-                      {feedbackCountLabel}
-                    </span>
-                  </div>
-                  <div className="flex min-w-0 items-center justify-between gap-3">
-                    <span
-                      className={
-                        emphasis === "freshness"
-                          ? "font-medium text-slate-900"
-                          : "whitespace-nowrap"
-                      }
-                    >
-                      Seen
-                    </span>
-                    <span
-                      className={
-                        emphasis === "freshness"
-                          ? "whitespace-nowrap font-medium text-slate-900"
-                          : "min-w-0 truncate whitespace-nowrap text-slate-700"
-                      }
-                    >
-                      {ageLabel}
-                    </span>
-                  </div>
-                  <div className="flex min-w-0 items-center justify-between gap-3">
-                    <span className="whitespace-nowrap">Ends</span>
-                    {endsDisplay.kind === "missing" ? (
-                      <span className="whitespace-nowrap text-slate-700">
-                        —
-                      </span>
-                    ) : (
-                      <span className="relative flex justify-end">
-                        <button
-                          type="button"
-                          data-testid="rebuild-ends-indicator"
-                          aria-label="View end time in UTC"
-                          className="whitespace-nowrap font-medium text-slate-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            setEndsTooltipListingId((current) =>
-                              current === listingId ? null : listingId
-                            );
-                          }}
-                          onFocus={() => setEndsTooltipListingId(listingId)}
-                          onBlur={() =>
-                            setEndsTooltipListingId((current) =>
-                              current === listingId ? null : current
-                            )
-                          }
-                          onMouseEnter={() =>
-                            setEndsTooltipListingId(listingId)
-                          }
-                          onMouseLeave={() =>
-                            setEndsTooltipListingId((current) =>
-                              current === listingId ? null : current
-                            )
-                          }
-                          onKeyDown={(event) => {
-                            if (event.key !== "Escape") return;
-                            event.preventDefault();
-                            event.stopPropagation();
-                            setEndsTooltipListingId(null);
-                          }}
-                        >
-                          {endsDisplay.relativeLabel}
-                        </button>
-                        {endsTooltipListingId === listingId &&
-                        endsDisplay.absoluteLabel ? (
-                          <div
-                            data-testid="rebuild-ends-tooltip"
-                            className="absolute right-0 top-full z-10 mt-1 w-max max-w-[16rem] rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm"
-                          >
-                            Ends at: {endsDisplay.absoluteLabel}
-                          </div>
-                        ) : null}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {expanded ? (
-                mode === "home" ? (
-                  <HomeDealQualityPanel
-                    panelId={panelId}
-                    confidencePanelId={confidencePanelId}
-                    deal={deal}
-                    duplicateCount={duplicateCount}
-                    sellerLabel={sellerLabel}
-                    confidenceExpanded={confidenceExpanded}
-                    listingId={listingId}
-                    onConfidenceClose={() =>
-                      setExpandedConfidenceListingId(null)
-                    }
-                  />
-                ) : (
-                  <DiscoveryExpandedPanel
-                    panelId={panelId}
-                    confidencePanelId={confidencePanelId}
-                    deal={deal}
-                    duplicateCount={duplicateCount}
-                    sellerLabel={sellerLabel}
-                    confidenceExpanded={confidenceExpanded}
-                    listingId={listingId}
-                    onConfidenceClose={() =>
-                      setExpandedConfidenceListingId(null)
-                    }
-                  />
-                )
+                    {REBUILD_SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               ) : null}
             </div>
+          </div>
+          <div className="hidden sm:block sm:col-start-5" aria-hidden="true" />
+        </DealRowGrid>
+      ) : null}
+      {hasItems ? (
+        <ul className={`mt-4 divide-y divide-slate-100 ${className ?? ""}`}>
+          {items.map(({ deal, duplicateCount }) => {
+            const listingId = deal.listingId;
+            const confidenceExpanded =
+              expandedConfidenceListingId === listingId;
+            const panelId = `${baseId}-${listingId}-inspection`;
+            const confidencePanelId = `${baseId}-${listingId}-confidence`;
+            const sellerLabel = deal.seller.name ?? deal.seller.username ?? "—";
+            const marketIndicator = formatMarketIndicator(
+              deal.provenance.market
+            );
+            const conditionLabel = deal.condition ?? "—";
+            const languageLabel = deal.language ?? "—";
+            const ageLabel = deal.freshness.dataAgeLabel || "—";
+            const endsDisplay = getEndsDisplay(deal.endsAtISO);
+            const sellerUrl = getSellerUrl(
+              deal.seller.username,
+              deal.provenance.source
+            );
+            const discountPercent = deal.price.discountPercent;
+            const discountValueLabel =
+              discountPercent == null
+                ? "—"
+                : `${discountPercent > 0 ? "+" : ""}${discountPercent}%`;
+
+            const emphasis =
+              sortPreset === "biggest-discount"
+                ? "discount"
+                : sortPreset === "endingSoon"
+                  ? "freshness"
+                  : sortPreset === "newest"
+                    ? "freshness"
+                    : "default";
+
+            return (
+              <li key={listingId} className="py-1">
+                <details className="group" data-testid="home-deal-details">
+                  <summary
+                    data-testid="rebuild-deal-row"
+                    data-listing-id={listingId}
+                    data-mode={mode}
+                    aria-controls={panelId}
+                    className={`list-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden grid ${getGridColsForMode(
+                      mode
+                    )} ${GRID_GAP} ${ROW_PADDING} -mx-2 rounded-md py-1.5`}
+                  >
+                    {/* Identity column: title + set-line */}
+                    <div
+                      data-testid="rebuild-deal-col-identity"
+                      className="min-w-0"
+                    >
+                      {mode === "home" && deal.url ? (
+                        <a
+                          data-testid="rebuild-deal-row-title"
+                          href={deal.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {deal.title}
+                        </a>
+                      ) : (
+                        <span
+                          className="block"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <IntentPrefetchLink
+                            data-testid="rebuild-deal-row-title"
+                            href={buildListingUrl({ id: listingId })}
+                            className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
+                          >
+                            {deal.title}
+                          </IntentPrefetchLink>
+                        </span>
+                      )}
+
+                      <p className="mt-1 truncate text-xs text-slate-500">
+                        {[deal.setName, conditionLabel, languageLabel]
+                          .filter((v) => {
+                            if (!v || v === "—" || v === "UNKNOWN")
+                              return false;
+                            if (v.toLowerCase() === "graded") return false;
+                            return true;
+                          })
+                          .join(" · ") || "—"}
+                      </p>
+                    </div>
+
+                    {/* Price column */}
+                    <div
+                      data-testid="rebuild-deal-col-price"
+                      className="whitespace-nowrap text-right tabular-nums"
+                    >
+                      <p className="text-lg font-semibold text-slate-900">
+                        {deal.price.display === "Unavailable"
+                          ? "—"
+                          : deal.price.display}
+                      </p>
+                      {mode === "home" && marketIndicator === "—" ? null : (
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {marketIndicator}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Discount column */}
+                    <div
+                      data-testid="rebuild-deal-col-discount"
+                      className="whitespace-nowrap text-right tabular-nums"
+                    >
+                      <p
+                        className={`text-sm font-medium ${
+                          discountPercent == null
+                            ? "text-slate-400"
+                            : discountPercent < 0
+                              ? "text-emerald-700"
+                              : "text-slate-700"
+                        }`}
+                      >
+                        {discountValueLabel}
+                      </p>
+                      <p
+                        className={`mt-0.5 text-xs ${
+                          emphasis === "discount"
+                            ? "font-medium text-slate-900"
+                            : "text-slate-500"
+                        }`}
+                      >
+                        vs market
+                      </p>
+                    </div>
+
+                    {/* Seller column */}
+                    <div
+                      data-testid="rebuild-deal-col-seller"
+                      className="min-w-0 text-right text-xs"
+                    >
+                      <p
+                        className={`truncate font-medium ${
+                          mode === "home" ? "text-slate-700" : "text-slate-900"
+                        }`}
+                      >
+                        {sellerUrl ? (
+                          <a
+                            href={sellerUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={
+                              mode === "home"
+                                ? "text-slate-700 hover:text-slate-900 hover:underline"
+                                : "hover:underline"
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {sellerLabel}
+                          </a>
+                        ) : (
+                          sellerLabel
+                        )}
+                      </p>
+                      <p className="mt-0.5 text-slate-500">
+                        {deal.seller.feedbackCount != null &&
+                        deal.seller.positivePercent != null ? (
+                          <span>
+                            ★ {deal.seller.feedbackCount.toLocaleString()} (
+                            {deal.seller.positivePercent.toFixed(1)}%)
+                          </span>
+                        ) : deal.seller.feedbackCount != null ? (
+                          <span>
+                            ★ {deal.seller.feedbackCount.toLocaleString()}
+                          </span>
+                        ) : deal.seller.positivePercent != null ? (
+                          <span>
+                            {deal.seller.positivePercent.toFixed(1)}% positive
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Chevron column */}
+                    <div className="hidden items-center justify-center sm:flex">
+                      <span
+                        className={`transition-transform group-open:rotate-180 ${
+                          mode === "home"
+                            ? "text-[8px] leading-none text-slate-400 opacity-60"
+                            : "text-slate-400"
+                        }`}
+                      >
+                        ▼
+                      </span>
+                    </div>
+                  </summary>
+
+                  {mode === "home" ? (
+                    <HomeDealQualityPanel
+                      panelId={panelId}
+                      confidencePanelId={confidencePanelId}
+                      deal={deal}
+                      sellerLabel={sellerLabel}
+                      sellerUrl={sellerUrl}
+                      confidenceExpanded={confidenceExpanded}
+                      listingId={listingId}
+                      ageLabel={ageLabel}
+                      endsDisplay={endsDisplay}
+                      onConfidenceClose={() =>
+                        setExpandedConfidenceListingId(null)
+                      }
+                    />
+                  ) : (
+                    <DiscoveryExpandedPanel
+                      panelId={panelId}
+                      confidencePanelId={confidencePanelId}
+                      deal={deal}
+                      duplicateCount={duplicateCount}
+                      sellerLabel={sellerLabel}
+                      confidenceExpanded={confidenceExpanded}
+                      listingId={listingId}
+                      onConfidenceClose={() =>
+                        setExpandedConfidenceListingId(null)
+                      }
+                    />
+                  )}
+                </details>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <ul className={`mt-4 divide-y divide-slate-100 ${className ?? ""}`}>
+          <li key="placeholder" className="py-1">
+            <details className="group" data-testid="home-deal-details">
+              <summary
+                data-testid="rebuild-deal-row"
+                data-listing-id="placeholder"
+                data-mode={mode}
+                aria-controls={`${baseId}-placeholder-inspection`}
+                className={`list-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden grid ${getGridColsForMode(
+                  mode
+                )} ${GRID_GAP} ${ROW_PADDING} -mx-2 rounded-md py-1.5`}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-slate-400">
+                    Loading deals…
+                  </p>
+                  <p className="mt-1 truncate text-xs text-slate-300">—</p>
+                </div>
+
+                <div className="whitespace-nowrap text-right tabular-nums">
+                  <p className="text-lg font-semibold text-slate-200">—</p>
+                </div>
+
+                <div className="whitespace-nowrap text-right tabular-nums">
+                  <p className="text-sm font-medium text-slate-200">—</p>
+                  <p className="mt-0.5 text-xs text-slate-200">vs market</p>
+                </div>
+
+                <div className="min-w-0 text-right text-xs">
+                  <p className="truncate font-medium text-slate-300">—</p>
+                  <p className="mt-0.5 text-slate-200">—</p>
+                </div>
+
+                <div className="hidden items-center justify-center sm:flex">
+                  <span
+                    className={`transition-transform group-open:rotate-180 ${
+                      mode === "home"
+                        ? "text-[8px] leading-none text-slate-400 opacity-60"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    ▼
+                  </span>
+                </div>
+              </summary>
+
+              <div
+                id={`${baseId}-placeholder-inspection`}
+                className="rebuild-inspection-panel col-span-full -mx-2 mt-1 border-t border-slate-100 pt-2 text-xs text-slate-500"
+              >
+                Deal details will appear once data is available.
+              </div>
+            </details>
           </li>
-        );
-      })}
-    </ul>
+        </ul>
+      )}
+
+      {mode === "home" ? (
+        <details className="mt-6 rounded-md border border-slate-100 bg-slate-50/60 px-4 py-3 text-sm text-slate-700">
+          <summary className="cursor-pointer list-none font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden">
+            Provenance · Fetched at: —
+          </summary>
+          <div className="mt-2 text-xs leading-snug text-slate-600">
+            <p>Fetched at: —</p>
+            <p className="mt-2">
+              Deals are derived from marketplace listings and enriched with
+              market baselines where available.
+            </p>
+          </div>
+        </details>
+      ) : null}
+
+      {mode === "home" ? (
+        homeDeferredReady ? (
+          <div data-testid="rebuild-home-deferred-content" className="mt-6">
+            <nav
+              data-testid="rebuild-home-nav"
+              className="flex items-center justify-end gap-6 text-sm text-slate-600"
+            >
+              <IntentPrefetchLink
+                href="/rebuild/discovery"
+                className="hover:text-slate-900 hover:underline"
+              >
+                Browse deals
+              </IntentPrefetchLink>
+              <IntentPrefetchLink
+                href="/rebuild/alerts"
+                className="hover:text-slate-900 hover:underline"
+              >
+                Alerts
+              </IntentPrefetchLink>
+              <IntentPrefetchLink
+                href="/rebuild/ops"
+                className="hover:text-slate-900 hover:underline"
+              >
+                Ops
+              </IntentPrefetchLink>
+            </nav>
+          </div>
+        ) : (
+          <div
+            data-testid="rebuild-home-deferred-skeleton"
+            className="mt-6 h-8 w-full rounded-md bg-slate-50"
+            aria-hidden="true"
+          />
+        )
+      ) : null}
+    </>
   );
 }

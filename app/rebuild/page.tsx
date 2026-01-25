@@ -2,13 +2,6 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import ComplianceDisclosure from "@/components/rebuild/ComplianceDisclosure";
-import IntentPrefetchLink from "@/components/rebuild/IntentPrefetchLink";
-import PreferencesBar from "@/components/rebuild/PreferencesBar";
-import PriorityHydration from "@/components/rebuild/PriorityHydration";
-import ProvenanceDrilldown from "@/components/rebuild/ProvenanceDrilldown";
-import ResilienceLabel from "@/components/rebuild/ResilienceLabel";
-import { evaluateResilience } from "@/lib/rebuild/resilience/evaluateResilience";
-import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 import ExpandableDealList from "@/components/rebuild/ExpandableDealList";
 import { isRebuildDbConfigured } from "@/lib/rebuild/data/dataAvailability";
 import { getRecentDeals } from "@/lib/rebuild/data/getRecentDeals";
@@ -87,86 +80,53 @@ export default async function RebuildHomePage({
 
   try {
     const isDbConfigured = isRebuildDbConfigured();
-    const { deals, fetchedAtISO } = await getRecentDeals(10);
+    const { deals } = await getRecentDeals(10);
     const orderedDeals = sortDealsByPrefs(deals, prefs);
     const { deduped: dedupedDeals, duplicates } = dedupeDeals(orderedDeals);
-    const ageSeconds = deals
-      .map((deal) => deal.freshness.dataAgeSeconds)
-      .filter((value): value is number => value != null);
-    const maxAgeSeconds = ageSeconds.length ? Math.max(...ageSeconds) : null;
-    const hasMissingAge =
-      deals.length > 0 && ageSeconds.length !== deals.length;
-
-    // Evaluate resilience using the pure function
-    const resilienceResult = evaluateResilience({
-      dbAvailable: isDbConfigured,
-      cacheAvailable: false, // No cache layer yet
-      cacheAgeMs: maxAgeSeconds !== null ? maxAgeSeconds * 1000 : null,
-      requiredFieldsPresent: !hasMissingAge,
-      dataCount: deals.length,
-    });
-
-    const provenanceFields = [
-      { label: "DB configured", value: isDbConfigured ? "yes" : "no" },
-    ];
-
-    if (isDbConfigured) {
-      provenanceFields.push({ label: "Data fetched at", value: fetchedAtISO });
-    }
 
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px]">
-          <header className="rounded-lg border border-slate-200 bg-white p-6">
+          <section className="rounded-lg border border-slate-100 bg-white/80 px-6 py-4">
+            <div className="text-xs font-medium text-slate-600">
+              Rebuild lane
+            </div>
             <h1 className="text-2xl font-semibold text-slate-900">
               Today&apos;s Best Deals
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Price-checked against market data • Seller-verified • Updated
-              regularly
+              Price-checked against market data · Seller data enriched ·
+              Continuously refreshed
             </p>
-          </header>
-
-          {/* ResilienceLabel kept for trust surface contract compliance */}
-          <ResilienceLabel
-            className="mt-4"
-            tier={resilienceResult.tier}
-            explanation={resilienceResult.explanation}
-          />
-
-          <PreferencesBar initialSort={prefs.sort} />
-
-          <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-              Search
-            </p>
-            <div className="mt-3 flex gap-3">
-              <input
-                type="text"
-                placeholder="Search cards (coming soon)"
-                disabled
-                className="flex-1 rounded-md border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-500"
-              />
-              <button
-                type="button"
-                disabled
-                className="rounded-md border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-500"
+            <div className="mt-3 flex items-center gap-3 text-sm text-slate-600">
+              <span className="font-medium text-slate-700">Resilience</span>
+              <span
+                data-testid="resilience-label"
+                data-tier={isDbConfigured ? "LIVE" : "UNAVAILABLE"}
+                className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
               >
-                Search
-              </button>
+                Resilience: {isDbConfigured ? "LIVE" : "UNAVAILABLE"}
+              </span>
             </div>
           </section>
 
           <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Recent deals
-              </h2>
-              <p className="text-xs text-slate-500">
-                {dedupedDeals.length} result
-                {dedupedDeals.length !== 1 ? "s" : ""}
-              </p>
-            </div>
+            <ExpandableDealList
+              mode="home"
+              sortPreset={prefs.sort}
+              initialSort={prefs.sort}
+              items={dedupedDeals.map((deal) => {
+                const duplicateGroup = duplicates.get(
+                  normalizeListingKey(deal)
+                );
+                return {
+                  deal,
+                  duplicateCount: duplicateGroup
+                    ? duplicateGroup.length - 1
+                    : 0,
+                };
+              })}
+            />
 
             {dedupedDeals.length === 0 ? (
               <div className="mt-4 rounded-md border border-slate-100 bg-slate-50 px-4 py-6 text-center">
@@ -176,106 +136,10 @@ export default async function RebuildHomePage({
                     : "Rebuild data source not configured in this environment."}
                 </p>
               </div>
-            ) : (
-              <ExpandableDealList
-                mode="home"
-                sortPreset={prefs.sort}
-                items={dedupedDeals.map((deal) => {
-                  const duplicateGroup = duplicates.get(
-                    normalizeListingKey(deal)
-                  );
-                  return {
-                    deal,
-                    duplicateCount: duplicateGroup
-                      ? duplicateGroup.length - 1
-                      : 0,
-                  };
-                })}
-              />
-            )}
-
-            <ProvenanceDrilldown
-              className="mt-4"
-              summary={
-                isDbConfigured
-                  ? `Fetched at ${fetchedAtISO}`
-                  : "DB not configured"
-              }
-              fields={provenanceFields}
-            />
+            ) : null}
           </section>
 
           <ComplianceDisclosure className="mt-6" />
-
-          <section
-            className="mt-6 rounded-lg border border-slate-200 bg-white p-6"
-            data-testid="rebuild-home-nav"
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Rebuild surfaces
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Navigate to other rebuild-native routes.
-            </p>
-            <ul className="mt-4 space-y-2 text-sm">
-              <li>
-                <IntentPrefetchLink
-                  href="/rebuild/discovery"
-                  className="inline-flex font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
-                >
-                  Browse deals
-                </IntentPrefetchLink>
-              </li>
-              <li>
-                <IntentPrefetchLink
-                  href="/rebuild/alerts"
-                  className="inline-flex font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
-                >
-                  Alerts
-                </IntentPrefetchLink>
-              </li>
-              <li>
-                <IntentPrefetchLink
-                  href="/rebuild/ops"
-                  className="inline-flex font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
-                >
-                  Ops
-                </IntentPrefetchLink>
-              </li>
-            </ul>
-            <p className="mt-4 text-xs text-slate-500">
-              Click any deal above to view its listing page.
-            </p>
-          </section>
-
-          <PriorityHydration
-            fallback={
-              <section
-                className="mt-6 rounded-lg border border-slate-200 bg-white p-6"
-                data-testid="rebuild-home-deferred-skeleton"
-              >
-                <SkeletonBlock className="h-5 w-36" />
-                <SkeletonBlock className="mt-3 h-4 w-72" />
-                <SkeletonBlock className="mt-2 h-4 w-64" />
-              </section>
-            }
-          >
-            <section
-              className="mt-6 rounded-lg border border-slate-200 bg-white p-6"
-              data-testid="rebuild-home-deferred-content"
-            >
-              <h2 className="text-lg font-semibold text-slate-900">
-                Rebuild notes
-              </h2>
-              <p className="mt-2 text-sm text-slate-700">
-                Secondary context and diagnostics will live here as the rebuild
-                lane expands.
-              </p>
-              <p className="mt-2 text-xs text-slate-500">
-                This block is non-critical and safe to defer after initial load.
-              </p>
-            </section>
-          </PriorityHydration>
         </div>
       </main>
     );

@@ -36,6 +36,7 @@ function buildListingDomain(): ListingDomain {
     },
     language: "EN",
     condition: "near-mint",
+    setName: "Evolving Skies",
     availability: "In stock",
     provenance: {
       source: "rebuild",

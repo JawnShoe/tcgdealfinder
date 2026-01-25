@@ -36,6 +36,7 @@ export async function getRecentDeals(
       SELECT
         l.card_id,
         ${hasCardLanguage ? "c.language" : "NULL"} as card_language,
+        c.set_name,
         l.listing_id,
         l.title,
         l.url,

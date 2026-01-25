@@ -10,6 +10,7 @@ test("mapDbRowToListingDomain maps DB row into rebuild domain model", () => {
   const row: DbListingRow = {
     card_id: 1,
     card_language: "EN",
+    set_name: "Evolving Skies",
     listing_id: "v1|1234567890|0",
     title: "Example listing",
     url: "https://example.com/listing",

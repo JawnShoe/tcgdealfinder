@@ -682,3 +682,8 @@ This change applies consumer-facing visual polish to the `/rebuild` homepage onl
 - Confidence/freshness/provenance still derived server-side
 - Existing trust surface contracts (ResilienceLabel, Confidence badge) preserved
 - Discovery page (`/rebuild/discovery`) unaffected by this change
+
+### 2026-02-04: Stabilization — Ops metrics degrade gracefully
+
+- `/rebuild/ops` metrics panels MUST treat missing metrics tables as an explicit degraded state (NOT INSTRUMENTED), not a server error.
+- Copy MUST be low-panic and explicit: "Metrics tables not present in this environment yet."

@@ -4,6 +4,30 @@ import { isRebuildDbConfigured } from "../data/dataAvailability";
 const API_WINDOW_MINUTES = 60;
 const OUTBOUND_WINDOW_HOURS = 24;
 
+function isMissingMetricsTable(error: unknown, tableName: string): boolean {
+  if (!tableName) {
+    return false;
+  }
+
+  const err = error as { code?: unknown; message?: unknown } | null;
+  const code = err && typeof err.code === "string" ? err.code : null;
+  const message = err && typeof err.message === "string" ? err.message : null;
+
+  const tableNameLower = tableName.toLowerCase();
+  const missingRelationSubstring = `relation "${tableNameLower}" does not exist`;
+  const isMissingByMessage =
+    typeof message === "string" &&
+    message.toLowerCase().includes(missingRelationSubstring);
+
+  if (code === "42P01") {
+    // Narrow: if we have a message, ensure it matches the expected table.
+    // If the driver doesn't include a message, treat 42P01 as missing.
+    return message == null ? true : isMissingByMessage;
+  }
+
+  return isMissingByMessage;
+}
+
 export type ApiMetricsSnapshot = {
   status: "available" | "unavailable" | "empty" | "error";
   windowMinutes: number;
@@ -50,6 +74,9 @@ export async function recordRebuildApiRequest(params: {
       ]
     );
   } catch (error) {
+    if (isMissingMetricsTable(error, "rebuild_api_requests")) {
+      return;
+    }
     console.error("rebuild api metrics insert failed", error);
   }
 }
@@ -76,6 +103,9 @@ export async function recordRebuildOutboundClick(params: {
       [params.listingId, params.url, params.requestId]
     );
   } catch (error) {
+    if (isMissingMetricsTable(error, "rebuild_outbound_clicks")) {
+      return;
+    }
     console.error("rebuild outbound click insert failed", error);
   }
 }
@@ -136,6 +166,16 @@ export async function getRebuildApiMetricsSnapshot(): Promise<ApiMetricsSnapshot
       p95Ms: Number.isFinite(p95 ?? NaN) ? p95 : null,
     };
   } catch (error) {
+    if (isMissingMetricsTable(error, "rebuild_api_requests")) {
+      return {
+        status: "unavailable",
+        windowMinutes: API_WINDOW_MINUTES,
+        totalRequests: null,
+        errorRate: null,
+        p50Ms: null,
+        p95Ms: null,
+      };
+    }
     console.error("rebuild api metrics query failed", error);
     return {
       status: "error",
@@ -203,6 +243,15 @@ export async function getRebuildOutboundClicksSnapshot(): Promise<OutboundClicks
       lastClickedAtISO,
     };
   } catch (error) {
+    if (isMissingMetricsTable(error, "rebuild_outbound_clicks")) {
+      return {
+        status: "unavailable",
+        windowHours: OUTBOUND_WINDOW_HOURS,
+        totalClicks: null,
+        last24hClicks: null,
+        lastClickedAtISO: null,
+      };
+    }
     console.error("rebuild outbound clicks query failed", error);
     return {
       status: "error",

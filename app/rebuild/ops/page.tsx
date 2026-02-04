@@ -194,7 +194,9 @@ export default async function RebuildOpsPage() {
           ? "NO DATA"
           : apiMetrics.status === "error"
             ? "ERROR"
-            : "UNAVAILABLE";
+            : isDbConfigured
+              ? "NOT INSTRUMENTED"
+              : "UNAVAILABLE";
 
     const apiStatusClass =
       apiMetrics.status === "available"
@@ -210,7 +212,9 @@ export default async function RebuildOpsPage() {
           ? "NO DATA"
           : outboundClicks.status === "error"
             ? "ERROR"
-            : "UNAVAILABLE";
+            : isDbConfigured
+              ? "NOT INSTRUMENTED"
+              : "UNAVAILABLE";
 
     const clicksStatusClass =
       outboundClicks.status === "available"
@@ -224,14 +228,22 @@ export default async function RebuildOpsPage() {
         ? "No API traffic recorded yet."
         : apiMetrics.status === "error"
           ? "Metrics query failed."
-          : "Not instrumented yet.";
+          : apiMetrics.status === "unavailable"
+            ? isDbConfigured
+              ? "Metrics tables not present in this environment yet."
+              : "Database not configured in this environment."
+            : "Not instrumented yet.";
 
     const clicksEmptyMessage =
       outboundClicks.status === "empty"
         ? "No outbound clicks recorded yet."
         : outboundClicks.status === "error"
           ? "Metrics query failed."
-          : "Not instrumented yet.";
+          : outboundClicks.status === "unavailable"
+            ? isDbConfigured
+              ? "Metrics tables not present in this environment yet."
+              : "Database not configured in this environment."
+            : "Not instrumented yet.";
 
     return (
       <main className="min-h-screen bg-slate-50">

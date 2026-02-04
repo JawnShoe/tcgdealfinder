@@ -6,10 +6,10 @@ const listingId = "rebuild-e2e-1";
 const clsBudget = 0.01;
 const routes = [
   "/",
-  "/rebuild/discovery",
-  `/rebuild/listing/${encodeURIComponent(listingId)}`,
-  "/rebuild/alerts",
-  "/rebuild/ops",
+  "/discovery",
+  `/listing/${encodeURIComponent(listingId)}`,
+  "/alerts",
+  "/ops",
 ];
 
 test.skip(!databaseUrl, "DATABASE_URL not set for rebuild CLS.");

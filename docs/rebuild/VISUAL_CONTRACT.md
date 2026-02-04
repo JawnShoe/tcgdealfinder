@@ -693,3 +693,11 @@ Routing contract (hard):
 - `/rebuild` is deleted and must return a deterministic 404.
 - No redirect from `/rebuild` to `/`.
 - No `/rebuild` stub page.
+
+### 2026-02-04: Canonical Homepage Regression Restore
+
+Regression recovery after route decommission must preserve the existing visual/interaction contract on `/`:
+
+- The canonical homepage on `/` must retain the established scan hierarchy, trust markers, and deferred skeleton/content markers.
+- Title-only outbound hit-area remains enforced (whitespace click expands/collapses; title click commits outbound).
+- `/rebuild` remains a hard 404 with no redirect and no stub surface.

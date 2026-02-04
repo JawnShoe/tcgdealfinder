@@ -12,20 +12,20 @@ import {
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams } = request.nextUrl;
   const token = searchParams.get("token");
-  const redirectTo = searchParams.get("redirect") || "/rebuild/ops";
+  const redirectTo = searchParams.get("redirect") || "/ops";
 
   // Validate token (return 404 to avoid discovery, not 401)
   if (!validateRawToken(token)) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
-  // Validate redirect target (must be /rebuild/ops/* or /debug/* to prevent open redirects)
+  // Validate redirect target (must be /ops/* or /debug/* to prevent open redirects)
   const safeRedirect =
-    redirectTo.startsWith("/rebuild/ops/") ||
-    redirectTo.startsWith("/rebuild/ops") ||
+    redirectTo.startsWith("/ops/") ||
+    redirectTo.startsWith("/ops") ||
     redirectTo.startsWith("/debug/")
       ? redirectTo
-      : "/rebuild/ops";
+      : "/ops";
 
   // Create redirect
   const redirectUrl = new URL(safeRedirect, request.url);

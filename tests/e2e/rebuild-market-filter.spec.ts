@@ -7,7 +7,7 @@ test.skip(!databaseUrl, "DATABASE_URL not set for rebuild E2E.");
 test("rebuild discovery: market filter updates URL and persists; rows show market + verified badge when present", async ({
   page,
 }) => {
-  await page.goto("/rebuild/discovery?sort=newest", {
+  await page.goto("/discovery?sort=newest", {
     waitUntil: "domcontentloaded",
   });
 

@@ -13,7 +13,7 @@ test("rebuild discovery: cross-session persistence (localStorage) and clear rese
     }
   });
 
-  await page.goto(`${baseURL}/rebuild/discovery?sort=newest`, {
+  await page.goto(`${baseURL}/discovery?sort=newest`, {
     waitUntil: "domcontentloaded",
   });
 
@@ -92,7 +92,7 @@ test("rebuild discovery: cross-session persistence (localStorage) and clear rese
   const context2 = await browser.newContext({ storageState });
   const page2 = await context2.newPage();
 
-  await page2.goto(`${baseURL}/rebuild/discovery`, {
+  await page2.goto(`${baseURL}/discovery`, {
     waitUntil: "domcontentloaded",
   });
 
@@ -109,7 +109,7 @@ test("rebuild discovery: cross-session persistence (localStorage) and clear rese
 
   const clearButton = page2.getByTestId("discovery-filters-clear");
   await clearButton.click();
-  await expect(page2).toHaveURL(/\/rebuild\/discovery$/, { timeout: 15000 });
+  await expect(page2).toHaveURL(/\/discovery$/, { timeout: 15000 });
   await expect(page2.getByTestId("discovery-sort-select")).toHaveValue(
     "newest"
   );
@@ -134,11 +134,11 @@ test("rebuild discovery: cross-session persistence (localStorage) and clear rese
     storageState: storageAfterClear,
   });
   const page3 = await context3.newPage();
-  await page3.goto(`${baseURL}/rebuild/discovery`, {
+  await page3.goto(`${baseURL}/discovery`, {
     waitUntil: "domcontentloaded",
   });
   await expect(page3.getByTestId("discovery-filters-bar")).toBeVisible();
-  expect(page3.url()).toMatch(/\/rebuild\/discovery$/);
+  expect(page3.url()).toMatch(/\/discovery$/);
   await expect(page3.getByTestId("discovery-sort-select")).toHaveValue(
     "newest"
   );
@@ -177,7 +177,7 @@ test("rebuild discovery: URL params override persisted localStorage state", asyn
     }
   });
 
-  await page.goto(`${baseURL}/rebuild/discovery?sort=endingSoon`, {
+  await page.goto(`${baseURL}/discovery?sort=endingSoon`, {
     waitUntil: "domcontentloaded",
   });
 
@@ -199,7 +199,7 @@ test("rebuild discovery: sort selection updates URL and persists on reload", asy
     pageErrors.push(String(error));
   });
 
-  await page.goto(`${baseURL}/rebuild/discovery?sort=newest`, {
+  await page.goto(`${baseURL}/discovery?sort=newest`, {
     waitUntil: "domcontentloaded",
   });
   await page.waitForLoadState("networkidle");

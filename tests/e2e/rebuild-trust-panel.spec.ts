@@ -11,7 +11,7 @@ test("rebuild trust panel is SSR-visible and stable", async ({
   page,
   request,
 }) => {
-  const routePath = `/rebuild/listing/${encodeURIComponent(listingId)}`;
+  const routePath = `/listing/${encodeURIComponent(listingId)}`;
   const routeUrl = `${baseURL}${routePath}`;
 
   const response = await request.get(routeUrl);

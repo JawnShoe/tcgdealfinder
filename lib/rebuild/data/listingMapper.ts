@@ -71,6 +71,10 @@ export type ListingDomain = {
   listingId: string;
   title: string;
   url: string | null;
+  /** Full-size listing image URL when available (integration-provided). */
+  imageUrl?: string | null;
+  /** Thumbnail listing image URL when available (preferred for small UI slots). */
+  thumbnailUrl?: string | null;
   endsAtISO?: string | null;
   price: PricePoint;
   seller: SellerSignal;
@@ -96,6 +100,8 @@ export type DbListingRow = {
   listing_id: string;
   title: string;
   url: string | null;
+  image_url?: string | null;
+  thumbnail_url?: string | null;
   ends_at?: Date | string | null;
   total_price_cad: string | null;
   total_usd: string | null;
@@ -266,6 +272,8 @@ export function mapDbRowToListingDomain(
     listingId: row.listing_id,
     title: row.title,
     url: row.url ?? null,
+    imageUrl: row.image_url ?? null,
+    thumbnailUrl: row.thumbnail_url ?? null,
     endsAtISO: row.ends_at ? toIsoString(row.ends_at) : null,
     price,
     seller,

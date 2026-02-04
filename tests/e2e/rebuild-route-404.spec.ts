@@ -1,12 +1,23 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-test("rebuild route returns hard 404 without homepage markers", async ({
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:3000";
+
+test("canonical home cutover: /rebuild is hard 404 and does not render home markers", async ({
+  page,
   request,
-  baseURL,
 }) => {
-  const response = await request.get(`${baseURL}/rebuild`);
+  const url = `${baseURL}/rebuild`;
+  const response = await request.get(url, { maxRedirects: 0 });
+
   expect(response.status()).toBe(404);
-  const body = await response.text();
-  expect(body).not.toContain('data-testid="rebuild-home-deferred-content"');
-  expect(body).not.toContain('data-testid="rebuild-home-deferred-skeleton"');
+  expect(response.headers().location ?? "").toBe("");
+
+  const pageResponse = await page.goto(url, { waitUntil: "domcontentloaded" });
+  expect(pageResponse?.status()).toBe(404);
+  await expect(page.getByTestId("rebuild-home-deferred-skeleton")).toHaveCount(
+    0
+  );
+  await expect(page.getByTestId("rebuild-home-deferred-content")).toHaveCount(
+    0
+  );
 });

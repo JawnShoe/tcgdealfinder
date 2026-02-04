@@ -196,12 +196,12 @@ async function recordOutboundClick(
 
 test("Journey A - Discovery path", async ({ page, request }) => {
   const homeUrl = `${baseURL}/`;
-  const discoveryUrl = `${baseURL}/rebuild/discovery`;
-  const listingUrl = `${baseURL}/rebuild/listing/${encodeURIComponent(listingId)}`;
+  const discoveryUrl = `${baseURL}/discovery`;
+  const listingUrl = `${baseURL}/listing/${encodeURIComponent(listingId)}`;
 
   await test.step("Home: availability + SSR trust surfaces", async () => {
     assertLoadingSkeletonSourceFile(
-      ["app", "rebuild", "loading.tsx"],
+      ["app", "loading.tsx"],
       "rebuild-loading-home"
     );
     const body = await assertSsrIsNotShellOnly(request, homeUrl, {
@@ -219,23 +219,23 @@ test("Journey A - Discovery path", async ({ page, request }) => {
 
   await test.step("Discovery: availability + SSR trust surfaces", async () => {
     assertLoadingSkeletonSourceFile(
-      ["app", "rebuild", "discovery", "loading.tsx"],
+      ["app", "discovery", "loading.tsx"],
       "rebuild-loading-discovery"
     );
     const body = await assertSsrIsNotShellOnly(request, discoveryUrl, {
-      routeLabel: "Journey A /rebuild/discovery",
+      routeLabel: "Journey A /discovery",
     });
     expect(body).toContain('data-testid="resilience-label"');
     expect(body).toContain("Provenance");
 
     await page.goto(discoveryUrl, { waitUntil: "domcontentloaded" });
-    await assertTrustSurfacesUi(page, "Journey A /rebuild/discovery");
-    await assertImagesHaveDimensions(page, "Journey A /rebuild/discovery");
+    await assertTrustSurfacesUi(page, "Journey A /discovery");
+    await assertImagesHaveDimensions(page, "Journey A /discovery");
   });
 
   await test.step("Listing: availability + trust + outbound", async () => {
     assertLoadingSkeletonSourceFile(
-      ["app", "rebuild", "listing", "[id]", "loading.tsx"],
+      ["app", "listing", "[id]", "loading.tsx"],
       "rebuild-loading-listing"
     );
 
@@ -243,35 +243,35 @@ test("Journey A - Discovery path", async ({ page, request }) => {
       request,
       page,
       listingUrl,
-      "Journey A /rebuild/listing/[id]"
+      "Journey A /listing/[id]"
     );
 
     const { href } = await assertOutboundSafety(
       page,
-      "Journey A /rebuild/listing/[id]"
+      "Journey A /listing/[id]"
     );
     await recordOutboundClick(request, href, "Journey A outbound click");
   });
 });
 
 test("Journey B - Alerts path", async ({ page, request }) => {
-  const alertsUrl = `${baseURL}/rebuild/alerts`;
-  const listingUrl = `${baseURL}/rebuild/listing/${encodeURIComponent(listingId)}`;
+  const alertsUrl = `${baseURL}/alerts`;
+  const listingUrl = `${baseURL}/listing/${encodeURIComponent(listingId)}`;
 
   await test.step("Alerts: availability + SSR trust surfaces", async () => {
     assertLoadingSkeletonSourceFile(
-      ["app", "rebuild", "alerts", "loading.tsx"],
+      ["app", "alerts", "loading.tsx"],
       "rebuild-loading-alerts"
     );
     const body = await assertSsrIsNotShellOnly(request, alertsUrl, {
-      routeLabel: "Journey B /rebuild/alerts",
+      routeLabel: "Journey B /alerts",
     });
     expect(body).toContain('data-testid="resilience-label"');
     expect(body).toContain("Provenance");
 
     await page.goto(alertsUrl, { waitUntil: "domcontentloaded" });
-    await assertTrustSurfacesUi(page, "Journey B /rebuild/alerts");
-    await assertImagesHaveDimensions(page, "Journey B /rebuild/alerts");
+    await assertTrustSurfacesUi(page, "Journey B /alerts");
+    await assertImagesHaveDimensions(page, "Journey B /alerts");
   });
 
   await test.step("Listing: availability + trust + outbound", async () => {
@@ -279,27 +279,27 @@ test("Journey B - Alerts path", async ({ page, request }) => {
       request,
       page,
       listingUrl,
-      "Journey B /rebuild/listing/[id]"
+      "Journey B /listing/[id]"
     );
 
     const { href } = await assertOutboundSafety(
       page,
-      "Journey B /rebuild/listing/[id]"
+      "Journey B /listing/[id]"
     );
     await recordOutboundClick(request, href, "Journey B outbound click");
   });
 });
 
 test("Journey C - Health / Ops", async ({ page, request }) => {
-  const opsUrl = `${baseURL}/rebuild/ops`;
+  const opsUrl = `${baseURL}/ops`;
 
   await test.step("Ops: availability + resilience tiers + freshness indicators", async () => {
     assertLoadingSkeletonSourceFile(
-      ["app", "rebuild", "ops", "loading.tsx"],
+      ["app", "ops", "loading.tsx"],
       "rebuild-loading-ops"
     );
     const body = await assertSsrIsNotShellOnly(request, opsUrl, {
-      routeLabel: "Journey C /rebuild/ops",
+      routeLabel: "Journey C /ops",
       expectCompliance: false,
     });
     expect(body).toContain('data-testid="resilience-tiers-panel"');
@@ -308,15 +308,15 @@ test("Journey C - Health / Ops", async ({ page, request }) => {
     await page.goto(opsUrl, { waitUntil: "domcontentloaded" });
     await expect(
       page.getByRole("heading", { name: "Rebuild Ops", exact: true }),
-      "Journey C /rebuild/ops heading"
+      "Journey C /ops heading"
     ).toBeVisible();
     await expect(
       page.getByTestId("resilience-tiers-panel"),
-      "Journey C /rebuild/ops resilience tiers panel"
+      "Journey C /ops resilience tiers panel"
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Job freshness" }),
-      "Journey C /rebuild/ops job freshness heading"
+      "Journey C /ops job freshness heading"
     ).toBeVisible();
   });
 });

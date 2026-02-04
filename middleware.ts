@@ -30,5 +30,13 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/rebuild/:path*", "/api/health", "/discovery"],
+  matcher: [
+    "/",
+    "/discovery",
+    "/listing/:path*",
+    "/alerts/:path*",
+    "/ops/:path*",
+    "/api/rebuild/:path*",
+    "/api/health",
+  ],
 };

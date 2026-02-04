@@ -103,18 +103,29 @@ function formatUtcTimestamp(date: Date): string {
 }
 
 function getListingThumbnailUrl(deal: ListingDomain): string | null {
-  const record = deal as unknown as Record<string, unknown>;
-  const candidates = [
-    record.thumbnailUrl,
-    record.imageUrl,
-    record.thumbnail_url,
-    record.image_url,
-  ];
-
+  const candidates = [deal.thumbnailUrl, deal.imageUrl];
   for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate.trim() !== "") {
-      return candidate;
-    }
+    const normalized = normalizeListingImageUrl(candidate);
+    if (normalized) return normalized;
+  }
+  return null;
+}
+
+function normalizeListingImageUrl(
+  value: string | null | undefined
+): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith("//")) {
+    return `https:${trimmed}`;
+  }
+  if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("i.ebayimg.com/")) {
+    return `https://${trimmed}`;
   }
 
   return null;
@@ -181,7 +192,7 @@ function getConfidenceReason(deal: ListingDomain): string {
     return "Limited price data available";
   }
 
-  return "Confidence could not be determined";
+  return "Not enough comparable market data yet.";
 }
 
 /**
@@ -193,23 +204,20 @@ function getMarketContext(deal: ListingDomain): {
 } {
   if (deal.price.discountPercent == null) {
     return {
-      title: "No market match",
+      title: "Market data: unavailable",
       summary: null,
     };
   }
 
   return {
-    title: "Market data available",
+    title: "Market data: available",
     summary: null,
   };
 }
 
-function getSignalNote(deal: ListingDomain): string {
-  if (deal.price.discountPercent == null) {
-    return "Signal unreliable (no market match)";
-  }
-
-  return "More context soon";
+function getSignalNote(deal: ListingDomain): string | null {
+  void deal;
+  return null;
 }
 
 type HomeDealQualityPanelProps = {
@@ -247,6 +255,10 @@ function HomeDealQualityPanel({
   const marketContext = getMarketContext(deal);
   const signalNote = getSignalNote(deal);
   const thumbnailUrl = getListingThumbnailUrl(deal);
+  const isConfidenceUnknown = deal.trust.confidence.label === "unknown";
+  const confidenceLabel = isConfidenceUnknown
+    ? "Confidence pending"
+    : deal.trust.confidence.label;
 
   return (
     <div
@@ -263,20 +275,20 @@ function HomeDealQualityPanel({
     >
       <DealRowGrid mode="home" className="pb-1 text-xs">
         <div className="min-w-0 sm:col-start-1">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-100">
-              <div className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-400">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200/70 bg-slate-50 shadow-sm">
+              <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">
                 No image
               </div>
               {thumbnailUrl ? (
                 <img
                   src={thumbnailUrl}
-                  width={56}
-                  height={56}
+                  width={64}
+                  height={64}
                   loading="lazy"
                   decoding="async"
                   alt={deal.title}
-                  className="absolute inset-0 h-full w-full object-cover"
+                  className="absolute inset-0 block h-full w-full object-cover"
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                   }}
@@ -284,19 +296,15 @@ function HomeDealQualityPanel({
               ) : null}
             </div>
             <div className="flex min-w-0 items-start gap-2">
-              <ConfidenceBadge label={deal.trust.confidence.label} />
+              <ConfidenceBadge label={confidenceLabel} />
               <div className="min-w-0">
                 <p
-                  className="truncate font-medium capitalize text-slate-900"
-                  title={
-                    deal.trust.confidence.label === "unknown"
-                      ? "Unknown"
-                      : deal.trust.confidence.label
-                  }
+                  className={`truncate font-medium text-slate-900 ${
+                    isConfidenceUnknown ? "" : "capitalize"
+                  }`}
+                  title={confidenceLabel}
                 >
-                  {deal.trust.confidence.label === "unknown"
-                    ? "Unknown"
-                    : deal.trust.confidence.label}
+                  {confidenceLabel}
                 </p>
                 <p
                   className="mt-0.5 truncate text-slate-500"
@@ -327,9 +335,11 @@ function HomeDealQualityPanel({
           data-testid="home-expanded-col3"
           className="flex w-full min-w-0 flex-col items-end self-start text-right sm:col-start-3"
         >
-          <p className="w-full line-clamp-2 break-words text-right text-[12px] leading-snug text-slate-500">
-            {signalNote}
-          </p>
+          {signalNote ? (
+            <p className="w-full line-clamp-2 break-words text-right text-[12px] leading-snug text-slate-500">
+              {signalNote}
+            </p>
+          ) : null}
         </div>
 
         <div className="min-w-0 text-right sm:col-start-4">
@@ -606,6 +616,9 @@ export default function ExpandableDealList({
 }: ExpandableDealListProps) {
   const [expandedConfidenceListingId, setExpandedConfidenceListingId] =
     useState<string | null>(null);
+  const [expandedHomeListingId, setExpandedHomeListingId] = useState<
+    string | null
+  >(null);
   const [homeSort, setHomeSort] = useState<RebuildSort | null>(
     mode === "home" ? (initialSort ?? null) : null
   );
@@ -700,7 +713,15 @@ export default function ExpandableDealList({
 
             return (
               <li key={listingId} className="py-1">
-                <details className="group" data-testid="home-deal-details">
+                <details
+                  className="group"
+                  data-testid="home-deal-details"
+                  open={
+                    mode === "home"
+                      ? expandedHomeListingId === listingId
+                      : undefined
+                  }
+                >
                   <summary
                     data-testid="rebuild-deal-row"
                     data-listing-id={listingId}
@@ -709,6 +730,15 @@ export default function ExpandableDealList({
                     className={`list-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden grid ${getGridColsForMode(
                       mode
                     )} ${GRID_GAP} ${ROW_PADDING} -mx-2 rounded-md py-1.5`}
+                    onClick={(event) => {
+                      if (mode !== "home") return;
+                      // Prevent the browser default toggle so it doesn't fight our controlled `open`.
+                      event.preventDefault();
+                      setExpandedConfidenceListingId(null);
+                      setExpandedHomeListingId((current) =>
+                        current === listingId ? null : listingId
+                      );
+                    }}
                   >
                     {/* Identity column: title + set-line */}
                     <div
@@ -721,7 +751,7 @@ export default function ExpandableDealList({
                           href={deal.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
+                          className="inline-flex w-fit max-w-full truncate text-sm font-medium text-slate-800 hover:text-slate-900"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {deal.title}
@@ -734,14 +764,14 @@ export default function ExpandableDealList({
                           <IntentPrefetchLink
                             data-testid="rebuild-deal-row-title"
                             href={buildListingUrl({ id: listingId })}
-                            className="block truncate text-sm font-medium text-slate-900 hover:text-slate-700"
+                            className="block truncate text-sm font-medium text-slate-800 hover:text-slate-900"
                           >
                             {deal.title}
                           </IntentPrefetchLink>
                         </span>
                       )}
 
-                      <p className="mt-1 truncate text-xs text-slate-500">
+                      <p className="mt-1 truncate text-xs text-slate-400">
                         {[deal.setName, conditionLabel, languageLabel]
                           .filter((v) => {
                             if (!v || v === "—" || v === "UNKNOWN")
@@ -764,7 +794,7 @@ export default function ExpandableDealList({
                           : deal.price.display}
                       </p>
                       {mode === "home" && marketIndicator === "—" ? null : (
-                        <p className="mt-0.5 text-xs text-slate-500">
+                        <p className="mt-0.5 text-xs text-slate-400">
                           {marketIndicator}
                         </p>
                       )}
@@ -789,8 +819,8 @@ export default function ExpandableDealList({
                       <p
                         className={`mt-0.5 text-xs ${
                           emphasis === "discount"
-                            ? "font-medium text-slate-900"
-                            : "text-slate-500"
+                            ? "font-medium text-slate-700"
+                            : "text-slate-400"
                         }`}
                       >
                         vs market
@@ -825,7 +855,7 @@ export default function ExpandableDealList({
                           sellerLabel
                         )}
                       </p>
-                      <p className="mt-0.5 text-slate-500">
+                      <p className="mt-0.5 text-slate-400">
                         {deal.seller.feedbackCount != null &&
                         deal.seller.positivePercent != null ? (
                           <span>
@@ -979,6 +1009,18 @@ export default function ExpandableDealList({
                 className="hover:text-slate-900 hover:underline"
               >
                 Browse deals
+              </IntentPrefetchLink>
+              <IntentPrefetchLink
+                href="/alerts"
+                className="hover:text-slate-900 hover:underline"
+              >
+                Alerts
+              </IntentPrefetchLink>
+              <IntentPrefetchLink
+                href="/ops"
+                className="hover:text-slate-900 hover:underline"
+              >
+                Ops
               </IntentPrefetchLink>
             </nav>
           </div>

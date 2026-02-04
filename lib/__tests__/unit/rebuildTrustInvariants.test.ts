@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -119,6 +119,10 @@ test("rebuild sources do not import legacy paths", () => {
 });
 
 function collectFiles(dir: string): string[] {
+  if (!existsSync(dir)) {
+    return [];
+  }
+
   const entries = readdirSync(dir, { withFileTypes: true });
   const files: string[] = [];
 

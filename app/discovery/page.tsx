@@ -40,15 +40,11 @@ type DiscoveryPageProps = {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-function toCanonicalDiscoveryUrl(url: string): string {
-  return url.replace("/rebuild/discovery", "/discovery");
-}
-
 export async function generateMetadata({
   searchParams,
 }: DiscoveryPageProps): Promise<Metadata> {
   const sp = searchParams ? await searchParams : {};
-  const canonical = toCanonicalDiscoveryUrl(buildDiscoveryCanonicalUrl(sp));
+  const canonical = buildDiscoveryCanonicalUrl(sp);
   return {
     title: discoveryTitle,
     description: discoveryDescription,

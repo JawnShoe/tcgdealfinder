@@ -257,7 +257,7 @@ test("rebuild discovery: sort selection updates URL and persists on reload", asy
 test("rebuild home: sort selection updates URL and persists on reload", async ({
   page,
 }) => {
-  await page.goto(`${baseURL}/rebuild`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${baseURL}/`, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle");
 
   const sortSelect = page.getByLabel("Sort");

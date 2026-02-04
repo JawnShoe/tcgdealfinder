@@ -52,7 +52,7 @@ test("Expandable rows: row=inspect, title=act, single expanded, keyboard", async
 test("Expandable rows: rebuild home recent deals supports inspection mode", async ({
   page,
 }) => {
-  await page.goto("/rebuild", { waitUntil: "domcontentloaded" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 
   const rows = page.getByTestId("rebuild-deal-row");
   const rowCount = await rows.count();

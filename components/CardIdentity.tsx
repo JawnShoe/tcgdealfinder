@@ -87,7 +87,7 @@ export function CardIdentityBlock({
       ) : null}
       {showViewCardLink && listingId ? (
         <Link
-          href={`/rebuild/listing/${encodeURIComponent(listingId)}`}
+          href={`/listing/${encodeURIComponent(listingId)}`}
           className="text-xs font-medium text-slate-500 hover:text-slate-800"
         >
           View listing

@@ -1,6 +1,6 @@
 import { SkeletonBlock, SkeletonRow } from "@/components/rebuild/Skeleton";
 
-export default function RebuildHomeLoading() {
+export default function HomeLoading() {
   return (
     <main
       className="min-h-screen bg-slate-50"

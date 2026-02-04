@@ -26,7 +26,7 @@ test("rebuild listing a11y smoke", async ({ page }) => {
 });
 
 test("rebuild keyboard essentials", async ({ page }) => {
-  await page.goto(`${baseURL}/rebuild`, { waitUntil: "networkidle" });
+  await page.goto(`${baseURL}/`, { waitUntil: "networkidle" });
 
   const browseLink = page.getByRole("link", { name: "Browse deals" });
   await browseLink.focus();

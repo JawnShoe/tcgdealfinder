@@ -7,7 +7,7 @@ test.skip(!databaseUrl, "DATABASE_URL not set for rebuild E2E.");
 test("rebuild home: confidence badge opens inline drilldown in expanded row", async ({
   page,
 }) => {
-  await page.goto("/rebuild", { waitUntil: "domcontentloaded" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 
   const row = page.getByTestId("rebuild-deal-row").first();
   await expect(row).toBeVisible({ timeout: 15000 });

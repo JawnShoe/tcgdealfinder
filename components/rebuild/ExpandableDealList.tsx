@@ -975,22 +975,10 @@ export default function ExpandableDealList({
               className="flex items-center justify-end gap-6 text-sm text-slate-600"
             >
               <IntentPrefetchLink
-                href="/rebuild/discovery"
+                href="/discovery"
                 className="hover:text-slate-900 hover:underline"
               >
                 Browse deals
-              </IntentPrefetchLink>
-              <IntentPrefetchLink
-                href="/rebuild/alerts"
-                className="hover:text-slate-900 hover:underline"
-              >
-                Alerts
-              </IntentPrefetchLink>
-              <IntentPrefetchLink
-                href="/rebuild/ops"
-                className="hover:text-slate-900 hover:underline"
-              >
-                Ops
               </IntentPrefetchLink>
             </nav>
           </div>

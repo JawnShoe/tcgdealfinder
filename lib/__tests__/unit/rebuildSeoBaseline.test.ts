@@ -35,7 +35,7 @@ test("discovery canonical strips unknown params and normalizes sort", () => {
     });
     assert.equal(
       canonical,
-      "https://example.com/rebuild/discovery?sort=biggest-discount"
+      "https://example.com/discovery?sort=biggest-discount"
     );
   });
 });
@@ -46,7 +46,7 @@ test("discovery canonical omits default sort", () => {
       sort: "newest",
       q: "charizard",
     });
-    assert.equal(canonical, "https://example.com/rebuild/discovery");
+    assert.equal(canonical, "https://example.com/discovery");
   });
 });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { parsePreset, type Preset } from "@/lib/rebuild/prefs/rebuildPrefs";
 import {
   ALLOWED_CONDITIONS,
@@ -40,7 +40,6 @@ export default function DiscoveryFiltersBar({
   className,
 }: DiscoveryFiltersBarProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [preset, setPreset] = useState<Preset>(initialPreset);
@@ -95,8 +94,7 @@ export default function DiscoveryFiltersBar({
     setSeller(queryFromUrl.filters.seller ?? "");
   }, [queryFromUrl, searchParamsKey]);
 
-  const basePath: "/discovery" | "/rebuild/discovery" =
-    pathname === "/rebuild/discovery" ? "/rebuild/discovery" : "/discovery";
+  const basePath = "/discovery" as const;
 
   useEffect(() => {
     if (hydrationAttemptedRef.current) return;

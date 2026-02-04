@@ -2,10 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
-  if (
-    request.nextUrl.pathname === "/discovery" ||
-    request.nextUrl.pathname === "/rebuild/discovery"
-  ) {
+  if (request.nextUrl.pathname === "/discovery") {
     const rawSort = request.nextUrl.searchParams.get("sort") ?? "";
     const sort = rawSort.trim();
     if (sort) {
@@ -33,10 +30,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/rebuild/:path*",
-    "/api/rebuild/:path*",
-    "/api/health",
-    "/discovery",
-  ],
+  matcher: ["/api/rebuild/:path*", "/api/health", "/discovery"],
 };

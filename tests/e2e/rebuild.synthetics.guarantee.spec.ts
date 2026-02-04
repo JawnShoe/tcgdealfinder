@@ -34,7 +34,7 @@ function assertLoadingSkeletonSourceFile(
  */
 function isRebuildHomepage(url: string): boolean {
   const path = new URL(url).pathname;
-  return path === "/rebuild" || path === "/rebuild/";
+  return path === "/";
 }
 
 async function assertSsrIsNotShellOnly(
@@ -195,7 +195,7 @@ async function recordOutboundClick(
 }
 
 test("Journey A - Discovery path", async ({ page, request }) => {
-  const homeUrl = `${baseURL}/rebuild`;
+  const homeUrl = `${baseURL}/`;
   const discoveryUrl = `${baseURL}/rebuild/discovery`;
   const listingUrl = `${baseURL}/rebuild/listing/${encodeURIComponent(listingId)}`;
 
@@ -205,7 +205,7 @@ test("Journey A - Discovery path", async ({ page, request }) => {
       "rebuild-loading-home"
     );
     const body = await assertSsrIsNotShellOnly(request, homeUrl, {
-      routeLabel: "Journey A /rebuild",
+      routeLabel: "Journey A /",
     });
     expect(body).toContain('data-testid="resilience-label"');
     expect(body).toContain("Provenance");
@@ -213,8 +213,8 @@ test("Journey A - Discovery path", async ({ page, request }) => {
     expect(body).not.toContain('data-testid="rebuild-home-deferred-content"');
 
     await page.goto(homeUrl, { waitUntil: "domcontentloaded" });
-    await assertTrustSurfacesUi(page, "Journey A /rebuild");
-    await assertImagesHaveDimensions(page, "Journey A /rebuild");
+    await assertTrustSurfacesUi(page, "Journey A /");
+    await assertImagesHaveDimensions(page, "Journey A /");
   });
 
   await test.step("Discovery: availability + SSR trust surfaces", async () => {

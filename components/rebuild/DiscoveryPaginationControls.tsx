@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import type { Preset } from "@/lib/rebuild/prefs/rebuildPrefs";
 import type { DiscoveryFilters } from "@/lib/rebuild/discovery/discoveryQuery";
 import { buildDiscoveryUrl } from "@/lib/rebuild/urls";
@@ -33,10 +33,8 @@ export default function DiscoveryPaginationControls({
   totalCount,
 }: DiscoveryPaginationControlsProps) {
   const router = useRouter();
-  const pathname = usePathname();
 
-  const basePath =
-    pathname === "/rebuild/discovery" ? "/rebuild/discovery" : "/discovery";
+  const basePath = "/discovery" as const;
 
   const normalizedPageSize = useMemo(
     () => normalizePageSize(pageSize),

@@ -2,7 +2,10 @@ import { SkeletonBlock } from "@/components/rebuild/Skeleton";
 
 export default function DiscoveryLoading() {
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main
+      data-testid="rebuild-loading-discovery"
+      className="min-h-screen bg-slate-50"
+    >
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="rounded-lg border border-slate-200 bg-white p-6">
           <SkeletonBlock className="h-6 w-40" />

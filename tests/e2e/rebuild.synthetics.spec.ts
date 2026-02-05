@@ -93,45 +93,40 @@ test("Stage 4 delete: /sets/[setId] returns 404 (stubs removed)", async ({
   expect(response.status()).toBe(404);
 });
 
-test("Stage 1 decommission: /alerts/unsubscribe page redirects to rebuild API endpoint", async ({
+test("Stage 1 decommission: /alerts/unsubscribe page renders HTML surface (no redirect)", async ({
   request,
 }) => {
   const testToken = "test-token-e2e-page-redirect";
   const legacyUrl = `${baseURL}/alerts/unsubscribe?token=${testToken}`;
-  const expectedPath = `/api/rebuild/alerts/unsubscribe?token=${testToken}`;
 
   const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
+  expect(response.status()).toBe(200);
 
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
+  const contentType = response.headers()["content-type"] ?? "";
+  expect(contentType).toContain("text/html");
+  const body = await response.text();
+  expect(body).toContain('id="__next-page-redirect"');
+  expect(body).toContain(
+    `content="0;url=/api/rebuild/alerts/unsubscribe?token=${encodeURIComponent(testToken)}"`
+  );
 });
 
 test("Stage 1 decommission: /alerts/unsubscribe page handles missing token gracefully", async ({
   request,
 }) => {
   const legacyUrl = `${baseURL}/alerts/unsubscribe`;
-  const expectedPath = `/api/rebuild/alerts/unsubscribe`;
 
   const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
+  expect(response.status()).toBe(200);
 
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-    // Ensure no token param when none provided
-    expect(resolvedLocation).not.toContain("token=");
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
+  const contentType = response.headers()["content-type"] ?? "";
+  expect(contentType).toContain("text/html");
+  const body = await response.text();
+  expect(body).toContain('id="__next-page-redirect"');
+  expect(body).toContain('content="0;url=/api/rebuild/alerts/unsubscribe"');
+  expect(body).not.toContain(
+    'content="0;url=/api/rebuild/alerts/unsubscribe?token='
+  );
 });
 
 test("Stage 1 decommission: /api/alerts/unsubscribe redirects to rebuild endpoint", async ({

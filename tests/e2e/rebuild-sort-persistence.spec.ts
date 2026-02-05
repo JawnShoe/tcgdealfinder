@@ -263,14 +263,15 @@ test("rebuild home: sort selection updates URL and persists on reload", async ({
   const sortSelect = page.getByLabel("Sort");
   await expect(sortSelect).toBeVisible();
 
-  await sortSelect.selectOption("biggest-discount");
+  await Promise.all([
+    page.waitForURL(/[?&]sort=biggest-discount\b/, {
+      timeout: 15000,
+      waitUntil: "commit",
+    }),
+    sortSelect.selectOption("biggest-discount"),
+  ]);
   await page.evaluate(() => new Promise(requestAnimationFrame));
-  await expect(sortSelect).toHaveValue("biggest-discount");
-  await page.waitForURL(/[?&]sort=biggest-discount\b/, {
-    timeout: 15000,
-    waitUntil: "commit",
-  });
-  await expect(sortSelect).toHaveValue("biggest-discount");
+  await expect(page.getByLabel("Sort")).toHaveValue("biggest-discount");
   expect(page.url()).toMatch(/[?&]sort=biggest-discount\b/);
 
   await page.reload({ waitUntil: "domcontentloaded" });

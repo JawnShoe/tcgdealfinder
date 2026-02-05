@@ -693,6 +693,7 @@ Routing contract (hard):
 - `/rebuild` is deleted and must return a deterministic 404.
 - No redirect from `/rebuild` to `/`.
 - No `/rebuild` stub page.
+- Homepage anchor: `HOME_CANONICAL_SHA=f02b8f2f57ec461cb52024a8c5a70d0e104ed7ce` (signature gate: `tests/e2e/home-canonical.spec.ts`).
 
 ### 2026-02-04: Canonical Homepage Regression Restore
 

@@ -2,6 +2,13 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
+  if (
+    request.nextUrl.pathname === "/rebuild" ||
+    request.nextUrl.pathname.startsWith("/rebuild/")
+  ) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
   if (request.nextUrl.pathname === "/discovery") {
     const rawSort = request.nextUrl.searchParams.get("sort") ?? "";
     const sort = rawSort.trim();
@@ -31,6 +38,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/rebuild/:path*",
     "/",
     "/discovery",
     "/listing/:path*",

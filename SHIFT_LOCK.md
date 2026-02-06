@@ -210,7 +210,7 @@ Every coder PR response must include a CLOSEOUT section answering all items:
 
    Default (module completion PRs):
    - If a PR completes a module, it MUST include both:
-     - the module doc (docs/archive/rebaseline/modules/Mxx\_\*.md)
+     - the module completion evidence inline in the PR response (scope, acceptance criteria, and merged PR link)
      - the SSOT progress line update in PROJECT_SSOT.md
        in the SAME PR (single PR per module).
 

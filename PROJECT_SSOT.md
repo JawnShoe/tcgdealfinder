@@ -1,7 +1,7 @@
 # PROJECT SSOT — TCG Deal Finder
 
 **Last Updated**: 2026-01-05
-**Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080). **T2-6 merged (PR #175)**: Alerts subscribe/unsubscribe UX + APIs complete (flag-gated). **T2-7**: Alerts sending go-live gating complete (operator-safe, default-safe). **T2-8**: Alerts idempotency updated to one-email-per-listing. **P2.1**: Health job status + go-live schedule gate complete — `/api/health` exposes job freshness with OK/STALE signals; go-live gate documented in `docs/ENV_RUNBOOK.md`. **P2.2**: Index audit complete — no index changes needed at current scale (see `docs/archive/db/INDEX_AUDIT_P2.2.md`). Re-run P2.2 when listings > 50k or /top-deals p95 > 500ms. **P2.3**: Closed — no true N+1 DB query patterns found; 60s cache + batching already prevents N+1 at DB level (evidence: cold-run DB logs on `/`, `/top-deals`, `/cards/[id]`, `/ending-soon`).
+**Status**: REBASELINE v1 COMPLETE (M01–M10 finished). Layout parity complete; header typography unified; Pokémon Set Coverage AUDITED (API-complete); Empty States + Retention Nudges DONE; Card Page Internal Navigation DONE; "No Deals Right Now" Intelligence DONE; Tooltip regression sequence LOCKED (fa56778→28b8080). **T2-6 merged (PR #175)**: Alerts subscribe/unsubscribe UX + APIs complete (flag-gated). **T2-7**: Alerts sending go-live gating complete (operator-safe, default-safe). **T2-8**: Alerts idempotency updated to one-email-per-listing. **P2.1**: Health job status + go-live schedule gate complete — `/api/health` exposes job freshness with OK/STALE signals; go-live gate documented in `docs/ENV_RUNBOOK.md`. **P2.2**: Index audit complete — no index changes needed at current scale. Re-run P2.2 when listings > 50k or `/top-deals` p95 > 500ms. **P2.3**: Closed — no true N+1 DB query patterns found; 60s cache + batching already prevents N+1 at DB level (evidence: cold-run DB logs on `/`, `/top-deals`, `/cards/[id]`, `/ending-soon`).
 
 **ACTIVE WORK**: P4.1 — Design Phase 1 (visual legitimacy, strictly non-functional)
 **Workstreams & Priorities**: `docs/WORKSTREAMS_MASTER.md`
@@ -66,10 +66,10 @@ _NOTE: Prior local-only Claude plan existed outside repo; no longer referenced. 
 - Added migration `006_add_listings_card_id_idx.sql` (2025-12-25): Standalone index on `listings(card_id)` for card detail query performance. Addresses HIGH ROI perf issue from 2025-12-25 audit. The existing composite index `listings_market_card_id_idx (market, card_id)` only helps when market is also filtered; this standalone index improves card-only lookups. Apply: `npx tsx scripts/run-migration.ts migrations/006_add_listings_card_id_idx.sql`. Verify: `npx tsx scripts/verify-migration-006.ts`.
 - Rotated `ADMIN_SECRET` + `DEBUG_ADMIN_TOKEN` on 2025-12-21; values are local-only and no longer present in tracked files. Commit: 3942e84.
 - Repo hygiene (2025-12-21): untracked `settings.local.json` (example added), ignored local/artifact patterns; removed tracked artifacts (`components/home/HomeContent.corrupted.bak`, `_content*.txt`, `temp`, `temp_pkg.txt`, `import-log.txt`, `tsconfig.tsbuildinfo`). Commits: 7878ea1, af98509.
-- Repo hygiene Pack A (2025-12-23): Created `docs/INDEX.md` (doc map); moved 12 historical docs to `docs/archive/` with archive README; deleted 5 stale utility files (`test.txt`, `fix_config.py`, `remove_fn.py`, `write_config.py`, `write-config.js`); updated SHIFT_LOCK.md to reference PROJECT_SSOT.md as authoritative. Commit: c437616.
+- Repo hygiene Pack A (2025-12-23): Created `docs/INDEX.md` (doc map); moved 12 historical docs to archive with archive README; deleted 5 stale utility files (`test.txt`, `fix_config.py`, `remove_fn.py`, `write_config.py`, `write-config.js`); updated SHIFT_LOCK.md to reference PROJECT_SSOT.md as authoritative. Commit: c437616.
 - Repo hygiene Pack A.5 (2025-12-23): Moved 22 untracked restorepoint bundles from root to `.restorepoints/`; added `.restorepoints/` + `/*.bundle` to .gitignore to prevent future root clutter. Commit: e7b2a0a.
 - Repo hygiene Pack B1 (2025-12-23): Moved 35 root-level one-off scripts to `scripts/one-off/` (check-_.ts, test-_.ts, verify-db.ts, run-migration.ts, etc.); created one-off README with usage notes; updated archived doc reference. No production code references. Commit: 52fbf6f.
-- Repo hygiene Pack B2 (2025-12-23): Consolidated docs/archive/DECISIONS.md into PROJECT_SSOT.md LOCKED SYSTEMS section (enhanced Watchlist v1, Seller Trust Display, Deal Systems, Top Deals Columns, Global UI Scale, Pokémon Set Ingestion with detailed policy); archived docs/archive/DECISIONS.md to `docs/archive/`; updated FILE REFERENCE section. No code references to docs/archive/DECISIONS.md found. Commit: 97aa07b.
+- Repo hygiene Pack B2 (2025-12-23): Consolidated historical DECISIONS content into PROJECT_SSOT.md LOCKED SYSTEMS section (enhanced Watchlist v1, Seller Trust Display, Deal Systems, Top Deals Columns, Global UI Scale, Pokémon Set Ingestion with detailed policy); archived the source document; updated FILE REFERENCE section. No code references to that archived document found. Commit: 97aa07b.
 - Repo hygiene Pack B3 (2025-12-23): Archived duplicate migration `scripts/migrations/add_listing_integrity_fields.sql` to `scripts/migrations/archive/` (canonical version `migrations/002_add_listing_integrity_fields.sql` kept, referenced by lib/schema.ts). Created archive README. Diff: functionally identical SQL, only comment differences. Commit: 5d991a2.
 - Added GitHub Actions CI (2025-12-23): Workflow runs lint + build on push/PR to main. Package manager detected as npm (via package-lock.json). Node 20 LTS used (package.json engines: >=18.17.0). Minimal permissions (contents: read) + npm caching enabled. Initially required DATABASE_URL secret for build (9021756), later fixed by lazy DB pool initialization (245bd56, 7b2718f). Commits: 6b68fde, 9021756.
 - CI build fix (2025-12-23): Removed build-time DB dependency. DB-backed pages (top-deals, ending-soon, sets, alerts, catalog) forced dynamic rendering (`export const dynamic = 'force-dynamic'`). Debug integrity API route returns 500 error instead of throwing. Build no longer requires live DB connection. Commit: 2eec8f8.
@@ -97,14 +97,14 @@ _NOTE: Prior local-only Claude plan existed outside repo; no longer referenced. 
 - Restorepoint bundle for admin UI fixes (2025-12-22): `T:\Projects\restorepoints\admin-ui-8b6003c.bundle`.
 - Restorepoint bundle for pre-Tailwind v4 migration (2025-12-24): `t:\Projects\tcg-deal-finder-pre-tailwind-v4-migration.bundle` (HEAD: 1861b7f).
 - Job Silence Watchdog (2025-12-26): Added `.github/workflows/job-silence-watchdog.yml` to detect when scheduled data pipeline jobs have not run. Runs every 2 hours; checks `/api/health` freshness data; fails workflow if listings >2h stale or historical prices >26h stale. Distinguishes "job didn't run" from "job ran and failed". PR #66 (commit eea4de6).
-- Design Audit + Phases Docs (2025-12-27): Added `docs/archive/design/DESIGN_AUDIT_2025-01.md` (external expert audit, advisory-only) and `docs/archive/design/DESIGN_PHASES.md` (locked Phase 1 definition). Design Direction section added to SSOT as pointer. Classification: Docs-only (advisory planning artifacts, temporary). PR: #73 (merged). Merge commit: d21300c.
+- Design Audit + Phases Docs (2025-12-27): Added archived design audit + phase docs (external expert audit, advisory-only). Design Direction section added to SSOT as pointer. Classification: Docs-only (advisory planning artifacts, temporary). PR: #73 (merged). Merge commit: d21300c.
 - Option A Phase 0 ƒ?" FX run instrumentation (2025-12-28): Added `migrations/009_option_a_fx_rate_runs.sql` and updated `scripts/update-fx-rates-auto.ts` to use Open Exchange Rates (env-only `OPEN_EXCHANGE_RATES_APP_ID`) with hard bounds + 5%/15% drift gating (hold last-known). `/api/health` now surfaces provider/cadence + last-success vs last-attempt status and listing invariant rates (`total_usd` null rate, shipping unknown rate). PR: #96 (merged).
 - Option A Phase 1 ƒ?" Listing snapshot + deterministic totals (2025-12-28): Added `migrations/010_option_a_listings_snapshot_fx_precision.sql` to introduce `snapshot_at`, `ingested_at`, `shipping_unknown`, `fx_status`, `fx_timestamp` and widen `total_usd`/`fx_rate_to_usd` precision. Updated `scripts/update-listings.ts` to compute deterministic totals even when shipping is unknown and to represent missing FX as `fx_status='MISSING'` without writing `total_usd`. Updated `lib/fxRates.ts` to return precise USD values (no display rounding). No ranking or UI feature changes in this phase. PR: #98 (merged).
 - Option A Phase 2 ƒ?" USD sold baselines (2025-12-28): Added `migrations/011_option_a_sold_fx_snapshot.sql` and `migrations/012_option_a_historical_baseline_usd.sql` to extend `ebay_sold_listings` with currency + FX snapshot fields and to add `historical_prices.baseline_median_usd` + baseline metadata (`baseline_sample_size_usd`, `baseline_window_days`, `baseline_outlier_trim_percent`, `baseline_status`). Updated `scripts/update-sold-listings.ts` to persist sold snapshots with deterministic totals + FX snapshot and updated `scripts/update-historical-prices.ts` to compute/persist `baseline_median_usd` from `ebay_sold_listings.total_usd` using the locked knobs (90d/180d fallback, min 30 comps, trim 5%). No ranking or UI feature changes in this phase; `baseline_median_usd` is not read by deal surfaces yet. PR: #102 (merged).
 - Track B — UI/SSR stability pass (2025-12-29): Historic USD display preserved; made deterministic to avoid hydration mismatch on `/`, `/top-deals`, and `/watchlist` (no client-side currency conversion/repair for Historic). PR: #109 (merged). Merge commit: df62aac.
 - Track B — Tooltip parity + deterministic "≈ USD" (2025-12-29): Eliminated "≈ USD" flicker (removed viewer-locale gating); restored 2-row price layout (price+discount pinned; optional "≈ USD" row); tooltip parity standardized (native `title=` removed where needed; tooltip component unified). PR: #110 (merged). Merge commit: dcb35ae.
 - P2.1 — Health job status + go-live schedule gate (2026-01-02): Enhanced `/api/health` to expose job freshness with deterministic OK/STALE/UNKNOWN signals for all pipeline jobs (listings, historical prices, sold listings, FX rates, alerts sending). Added `jobs` object with status, lastSuccessAt, ageHours, and staleThresholdHours per job. Documented explicit operator go-live gate in `docs/ENV_RUNBOOK.md` with pre-flight checklist and enable/rollback steps. Schedules remain disabled by default. PR: #181.
-- **STOP**: Sold baselines blocked pending approved sold-data source. See `docs/archive/plan/SOLD_DATA_SOURCE_OPTIONS.md`.
+- **STOP**: Sold baselines remain blocked until one sold-data source is explicitly approved for production use. Approval must include source selection, compliance/licensing confirmation, reliability/rate-limit viability, and operator runbook readiness documented in SSOT.
 - eBay update (2025-12-28): eBay DTS ticket closed; eBay directed us to submit an Application Growth Check (AGC) for Marketplace Insights API access/rate limits. AGC packet: `docs/ops/EBAY_AGC_SUBMISSION_PACKET.md`. Link: https://developer.ebay.com/my/support/tickets?tab=app-check (AGC Reference #: 251228-000007).
 
 ### Security / Admin Access
@@ -274,10 +274,7 @@ _NOTE: Prior local-only Claude plan existed outside repo; no longer referenced. 
 A comprehensive external design audit was completed in Jan 2025.
 It is advisory only and informs phased redesign planning.
 
-Canonical references:
-
-- `docs/archive/design/DESIGN_AUDIT_2025-01.md`
-- `docs/archive/design/DESIGN_PHASES.md`
+Canonical references are inlined in this SSOT section for active governance use; archived design artifacts are historical provenance only.
 
 ---
 
@@ -409,7 +406,7 @@ Job Silence Watchdog is merged but currently blocked until we have a public doma
 - **Tooltip contents**: Shows both identities (Store + Account) when present, along with feedback percentage and rounded sales count.
 - **Identity contract**: "Seller (eBay)" references the seller provided by eBay; showing the store name in UI is a readability choice over the same account.
 - **Storefront enrichment**: The eBay Shopping API feeding storefront data was decommissioned on 2025-02-04; any remaining enrichment calls are best-effort legacy fallbacks that can fail unpredictably (IP/rate limits, endpoint retirement). When storefront data is missing, the UI must fall back to the seller username—this is expected behavior and not a UI bug.
-- **Audit note (2025-12-20)**: Storefront coverage currently sits below 1% across markets (see `docs/archive/storefront_enrichment_audit.md`); enrichment still depends on the deprecated Shopping API and frequently hits `IP limit exceeded`.
+- **Audit note (2025-12-20)**: Storefront coverage measured below 1% across markets; enrichment still depends on the deprecated Shopping API and frequently hits `IP limit exceeded`.
 - **Phase 1 UI clarification (2025-12-20)**: Public surfaces now display the store name alone when present (otherwise the seller username); tooltips always show the username in the “Account” row and only add a “Store” row when a storefront exists. UI-only change—no backend or enrichment modifications.
 - **HTML scraping**: Not present in the codebase (verified 2025-12-20).
 - **Browse vs Shopping invariant**: Browse API is the canonical ingestion source; Shopping API may be called opportunistically for storefront names but must not be relied upon.
@@ -509,16 +506,16 @@ _Future consideration (deferred; requires separate Tier-1 audit and explicit app
 
 #### Rebaseline Progress
 
-- **M01** Dangerous scripts hardening — PRs: #123 — doc: `docs/archive/rebaseline/modules/M01_DANGEROUS_SCRIPTS.md`
-- **M02** Data correctness review + negative price guard — PRs: #124, #125 — doc: `docs/archive/rebaseline/modules/M02_DATA_CORRECTNESS.md`
-- **M03** Pricing/FX review + missing-rate signal + dev log dedupe — PRs: #126, #127, #128 — doc: `docs/archive/rebaseline/modules/M03_PRICING_FX.md`
-- **M04** Dedup + canonical IDs review — PRs: #132 — doc: `docs/archive/rebaseline/modules/M04_DEDUP_CANONICAL_IDS.md`
-- **M05** Scoring + confidence review — PRs: #134, #135 — doc: `docs/archive/rebaseline/modules/M05_SCORING_CONFIDENCE.md`
-- **M06** Blacklist + overrides review — PRs: #136 — doc: `docs/archive/rebaseline/modules/M06_BLACKLIST_OVERRIDES.md`
-- **M07** DB architecture + migrations review — PRs: #139 — doc: `docs/archive/rebaseline/modules/M07_DB_ARCHITECTURE_MIGRATIONS.md`
-- **M08** GitHub workflows review + timeout hardening — PRs: #148 — doc: `docs/archive/rebaseline/modules/M08_GITHUB_WORKFLOWS.md`
-- **M09** Docs review + governance inventory/deprecation pass — PRs: #151 — doc: `docs/archive/rebaseline/modules/M09_DOCS_REVIEW.md`
-- **M10** Dead code candidates review — PRs: #152 — doc: `docs/archive/rebaseline/modules/M10_DEAD_CODE_CANDIDATES.md`
+- **M01** Dangerous scripts hardening — PRs: #123 — module evidence archived.
+- **M02** Data correctness review + negative price guard — PRs: #124, #125 — module evidence archived.
+- **M03** Pricing/FX review + missing-rate signal + dev log dedupe — PRs: #126, #127, #128 — module evidence archived.
+- **M04** Dedup + canonical IDs review — PRs: #132 — module evidence archived.
+- **M05** Scoring + confidence review — PRs: #134, #135 — module evidence archived.
+- **M06** Blacklist + overrides review — PRs: #136 — module evidence archived.
+- **M07** DB architecture + migrations review — PRs: #139 — module evidence archived.
+- **M08** GitHub workflows review + timeout hardening — PRs: #148 — module evidence archived.
+- **M09** Docs review + governance inventory/deprecation pass — PRs: #151 — module evidence archived.
+- **M10** Dead code candidates review — PRs: #152 — module evidence archived.
 
 #### Tier 2 Status: ✅ COMPLETE (MVP)
 

@@ -69,7 +69,7 @@ P4.1 — Design Phase 1 (visual legitimacy, strictly non-functional)
 
 #### P2.2 Index Audit + Targeted Index Adds
 
-- **✅ COMPLETE**: 2026-01-02 — PR #182, #183. No index adds needed at current scale (listings=1,264, cards=27, historical_prices=5). See `docs/archive/db/INDEX_AUDIT_P2.2.md`. Re-run when listings > 50k or /top-deals p95 > 500ms.
+- **✅ COMPLETE**: 2026-01-02 — PR #182, #183. No index adds needed at current scale (listings=1,264, cards=27, historical_prices=5). Re-run when listings > 50k or `/top-deals` p95 > 500ms.
 
 - Objective: Reduce query latency and DB load with targeted indexes for the highest-traffic routes.
 - Dependencies: Query plan evidence (EXPLAIN); production query patterns; Neon constraints.
@@ -112,7 +112,7 @@ P4.1 — Design Phase 1 (visual legitimacy, strictly non-functional)
 #### P4.1 Design Phase 1 (strictly non-functional)
 
 - Objective: Improve visual legitimacy and consistency without functional/data/behavior changes.
-- Dependencies: `docs/archive/design/DESIGN_PHASES.md` constraints; UI consistency contract.
+- Dependencies: Locked non-functional design-phase constraints in SSOT; UI consistency contract.
 - Acceptance criteria: Visual-only diffs; no data logic changes; operator visual matrix passes; zero ranking changes.
 - Operator verification: Run the design-phase visual checklist; confirm no behavioral diffs.
 

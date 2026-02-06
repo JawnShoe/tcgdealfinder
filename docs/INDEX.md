@@ -37,14 +37,7 @@ These document operational procedures and policies (Repo Hardening Pack).
 
 ## Design Documents (Archived)
 
-These planning artifacts for the phased redesign have been archived. They are preserved for historical reference only.
-
-| Document                                                                              | Purpose                                                 | Status   |
-| ------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------- |
-| [docs/archive/design/DESIGN_AUDIT_2025-01.md](archive/design/DESIGN_AUDIT_2025-01.md) | External expert design audit (advisory, non-executable) | Archived |
-| [docs/archive/design/DESIGN_PHASES.md](archive/design/DESIGN_PHASES.md)               | Locked phased redesign plan                             | Archived |
-
-**Note**: These documents are advisory only and preserved for historical reference.
+Archived design-planning artifacts were historical-only and have been removed from active documentation navigation.
 
 ---
 
@@ -123,7 +116,6 @@ Baseline inventory and review plan for REBASELINE v1 (completed). Archived for h
 | [docs/archive/rebaseline/REPO_PACKET_2025-12-29.md](archive/rebaseline/REPO_PACKET_2025-12-29.md) | Complete repo inventory snapshot            | Archived |
 | [docs/archive/rebaseline/CRITICALITY_MAP.md](archive/rebaseline/CRITICALITY_MAP.md)               | Folder criticality labels                   | Archived |
 | [docs/archive/rebaseline/MODULE_REVIEW_PLAN.md](archive/rebaseline/MODULE_REVIEW_PLAN.md)         | Module review order and acceptance criteria | Archived |
-| [docs/archive/rebaseline/modules/](archive/rebaseline/modules/)                                   | Module review docs (M01–M10)                | Archived |
 | [docs/CLEANUP_INVENTORY.md](CLEANUP_INVENTORY.md)                                                 | Repo-wide cleanup candidates (inventory)    | ACTIVE   |
 
 ---
@@ -136,11 +128,9 @@ Completed implementation records, audits, and planning artifacts are preserved i
 | ----------------------------------------------- | ----------------------------------------------------- |
 | [docs/archive/](archive/)                       | Historical implementation records                     |
 | [docs/archive/audits/](archive/audits/)         | Closed audit artifacts (2025 full system + inventory) |
-| [docs/archive/design/](archive/design/)         | Design audit and phases (archived)                    |
 | [docs/archive/plan/](archive/plan/)             | Implementation plans (Option A, sold data options)    |
 | [docs/archive/audit/](archive/audit/)           | Product truth philosophy audit                        |
 | [docs/archive/incidents/](archive/incidents/)   | Incident reports                                      |
-| [docs/archive/db/](archive/db/)                 | Database index audit                                  |
 | [docs/archive/rebaseline/](archive/rebaseline/) | REBASELINE v1 artifacts (repo packet, modules)        |
 
 See the [archive README](archive/README.md) for navigation.

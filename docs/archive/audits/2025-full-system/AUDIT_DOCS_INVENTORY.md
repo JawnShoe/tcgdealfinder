@@ -43,9 +43,9 @@ Total markdown files: 32
 
 ## docs/ui/ Directory
 
-| File                       | Location   | Apparent Purpose                      | Audience              | Referenced by SSOT? |
-| -------------------------- | ---------- | ------------------------------------- | --------------------- | ------------------- |
-| UI_CONSISTENCY_CONTRACT.md | `docs/ui/` | UI tooltip/sizing governance (LOCKED) | Frontend contributors | Yes                 |
+| File               | Location   | Apparent Purpose                      | Audience              | Referenced by SSOT? |
+| ------------------ | ---------- | ------------------------------------- | --------------------- | ------------------- |
+| VISUAL_CONTRACT.md | `docs/ui/` | UI tooltip/sizing governance (LOCKED) | Frontend contributors | Yes                 |
 
 ---
 

@@ -15,7 +15,7 @@ Notes: Blocked pending explicit approval + sold-data source gate(s).
 - `docs/audit/PRODUCT_TRUTH_PHILOSOPHY_AUDIT_OPTION_A.md` (APPROVED; definitions-only)
 - `PROJECT_SSOT.md` (LOCKED systems + scope boundaries)
 - `SHIFT_LOCK.md` (DONE/SHIFT/Evidence gates)
-- `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md` (LOCKED UI invariants)
+- `docs/rebuild/VISUAL_CONTRACT.md` (LOCKED UI invariants)
 - `docs/design/DESIGN_PHASES.md` (LOCKED design-phase constraints)
 
 ---
@@ -343,7 +343,7 @@ The following become the canonical truth values used for ranking, labeling, and 
 
 **UI Consistency Contract**
 
-- All tooltip/overflow rules in `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md` remain binding; Option A work must not introduce layout churn or tooltip behavior regressions.
+- All tooltip/overflow rules in `docs/rebuild/VISUAL_CONTRACT.md` remain binding; Option A work must not introduce layout churn or tooltip behavior regressions.
 
 ---
 

@@ -104,9 +104,9 @@ docs/
 
 #### H. UI Governance
 
-| File                                                | Purpose                  | Status |
-| --------------------------------------------------- | ------------------------ | ------ |
-| `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md` | UI tooltip/sizing LOCKED | ACTIVE |
+| File                              | Purpose                  | Status |
+| --------------------------------- | ------------------------ | ------ |
+| `docs/rebuild/VISUAL_CONTRACT.md` | UI tooltip/sizing LOCKED | ACTIVE |
 
 #### I. REBASELINE Artifacts (ACTIVE)
 

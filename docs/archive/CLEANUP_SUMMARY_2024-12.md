@@ -52,7 +52,7 @@ Each file received an archive header:
 - `PROJECT_SSOT.md` — Single Source of Truth
 - `SHIFT_LOCK.md` — Process gates
 - `REGRESSION_CHECKLIST.md` — Release testing
-- `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md` — UI governance
+- `docs/rebuild/VISUAL_CONTRACT.md` — UI governance
 
 ### Operational Runbooks (6)
 

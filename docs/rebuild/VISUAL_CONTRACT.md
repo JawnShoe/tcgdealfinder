@@ -711,3 +711,23 @@ Canonical `/ops` metrics panels must degrade safely when DB is configured but ob
 - Degraded-state copy is explicit and low-panic: "Metrics tables not present in this environment yet."
 - This degraded state is expected pre-migration and must not crash the route.
 - Non-missing-table DB failures still render `ERROR` semantics.
+
+### 2026-02-06: Supersedes UI Consistency Contract
+
+This contract supersedes and replaces the removed legacy archive tooltip governance documents:
+
+- Legacy UI consistency contract (removed)
+- Legacy tooltip inventory audit (removed)
+
+Canonical visual authority for tooltip and overflow behavior now lives here.
+
+**Tooltip and overflow stability rules (mandatory):**
+
+- Tooltip/reveal interactions MUST NOT encode critical meaning; hover/focus may enhance only.
+- Any tooltip/reveal in scroll or overflow-clipped containers MUST render unclipped (portal/fixed positioning is the default-safe pattern).
+- Tooltip/reveal bounds MUST stay inside the viewport using measured bubble width (size max-width fallback is allowed only when measurement is unavailable).
+- Tooltip/reveal MUST dismiss on scroll and remain layout-stable while visible.
+- Tooltip sizing MUST use standardized semantic sizes (`compact`, `medium`, `wide`); ad-hoc width forcing (including `min-w-*` style constraints) is forbidden.
+- Multi-line final-line whitespace from normal wrapping is acceptable and MUST NOT trigger cosmetic churn.
+- Table surfaces MUST prevent page-level horizontal scrolling while preserving inner-table horizontal scroll behavior.
+- Tooltip/reveal behavior MUST remain CLS-safe (no row-height mutation during show/hide).

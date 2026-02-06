@@ -263,6 +263,7 @@ Degraded states:
 - MUST NOT encode critical meaning on hover only.
 - Trust metadata MUST be visible at first render in the viewport.
 - Tooltip content may only enhance; it must not change meaning or layout.
+- Detailed tooltip/overflow stability rules are governed by `docs/rebuild/VISUAL_CONTRACT.md` ("2026-02-06: Supersedes UI Consistency Contract").
 
 ## Hydration Tiers Contract
 

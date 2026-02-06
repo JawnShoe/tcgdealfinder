@@ -4,8 +4,27 @@ import { isRebuildDbConfigured } from "../data/dataAvailability";
 const API_WINDOW_MINUTES = 60;
 const OUTBOUND_WINDOW_HOURS = 24;
 
+type MetricsStatus =
+  | "available"
+  | "unavailable"
+  | "empty"
+  | "not_instrumented"
+  | "error";
+
+type MetricsDependencies = {
+  isDbConfigured: () => boolean;
+  query: typeof queryRebuild;
+  logError: (...args: unknown[]) => void;
+};
+
+const defaultMetricsDependencies: MetricsDependencies = {
+  isDbConfigured: isRebuildDbConfigured,
+  query: queryRebuild,
+  logError: console.error,
+};
+
 export type ApiMetricsSnapshot = {
-  status: "available" | "unavailable" | "empty" | "error";
+  status: MetricsStatus;
   windowMinutes: number;
   totalRequests: number | null;
   errorRate: number | null;
@@ -14,25 +33,80 @@ export type ApiMetricsSnapshot = {
 };
 
 export type OutboundClicksSnapshot = {
-  status: "available" | "unavailable" | "empty" | "error";
+  status: MetricsStatus;
   totalClicks: number | null;
   last24hClicks: number | null;
   lastClickedAtISO: string | null;
   windowHours: number;
 };
 
-export async function recordRebuildApiRequest(params: {
-  route: string;
-  statusCode: number;
-  durationMs: number;
-  requestId: string;
-}) {
-  if (!isRebuildDbConfigured()) {
+type MetricsErrorStatus = Extract<MetricsStatus, "not_instrumented" | "error">;
+
+type MetricsErrorMapping = {
+  status: MetricsErrorStatus;
+  shouldLog: boolean;
+};
+
+function extractErrorCode(error: unknown): string {
+  if (typeof error === "object" && error != null && "code" in error) {
+    return String((error as { code?: unknown }).code ?? "").toUpperCase();
+  }
+
+  return "";
+}
+
+function extractErrorMessage(error: unknown): string {
+  if (typeof error === "object" && error != null && "message" in error) {
+    return String((error as { message?: unknown }).message ?? "").toLowerCase();
+  }
+
+  return String(error ?? "").toLowerCase();
+}
+
+/**
+ * Canonical missing-table detector for rebuild observability metrics queries.
+ * 42P01 is the authoritative Postgres signal; message matching is a fallback.
+ */
+export function mapMetricsTableError(error: unknown): MetricsErrorMapping {
+  const errorCode = extractErrorCode(error);
+  if (errorCode === "42P01") {
+    return { status: "not_instrumented", shouldLog: false };
+  }
+
+  const message = extractErrorMessage(error);
+  const refersToMetricsTable =
+    message.includes("rebuild_api_requests") ||
+    message.includes("rebuild_outbound_clicks");
+  const missingTableSignal =
+    message.includes("undefined_table") ||
+    message.includes("42p01") ||
+    message.includes("relation") ||
+    message.includes("table");
+  const missingPhraseSignal =
+    message.includes("does not exist") || message.includes("no such table");
+
+  if (refersToMetricsTable && missingTableSignal && missingPhraseSignal) {
+    return { status: "not_instrumented", shouldLog: false };
+  }
+
+  return { status: "error", shouldLog: true };
+}
+
+export async function recordRebuildApiRequest(
+  params: {
+    route: string;
+    statusCode: number;
+    durationMs: number;
+    requestId: string;
+  },
+  deps: MetricsDependencies = defaultMetricsDependencies
+) {
+  if (!deps.isDbConfigured()) {
     return;
   }
 
   try {
-    await queryRebuild(
+    await deps.query(
       `
         INSERT INTO rebuild_api_requests (
           route,
@@ -50,21 +124,27 @@ export async function recordRebuildApiRequest(params: {
       ]
     );
   } catch (error) {
-    console.error("rebuild api metrics insert failed", error);
+    const errorMapping = mapMetricsTableError(error);
+    if (errorMapping.shouldLog) {
+      deps.logError("rebuild api metrics insert failed", error);
+    }
   }
 }
 
-export async function recordRebuildOutboundClick(params: {
-  listingId: string | null;
-  url: string;
-  requestId: string;
-}) {
-  if (!isRebuildDbConfigured()) {
+export async function recordRebuildOutboundClick(
+  params: {
+    listingId: string | null;
+    url: string;
+    requestId: string;
+  },
+  deps: MetricsDependencies = defaultMetricsDependencies
+) {
+  if (!deps.isDbConfigured()) {
     return;
   }
 
   try {
-    await queryRebuild(
+    await deps.query(
       `
         INSERT INTO rebuild_outbound_clicks (
           listing_id,
@@ -76,12 +156,17 @@ export async function recordRebuildOutboundClick(params: {
       [params.listingId, params.url, params.requestId]
     );
   } catch (error) {
-    console.error("rebuild outbound click insert failed", error);
+    const errorMapping = mapMetricsTableError(error);
+    if (errorMapping.shouldLog) {
+      deps.logError("rebuild outbound click insert failed", error);
+    }
   }
 }
 
-export async function getRebuildApiMetricsSnapshot(): Promise<ApiMetricsSnapshot> {
-  if (!isRebuildDbConfigured()) {
+export async function getRebuildApiMetricsSnapshot(
+  deps: MetricsDependencies = defaultMetricsDependencies
+): Promise<ApiMetricsSnapshot> {
+  if (!deps.isDbConfigured()) {
     return {
       status: "unavailable",
       windowMinutes: API_WINDOW_MINUTES,
@@ -93,7 +178,7 @@ export async function getRebuildApiMetricsSnapshot(): Promise<ApiMetricsSnapshot
   }
 
   try {
-    const result = await queryRebuild<{
+    const result = await deps.query<{
       total: number | string | null;
       errors: number | string | null;
       p50_ms: number | string | null;
@@ -136,9 +221,13 @@ export async function getRebuildApiMetricsSnapshot(): Promise<ApiMetricsSnapshot
       p95Ms: Number.isFinite(p95 ?? NaN) ? p95 : null,
     };
   } catch (error) {
-    console.error("rebuild api metrics query failed", error);
+    const errorMapping = mapMetricsTableError(error);
+    if (errorMapping.shouldLog) {
+      deps.logError("rebuild api metrics query failed", error);
+    }
+
     return {
-      status: "error",
+      status: errorMapping.status,
       windowMinutes: API_WINDOW_MINUTES,
       totalRequests: null,
       errorRate: null,
@@ -148,8 +237,10 @@ export async function getRebuildApiMetricsSnapshot(): Promise<ApiMetricsSnapshot
   }
 }
 
-export async function getRebuildOutboundClicksSnapshot(): Promise<OutboundClicksSnapshot> {
-  if (!isRebuildDbConfigured()) {
+export async function getRebuildOutboundClicksSnapshot(
+  deps: MetricsDependencies = defaultMetricsDependencies
+): Promise<OutboundClicksSnapshot> {
+  if (!deps.isDbConfigured()) {
     return {
       status: "unavailable",
       windowHours: OUTBOUND_WINDOW_HOURS,
@@ -160,7 +251,7 @@ export async function getRebuildOutboundClicksSnapshot(): Promise<OutboundClicks
   }
 
   try {
-    const result = await queryRebuild<{
+    const result = await deps.query<{
       total: number | string | null;
       last_24h: number | string | null;
       last_clicked_at: Date | string | null;
@@ -203,9 +294,13 @@ export async function getRebuildOutboundClicksSnapshot(): Promise<OutboundClicks
       lastClickedAtISO,
     };
   } catch (error) {
-    console.error("rebuild outbound clicks query failed", error);
+    const errorMapping = mapMetricsTableError(error);
+    if (errorMapping.shouldLog) {
+      deps.logError("rebuild outbound clicks query failed", error);
+    }
+
     return {
-      status: "error",
+      status: errorMapping.status,
       windowHours: OUTBOUND_WINDOW_HOURS,
       totalClicks: null,
       last24hClicks: null,

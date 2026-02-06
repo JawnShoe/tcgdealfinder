@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   title: opsTitle,
   description: opsDescription,
   alternates: {
-    canonical: buildCanonicalUrl("/rebuild/ops"),
+    canonical: buildCanonicalUrl("/ops"),
   },
   robots: {
     index: false,
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: opsTitle,
     description: opsDescription,
-    url: buildCanonicalUrl("/rebuild/ops"),
+    url: buildCanonicalUrl("/ops"),
   },
   twitter: {
     title: opsTitle,
@@ -119,7 +119,7 @@ export default async function RebuildOpsPage() {
 
     const routeResilienceStatuses: RouteResilienceStatus[] = [
       {
-        route: "/rebuild",
+        route: "/",
         ...evaluateResilience({
           dbAvailable: isDbConfigured,
           cacheAvailable: false,
@@ -129,7 +129,7 @@ export default async function RebuildOpsPage() {
         }),
       },
       {
-        route: "/rebuild/discovery",
+        route: "/discovery",
         ...evaluateResilience({
           dbAvailable: isDbConfigured,
           cacheAvailable: false,
@@ -139,7 +139,7 @@ export default async function RebuildOpsPage() {
         }),
       },
       {
-        route: "/rebuild/listing/[id]",
+        route: "/listing/[id]",
         ...evaluateResilience({
           dbAvailable: isDbConfigured,
           cacheAvailable: false,
@@ -149,7 +149,7 @@ export default async function RebuildOpsPage() {
         }),
       },
       {
-        route: "/rebuild/alerts",
+        route: "/alerts",
         ...evaluateResilience({
           dbAvailable: isDbConfigured,
           cacheAvailable: false,
@@ -159,7 +159,7 @@ export default async function RebuildOpsPage() {
         }),
       },
       {
-        route: "/rebuild/ops",
+        route: "/ops",
         ...evaluateResilience({
           dbAvailable: isDbConfigured,
           cacheAvailable: false,
@@ -467,7 +467,7 @@ export default async function RebuildOpsPage() {
     logRequest({
       level: status >= 500 ? "error" : "info",
       msg: "rebuild.ops.render",
-      route: "/rebuild/ops",
+      route: "/ops",
       requestId,
       durationMs: Date.now() - start,
       status,

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { buildDiscoveryUrl } from "@/lib/rebuild/urls";
 
 /**
@@ -17,30 +18,15 @@ export function SiteHeader() {
             href="/"
             className="flex items-center gap-2 text-slate-900 hover:text-slate-700"
           >
-            <svg viewBox="0 0 32 32" className="h-7 w-7" aria-hidden="true">
-              <rect x="4" y="2" width="24" height="28" rx="3" fill="#0f172a" />
-              <rect x="6" y="4" width="20" height="24" rx="2" fill="#1e293b" />
-              <circle
-                cx="16"
-                cy="14"
-                r="8"
-                stroke="#10b981"
-                strokeWidth="1.5"
-                fill="none"
-                opacity="0.3"
-              />
-              <circle
-                cx="16"
-                cy="14"
-                r="5"
-                stroke="#10b981"
-                strokeWidth="1.5"
-                fill="none"
-                opacity="0.5"
-              />
-              <circle cx="16" cy="14" r="2" fill="#10b981" />
-              <path d="M12 22 L16 20 L20 22 L16 24 Z" fill="#38bdf8" />
-            </svg>
+            <Image
+              src="/brand/logo.png"
+              alt="TCG Deal Finder"
+              width={28}
+              height={28}
+              className="h-7 w-7"
+              style={{ imageRendering: "pixelated" }}
+              priority
+            />
             <span className="font-semibold text-sm sm:text-base tracking-tight">
               TCG Deal Finder
             </span>

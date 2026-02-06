@@ -35,8 +35,7 @@ export default function DiscoveryPaginationControls({
   const router = useRouter();
   const pathname = usePathname();
 
-  const basePath =
-    pathname === "/rebuild/discovery" ? "/rebuild/discovery" : "/discovery";
+  const basePath = "/discovery";
 
   const normalizedPageSize = useMemo(
     () => normalizePageSize(pageSize),

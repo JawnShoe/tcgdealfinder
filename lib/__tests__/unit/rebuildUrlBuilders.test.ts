@@ -73,9 +73,9 @@ test("buildDiscoveryUrl normalizes unexpected pageSize", () => {
 });
 
 test("buildListingUrl encodes the listing id", () => {
-  assert.equal(buildListingUrl({ id: "abc" }), "/rebuild/listing/abc");
+  assert.equal(buildListingUrl({ id: "abc" }), "/listing/abc");
   assert.equal(
     buildListingUrl({ id: "abc/def?x=1" }),
-    "/rebuild/listing/abc%2Fdef%3Fx%3D1"
+    "/listing/abc%2Fdef%3Fx%3D1"
   );
 });

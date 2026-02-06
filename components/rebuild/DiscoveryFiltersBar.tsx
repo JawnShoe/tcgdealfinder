@@ -95,8 +95,7 @@ export default function DiscoveryFiltersBar({
     setSeller(queryFromUrl.filters.seller ?? "");
   }, [queryFromUrl, searchParamsKey]);
 
-  const basePath: "/discovery" | "/rebuild/discovery" =
-    pathname === "/rebuild/discovery" ? "/rebuild/discovery" : "/discovery";
+  const basePath: "/discovery" = "/discovery";
 
   useEffect(() => {
     if (hydrationAttemptedRef.current) return;

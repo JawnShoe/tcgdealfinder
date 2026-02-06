@@ -1,13 +1,15 @@
 import { expect, test } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:3000";
+const databaseUrl = process.env.DATABASE_URL;
 
 test.use({ viewport: { width: 1280, height: 800 } });
+test.skip(!databaseUrl, "DATABASE_URL not set for rebuild E2E.");
 
 test("rebuild discovery: scan grid columns + inspect expand remain deterministic", async ({
   page,
 }) => {
-  await page.goto(`${baseURL}/rebuild/discovery`, {
+  await page.goto(`${baseURL}/discovery`, {
     waitUntil: "domcontentloaded",
   });
 
@@ -17,7 +19,7 @@ test("rebuild discovery: scan grid columns + inspect expand remain deterministic
   await expect(firstRow.getByTestId("rebuild-deal-col-identity")).toBeVisible();
   await expect(firstRow.getByTestId("rebuild-deal-col-price")).toBeVisible();
   await expect(firstRow.getByTestId("rebuild-deal-col-discount")).toBeVisible();
-  await expect(firstRow.getByTestId("rebuild-deal-col-trust")).toBeVisible();
+  await expect(firstRow.getByTestId("rebuild-deal-col-seller")).toBeVisible();
 
   await expect
     .poll(

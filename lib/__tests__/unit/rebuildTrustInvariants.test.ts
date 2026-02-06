@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -102,11 +102,13 @@ test("evaluateTrustInvariants flags confidence label drift", () => {
 test("rebuild sources do not import legacy paths", () => {
   const root = process.cwd();
   const roots = [
-    join(root, "app", "rebuild"),
+    join(root, "app"),
     join(root, "components", "rebuild"),
     join(root, "lib", "rebuild"),
   ];
-  const files = roots.flatMap((dir) => collectFiles(dir));
+  const files = roots.flatMap((dir) =>
+    existsSync(dir) ? collectFiles(dir) : []
+  );
   const legacyImport = /from\s+["']@\/legacy\//;
   const legacyRelative = /from\s+["']\.\.\/.*legacy\//;
 

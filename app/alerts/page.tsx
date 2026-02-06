@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: alertsTitle,
   description: alertsDescription,
   alternates: {
-    canonical: buildCanonicalUrl("/rebuild/alerts"),
+    canonical: buildCanonicalUrl("/alerts"),
   },
   robots: {
     index: false,
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: alertsTitle,
     description: alertsDescription,
-    url: buildCanonicalUrl("/rebuild/alerts"),
+    url: buildCanonicalUrl("/alerts"),
   },
   twitter: {
     title: alertsTitle,
@@ -86,7 +86,7 @@ export default function RebuildAlertsPage() {
           <ul className="mt-4 space-y-2 text-sm">
             <li>
               <IntentPrefetchLink
-                href="/rebuild/discovery"
+                href="/discovery"
                 className="inline-flex font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
               >
                 Browse deals
@@ -94,7 +94,7 @@ export default function RebuildAlertsPage() {
             </li>
             <li>
               <IntentPrefetchLink
-                href="/rebuild/listing/rebuild-e2e-1"
+                href="/listing/rebuild-e2e-1"
                 className="inline-flex font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
               >
                 View example listing

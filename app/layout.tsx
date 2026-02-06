@@ -12,6 +12,12 @@ const SITE_URL = "https://tcg-deal-finder.local";
 export const metadata: Metadata = {
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
+  icons: {
+    icon: [
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+  },
   openGraph: {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,

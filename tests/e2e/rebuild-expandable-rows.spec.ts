@@ -7,7 +7,7 @@ test.skip(!databaseUrl, "DATABASE_URL not set for rebuild E2E.");
 test("Expandable rows: row=inspect, title=act, single expanded, keyboard", async ({
   page,
 }) => {
-  await page.goto("/rebuild/discovery?sort=newest", {
+  await page.goto("/discovery?sort=newest", {
     waitUntil: "domcontentloaded",
   });
 
@@ -42,7 +42,7 @@ test("Expandable rows: row=inspect, title=act, single expanded, keyboard", async
   await page.keyboard.press("Escape");
   await expect(row2).toHaveAttribute("aria-expanded", "false");
 
-  await page.route("**/rebuild/listing/**", (route) => route.abort());
+  await page.route("**/listing/**", (route) => route.abort());
   await expect(row1).toHaveAttribute("aria-expanded", "false");
   await row1.getByTestId("rebuild-deal-row-title").click();
   await expect(row1).toHaveAttribute("aria-expanded", "false");
@@ -52,7 +52,7 @@ test("Expandable rows: row=inspect, title=act, single expanded, keyboard", async
 test("Expandable rows: rebuild home recent deals supports inspection mode", async ({
   page,
 }) => {
-  await page.goto("/rebuild", { waitUntil: "domcontentloaded" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 
   const rows = page.getByTestId("rebuild-deal-row");
   const rowCount = await rows.count();

@@ -9,7 +9,7 @@ import {
 
 type BuildDiscoveryUrlInput = {
   preset: Preset;
-  basePath?: "/discovery" | "/rebuild/discovery";
+  basePath?: "/discovery";
   includeDefaultPreset?: boolean;
   filters?: DiscoveryFilters;
   pagination?: {
@@ -70,5 +70,5 @@ export function buildDiscoveryUrl({
 }
 
 export function buildListingUrl({ id }: { id: string }): string {
-  return `/rebuild/listing/${encodeURIComponent(id)}`;
+  return `/listing/${encodeURIComponent(id)}`;
 }

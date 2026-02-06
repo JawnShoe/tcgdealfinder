@@ -19,7 +19,7 @@ test("rebuild alerts: recent alerts empty state", async ({ page }) => {
     });
   });
 
-  await page.goto("/rebuild/alerts", { waitUntil: "domcontentloaded" });
+  await page.goto("/alerts", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByTestId("rebuild-alerts-history")).toBeVisible({
     timeout: 15000,
@@ -60,7 +60,7 @@ test("rebuild alerts: recent alerts populated state", async ({ page }) => {
     });
   });
 
-  await page.goto("/rebuild/alerts", { waitUntil: "domcontentloaded" });
+  await page.goto("/alerts", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByTestId("rebuild-alerts-history-list")).toBeVisible({
     timeout: 15000,
@@ -116,7 +116,7 @@ test("rebuild alerts: subscription form submits and shows success state", async 
   const historyResponsePromise = page.waitForResponse(
     "**/api/rebuild/alerts/history"
   );
-  await page.goto("/rebuild/alerts", { waitUntil: "domcontentloaded" });
+  await page.goto("/alerts", { waitUntil: "domcontentloaded" });
   await historyResponsePromise;
 
   const form = page.getByTestId("rebuild-alerts-subscribe-form");

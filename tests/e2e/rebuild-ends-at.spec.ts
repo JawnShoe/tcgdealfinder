@@ -1,9 +1,13 @@
 import { expect, test } from "@playwright/test";
 
+const databaseUrl = process.env.DATABASE_URL;
+
+test.skip(!databaseUrl, "DATABASE_URL not set for rebuild E2E.");
+
 test("rebuild discovery: ends indicator reveals absolute UTC timestamp", async ({
   page,
 }) => {
-  await page.goto("/rebuild/discovery?sort=newest", {
+  await page.goto("/discovery?sort=newest", {
     waitUntil: "domcontentloaded",
   });
 

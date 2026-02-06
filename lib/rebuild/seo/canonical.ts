@@ -24,12 +24,12 @@ export function buildDiscoveryCanonicalUrl(
       : { sort: DEFAULT_REBUILD_SORT };
   const canonicalParams = serializeRebuildPrefs(prefs);
   const query = canonicalParams.toString();
-  const path = query ? `/rebuild/discovery?${query}` : "/rebuild/discovery";
+  const path = query ? `/discovery?${query}` : "/discovery";
   return buildAbsoluteUrl(path);
 }
 
 export function buildListingCanonicalUrl(listingId: string): string {
-  return buildAbsoluteUrl(`/rebuild/listing/${encodeURIComponent(listingId)}`);
+  return buildAbsoluteUrl(`/listing/${encodeURIComponent(listingId)}`);
 }
 
 function normalizeSearchParams(

@@ -49,7 +49,7 @@ export function ExclusionsToolClient({
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/rebuild/ops/exclusions", {
+      const response = await fetch("/api/ops/exclusions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -94,7 +94,7 @@ export function ExclusionsToolClient({
   const handleRemoveOverride = async (listingId: string) => {
     try {
       const response = await fetch(
-        `/api/rebuild/ops/exclusions?listingId=${encodeURIComponent(listingId)}`,
+        `/api/ops/exclusions?listingId=${encodeURIComponent(listingId)}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -122,7 +122,7 @@ export function ExclusionsToolClient({
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm font-medium text-slate-700">Filter:</span>
           <a
-            href="/rebuild/ops/exclusions"
+            href="/ops/exclusions"
             className={`rounded px-3 py-1 text-sm transition ${
               !kindFilter
                 ? "bg-amber-500 text-white"
@@ -135,7 +135,7 @@ export function ExclusionsToolClient({
             (type) => (
               <a
                 key={type}
-                href={`/rebuild/ops/exclusions?kind=${type}&limit=${limit}`}
+                href={`/ops/exclusions?kind=${type}&limit=${limit}`}
                 className={`rounded px-3 py-1 text-sm transition ${
                   kindFilter === type
                     ? "bg-amber-500 text-white"
@@ -153,7 +153,7 @@ export function ExclusionsToolClient({
           {[50, 100, 200].map((l) => (
             <a
               key={l}
-              href={`/rebuild/ops/exclusions?limit=${l}${kindFilter ? `&kind=${kindFilter}` : ""}`}
+              href={`/ops/exclusions?limit=${l}${kindFilter ? `&kind=${kindFilter}` : ""}`}
               className={`rounded px-3 py-1 text-sm transition ${
                 limit === l
                   ? "bg-amber-500 text-white"

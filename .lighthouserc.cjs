@@ -1,16 +1,11 @@
 module.exports = {
   ci: {
     collect: {
-      url: [
-        "http://127.0.0.1:3000/rebuild",
-        "http://127.0.0.1:3000/rebuild/discovery",
-        "http://127.0.0.1:3000/rebuild/listing/rebuild-e2e-1",
-        "http://127.0.0.1:3000/rebuild/alerts",
-        "http://127.0.0.1:3000/rebuild/ops",
-      ],
+      url: ["http://127.0.0.1:3000/"],
       numberOfRuns: 2,
-      startServerCommand: "npm run dev -- --hostname 127.0.0.1 --port 3000",
-      startServerReadyPattern: "started server",
+      startServerCommand:
+        "node -e \"require('node:fs').rmSync('.next', { recursive: true, force: true })\" && npm run build && npm run start -- --hostname 127.0.0.1 --port 3000",
+      startServerReadyPattern: "http://127\\.0\\.0\\.1:3000",
       startServerReadyTimeout: 120000,
       settings: {
         onlyCategories: ["performance"],

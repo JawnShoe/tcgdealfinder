@@ -6,81 +6,94 @@ import {
 } from "@/lib/rebuild/observability/logging";
 import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
 import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
-import { listWatches, listRecentAlerts } from "@/lib/rebuild/data/alertsOps";
-import { AlertsToolClient } from "./AlertsToolClient";
+import { listListingOverrides } from "@/lib/rebuild/data/listingsOps";
+import { ListingsToolClient } from "./ListingsToolClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const alertsTitle = buildRebuildTitle("Alerts");
-const alertsDescription = "Rebuild ops view for alerts watchlist management.";
+const listingsTitle = buildRebuildTitle("Listings");
+const listingsDescription = "Rebuild ops view for listings management.";
 
 export const metadata: Metadata = {
-  title: alertsTitle,
-  description: alertsDescription,
+  title: listingsTitle,
+  description: listingsDescription,
   alternates: {
-    canonical: buildCanonicalUrl("/rebuild/ops/alerts"),
+    canonical: buildCanonicalUrl("/ops/listings"),
   },
   robots: {
     index: false,
     follow: false,
   },
   openGraph: {
-    title: alertsTitle,
-    description: alertsDescription,
-    url: buildCanonicalUrl("/rebuild/ops/alerts"),
+    title: listingsTitle,
+    description: listingsDescription,
+    url: buildCanonicalUrl("/ops/listings"),
   },
   twitter: {
-    title: alertsTitle,
-    description: alertsDescription,
+    title: listingsTitle,
+    description: listingsDescription,
   },
 };
 
-export default async function RebuildOpsAlertsPage() {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default async function RebuildOpsListingsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>;
+}) {
   const start = Date.now();
   const headersList = await headers();
   const requestId = getRequestIdFromHeaders(headersList);
   let status = 200;
   let requestError: unknown;
 
+  // Parse query params
+  const params = searchParams ? await searchParams : {};
+  const limitParam = Array.isArray(params.limit)
+    ? params.limit[0]
+    : params.limit;
+  const limit = limitParam
+    ? Math.min(parseInt(limitParam, 10) || 200, 500)
+    : 200;
+
   try {
-    // Fetch watches and alerts (safe - returns empty arrays on DB issues)
-    let watches: Awaited<ReturnType<typeof listWatches>> = [];
-    let alerts: Awaited<ReturnType<typeof listRecentAlerts>> = [];
+    // Fetch overrides (safe - returns empty array on DB issues)
+    let overrides: Awaited<ReturnType<typeof listListingOverrides>> = [];
     let fetchError: string | null = null;
     let isDbNotInitialized = false;
 
     try {
-      [watches, alerts] = await Promise.all([
-        listWatches(),
-        listRecentAlerts(50),
-      ]);
+      overrides = await listListingOverrides({
+        limit,
+      });
     } catch (err: unknown) {
       // Check for missing table error (42P01 = undefined_table in PostgreSQL)
       const pgError = err as { code?: string };
       if (pgError.code === "42P01") {
         isDbNotInitialized = true;
         fetchError =
-          "Database not initialized (missing alerts_watchlist or alerts_log table)";
+          "Database not initialized (missing listing_overrides table)";
       } else {
         fetchError =
-          err instanceof Error ? err.message : "Failed to fetch alerts data";
+          err instanceof Error ? err.message : "Failed to fetch overrides";
       }
-      console.error("[rebuild/ops/alerts] fetch error:", err);
+      console.error("[rebuild/ops/listings] fetch error:", err);
     }
 
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-            Rebuild lane - Ops Alerts
+            Rebuild lane - Ops Listings
           </div>
 
           <header className="rounded-lg border border-slate-200 bg-white p-6">
-            <h1 className="text-2xl font-semibold text-slate-900">Alerts</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Listings</h1>
             <p className="mt-2 text-sm text-slate-700">
-              Manage alert watchlist rules. When a watched card meets the
-              threshold criteria, an alert is logged.
+              Manage listing overrides. Set allow/block/soft-exclude on
+              individual listings without blacklisting an entire seller.
             </p>
           </header>
 
@@ -93,8 +106,8 @@ export default async function RebuildOpsAlertsPage() {
                 Database Not Initialized
               </h2>
               <p className="mt-2 text-sm text-amber-700">
-                The alerts_watchlist or alerts_log table does not exist. Run
-                migrations to initialize the database.
+                The listing_overrides table does not exist. Run migrations to
+                initialize the database.
               </p>
             </section>
           ) : fetchError ? (
@@ -105,7 +118,7 @@ export default async function RebuildOpsAlertsPage() {
               <p className="mt-2 text-sm text-red-700">{fetchError}</p>
             </section>
           ) : (
-            <AlertsToolClient initialWatches={watches} initialAlerts={alerts} />
+            <ListingsToolClient initialOverrides={overrides} limit={limit} />
           )}
         </div>
       </main>
@@ -117,8 +130,8 @@ export default async function RebuildOpsAlertsPage() {
   } finally {
     logRequest({
       level: status >= 500 ? "error" : "info",
-      msg: "rebuild.ops.alerts.render",
-      route: "/rebuild/ops/alerts",
+      msg: "rebuild.ops.listings.render",
+      route: "/ops/listings",
       requestId,
       durationMs: Date.now() - start,
       status,

@@ -148,7 +148,7 @@ Rules
 Placement and SSR requirements:
 
 - MUST render server-side and be visible at first render (no hover-only meaning).
-- MUST be present on all rebuild routes that surface trust: `/rebuild`, `/rebuild/discovery`, `/rebuild/listing/[id]`.
+- MUST be present on all canonical routes that surface trust: `/`, `/discovery`, `/listing/[id]`.
 - MUST include stable attributes:
   - `data-testid="resilience-label"`
   - `data-tier="<LIVE|CACHED|STALE|PARTIAL|UNAVAILABLE>"`
@@ -644,7 +644,7 @@ Confidence must explain itself without hover dependency and without mutating tru
 
 ### 2026-01-22: Homepage Visual Legitimacy — Trust-Forward Consumer
 
-This change applies consumer-facing visual polish to the `/rebuild` homepage only. Trust semantics are unchanged.
+This change applies consumer-facing visual polish to the `/` homepage only. Trust semantics are unchanged.
 
 **Homepage visual intent:**
 
@@ -673,7 +673,7 @@ This change applies consumer-facing visual polish to the `/rebuild` homepage onl
 
 **Where deep trust explanation lives:**
 
-- Listing detail page (`/rebuild/listing/[id]`)
+- Listing detail page (`/listing/[id]`)
 - Explicit secondary link ("How confidence is calculated →")
 
 **Trust semantics unchanged:**
@@ -681,4 +681,24 @@ This change applies consumer-facing visual polish to the `/rebuild` homepage onl
 - No ranking, filtering, or scoring logic changes
 - Confidence/freshness/provenance still derived server-side
 - Existing trust surface contracts (ResilienceLabel, Confidence badge) preserved
-- Discovery page (`/rebuild/discovery`) unaffected by this change
+- Discovery page (`/discovery`) unaffected by this change
+
+### 2026-02-04: Canonical Homepage Routing Contract
+
+`/` is the canonical homepage route.
+
+Routing contract (hard):
+
+- `/` renders the upgraded homepage surface (details/summary rows, trust markers, deferred skeleton/content markers).
+- `/rebuild` is deleted and must return a deterministic 404.
+- No redirect from `/rebuild` to `/`.
+- No `/rebuild` stub page.
+- Homepage anchor: `HOME_CANONICAL_SHA=f02b8f2f57ec461cb52024a8c5a70d0e104ed7ce` (signature gate: `tests/e2e/home-canonical.spec.ts`).
+
+### 2026-02-04: Canonical Homepage Regression Restore
+
+Regression recovery after route decommission must preserve the existing visual/interaction contract on `/`:
+
+- The canonical homepage on `/` must retain the established scan hierarchy, trust markers, and deferred skeleton/content markers.
+- Title-only outbound hit-area remains enforced (whitespace click expands/collapses; title click commits outbound).
+- `/rebuild` remains a hard 404 with no redirect and no stub surface.

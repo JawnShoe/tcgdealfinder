@@ -32,3 +32,9 @@ _content*.txt
 # local restorepoints
 .restorepoints/
 /*.bundle
+
+# local evidence artifacts
+test-results/local-evidence/
+
+# macOS filesystem noise
+.DS_Store

@@ -70,12 +70,9 @@ export function ListingsToolClient({ initialOverrides, limit }: Props) {
         params.set("overrideType", filterOverrideType);
       }
 
-      const response = await fetch(
-        `/api/rebuild/ops/listings?${params.toString()}`,
-        {
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`/api/ops/listings?${params.toString()}`, {
+        credentials: "include",
+      });
 
       const data = await response.json();
 
@@ -105,7 +102,7 @@ export function ListingsToolClient({ initialOverrides, limit }: Props) {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/rebuild/ops/listings", {
+      const response = await fetch("/api/ops/listings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -155,7 +152,7 @@ export function ListingsToolClient({ initialOverrides, limit }: Props) {
   const handleRemoveOverride = async (listingId: string) => {
     try {
       const response = await fetch(
-        `/api/rebuild/ops/listings?listingId=${encodeURIComponent(listingId)}`,
+        `/api/ops/listings?listingId=${encodeURIComponent(listingId)}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -244,7 +241,7 @@ export function ListingsToolClient({ initialOverrides, limit }: Props) {
           {[50, 100, 200].map((l) => (
             <a
               key={l}
-              href={`/rebuild/ops/listings?limit=${l}`}
+              href={`/ops/listings?limit=${l}`}
               className={`rounded px-3 py-1 text-sm transition ${
                 limit === l
                   ? "bg-amber-500 text-white"

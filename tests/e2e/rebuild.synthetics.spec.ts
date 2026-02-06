@@ -22,10 +22,7 @@ const complianceCopy = "We may earn a commission from qualifying purchases.";
 test.skip(!databaseUrl, "DATABASE_URL not set for rebuild synthetics.");
 
 function buildCanonicalDiscoveryUrl(searchParams?: URLSearchParams): string {
-  return buildDiscoveryCanonicalUrl(searchParams).replace(
-    "/rebuild/discovery",
-    "/discovery"
-  );
+  return buildDiscoveryCanonicalUrl(searchParams);
 }
 
 test("Stage 1 delete: /top-deals returns 404 (legacy route removed)", async ({
@@ -96,52 +93,40 @@ test("Stage 4 delete: /sets/[setId] returns 404 (stubs removed)", async ({
   expect(response.status()).toBe(404);
 });
 
-test("Stage 5 delete: /alerts returns 404 (redirect stub removed)", async ({
-  request,
-}) => {
-  const response = await request.get(`${baseURL}/alerts`);
-  expect(response.status()).toBe(404);
-});
-
-test("Stage 1 decommission: /alerts/unsubscribe page redirects to rebuild API endpoint", async ({
+test("Stage 1 decommission: /alerts/unsubscribe page renders HTML surface (no redirect)", async ({
   request,
 }) => {
   const testToken = "test-token-e2e-page-redirect";
   const legacyUrl = `${baseURL}/alerts/unsubscribe?token=${testToken}`;
-  const expectedPath = `/api/rebuild/alerts/unsubscribe?token=${testToken}`;
 
   const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
+  expect(response.status()).toBe(200);
 
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
+  const contentType = response.headers()["content-type"] ?? "";
+  expect(contentType).toContain("text/html");
+  const body = await response.text();
+  expect(body).toContain('id="__next-page-redirect"');
+  expect(body).toContain(
+    `content="0;url=/api/rebuild/alerts/unsubscribe?token=${encodeURIComponent(testToken)}"`
+  );
 });
 
 test("Stage 1 decommission: /alerts/unsubscribe page handles missing token gracefully", async ({
   request,
 }) => {
   const legacyUrl = `${baseURL}/alerts/unsubscribe`;
-  const expectedPath = `/api/rebuild/alerts/unsubscribe`;
 
   const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
+  expect(response.status()).toBe(200);
 
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-    // Ensure no token param when none provided
-    expect(resolvedLocation).not.toContain("token=");
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
+  const contentType = response.headers()["content-type"] ?? "";
+  expect(contentType).toContain("text/html");
+  const body = await response.text();
+  expect(body).toContain('id="__next-page-redirect"');
+  expect(body).toContain('content="0;url=/api/rebuild/alerts/unsubscribe"');
+  expect(body).not.toContain(
+    'content="0;url=/api/rebuild/alerts/unsubscribe?token='
+  );
 });
 
 test("Stage 1 decommission: /api/alerts/unsubscribe redirects to rebuild endpoint", async ({
@@ -244,7 +229,7 @@ test("Stage 5 delete: /watchlist returns 404 (redirect stub removed)", async ({
 test("Stage 1 decommission: header does not contain Watchlist link", async ({
   page,
 }) => {
-  await page.goto(`${baseURL}/rebuild`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${baseURL}/`, { waitUntil: "domcontentloaded" });
   const banner = page.getByRole("banner");
   await expect(banner).toBeVisible();
   await expect(banner.getByRole("link", { name: "Watchlist" })).toHaveCount(0);
@@ -253,7 +238,7 @@ test("Stage 1 decommission: header does not contain Watchlist link", async ({
 test("Stage 1 decommission: no watchlist star buttons on discovery page", async ({
   page,
 }) => {
-  await page.goto(`${baseURL}/rebuild/discovery`, {
+  await page.goto(`${baseURL}/discovery`, {
     waitUntil: "domcontentloaded",
   });
   // Star buttons used aria-label "Watch this card" or similar
@@ -367,10 +352,10 @@ test("Stage 5 delete: /admin returns 404 (redirect stub removed)", async ({
   expect(response.status()).toBe(404);
 });
 
-test("Stage 2 parity: /rebuild/ops/exclusions renders tool surface", async ({
+test("Stage 2 parity: /ops/exclusions renders tool surface", async ({
   page,
 }) => {
-  const url = `${baseURL}/rebuild/ops/exclusions`;
+  const url = `${baseURL}/ops/exclusions`;
 
   await page.goto(url, { waitUntil: "domcontentloaded" });
 
@@ -428,10 +413,10 @@ test("Stage 2 parity: /api/rebuild/ops/exclusions returns 401 without auth", asy
   expect(deleteBody.error).toBe("Unauthorized");
 });
 
-test("Stage 2 parity: /rebuild/ops/blacklist renders tool surface", async ({
+test("Stage 2 parity: /ops/blacklist renders tool surface", async ({
   page,
 }) => {
-  const url = `${baseURL}/rebuild/ops/blacklist`;
+  const url = `${baseURL}/ops/blacklist`;
 
   await page.goto(url, { waitUntil: "domcontentloaded" });
 
@@ -489,10 +474,8 @@ test("Stage 2 parity: /api/rebuild/ops/blacklist returns 401 without auth", asyn
   expect(deleteBody.error).toBe("Unauthorized");
 });
 
-test("Stage 2 parity: /rebuild/ops/alerts renders tool surface", async ({
-  page,
-}) => {
-  const url = `${baseURL}/rebuild/ops/alerts`;
+test("Stage 2 parity: /ops/alerts renders tool surface", async ({ page }) => {
+  const url = `${baseURL}/ops/alerts`;
 
   await page.goto(url, { waitUntil: "domcontentloaded" });
 
@@ -555,10 +538,8 @@ test("Stage 2 parity: /api/rebuild/ops/alerts returns 401 without auth", async (
   expect(deleteBody.error).toBe("Unauthorized");
 });
 
-test("Stage 2 parity: /rebuild/ops/listings renders tool surface", async ({
-  page,
-}) => {
-  const url = `${baseURL}/rebuild/ops/listings`;
+test("Stage 2 parity: /ops/listings renders tool surface", async ({ page }) => {
+  const url = `${baseURL}/ops/listings`;
 
   await page.goto(url, { waitUntil: "domcontentloaded" });
 
@@ -904,18 +885,18 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
   expect(robotsResponse.ok()).toBeTruthy();
   const robotsBody = (await robotsResponse.text()).toLowerCase();
   expect(robotsBody).toContain("user-agent: *");
-  expect(robotsBody).toContain("disallow: /rebuild/ops");
-  expect(robotsBody).toContain("disallow: /rebuild/alerts");
+  expect(robotsBody).toContain("disallow: /ops");
+  expect(robotsBody).toContain("disallow: /alerts");
   expect(robotsBody).toContain("sitemap:");
 
   const sitemapResponse = await request.get(`${baseURL}/sitemap.xml`);
   expect(sitemapResponse.ok()).toBeTruthy();
   const sitemapBody = await sitemapResponse.text();
-  expect(sitemapBody).toContain(buildCanonicalUrl("/rebuild"));
-  expect(sitemapBody).toContain(buildCanonicalUrl("/rebuild/discovery"));
+  expect(sitemapBody).toContain(buildCanonicalUrl("/"));
+  expect(sitemapBody).toContain(buildCanonicalUrl("/discovery"));
   expect(sitemapBody).toContain(buildListingCanonicalUrl(listingId));
 
-  const discoveryQueryUrl = `${baseURL}/rebuild/discovery?sort=biggest-discount&foo=bar`;
+  const discoveryQueryUrl = `${baseURL}/discovery?sort=biggest-discount&foo=bar`;
   const discoveryQueryResponse = await request.get(discoveryQueryUrl);
   expect(discoveryQueryResponse.ok()).toBeTruthy();
   const discoveryQueryBody = await discoveryQueryResponse.text();
@@ -929,21 +910,19 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
   const routes = [
     "/",
     "/discovery",
-    "/rebuild",
-    "/rebuild/discovery",
-    `/rebuild/listing/${encodeURIComponent(listingId)}`,
-    "/rebuild/alerts",
-    "/rebuild/ops",
+    `/listing/${encodeURIComponent(listingId)}`,
+    "/alerts",
+    "/ops",
   ];
 
   for (const route of routes) {
     const url = `${baseURL}${route}`;
-    if (route === "/rebuild/ops") {
+    if (route === "/ops") {
       const response = await request.get(url);
       expect(response.ok()).toBeTruthy();
       const body = await response.text();
       assertSeoBasics(body, {
-        canonical: buildCanonicalUrl("/rebuild/ops"),
+        canonical: buildCanonicalUrl("/ops"),
         indexable: false,
       });
       await assertOpsSsrHeading(request, url);
@@ -953,36 +932,28 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
       continue;
     }
 
-    const expectFetchedAt =
-      route === "/" ||
-      route === "/discovery" ||
-      route === "/rebuild" ||
-      route === "/rebuild/discovery";
+    const expectFetchedAt = route === "/" || route === "/discovery";
     const response = await request.get(url);
     expect(response.ok()).toBeTruthy();
     const body = await response.text();
 
-    if (
-      route === "/" ||
-      route === "/discovery" ||
-      route === "/rebuild/discovery"
-    ) {
+    if (route === "/discovery") {
       assertSeoBasics(body, {
         canonical: buildCanonicalDiscoveryUrl(),
         indexable: true,
       });
       const title = extractTitle(body);
       expect(title).toBe(buildRebuildTitle("Discovery"));
-    } else if (route === "/rebuild") {
+    } else if (route === "/") {
       assertSeoBasics(body, {
-        canonical: buildCanonicalUrl("/rebuild"),
+        canonical: buildCanonicalUrl("/"),
         indexable: true,
       });
       const jsonLd = extractJsonLdObjects(body);
       expect(findJsonLdByType(jsonLd, "WebApplication")).toBeTruthy();
       const title = extractTitle(body);
       expect(title).toBe(buildRebuildTitle("Today's Best Deals"));
-    } else if (route.startsWith("/rebuild/listing/")) {
+    } else if (route.startsWith("/listing/")) {
       assertSeoBasics(body, {
         canonical: buildListingCanonicalUrl(listingId),
         indexable: true,
@@ -991,9 +962,9 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
       expect(findJsonLdByType(jsonLd, "Product")).toBeTruthy();
       const title = extractTitle(body);
       expect(title).toBe(buildListingTitle("Rebuild E2E Listing"));
-    } else if (route === "/rebuild/alerts") {
+    } else if (route === "/alerts") {
       assertSeoBasics(body, {
-        canonical: buildCanonicalUrl("/rebuild/alerts"),
+        canonical: buildCanonicalUrl("/alerts"),
         indexable: false,
       });
       const title = extractTitle(body);
@@ -1007,11 +978,11 @@ test("rebuild synthetics: trust surfaces visible across rebuild funnel", async (
     if (expectFetchedAt) {
       await assertProvenanceSummaryStable(page);
     }
-    if (route.startsWith("/rebuild/listing/")) {
+    if (route.startsWith("/listing/")) {
       await assertSsrPredictiveSignals(request, url);
       await assertUiPredictiveSignals(page);
     }
-    if (route === "/rebuild/alerts") {
+    if (route === "/alerts") {
       await assertAlertsSsrHeading(request, url);
       await assertAlertsHeading(page);
     }
@@ -1106,31 +1077,31 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
   page,
   request,
 }) => {
-  const homeUrl = `${baseURL}/rebuild`;
-  const discoveryUrl = `${baseURL}/rebuild/discovery`;
-  const alertsUrl = `${baseURL}/rebuild/alerts`;
-  const opsUrl = `${baseURL}/rebuild/ops`;
-  const listingPath = `/rebuild/listing/${encodeURIComponent(listingId)}`;
+  const homeUrl = `${baseURL}/`;
+  const discoveryUrl = `${baseURL}/discovery`;
+  const alertsUrl = `${baseURL}/alerts`;
+  const opsUrl = `${baseURL}/ops`;
+  const listingPath = `/listing/${encodeURIComponent(listingId)}`;
   const listingUrl = `${baseURL}${listingPath}`;
 
   assertLoadingSkeletonSourceFile(
-    ["app", "rebuild", "loading.tsx"],
+    ["app", "loading.tsx"],
     "rebuild-loading-home"
   );
   assertLoadingSkeletonSourceFile(
-    ["app", "rebuild", "discovery", "loading.tsx"],
+    ["app", "discovery", "loading.tsx"],
     "rebuild-loading-discovery"
   );
   assertLoadingSkeletonSourceFile(
-    ["app", "rebuild", "listing", "[id]", "loading.tsx"],
+    ["app", "listing", "[id]", "loading.tsx"],
     "rebuild-loading-listing"
   );
   assertLoadingSkeletonSourceFile(
-    ["app", "rebuild", "alerts", "loading.tsx"],
+    ["app", "alerts", "loading.tsx"],
     "rebuild-loading-alerts"
   );
   assertLoadingSkeletonSourceFile(
-    ["app", "rebuild", "ops", "loading.tsx"],
+    ["app", "ops", "loading.tsx"],
     "rebuild-loading-ops"
   );
 
@@ -1193,13 +1164,9 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
   const opsLink = homeNav.getByRole("link", { name: "Ops" });
   await expect(opsLink).toHaveAttribute("data-intent-prefetch", "true");
 
-  await assertIntentPrefetchTriggered(
-    page,
-    browseDealsLink,
-    "/rebuild/discovery"
-  );
-  await assertIntentPrefetchTriggered(page, alertsLink, "/rebuild/alerts");
-  await assertIntentPrefetchTriggered(page, opsLink, "/rebuild/ops");
+  await assertIntentPrefetchTriggered(page, browseDealsLink, "/discovery");
+  await assertIntentPrefetchTriggered(page, alertsLink, "/alerts");
+  await assertIntentPrefetchTriggered(page, opsLink, "/ops");
 
   await alertsLink.click();
   await page.waitForURL(alertsUrl, { waitUntil: "domcontentloaded" });
@@ -1210,7 +1177,7 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
   await page.waitForURL(discoveryUrl, { waitUntil: "domcontentloaded" });
 
   const firstListingLink = page
-    .locator('[data-intent-prefetch="true"][href^="/rebuild/listing/"]')
+    .locator('[data-intent-prefetch="true"][href^="/listing/"]')
     .first();
   await expect(firstListingLink).toHaveAttribute(
     "data-intent-prefetch",
@@ -1228,7 +1195,7 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
   }
 
   await firstListingLink.click();
-  await page.waitForURL(/\/rebuild\/listing\//, {
+  await page.waitForURL(/\/listing\//, {
     waitUntil: "domcontentloaded",
   });
 
@@ -1271,7 +1238,7 @@ test("rebuild perceived speed: skeletons + priority hydration + intent prefetch"
   await assertIntentPrefetchTriggered(
     page,
     exampleListing,
-    "/rebuild/listing/rebuild-e2e-1"
+    "/listing/rebuild-e2e-1"
   );
 
   await exampleListing.click();

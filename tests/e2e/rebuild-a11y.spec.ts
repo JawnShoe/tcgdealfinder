@@ -8,7 +8,7 @@ const listingId = "rebuild-e2e-1";
 test.skip(!databaseUrl, "DATABASE_URL not set for rebuild a11y.");
 
 test("rebuild listing a11y smoke", async ({ page }) => {
-  const routeUrl = `${baseURL}/rebuild/listing/${encodeURIComponent(listingId)}`;
+  const routeUrl = `${baseURL}/listing/${encodeURIComponent(listingId)}`;
   await page.goto(routeUrl, { waitUntil: "networkidle" });
 
   const results = await new AxeBuilder({ page }).analyze();
@@ -26,7 +26,7 @@ test("rebuild listing a11y smoke", async ({ page }) => {
 });
 
 test("rebuild keyboard essentials", async ({ page }) => {
-  await page.goto(`${baseURL}/rebuild`, { waitUntil: "networkidle" });
+  await page.goto(`${baseURL}/`, { waitUntil: "networkidle" });
 
   const browseLink = page.getByRole("link", { name: "Browse deals" });
   await browseLink.focus();
@@ -37,7 +37,7 @@ test("rebuild keyboard essentials", async ({ page }) => {
   await page.keyboard.press("Enter");
   await expect(page.locator("details").first()).toHaveAttribute("open", "");
 
-  await page.goto(`${baseURL}/rebuild/discovery`, { waitUntil: "networkidle" });
+  await page.goto(`${baseURL}/discovery`, { waitUntil: "networkidle" });
 
   const sortSelect = page.getByLabel("Sort");
   await sortSelect.focus();
@@ -48,12 +48,9 @@ test("rebuild keyboard essentials", async ({ page }) => {
   await page.keyboard.press("Enter");
   await expect(page.locator("details").first()).toHaveAttribute("open", "");
 
-  await page.goto(
-    `${baseURL}/rebuild/listing/${encodeURIComponent(listingId)}`,
-    {
-      waitUntil: "networkidle",
-    }
-  );
+  await page.goto(`${baseURL}/listing/${encodeURIComponent(listingId)}`, {
+    waitUntil: "networkidle",
+  });
 
   const backLink = page.getByRole("link", { name: "Back to Discovery" });
   await backLink.focus();

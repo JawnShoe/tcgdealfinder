@@ -38,7 +38,7 @@ export function BlacklistToolClient({ initialSellers, limit }: Props) {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/rebuild/ops/blacklist", {
+      const response = await fetch("/api/ops/blacklist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -83,7 +83,7 @@ export function BlacklistToolClient({ initialSellers, limit }: Props) {
   const handleRemoveSeller = async (sellerUsername: string) => {
     try {
       const response = await fetch(
-        `/api/rebuild/ops/blacklist?sellerUsername=${encodeURIComponent(sellerUsername)}`,
+        `/api/ops/blacklist?sellerUsername=${encodeURIComponent(sellerUsername)}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -129,7 +129,7 @@ export function BlacklistToolClient({ initialSellers, limit }: Props) {
           {[50, 100, 200].map((l) => (
             <a
               key={l}
-              href={`/rebuild/ops/blacklist?limit=${l}`}
+              href={`/ops/blacklist?limit=${l}`}
               className={`rounded px-3 py-1 text-sm transition ${
                 limit === l
                   ? "bg-amber-500 text-white"

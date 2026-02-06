@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   title: exclusionsTitle,
   description: exclusionsDescription,
   alternates: {
-    canonical: buildCanonicalUrl("/rebuild/ops/exclusions"),
+    canonical: buildCanonicalUrl("/ops/exclusions"),
   },
   robots: {
     index: false,
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: exclusionsTitle,
     description: exclusionsDescription,
-    url: buildCanonicalUrl("/rebuild/ops/exclusions"),
+    url: buildCanonicalUrl("/ops/exclusions"),
   },
   twitter: {
     title: exclusionsTitle,
@@ -147,7 +147,7 @@ export default async function RebuildOpsExclusionsPage({
     logRequest({
       level: status >= 500 ? "error" : "info",
       msg: "rebuild.ops.exclusions.render",
-      route: "/rebuild/ops/exclusions",
+      route: "/ops/exclusions",
       requestId,
       durationMs: Date.now() - start,
       status,

@@ -252,7 +252,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link
-                href="/rebuild/discovery"
+                href="/discovery"
                 data-intent-prefetch="true"
                 className="text-sm font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900"
               >
@@ -505,7 +505,7 @@ export default async function RebuildListingPage({ params }: PageProps) {
     logRequest({
       level: status >= 500 ? "error" : "info",
       msg: "rebuild.listing.render",
-      route: "/rebuild/listing/[id]",
+      route: "/listing/[id]",
       requestId,
       durationMs: Date.now() - start,
       status,

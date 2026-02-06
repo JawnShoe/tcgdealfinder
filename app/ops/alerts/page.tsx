@@ -6,95 +6,81 @@ import {
 } from "@/lib/rebuild/observability/logging";
 import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
 import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
-import { listBlacklistedSellers } from "@/lib/rebuild/data/blacklist";
-import { BlacklistToolClient } from "./BlacklistToolClient";
+import { listWatches, listRecentAlerts } from "@/lib/rebuild/data/alertsOps";
+import { AlertsToolClient } from "./AlertsToolClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const blacklistTitle = buildRebuildTitle("Blacklist");
-const blacklistDescription =
-  "Rebuild ops view for blacklist seller management.";
+const alertsTitle = buildRebuildTitle("Alerts");
+const alertsDescription = "Rebuild ops view for alerts watchlist management.";
 
 export const metadata: Metadata = {
-  title: blacklistTitle,
-  description: blacklistDescription,
+  title: alertsTitle,
+  description: alertsDescription,
   alternates: {
-    canonical: buildCanonicalUrl("/rebuild/ops/blacklist"),
+    canonical: buildCanonicalUrl("/ops/alerts"),
   },
   robots: {
     index: false,
     follow: false,
   },
   openGraph: {
-    title: blacklistTitle,
-    description: blacklistDescription,
-    url: buildCanonicalUrl("/rebuild/ops/blacklist"),
+    title: alertsTitle,
+    description: alertsDescription,
+    url: buildCanonicalUrl("/ops/alerts"),
   },
   twitter: {
-    title: blacklistTitle,
-    description: blacklistDescription,
+    title: alertsTitle,
+    description: alertsDescription,
   },
 };
 
-type SearchParams = Record<string, string | string[] | undefined>;
-
-export default async function RebuildOpsBlacklistPage({
-  searchParams,
-}: {
-  searchParams?: Promise<SearchParams>;
-}) {
+export default async function RebuildOpsAlertsPage() {
   const start = Date.now();
   const headersList = await headers();
   const requestId = getRequestIdFromHeaders(headersList);
   let status = 200;
   let requestError: unknown;
 
-  // Parse query params
-  const params = searchParams ? await searchParams : {};
-  const limitParam = Array.isArray(params.limit)
-    ? params.limit[0]
-    : params.limit;
-  const limit = limitParam
-    ? Math.min(parseInt(limitParam, 10) || 100, 500)
-    : 100;
-
   try {
-    // Fetch sellers (safe - returns empty array on DB issues)
-    let sellers: Awaited<ReturnType<typeof listBlacklistedSellers>> = [];
+    // Fetch watches and alerts (safe - returns empty arrays on DB issues)
+    let watches: Awaited<ReturnType<typeof listWatches>> = [];
+    let alerts: Awaited<ReturnType<typeof listRecentAlerts>> = [];
     let fetchError: string | null = null;
     let isDbNotInitialized = false;
 
     try {
-      sellers = await listBlacklistedSellers({
-        limit,
-      });
+      [watches, alerts] = await Promise.all([
+        listWatches(),
+        listRecentAlerts(50),
+      ]);
     } catch (err: unknown) {
       // Check for missing table error (42P01 = undefined_table in PostgreSQL)
       const pgError = err as { code?: string };
       if (pgError.code === "42P01") {
         isDbNotInitialized = true;
         fetchError =
-          "Database not initialized (missing seller_blacklist table)";
+          "Database not initialized (missing alerts_watchlist or alerts_log table)";
       } else {
         fetchError =
-          err instanceof Error ? err.message : "Failed to fetch sellers";
+          err instanceof Error ? err.message : "Failed to fetch alerts data";
       }
-      console.error("[rebuild/ops/blacklist] fetch error:", err);
+      console.error("[rebuild/ops/alerts] fetch error:", err);
     }
 
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-            Rebuild lane - Ops Blacklist
+            Rebuild lane - Ops Alerts
           </div>
 
           <header className="rounded-lg border border-slate-200 bg-white p-6">
-            <h1 className="text-2xl font-semibold text-slate-900">Blacklist</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Alerts</h1>
             <p className="mt-2 text-sm text-slate-700">
-              Manage blacklisted sellers. Blacklisting a seller prevents their
-              listings from appearing in search results.
+              Manage alert watchlist rules. When a watched card meets the
+              threshold criteria, an alert is logged.
             </p>
           </header>
 
@@ -107,8 +93,8 @@ export default async function RebuildOpsBlacklistPage({
                 Database Not Initialized
               </h2>
               <p className="mt-2 text-sm text-amber-700">
-                The seller_blacklist table does not exist. Run migrations to
-                initialize the database.
+                The alerts_watchlist or alerts_log table does not exist. Run
+                migrations to initialize the database.
               </p>
             </section>
           ) : fetchError ? (
@@ -119,7 +105,7 @@ export default async function RebuildOpsBlacklistPage({
               <p className="mt-2 text-sm text-red-700">{fetchError}</p>
             </section>
           ) : (
-            <BlacklistToolClient initialSellers={sellers} limit={limit} />
+            <AlertsToolClient initialWatches={watches} initialAlerts={alerts} />
           )}
         </div>
       </main>
@@ -131,8 +117,8 @@ export default async function RebuildOpsBlacklistPage({
   } finally {
     logRequest({
       level: status >= 500 ? "error" : "info",
-      msg: "rebuild.ops.blacklist.render",
-      route: "/rebuild/ops/blacklist",
+      msg: "rebuild.ops.alerts.render",
+      route: "/ops/alerts",
       requestId,
       durationMs: Date.now() - start,
       status,

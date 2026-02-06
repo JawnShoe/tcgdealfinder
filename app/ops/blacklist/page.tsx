@@ -6,39 +6,40 @@ import {
 } from "@/lib/rebuild/observability/logging";
 import { buildCanonicalUrl } from "@/lib/rebuild/seo/canonical";
 import { buildRebuildTitle } from "@/lib/rebuild/seo/meta";
-import { listListingOverrides } from "@/lib/rebuild/data/listingsOps";
-import { ListingsToolClient } from "./ListingsToolClient";
+import { listBlacklistedSellers } from "@/lib/rebuild/data/blacklist";
+import { BlacklistToolClient } from "./BlacklistToolClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const listingsTitle = buildRebuildTitle("Listings");
-const listingsDescription = "Rebuild ops view for listings management.";
+const blacklistTitle = buildRebuildTitle("Blacklist");
+const blacklistDescription =
+  "Rebuild ops view for blacklist seller management.";
 
 export const metadata: Metadata = {
-  title: listingsTitle,
-  description: listingsDescription,
+  title: blacklistTitle,
+  description: blacklistDescription,
   alternates: {
-    canonical: buildCanonicalUrl("/rebuild/ops/listings"),
+    canonical: buildCanonicalUrl("/ops/blacklist"),
   },
   robots: {
     index: false,
     follow: false,
   },
   openGraph: {
-    title: listingsTitle,
-    description: listingsDescription,
-    url: buildCanonicalUrl("/rebuild/ops/listings"),
+    title: blacklistTitle,
+    description: blacklistDescription,
+    url: buildCanonicalUrl("/ops/blacklist"),
   },
   twitter: {
-    title: listingsTitle,
-    description: listingsDescription,
+    title: blacklistTitle,
+    description: blacklistDescription,
   },
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-export default async function RebuildOpsListingsPage({
+export default async function RebuildOpsBlacklistPage({
   searchParams,
 }: {
   searchParams?: Promise<SearchParams>;
@@ -55,17 +56,17 @@ export default async function RebuildOpsListingsPage({
     ? params.limit[0]
     : params.limit;
   const limit = limitParam
-    ? Math.min(parseInt(limitParam, 10) || 200, 500)
-    : 200;
+    ? Math.min(parseInt(limitParam, 10) || 100, 500)
+    : 100;
 
   try {
-    // Fetch overrides (safe - returns empty array on DB issues)
-    let overrides: Awaited<ReturnType<typeof listListingOverrides>> = [];
+    // Fetch sellers (safe - returns empty array on DB issues)
+    let sellers: Awaited<ReturnType<typeof listBlacklistedSellers>> = [];
     let fetchError: string | null = null;
     let isDbNotInitialized = false;
 
     try {
-      overrides = await listListingOverrides({
+      sellers = await listBlacklistedSellers({
         limit,
       });
     } catch (err: unknown) {
@@ -74,26 +75,26 @@ export default async function RebuildOpsListingsPage({
       if (pgError.code === "42P01") {
         isDbNotInitialized = true;
         fetchError =
-          "Database not initialized (missing listing_overrides table)";
+          "Database not initialized (missing seller_blacklist table)";
       } else {
         fetchError =
-          err instanceof Error ? err.message : "Failed to fetch overrides";
+          err instanceof Error ? err.message : "Failed to fetch sellers";
       }
-      console.error("[rebuild/ops/listings] fetch error:", err);
+      console.error("[rebuild/ops/blacklist] fetch error:", err);
     }
 
     return (
       <main className="min-h-screen bg-slate-50">
         <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
-            Rebuild lane - Ops Listings
+            Rebuild lane - Ops Blacklist
           </div>
 
           <header className="rounded-lg border border-slate-200 bg-white p-6">
-            <h1 className="text-2xl font-semibold text-slate-900">Listings</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Blacklist</h1>
             <p className="mt-2 text-sm text-slate-700">
-              Manage listing overrides. Set allow/block/soft-exclude on
-              individual listings without blacklisting an entire seller.
+              Manage blacklisted sellers. Blacklisting a seller prevents their
+              listings from appearing in search results.
             </p>
           </header>
 
@@ -106,7 +107,7 @@ export default async function RebuildOpsListingsPage({
                 Database Not Initialized
               </h2>
               <p className="mt-2 text-sm text-amber-700">
-                The listing_overrides table does not exist. Run migrations to
+                The seller_blacklist table does not exist. Run migrations to
                 initialize the database.
               </p>
             </section>
@@ -118,7 +119,7 @@ export default async function RebuildOpsListingsPage({
               <p className="mt-2 text-sm text-red-700">{fetchError}</p>
             </section>
           ) : (
-            <ListingsToolClient initialOverrides={overrides} limit={limit} />
+            <BlacklistToolClient initialSellers={sellers} limit={limit} />
           )}
         </div>
       </main>
@@ -130,8 +131,8 @@ export default async function RebuildOpsListingsPage({
   } finally {
     logRequest({
       level: status >= 500 ? "error" : "info",
-      msg: "rebuild.ops.listings.render",
-      route: "/rebuild/ops/listings",
+      msg: "rebuild.ops.blacklist.render",
+      route: "/ops/blacklist",
       requestId,
       durationMs: Date.now() - start,
       status,

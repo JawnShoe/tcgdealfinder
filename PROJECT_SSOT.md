@@ -434,6 +434,7 @@ Job Silence Watchdog is merged but currently blocked until we have a public doma
 ### Deal Systems (LOCKED ✅)
 
 - **Best Trusted Deal**: `item price + shipping`; if shipping unknown shows "+ shipping at checkout". CTA block shows "Last updated … • Price may have changed on eBay" for pricing latency awareness.
+- **Confidence scoring doctrine**: Confidence is a reliability signal (not a deal-quality guarantee) derived from sample size, price dispersion, and shipping realism. Labels remain deterministic (`high` / `medium` / `low`) for identical inputs.
 - **Cross-market dedup**: Canonical listing identity is `listing_id` (fallback to numeric DB id). When duplicate listing IDs appear across markets, keep single row using priority **US → CA → GB → AU → others**. Ties fall back to lowest total price. Listings with different IDs are never fuzzy-merged; market badge communicates regional context.
 - **ENDS display**: Public surfaces show relative time ("Ends in 2h 15m", "Ended") with UTC tooltip, powered by `getEndsAtDisplay()` in `lib/dealFormatting.ts`. Debug/Admin views keep absolute UTC formatting for investigative clarity.
 - **Canonical ID**: `listing_id` (fallback to numeric DB id)

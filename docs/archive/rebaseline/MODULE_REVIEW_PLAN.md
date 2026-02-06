@@ -157,7 +157,7 @@ All files in `components/`.
 
 - [ ] All components inventoried
 - [ ] Bloat candidates documented
-- [ ] Tooltip patterns consistent (see UI_CONSISTENCY_CONTRACT.md)
+- [ ] Tooltip patterns consistent (see VISUAL_CONTRACT.md)
 - [ ] No inline styles (Tailwind only)
 - [ ] Accessibility attributes present
 

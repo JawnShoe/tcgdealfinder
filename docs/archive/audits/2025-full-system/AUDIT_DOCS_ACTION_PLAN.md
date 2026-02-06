@@ -45,7 +45,7 @@ docs/                       # Active documentation
 ├── RELEASES.md             # Ops runbook
 ├── surfaces.md             # Domain reference
 ├── ui/                     # UI governance
-│   └── UI_CONSISTENCY_CONTRACT.md
+│   └── VISUAL_CONTRACT.md
 ├── audit/                  # Audit evidence (temporary)
 │   ├── DB_ARCHITECTURE_EVIDENCE.md
 │   ├── EXPERT_AUDIT_2025-12-25.md (to commit)
@@ -127,7 +127,7 @@ Active audit in progress: [docs/audit/\_full-system-2025/](audit/_full-system-20
 
 ## Boss-Facing Summary (5 bullets max)
 
-1. **Authoritative docs (10)**: PROJECT_SSOT, SHIFT_LOCK, REGRESSION_CHECKLIST, INDEX, runbooks (BACKUP_POLICY, DB_MIGRATIONS, ENV_RUNBOOK, RELEASES, EVIDENCE_PACKET_TEMPLATE), UI_CONSISTENCY_CONTRACT — all required for daily ops
+1. **Authoritative docs (10)**: PROJECT_SSOT, SHIFT_LOCK, REGRESSION_CHECKLIST, INDEX, runbooks (BACKUP_POLICY, DB_MIGRATIONS, ENV_RUNBOOK, RELEASES, EVIDENCE_PACKET_TEMPLATE), VISUAL_CONTRACT — all required for daily ops
 
 2. **14 files are already archived**: All historical implementation records are in `docs/archive/` where they belong — no action needed
 

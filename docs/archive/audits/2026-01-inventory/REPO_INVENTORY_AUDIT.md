@@ -196,16 +196,16 @@ scripts/
 
 ### Authoritative (Active, Maintained)
 
-| Path                                                | Purpose                  | Last Commit | Referenced By     |
-| --------------------------------------------------- | ------------------------ | ----------- | ----------------- |
-| `docs/INDEX.md`                                     | Documentation map        | 2026-01-03  | CLAUDE.md         |
-| `docs/TIER2_ARCHITECTURE.md`                        | Tier 2 architecture spec | 2026-01-02  | CLAUDE.md routing |
-| `docs/DB_MIGRATIONS_RUNBOOK.md`                     | Migration procedures     | 2025-12-24  | CLAUDE.md routing |
-| `docs/ENV_RUNBOOK.md`                               | Environment config       | 2026-01-02  | CLAUDE.md routing |
-| `docs/DEFINITION_OF_READY.md`                       | Readiness checklist      | 2025-12-24  | CLAUDE.md routing |
-| `docs/RELEASES.md`                                  | Release procedures       | 2025-12-24  | CLAUDE.md routing |
-| `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md` | UI governance            | 2025-12-23  | CLAUDE.md routing |
-| `docs/archive/ui-legacy/TOOLTIP_INVENTORY.md`       | Tooltip catalog          | 2026-01-04  | UI contract       |
+| Path                                          | Purpose                  | Last Commit | Referenced By     |
+| --------------------------------------------- | ------------------------ | ----------- | ----------------- |
+| `docs/INDEX.md`                               | Documentation map        | 2026-01-03  | CLAUDE.md         |
+| `docs/TIER2_ARCHITECTURE.md`                  | Tier 2 architecture spec | 2026-01-02  | CLAUDE.md routing |
+| `docs/DB_MIGRATIONS_RUNBOOK.md`               | Migration procedures     | 2025-12-24  | CLAUDE.md routing |
+| `docs/ENV_RUNBOOK.md`                         | Environment config       | 2026-01-02  | CLAUDE.md routing |
+| `docs/DEFINITION_OF_READY.md`                 | Readiness checklist      | 2025-12-24  | CLAUDE.md routing |
+| `docs/RELEASES.md`                            | Release procedures       | 2025-12-24  | CLAUDE.md routing |
+| `docs/rebuild/VISUAL_CONTRACT.md`             | UI governance            | 2025-12-23  | CLAUDE.md routing |
+| `docs/archive/ui-legacy/TOOLTIP_INVENTORY.md` | Tooltip catalog          | 2026-01-04  | UI contract       |
 
 ### Operational (Reference)
 

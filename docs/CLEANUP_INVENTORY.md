@@ -52,7 +52,7 @@
 
 ### docs/INDEX.md Links
 
-- **Authoritative**: PROJECT_SSOT.md, SHIFT_LOCK.md, REGRESSION_CHECKLIST.md, UI_CONSISTENCY_CONTRACT.md, TIER2_ARCHITECTURE.md
+- **Authoritative**: PROJECT_SSOT.md, SHIFT_LOCK.md, REGRESSION_CHECKLIST.md, VISUAL_CONTRACT.md, TIER2_ARCHITECTURE.md
 - **Runbooks**: BACKUP_POLICY.md, ENV_RUNBOOK.md, DB_MIGRATIONS_RUNBOOK.md, RELEASES.md, DEFINITION_OF_READY.md, EVIDENCE_PACKET_TEMPLATE.md
 - **Design**: DESIGN_AUDIT_2025-01.md, DESIGN_PHASES.md
 - **Reference**: market-policy.md, surfaces.md, README.md
@@ -229,7 +229,7 @@ git ls-files | grep -iE "tmp|temp|test" | head -30
 | **docs/db/**                                            |               |                                        |                    |                                                       |
 | `docs/db/INDEX_AUDIT_P2.2.md`                           | REFERENCE     | PROJECT_SSOT.md, WORKSTREAMS_MASTER.md | KEEP               | Recent P2.2 work product                              | LOW        |
 | **docs/ui/**                                            |               |                                        |                    |                                                       |
-| `docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md`     | REFERENCE     | docs/INDEX.md                          | KEEP               | Active UI governance                                  | LOW        |
+| `docs/rebuild/VISUAL_CONTRACT.md`                       | REFERENCE     | docs/INDEX.md                          | KEEP               | Active UI governance                                  | LOW        |
 | **Runbooks (docs/)**                                    |               |                                        |                    |                                                       |
 | `docs/BACKUP_POLICY.md`                                 | REFERENCE     | docs/INDEX.md                          | KEEP               | Active operational runbook                            | LOW        |
 | `docs/ENV_RUNBOOK.md`                                   | REFERENCE     | docs/INDEX.md, PROJECT_SSOT.md         | KEEP               | Active operational runbook                            | LOW        |

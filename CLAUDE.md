@@ -122,6 +122,6 @@ Small docs-only edits (single file, no code, no behavior impact) may skip the Pl
 - Release / deploy / tagging / versioning → docs/RELEASES.md
 - Env vars / ops configuration → docs/ENV_RUNBOOK.md
 - "Start work" / readiness / gating questions → docs/DEFINITION_OF_READY.md
-- Shared / global UI behavior changes → docs/archive/ui-legacy/UI_CONSISTENCY_CONTRACT.md
+- Shared / global UI behavior changes → docs/rebuild/VISUAL_CONTRACT.md
 
 Coders are only required to consult additional documents when a trigger applies or when explicitly referenced in the task prompt.

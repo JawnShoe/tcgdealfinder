@@ -192,9 +192,11 @@ export default async function RebuildOpsPage() {
         ? "OK"
         : apiMetrics.status === "empty"
           ? "NO DATA"
-          : apiMetrics.status === "error"
-            ? "ERROR"
-            : "UNAVAILABLE";
+          : apiMetrics.status === "not_instrumented"
+            ? "NOT INSTRUMENTED"
+            : apiMetrics.status === "error"
+              ? "ERROR"
+              : "UNAVAILABLE";
 
     const apiStatusClass =
       apiMetrics.status === "available"
@@ -208,9 +210,11 @@ export default async function RebuildOpsPage() {
         ? "OK"
         : outboundClicks.status === "empty"
           ? "NO DATA"
-          : outboundClicks.status === "error"
-            ? "ERROR"
-            : "UNAVAILABLE";
+          : outboundClicks.status === "not_instrumented"
+            ? "NOT INSTRUMENTED"
+            : outboundClicks.status === "error"
+              ? "ERROR"
+              : "UNAVAILABLE";
 
     const clicksStatusClass =
       outboundClicks.status === "available"
@@ -222,16 +226,20 @@ export default async function RebuildOpsPage() {
     const apiEmptyMessage =
       apiMetrics.status === "empty"
         ? "No API traffic recorded yet."
-        : apiMetrics.status === "error"
-          ? "Metrics query failed."
-          : "Not instrumented yet.";
+        : apiMetrics.status === "not_instrumented"
+          ? "Metrics tables not present in this environment yet."
+          : apiMetrics.status === "error"
+            ? "Metrics query failed."
+            : "Metrics unavailable in this environment.";
 
     const clicksEmptyMessage =
       outboundClicks.status === "empty"
         ? "No outbound clicks recorded yet."
-        : outboundClicks.status === "error"
-          ? "Metrics query failed."
-          : "Not instrumented yet.";
+        : outboundClicks.status === "not_instrumented"
+          ? "Metrics tables not present in this environment yet."
+          : outboundClicks.status === "error"
+            ? "Metrics query failed."
+            : "Metrics unavailable in this environment.";
 
     return (
       <main className="min-h-screen bg-slate-50">
@@ -335,7 +343,10 @@ export default async function RebuildOpsPage() {
               <h2 className="text-lg font-semibold text-slate-900">
                 API error rate
               </h2>
-              <span className={`text-sm font-semibold ${apiStatusClass}`}>
+              <span
+                className={`text-sm font-semibold ${apiStatusClass}`}
+                data-testid="ops-api-metrics-status"
+              >
                 {apiStatusLabel}
               </span>
             </div>
@@ -367,14 +378,22 @@ export default async function RebuildOpsPage() {
                 </div>
               </dl>
             ) : (
-              <p className="mt-3 text-sm text-slate-700">{apiEmptyMessage}</p>
+              <p
+                className="mt-3 text-sm text-slate-700"
+                data-testid="ops-api-metrics-empty-message"
+              >
+                {apiEmptyMessage}
+              </p>
             )}
           </section>
 
           <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
             <div className="flex items-baseline justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Latency</h2>
-              <span className={`text-sm font-semibold ${apiStatusClass}`}>
+              <span
+                className={`text-sm font-semibold ${apiStatusClass}`}
+                data-testid="ops-latency-status"
+              >
                 {apiStatusLabel}
               </span>
             </div>
@@ -406,7 +425,10 @@ export default async function RebuildOpsPage() {
                 </div>
               </dl>
             ) : (
-              <p className="mt-3 text-sm text-slate-700">
+              <p
+                className="mt-3 text-sm text-slate-700"
+                data-testid="ops-latency-empty-message"
+              >
                 {apiMetrics.status === "empty"
                   ? "No latency samples recorded yet."
                   : apiEmptyMessage}
@@ -419,7 +441,10 @@ export default async function RebuildOpsPage() {
               <h2 className="text-lg font-semibold text-slate-900">
                 Outbound clicks
               </h2>
-              <span className={`text-sm font-semibold ${clicksStatusClass}`}>
+              <span
+                className={`text-sm font-semibold ${clicksStatusClass}`}
+                data-testid="ops-outbound-clicks-status"
+              >
                 {clicksStatusLabel}
               </span>
             </div>
@@ -451,7 +476,10 @@ export default async function RebuildOpsPage() {
                 </div>
               </dl>
             ) : (
-              <p className="mt-3 text-sm text-slate-700">
+              <p
+                className="mt-3 text-sm text-slate-700"
+                data-testid="ops-outbound-clicks-empty-message"
+              >
                 {clicksEmptyMessage}
               </p>
             )}

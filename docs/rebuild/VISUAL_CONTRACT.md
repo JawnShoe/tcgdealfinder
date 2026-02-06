@@ -702,3 +702,12 @@ Regression recovery after route decommission must preserve the existing visual/i
 - The canonical homepage on `/` must retain the established scan hierarchy, trust markers, and deferred skeleton/content markers.
 - Title-only outbound hit-area remains enforced (whitespace click expands/collapses; title click commits outbound).
 - `/rebuild` remains a hard 404 with no redirect and no stub surface.
+
+### 2026-02-06: Stabilization - Canonical /ops Metrics Degraded State
+
+Canonical `/ops` metrics panels must degrade safely when DB is configured but observability metrics tables are not yet present.
+
+- API error rate, Latency, and Outbound clicks status labels render `NOT INSTRUMENTED` (not `ERROR`).
+- Degraded-state copy is explicit and low-panic: "Metrics tables not present in this environment yet."
+- This degraded state is expected pre-migration and must not crash the route.
+- Non-missing-table DB failures still render `ERROR` semantics.

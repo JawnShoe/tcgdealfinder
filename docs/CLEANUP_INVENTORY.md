@@ -13,7 +13,7 @@ This document tracks low-risk repository cleanup candidates that do not change r
 ## Current Decisions
 
 - Keep production and CI-linked scripts in `scripts/`.
-- Move unreferenced one-off scripts into `scripts/one-off/` after reference proof.
+- Delete unreferenced one-off scripts after reference proof.
 - Delete dead API routes only when caller scans show zero relevant internal callers.
 - Delete dead `lib/` files only when import scans show zero active imports.
 

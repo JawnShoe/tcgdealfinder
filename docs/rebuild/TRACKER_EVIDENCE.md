@@ -35,9 +35,8 @@ A capability may only be marked **Recovered** when:
 **Reference artifacts for parity review:**
 
 - `docs/surfaces.md` — homepage/table column expectations, interaction patterns
-- `docs/archive/ui-baseline.md` — formatting/hierarchy rules, column alignment
 - `PROJECT_SSOT.md` — canonical confidence/trust doctrine and locked deal-system constraints
-- `docs/archive/DECISIONS.md` — interaction decisions, seller trust display
+- `docs/rebuild/VISUAL_CONTRACT.md` — layout/interaction constraints and trust-surface requirements
 
 ### Scan Power
 

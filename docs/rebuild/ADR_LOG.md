@@ -296,11 +296,11 @@
 ## ADR-0020: Docs Decommission (Pre-Launch Hygiene)
 
 - Status: Accepted
-- Decision: Archive non-active historical docs under `docs/archive/**`; rebuild SSOT stays in `docs/rebuild/**`.
+- Decision: Remove non-active historical docs from active governance flow; rebuild SSOT stays in `docs/rebuild/**`.
 - Scope: Move-only first; deletions are separate PRs (net-negative).
 - Non-goals: No runtime changes, no content rewrites.
-- Rationale: Reduce active-doc clutter; preserve institutional memory in a clear archive structure.
+- Rationale: Reduce active-doc clutter while keeping active governance self-contained.
 - Consequences:
-  - Historical/planning docs (`docs/design/**`, `docs/plan/**`, `docs/audit/**`, `docs/incidents/**`, `docs/db/**`, `docs/rebaseline/**`) are moved to `docs/archive/**`.
-  - `docs/INDEX.md` is updated only to fix broken links caused by moves.
-  - Archive taxonomy: `docs/archive/design/`, `docs/archive/plan/`, `docs/archive/audit/`, `docs/archive/incidents/`, `docs/archive/db/`, `docs/archive/rebaseline/`.
+  - Historical/planning docs are removed from active governance references.
+  - `docs/INDEX.md` is updated only to keep active links and instructions consistent.
+  - Governance decisions rely on active canonical docs only.

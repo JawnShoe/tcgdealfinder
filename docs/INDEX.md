@@ -107,33 +107,9 @@ CI runs only unit tests (`npm run test:unit`) to avoid requiring DATABASE_URL se
 
 ---
 
-## Rebaseline Artifacts (Archived)
+## Cleanup Inventory
 
-Baseline inventory and review plan for REBASELINE v1 (completed). Archived for historical reference.
-
-| Document                                                                                          | Purpose                                     | Status   |
-| ------------------------------------------------------------------------------------------------- | ------------------------------------------- | -------- |
-| [docs/archive/rebaseline/REPO_PACKET_2025-12-29.md](archive/rebaseline/REPO_PACKET_2025-12-29.md) | Complete repo inventory snapshot            | Archived |
-| [docs/archive/rebaseline/CRITICALITY_MAP.md](archive/rebaseline/CRITICALITY_MAP.md)               | Folder criticality labels                   | Archived |
-| [docs/archive/rebaseline/MODULE_REVIEW_PLAN.md](archive/rebaseline/MODULE_REVIEW_PLAN.md)         | Module review order and acceptance criteria | Archived |
-| [docs/CLEANUP_INVENTORY.md](CLEANUP_INVENTORY.md)                                                 | Repo-wide cleanup candidates (inventory)    | ACTIVE   |
-
----
-
-## Historical Archive (Non-Executable)
-
-Completed implementation records, audits, and planning artifacts are preserved in `docs/archive/` for reference only. These documents are **not actionable** — they represent past work, superseded plans, or closed audits.
-
-| Folder                                          | Contents                                              |
-| ----------------------------------------------- | ----------------------------------------------------- |
-| [docs/archive/](archive/)                       | Historical implementation records                     |
-| [docs/archive/audits/](archive/audits/)         | Closed audit artifacts (2025 full system + inventory) |
-| [docs/archive/plan/](archive/plan/)             | Implementation plans (Option A, sold data options)    |
-| [docs/archive/audit/](archive/audit/)           | Product truth philosophy audit                        |
-| [docs/archive/incidents/](archive/incidents/)   | Incident reports                                      |
-| [docs/archive/rebaseline/](archive/rebaseline/) | REBASELINE v1 artifacts (repo packet, modules)        |
-
-See the [archive README](archive/README.md) for navigation.
+`docs/CLEANUP_INVENTORY.md` tracks active cleanup candidates and current keep/defer decisions.
 
 ---
 

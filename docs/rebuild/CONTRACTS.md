@@ -1,5 +1,23 @@
 # Rebuild Contracts
 
+## Governance scope (canonical)
+
+Only `docs/rebuild/**` is canonical governance for the rebuild.
+
+Anything outside `docs/rebuild/**` is legacy by default unless proven otherwise.
+
+A file outside `docs/rebuild/**` may remain only as an operational dependency if at least one is true:
+
+- referenced by automation/CI/tooling
+- referenced by runtime code
+- explicitly ratified from within `docs/rebuild/**`
+
+Even when kept as an operational dependency, it is non-canonical unless explicitly ratified inside `docs/rebuild/**`.
+
+Operational dependencies (non-canonical): none.
+
+Merge-blocking rule: Any reference from `docs/rebuild/**` to legacy governance is merge-blocking unless it is a ratified operational dependency reference and clearly labeled as a "non-canonical operational dependency".
+
 ## Championship Rebuild Plan — Archived
 
 **Status: Archived / Completed**

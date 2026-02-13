@@ -50,7 +50,7 @@ export function getClientIp(request: Request): string {
  * Check and record a rate-limited action.
  * Uses sliding window: counts requests in the last WINDOW_SECONDS.
  *
- * @param route - Route identifier (e.g., "/api/alerts/subscribe")
+ * @param route - Route identifier (e.g., "/api/rebuild/alerts/subscribe")
  * @param ip - Client IP address
  * @returns RateLimitResult with allowed status and retry info
  */

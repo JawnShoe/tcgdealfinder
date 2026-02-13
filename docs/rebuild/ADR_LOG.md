@@ -302,5 +302,14 @@
 - Rationale: Reduce active-doc clutter while keeping active governance self-contained.
 - Consequences:
   - Historical/planning docs are removed from active governance references.
-  - `docs/INDEX.md` is updated only to keep active links and instructions consistent.
+  - Legacy doc indexes are non-canonical; rebuild SSOT stays in `docs/rebuild/**`.
   - Governance decisions rely on active canonical docs only.
+
+## ADR-0021: Canonical governance scope is docs/rebuild/\*\*
+
+- Status: Accepted
+- Decision: Only `docs/rebuild/**` is canonical governance for the rebuild. Anything outside `docs/rebuild/**` is legacy by default and may remain only if proven as an operational dependency (automation/CI/tooling or runtime) or explicitly ratified from within `docs/rebuild/**`.
+- Rationale: Stop governance drift by eliminating competing sources of truth and making compliance verifiable from repository artifacts alone.
+- Implications:
+  - References from `docs/rebuild/**` to legacy governance are merge-blocking unless the referenced file is a ratified operational dependency and clearly labeled as a "non-canonical operational dependency".
+  - Operational dependency documentation may remain outside `docs/rebuild/**`, but is non-canonical unless explicitly ratified within `docs/rebuild/**`.

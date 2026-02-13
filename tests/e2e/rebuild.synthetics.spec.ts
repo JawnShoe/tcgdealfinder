@@ -129,24 +129,20 @@ test("Stage 1 decommission: /alerts/unsubscribe page handles missing token grace
   );
 });
 
-test("Stage 1 decommission: /api/alerts/unsubscribe redirects to rebuild endpoint", async ({
+test("Rebuild unsubscribe endpoint: does not rely on legacy alerts shim", async ({
   request,
 }) => {
   const testToken = "test-token-e2e-redirect";
-  const legacyUrl = `${baseURL}/api/alerts/unsubscribe?token=${testToken}`;
-  const expectedPath = `/api/rebuild/alerts/unsubscribe?token=${testToken}`;
+  const url = `${baseURL}/api/rebuild/alerts/unsubscribe?token=${testToken}`;
 
-  const response = await request.get(legacyUrl, { maxRedirects: 0 });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
+  const response = await request.get(url);
+  // When alerts are disabled, returns 501; when enabled, returns 400 for invalid token
+  expect([400, 501]).toContain(response.status());
 
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
+  const body = await response.text();
+  expect(body).toMatch(
+    /invalid or has already been used|Missing unsubscribe token|Alerts are not enabled/i
+  );
 });
 
 test("Rebuild unsubscribe endpoint: returns 400 for missing token", async ({
@@ -178,27 +174,22 @@ test("Rebuild unsubscribe endpoint: returns appropriate response for invalid tok
   );
 });
 
-test("Stage 1 decommission: /api/alerts/subscribe redirects to rebuild endpoint", async ({
+test("Rebuild subscribe endpoint: does not rely on legacy alerts shim", async ({
   request,
 }) => {
-  const legacyUrl = `${baseURL}/api/alerts/subscribe`;
-  const expectedPath = `/api/rebuild/alerts/subscribe`;
+  const url = `${baseURL}/api/rebuild/alerts/subscribe`;
 
-  // Send a POST request with maxRedirects: 0 to verify redirect behavior
-  const response = await request.post(legacyUrl, {
-    data: { cardId: 1, email: "test@example.com", minDiscountPercent: 10 },
-    maxRedirects: 0,
+  // Intentionally omit email so behavior is deterministic without requiring DB setup.
+  const response = await request.post(url, {
+    data: { cardId: 1, minDiscountPercent: 10 },
   });
-  expect(response.status()).toBe(308);
-  const location = response.headers()["location"];
-  expect(location).toBeTruthy();
 
-  const resolvedLocation = location ?? "";
-  if (resolvedLocation.startsWith("http")) {
-    expect(resolvedLocation).toContain(expectedPath);
-  } else {
-    expect(resolvedLocation).toBe(expectedPath);
-  }
+  // When alerts are disabled, returns 501; when enabled, returns 400 for missing email
+  expect([400, 501]).toContain(response.status());
+
+  const body = await response.json();
+  expect(body.ok).toBe(false);
+  expect(body.error).toMatch(/valid email address|Alerts are not enabled/i);
 });
 
 test("Rebuild subscribe endpoint: returns deterministic validation error for missing email", async ({

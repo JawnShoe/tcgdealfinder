@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS rate_limits (
   id SERIAL PRIMARY KEY,
-  -- Key format: "{route}:{ip}" e.g., "/api/alerts/subscribe:192.168.1.1"
+  -- Key format: "{route}:{ip}" e.g., "/api/rebuild/alerts/subscribe:192.168.1.1"
   rate_key TEXT NOT NULL,
   -- Timestamp of the request (for sliding window calculation)
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

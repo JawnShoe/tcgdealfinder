@@ -1,7 +1,0 @@
-ALTER TABLE listings
-  ADD COLUMN IF NOT EXISTS shipping_known BOOLEAN NOT NULL DEFAULT TRUE,
-  ADD COLUMN IF NOT EXISTS shipping_source TEXT;
-
-ALTER TABLE listings
-  ALTER COLUMN shipping_cad DROP NOT NULL,
-  ALTER COLUMN total_price_cad DROP NOT NULL;

@@ -1,4 +1,0 @@
-ALTER TABLE listings
-  ADD COLUMN IF NOT EXISTS grader TEXT,
-  ADD COLUMN IF NOT EXISTS grade_value TEXT,
-  ADD COLUMN IF NOT EXISTS grade_source TEXT;

@@ -43,15 +43,15 @@ All legacy files are now archived under `legacy/archive/<domain>/` with header c
 
 These are NOT quarantine candidates — used by scripts but not app routes:
 
-| File                     | Used by                                                                |
-| ------------------------ | ---------------------------------------------------------------------- |
-| `lib/baselineUsd.ts`     | `scripts/update-historical-prices.ts`                                  |
-| `lib/collectorNumber.ts` | `scripts/backfill-collector-numbers.ts`, `scripts/update-listings.ts`  |
-| `lib/ebayStorefront.ts`  | `scripts/update-listings.ts`, `scripts/backfill-seller-store-names.ts` |
-| `lib/emailQueue.ts`      | `scripts/check-alerts.ts`                                              |
-| `lib/fxRates.ts`         | `scripts/update-fx-rates.ts`, `scripts/update-listings.ts`             |
-| `lib/language.ts`        | `scripts/backfill-card-language.ts`                                    |
-| `lib/tcgplayerClient.ts` | `scripts/import-tcgplayer-catalog.ts`                                  |
+| File                     | Used by                                                               |
+| ------------------------ | --------------------------------------------------------------------- |
+| `lib/baselineUsd.ts`     | `scripts/update-historical-prices.ts`                                 |
+| `lib/collectorNumber.ts` | `scripts/backfill-collector-numbers.ts`, `scripts/update-listings.ts` |
+| `lib/ebayStorefront.ts`  | `scripts/update-listings.ts`                                          |
+| `lib/emailQueue.ts`      | `scripts/check-alerts.ts`                                             |
+| `lib/fxRates.ts`         | `scripts/update-fx-rates.ts`, `scripts/update-listings.ts`            |
+| `lib/language.ts`        | `scripts/backfill-card-language.ts`                                   |
+| `lib/tcgplayerClient.ts` | `scripts/import-tcgplayer-catalog.ts`                                 |
 
 ## Audit Commands
 

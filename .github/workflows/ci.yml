@@ -30,7 +30,7 @@ jobs:
       - name: Detect docs-only change
         id: changes
         if: github.event_name == 'pull_request'
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             non_docs:
@@ -41,7 +41,7 @@ jobs:
       - name: Detect docs-only change (push)
         id: changes_push
         if: github.event_name == 'push'
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           base: ${{ github.event.before }}
           ref: ${{ github.sha }}
